@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Planner Pro - Maquette Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CSS VARIABLES - DESIGN SYSTEM
+           ======================================== */
+        :root {
+            /* Colors - Light Mode */
+            --color-primary: #6366F1;
+            --color-primary-hover: #4F46E5;
+            --color-primary-light: #EEF2FF;
+            --color-primary-dark: #4338CA;
+
+            --color-success: #10B981;
+            --color-success-light: #D1FAE5;
+            --color-warning: #F59E0B;
+            --color-warning-light: #FEF3C7;
+            --color-error: #EF4444;
+            --color-error-light: #FEE2E2;
+            --color-info: #3B82F6;
+            --color-info-light: #DBEAFE;
+
+            --bg-base: #FFFFFF;
+            --bg-subtle: #F8FAFC;
+            --bg-muted: #F1F5F9;
+            --bg-elevated: #FFFFFF;
+
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --text-inverse: #FFFFFF;
+
+            --border-default: #E2E8F0;
+            --border-subtle: #F1F5F9;
+            --border-strong: #CBD5E1;
+
+            /* Spacing */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+            --space-8: 64px;
+
+            /* Typography */
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --font-size-3xl: 2rem;
+
+            /* Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+
+            /* Transitions */
+            --transition-fast: 150ms ease-out;
+            --transition-base: 200ms ease-out;
+            --transition-slow: 300ms ease-out;
+
+            /* Layout */
+            --header-height: 56px;
+            --sidebar-width: 280px;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --color-primary: #818CF8;
+            --color-primary-hover: #6366F1;
+            --color-primary-light: #1E1B4B;
+            --color-primary-dark: #A5B4FC;
+
+            --color-success: #34D399;
+            --color-success-light: #064E3B;
+            --color-warning: #FBBF24;
+            --color-warning-light: #78350F;
+            --color-error: #F87171;
+            --color-error-light: #7F1D1D;
+            --color-info: #60A5FA;
+            --color-info-light: #1E3A8A;
+
+            --bg-base: #0F172A;
+            --bg-subtle: #1E293B;
+            --bg-muted: #334155;
+            --bg-elevated: #1E293B;
+
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --text-inverse: #0F172A;
+
+            --border-default: #334155;
+            --border-subtle: #1E293B;
+            --border-strong: #475569;
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.6);
+        }
+
+        /* ========================================
+           BASE STYLES
+           ======================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 14px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            transition: background var(--transition-base), color var(--transition-base);
+        }
+
+        /* ========================================
+           HEADER
+           ======================================== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: var(--header-height);
+            background: var(--bg-base);
+            border-bottom: 1px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--space-5);
+            gap: var(--space-4);
+            backdrop-filter: blur(12px);
+            transition: background var(--transition-base), border-color var(--transition-base);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-weight: 700;
+            font-size: var(--font-size-lg);
+            color: var(--color-primary);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), #EC4899);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: var(--font-size-sm);
+        }
+
+        .project-selector {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .project-selector:hover {
+            background: var(--bg-muted);
+            border-color: var(--border-strong);
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .project-selector svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .header-spacer {
+            flex: 1;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            width: 240px;
+            transition: all var(--transition-fast);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            flex: 1;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-muted);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.active {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, var(--color-primary), #EC4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+        }
+
+        /* ========================================
+           MAIN LAYOUT
+           ======================================== */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* ========================================
+           TOOLBAR / TABS
+           ======================================== */
+        .toolbar {
+            background: var(--bg-base);
+            border-bottom: 1px solid var(--border-default);
+            padding: 0 var(--space-5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            transition: background var(--transition-base), border-color var(--transition-base);
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--space-1);
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4) var(--space-4);
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all var(--transition-fast);
+            background: transparent;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        /* ========================================
+           BUTTONS
+           ======================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            border: 1px solid var(--border-default);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-muted);
+            border-color: var(--border-strong);
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ========================================
+           CONTENT AREA
+           ======================================== */
+        .content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ========================================
+           GANTT CHART
+           ======================================== */
+        .gantt-wrapper {
+            flex: 1;
+            overflow: auto;
+            padding: var(--space-5);
+        }
+
+        .gantt-container {
+            background: var(--bg-base);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-default);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: background var(--transition-base), border-color var(--transition-base);
+        }
+
+        .gantt-header {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-default);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .gantt-header-task {
+            padding: var(--space-3) var(--space-4);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            border-right: 1px solid var(--border-default);
+        }
+
+        .gantt-timeline-header {
+            display: flex;
+            overflow: hidden;
+        }
+
+        .timeline-month {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: var(--space-2) 0;
+            border-right: 1px solid var(--border-default);
+        }
+
+        .timeline-month-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .timeline-weeks {
+            display: flex;
+            margin-top: var(--space-1);
+        }
+
+        .timeline-week {
+            flex: 1;
+            text-align: center;
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .gantt-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gantt-row {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background var(--transition-fast);
+        }
+
+        .gantt-row:hover {
+            background: var(--bg-subtle);
+        }
+
+        .gantt-row.subproject {
+            background: var(--bg-subtle);
+        }
+
+        .gantt-task-cell {
+            padding: var(--space-3) var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            border-right: 1px solid var(--border-default);
+        }
+
+        .task-expand {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: transform var(--transition-fast);
+        }
+
+        .task-expand.expanded {
+            transform: rotate(90deg);
+        }
+
+        .task-color {
+            width: 4px;
+            height: 24px;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
+        }
+
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-meta {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .gantt-timeline-cell {
+            position: relative;
+            min-height: 48px;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 49px,
+                    var(--border-subtle) 49px,
+                    var(--border-subtle) 50px
+                );
+        }
+
+        .gantt-bar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 28px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--space-3);
+            cursor: grab;
+            transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+        }
+
+        .gantt-bar:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-50%) scale(1.02);
+        }
+
+        .gantt-bar-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+        }
+
+        .gantt-bar-label {
+            position: relative;
+            z-index: 1;
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gantt-bar-handles {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: ew-resize;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .gantt-bar:hover .gantt-bar-handles {
+            opacity: 1;
+        }
+
+        .gantt-bar-handles.left {
+            left: 0;
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .gantt-bar-handles.right {
+            right: 0;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .milestone {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+            width: 16px;
+            height: 16px;
+            background: var(--color-warning);
+            border: 2px solid var(--bg-base);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+        }
+
+        .milestone:hover {
+            transform: translateY(-50%) rotate(45deg) scale(1.2);
+            box-shadow: var(--shadow-md);
+        }
+
+        .today-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--color-error);
+            z-index: 5;
+        }
+
+        .today-line::before {
+            content: 'Aujourd\'hui';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            color: var(--color-error);
+            white-space: nowrap;
+        }
+
+        /* ========================================
+           STATS BAR
+           ======================================== */
+        .stats-bar {
+            background: var(--bg-base);
+            border-top: 1px solid var(--border-default);
+            padding: var(--space-4) var(--space-5);
+            display: flex;
+            gap: var(--space-6);
+            transition: background var(--transition-base), border-color var(--transition-base);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-lg);
+        }
+
+        .stat-icon.tasks {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        .stat-icon.duration {
+            background: var(--color-info-light);
+            color: var(--color-info);
+        }
+
+        .stat-icon.progress {
+            background: var(--color-success-light);
+            color: var(--color-success);
+        }
+
+        .stat-icon.budget {
+            background: var(--color-warning-light);
+            color: var(--color-warning);
+        }
+
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           MOBILE BOTTOM NAV
+           ======================================== */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-base);
+            border-top: 1px solid var(--border-default);
+            padding: var(--space-2) var(--space-4);
+            padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-1);
+            padding: var(--space-2);
+            color: var(--text-muted);
+            font-size: var(--font-size-xs);
+            cursor: pointer;
+            transition: color var(--transition-fast);
+        }
+
+        .mobile-nav-item.active {
+            color: var(--color-primary);
+        }
+
+        .mobile-nav-item svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        @media (max-width: 1024px) {
+            .search-box {
+                width: 180px;
+            }
+
+            .gantt-header-task,
+            .gantt-task-cell {
+                width: 200px;
+                min-width: 200px;
+            }
+
+            .gantt-header {
+                grid-template-columns: 200px 1fr;
+            }
+
+            .gantt-row {
+                grid-template-columns: 200px 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 var(--space-4);
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .toolbar {
+                padding: 0 var(--space-4);
+            }
+
+            .tab span {
+                display: none;
+            }
+
+            .stats-bar {
+                flex-wrap: wrap;
+                gap: var(--space-4);
+            }
+
+            .stat-item {
+                flex: 1;
+                min-width: calc(50% - var(--space-2));
+            }
+
+            .gantt-wrapper {
+                padding: var(--space-3);
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .main-container {
+                padding-bottom: 70px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gantt-container {
+                border-radius: var(--radius-md);
+            }
+
+            .gantt-header-task,
+            .gantt-task-cell {
+                width: 150px;
+                min-width: 150px;
+            }
+
+            .gantt-header {
+                grid-template-columns: 150px 1fr;
+            }
+
+            .gantt-row {
+                grid-template-columns: 150px 1fr;
+            }
+
+            .task-meta {
+                display: none;
+            }
+        }
+
+        /* ========================================
+           ACCESSIBILITY
+           ======================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        *:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        /* ========================================
+           DEMO BADGE
+           ======================================== */
+        .demo-badge {
+            position: fixed;
+            bottom: var(--space-4);
+            right: var(--space-4);
+            background: var(--color-primary);
+            color: white;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        @media (max-width: 768px) {
+            .demo-badge {
+                bottom: 80px;
+            }
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gantt-row {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .gantt-row:nth-child(1) { animation-delay: 0.05s; }
+        .gantt-row:nth-child(2) { animation-delay: 0.1s; }
+        .gantt-row:nth-child(3) { animation-delay: 0.15s; }
+        .gantt-row:nth-child(4) { animation-delay: 0.2s; }
+        .gantt-row:nth-child(5) { animation-delay: 0.25s; }
+        .gantt-row:nth-child(6) { animation-delay: 0.3s; }
+        .gantt-row:nth-child(7) { animation-delay: 0.35s; }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header" role="banner">
+        <div class="logo">
+            <div class="logo-icon">GP</div>
+            <span>Gantt Planner</span>
+        </div>
+
+        <div class="project-selector" tabindex="0" role="button" aria-haspopup="listbox">
+            <span class="project-name">Projet Alpha</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        </div>
+
+        <div class="header-spacer"></div>
+
+        <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="Rechercher..." aria-label="Rechercher">
+        </div>
+
+        <div class="header-actions">
+            <button class="icon-btn" aria-label="Notifications" title="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+            </button>
+            <button class="icon-btn" aria-label="Paramètres" title="Paramètres">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+            <button class="icon-btn" id="themeToggle" aria-label="Changer de thème" title="Mode sombre/clair">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="moon-icon" style="display:none">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <div class="avatar" tabindex="0" role="button" aria-label="Profil utilisateur">JD</div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+        <!-- TOOLBAR -->
+        <nav class="toolbar" role="navigation" aria-label="Navigation principale">
+            <div class="tabs" role="tablist">
+                <button class="tab active" role="tab" aria-selected="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"/>
+                        <line x1="4" y1="10" x2="4" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12" y2="3"/>
+                        <line x1="20" y1="21" x2="20" y2="16"/>
+                        <line x1="20" y1="12" x2="20" y2="3"/>
+                    </svg>
+                    <span>Timeline</span>
+                </button>
+                <button class="tab" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Tableau</span>
+                </button>
+                <button class="tab" role="tab" aria-selected="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Ressources</span>
+                </button>
+            </div>
+
+            <div class="toolbar-actions">
+                <button class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exporter
+                </button>
+                <button class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Nouvelle tâche
+                </button>
+            </div>
+        </nav>
+
+        <!-- CONTENT -->
+        <main class="content" role="main">
+            <div class="gantt-wrapper">
+                <div class="gantt-container">
+                    <!-- GANTT HEADER -->
+                    <div class="gantt-header">
+                        <div class="gantt-header-task">Tâche</div>
+                        <div class="gantt-timeline-header">
+                            <div class="timeline-month">
+                                <div class="timeline-month-name">Février 2025</div>
+                                <div class="timeline-weeks">
+                                    <div class="timeline-week">S5</div>
+                                    <div class="timeline-week">S6</div>
+                                    <div class="timeline-week">S7</div>
+                                    <div class="timeline-week">S8</div>
+                                </div>
+                            </div>
+                            <div class="timeline-month">
+                                <div class="timeline-month-name">Mars 2025</div>
+                                <div class="timeline-weeks">
+                                    <div class="timeline-week">S9</div>
+                                    <div class="timeline-week">S10</div>
+                                    <div class="timeline-week">S11</div>
+                                    <div class="timeline-week">S12</div>
+                                </div>
+                            </div>
+                            <div class="timeline-month">
+                                <div class="timeline-month-name">Avril 2025</div>
+                                <div class="timeline-weeks">
+                                    <div class="timeline-week">S13</div>
+                                    <div class="timeline-week">S14</div>
+                                    <div class="timeline-week">S15</div>
+                                    <div class="timeline-week">S16</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GANTT BODY -->
+                    <div class="gantt-body">
+                        <!-- Subproject Row -->
+                        <div class="gantt-row subproject">
+                            <div class="gantt-task-cell">
+                                <div class="task-expand expanded">▶</div>
+                                <div class="task-color" style="background: #6366F1;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Phase 1 - Design</div>
+                                    <div class="task-meta">4 tâches</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell"></div>
+                        </div>
+
+                        <!-- Task 1 -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #8B5CF6;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Recherche UX</div>
+                                    <div class="task-meta">@Marie · 5 jours</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="gantt-bar" style="left: 20px; width: 120px; background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+                                    <div class="gantt-bar-progress" style="width: 100%;"></div>
+                                    <span class="gantt-bar-label">Recherche UX</span>
+                                    <div class="gantt-bar-handles left"></div>
+                                    <div class="gantt-bar-handles right"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task 2 -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #EC4899;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Wireframes</div>
+                                    <div class="task-meta">@Julie · 8 jours</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="gantt-bar" style="left: 150px; width: 180px; background: linear-gradient(135deg, #EC4899, #DB2777);">
+                                    <div class="gantt-bar-progress" style="width: 75%;"></div>
+                                    <span class="gantt-bar-label">Wireframes</span>
+                                    <div class="gantt-bar-handles left"></div>
+                                    <div class="gantt-bar-handles right"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task 3 -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #10B981;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Design système</div>
+                                    <div class="task-meta">@Pierre · 10 jours</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="gantt-bar" style="left: 340px; width: 220px; background: linear-gradient(135deg, #10B981, #059669);">
+                                    <div class="gantt-bar-progress" style="width: 30%;"></div>
+                                    <span class="gantt-bar-label">Design système</span>
+                                    <div class="gantt-bar-handles left"></div>
+                                    <div class="gantt-bar-handles right"></div>
+                                </div>
+                                <div class="today-line" style="left: 380px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Milestone -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #F59E0B;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">◆ Validation Design</div>
+                                    <div class="task-meta">Jalon · 15 Mar</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="milestone" style="left: 570px;" title="Validation Design - 15 Mars 2025"></div>
+                            </div>
+                        </div>
+
+                        <!-- Subproject Row 2 -->
+                        <div class="gantt-row subproject">
+                            <div class="gantt-task-cell">
+                                <div class="task-expand expanded">▶</div>
+                                <div class="task-color" style="background: #3B82F6;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Phase 2 - Développement</div>
+                                    <div class="task-meta">3 tâches</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell"></div>
+                        </div>
+
+                        <!-- Task 4 -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #3B82F6;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Frontend</div>
+                                    <div class="task-meta">@Thomas · 15 jours</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="gantt-bar" style="left: 580px; width: 300px; background: linear-gradient(135deg, #3B82F6, #2563EB);">
+                                    <div class="gantt-bar-progress" style="width: 0%;"></div>
+                                    <span class="gantt-bar-label">Frontend</span>
+                                    <div class="gantt-bar-handles left"></div>
+                                    <div class="gantt-bar-handles right"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task 5 -->
+                        <div class="gantt-row">
+                            <div class="gantt-task-cell" style="padding-left: 48px;">
+                                <div class="task-color" style="background: #6366F1;"></div>
+                                <div class="task-info">
+                                    <div class="task-name">Backend API</div>
+                                    <div class="task-meta">@Alex · 12 jours</div>
+                                </div>
+                            </div>
+                            <div class="gantt-timeline-cell">
+                                <div class="gantt-bar" style="left: 580px; width: 250px; background: linear-gradient(135deg, #6366F1, #4F46E5);">
+                                    <div class="gantt-bar-progress" style="width: 0%;"></div>
+                                    <span class="gantt-bar-label">Backend API</span>
+                                    <div class="gantt-bar-handles left"></div>
+                                    <div class="gantt-bar-handles right"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- STATS BAR -->
+        <footer class="stats-bar" role="contentinfo">
+            <div class="stat-item">
+                <div class="stat-icon tasks">📋</div>
+                <div class="stat-content">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Tâches actives</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon duration">⏱️</div>
+                <div class="stat-content">
+                    <div class="stat-value">45</div>
+                    <div class="stat-label">Jours restants</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon progress">📈</div>
+                <div class="stat-content">
+                    <div class="stat-value">67%</div>
+                    <div class="stat-label">Complété</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon budget">💰</div>
+                <div class="stat-content">
+                    <div class="stat-value">24.5k€</div>
+                    <div class="stat-label">Budget utilisé</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="mobile-nav" aria-label="Navigation mobile">
+        <div class="mobile-nav-items">
+            <div class="mobile-nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="21" x2="4" y2="14"/>
+                    <line x1="4" y1="10" x2="4" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12" y2="3"/>
+                    <line x1="20" y1="21" x2="20" y2="16"/>
+                    <line x1="20" y1="12" x2="20" y2="3"/>
+                </svg>
+                <span>Timeline</span>
+            </div>
+            <div class="mobile-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span>Tableau</span>
+            </div>
+            <div class="mobile-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                </svg>
+                <span>Équipe</span>
+            </div>
+            <div class="mobile-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <span>Plus</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- DEMO BADGE -->
+    <div class="demo-badge">
+        ✨ Maquette Design v2.0
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        const sunIcon = themeToggle.querySelector('.sun-icon');
+        const moonIcon = themeToggle.querySelector('.moon-icon');
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+
+            if (newTheme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        });
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+            });
+        });
+
+        // Mobile nav switching
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+        mobileNavItems.forEach(item => {
+            item.addEventListener('click', () => {
+                mobileNavItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Expand/Collapse subprojects
+        const expanders = document.querySelectorAll('.task-expand');
+        expanders.forEach(expander => {
+            expander.addEventListener('click', () => {
+                expander.classList.toggle('expanded');
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            // Toggle theme with Ctrl+D
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                themeToggle.click();
+            }
+        });
+    </script>
+</body>
+</html>
