@@ -6,6 +6,8 @@
 import { store } from './store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
+import { taskModal } from './task-modal.js';
+import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce } from './utils.js';
 
 class App {
@@ -19,6 +21,24 @@ class App {
 
         // Initialize Gantt renderer
         ganttRenderer.init();
+
+        // Initialize task modal
+        taskModal.init(() => {
+            ganttRenderer.render();
+            this._renderStats();
+            this._showToast('Tâche mise à jour', 'success');
+        });
+
+        // Initialize Gantt interactions (drag, resize, click)
+        ganttInteractions.init({
+            onTaskClick: (taskId) => taskModal.openEdit(taskId),
+            onUpdate: () => {
+                ganttRenderer.render();
+                this._renderStats();
+            },
+            getColWidth: () => ganttRenderer.zoomConfig[ganttRenderer.zoomLevel]?.colWidth || 50,
+            getTimelineStart: () => store.getTimelineRange().start,
+        });
 
         // Bind UI events
         this._bindTabs();
@@ -314,23 +334,7 @@ class App {
     }
 
     _showAddTaskDialog() {
-        // Will be fully implemented in Step 3
-        // For now: quick-add via prompt
-        const name = prompt('Nom de la tâche :');
-        if (!name || !name.trim()) return;
-
-        const today = new Date();
-        const colors = ['#6366F1', '#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-        store.addTask({
-            name: name.trim(),
-            startDate: today.toISOString().split('T')[0],
-            endDate: addDaysHelper(today, 7).toISOString().split('T')[0],
-            color: randomColor,
-        });
-
-        this._announceToSR(`Tâche "${name.trim()}" ajoutée`);
+        taskModal.openCreate();
     }
 
     _exportProject() {
@@ -534,13 +538,6 @@ class App {
             announcer.textContent = message;
         });
     }
-}
-
-/* Helper to avoid circular import */
-function addDaysHelper(date, days) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + days);
-    return d;
 }
 
 /* ---- Bootstrap ---- */
