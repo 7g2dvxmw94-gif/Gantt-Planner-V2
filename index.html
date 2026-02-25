@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gantt Planner Pro - Outil de planification de projets avec diagramme de Gantt interactif">
+    <meta name="theme-color" content="#6366F1" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#818CF8" media="(prefers-color-scheme: dark)">
+    <title>Gantt Planner Pro</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/gantt.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- Skip Navigation (Accessibility) -->
+    <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
+
+    <!-- Screen Reader Announcer -->
+    <div id="srAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="header" role="banner">
+        <div class="logo" aria-label="Gantt Planner Pro">
+            <div class="logo-icon" aria-hidden="true">GP</div>
+            <span>Gantt Planner</span>
+        </div>
+
+        <button class="project-selector" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Sélectionner un projet">
+            <span class="project-name" id="projectName">Projet Alpha</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        </button>
+
+        <div class="header-spacer"></div>
+
+        <!-- Search -->
+        <div class="search-box" role="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="search" id="searchInput" placeholder="Rechercher... (Ctrl+F)" aria-label="Rechercher dans le projet">
+        </div>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+            <button class="icon-btn" aria-label="Notifications" title="Notifications">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+            </button>
+            <button class="icon-btn" aria-label="Paramètres" title="Paramètres">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl+D)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="moon-icon" style="display:none" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+
+            <div class="avatar" tabindex="0" role="button" aria-label="Profil utilisateur - Jean Dupont">JD</div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTAINER ==================== -->
+    <div class="main-container">
+
+        <!-- ==================== TOOLBAR ==================== -->
+        <nav class="toolbar" role="navigation" aria-label="Navigation principale">
+            <div class="tabs" role="tablist" aria-label="Vues du projet">
+                <!-- Timeline Tab -->
+                <button class="tab active" role="tab" aria-selected="true" data-view="timeline" tabindex="0" id="tabTimeline" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="4" y1="21" x2="4" y2="14"/>
+                        <line x1="4" y1="10" x2="4" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12" y2="3"/>
+                        <line x1="20" y1="21" x2="20" y2="16"/>
+                        <line x1="20" y1="12" x2="20" y2="3"/>
+                    </svg>
+                    <span>Timeline</span>
+                </button>
+                <!-- Board Tab -->
+                <button class="tab" role="tab" aria-selected="false" data-view="board" tabindex="-1" id="tabBoard" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Tableau</span>
+                </button>
+                <!-- Resources Tab -->
+                <button class="tab" role="tab" aria-selected="false" data-view="resources" tabindex="-1" id="tabResources" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Ressources</span>
+                </button>
+            </div>
+
+            <div class="toolbar-actions">
+                <!-- Zoom Controls -->
+                <div class="zoom-controls" role="group" aria-label="Niveau de zoom">
+                    <button class="zoom-btn" data-zoom="day" aria-label="Zoom jour" title="Vue par jour">J</button>
+                    <button class="zoom-btn active" data-zoom="week" aria-label="Zoom semaine" title="Vue par semaine">S</button>
+                    <button class="zoom-btn" data-zoom="month" aria-label="Zoom mois" title="Vue par mois">M</button>
+                    <button class="zoom-btn" data-zoom="quarter" aria-label="Zoom trimestre" title="Vue par trimestre">T</button>
+                    <span class="zoom-label" aria-live="polite">Semaine</span>
+                </div>
+
+                <!-- Export -->
+                <button class="btn btn-secondary" id="exportBtn" aria-label="Exporter le projet">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Exporter</span>
+                </button>
+
+                <!-- Add Task -->
+                <button class="btn btn-primary" id="addTaskBtn" aria-label="Ajouter une nouvelle tâche (Ctrl+N)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Nouvelle tâche</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ==================== CONTENT ==================== -->
+        <main class="content" role="main" id="mainContent" aria-label="Contenu principal">
+            <!-- Timeline View (Gantt Chart) -->
+            <div class="gantt-wrapper">
+                <div class="gantt-container" id="ganttContainer" aria-label="Diagramme de Gantt">
+                    <!-- Rendered dynamically by gantt-renderer.js -->
+                </div>
+            </div>
+
+            <!-- Board View (hidden by default) -->
+            <div id="boardView" style="display: none;" aria-label="Vue tableau Kanban"></div>
+
+            <!-- Resource View (hidden by default) -->
+            <div id="resourceView" style="display: none;" aria-label="Vue ressources"></div>
+        </main>
+
+        <!-- ==================== STATS BAR ==================== -->
+        <footer class="stats-bar" role="contentinfo" aria-label="Statistiques du projet">
+            <div class="stat-item">
+                <div class="stat-icon tasks" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statTasks">-</div>
+                    <div class="stat-label">Tâches actives</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon duration" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statDays">-</div>
+                    <div class="stat-label">Jours restants</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon progress" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statProgress">-</div>
+                    <div class="stat-label">Complété</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon budget" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statBudget">-</div>
+                    <div class="stat-label">Budget utilisé</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM NAV ==================== -->
+    <nav class="mobile-nav" aria-label="Navigation mobile">
+        <div class="mobile-nav-items">
+            <button class="mobile-nav-item active" data-view="timeline" aria-label="Vue Timeline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="4" y1="21" x2="4" y2="14"/>
+                    <line x1="4" y1="10" x2="4" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12" y2="3"/>
+                    <line x1="20" y1="21" x2="20" y2="16"/>
+                    <line x1="20" y1="12" x2="20" y2="3"/>
+                </svg>
+                <span>Timeline</span>
+            </button>
+            <button class="mobile-nav-item" data-view="board" aria-label="Vue Tableau">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span>Tableau</span>
+            </button>
+            <button class="mobile-nav-item" data-view="resources" aria-label="Vue Équipe">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                </svg>
+                <span>Équipe</span>
+            </button>
+            <button class="mobile-nav-item" aria-label="Plus d'options">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                </svg>
+                <span>Plus</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

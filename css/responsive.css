@@ -1,0 +1,159 @@
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+/* ---- Tablet (1024px) ---- */
+@media (max-width: 1024px) {
+    .search-box {
+        width: 180px;
+    }
+
+    :root {
+        --gantt-task-col-width: 220px;
+    }
+
+    .stats-bar {
+        gap: var(--space-4);
+    }
+}
+
+/* ---- Mobile Landscape / Small Tablet (768px) ---- */
+@media (max-width: 768px) {
+    .header {
+        padding: 0 var(--space-4);
+    }
+
+    .search-box {
+        display: none;
+    }
+
+    .logo span {
+        display: none;
+    }
+
+    .toolbar {
+        padding: 0 var(--space-4);
+    }
+
+    .tab span {
+        display: none;
+    }
+
+    .toolbar-actions .btn span {
+        display: none;
+    }
+
+    .toolbar-actions .btn {
+        padding: var(--space-2);
+    }
+
+    .stats-bar {
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .stat-item {
+        flex: 1;
+        min-width: calc(50% - var(--space-2));
+    }
+
+    .gantt-wrapper {
+        padding: var(--space-3);
+    }
+
+    .mobile-nav {
+        display: block;
+    }
+
+    .main-container {
+        padding-bottom: 70px;
+    }
+
+    :root {
+        --gantt-task-col-width: 180px;
+    }
+
+    .zoom-controls {
+        display: none;
+    }
+}
+
+/* ---- Mobile Portrait (480px) ---- */
+@media (max-width: 480px) {
+    :root {
+        --gantt-task-col-width: 150px;
+        --header-height: 48px;
+    }
+
+    .gantt-container {
+        border-radius: var(--radius-md);
+    }
+
+    .task-meta {
+        display: none;
+    }
+
+    .header-actions .icon-btn:not(#themeToggle) {
+        display: none;
+    }
+
+    .project-selector .project-name {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .stat-icon {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-size-sm);
+    }
+
+    .stat-value {
+        font-size: var(--font-size-lg);
+    }
+
+    .toolbar-actions .btn-secondary {
+        display: none;
+    }
+
+    .modal {
+        width: 95%;
+        max-height: 90vh;
+        border-radius: var(--radius-lg);
+    }
+}
+
+/* ---- Print ---- */
+@media print {
+    .header,
+    .toolbar,
+    .stats-bar,
+    .mobile-nav,
+    .toast-container {
+        display: none !important;
+    }
+
+    .main-container {
+        padding-bottom: 0;
+        min-height: auto;
+    }
+
+    .gantt-wrapper {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .gantt-container {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+}

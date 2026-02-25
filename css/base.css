@@ -1,0 +1,137 @@
+/* ========================================
+   BASE & RESET STYLES
+   ======================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 14px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    line-height: var(--line-height-normal);
+    min-height: 100vh;
+    transition: background var(--transition-base), color var(--transition-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Links ---- */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--color-primary-hover);
+}
+
+/* ---- Images ---- */
+img, svg {
+    display: block;
+    max-width: 100%;
+}
+
+/* ---- Lists ---- */
+ul, ol {
+    list-style: none;
+}
+
+/* ---- Tables ---- */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* ---- Focus & Accessibility ---- */
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Skip to content link */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: var(--space-4);
+    z-index: var(--z-toast);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    font-weight: var(--font-weight-medium);
+    transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ---- Visually Hidden (SR only) ---- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ---- Selection ---- */
+::selection {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+}
+
+/* ---- Scrollbar (Webkit) ---- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-subtle);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) var(--bg-subtle);
+}
