@@ -611,11 +611,17 @@ class TaskModal {
             data.parentId = selectedParent;
             store.updateTask(this._editingTaskId, data);
 
-            // Update successors: sync the reverse links
+            // Update successors: sync the reverse links (only changed ones)
             const selectedSuccessors = this._getSelectedSuccessors();
             const allTasks = store.getTasks().filter(t => !t.isPhase && t.id !== this._editingTaskId);
             allTasks.forEach(t => {
                 const succEntry = selectedSuccessors.find(s => s.taskId === t.id);
+                const currentLink = (t.dependencies || []).find(d => d.taskId === this._editingTaskId);
+
+                // Skip if nothing changed
+                if (!succEntry && !currentLink) return;
+                if (succEntry && currentLink && succEntry.type === currentLink.type) return;
+
                 let deps = (t.dependencies || []).filter(d => d.taskId !== this._editingTaskId);
                 if (succEntry) {
                     deps.push({ taskId: this._editingTaskId, type: succEntry.type });

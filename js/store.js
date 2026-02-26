@@ -477,8 +477,10 @@ class Store {
             this._recalculatePhase(task.parentId);
         }
 
-        // Propagate to successors
-        this.propagateDependencies(taskId);
+        // Propagate to successors only when dates change
+        if (updates.startDate !== undefined || updates.endDate !== undefined) {
+            this.propagateDependencies(taskId);
+        }
 
         this._save();
         this._emit('task:update', this._data.tasks[idx]);
