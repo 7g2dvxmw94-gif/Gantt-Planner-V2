@@ -69,6 +69,29 @@ class TaskModal {
         datesRow.appendChild(this._createField('Date de fin', 'date', 'taskEnd'));
         body.appendChild(datesRow);
 
+        // Duration row
+        const durationRow = createElement('div', { className: 'form-row' });
+        const durationGroup = createElement('div', { className: 'form-group' });
+        durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, 'Durée (jours)'));
+        this._durationInput = createElement('input', {
+            className: 'input',
+            type: 'number',
+            id: 'taskDuration',
+            min: '1',
+            value: '7',
+            placeholder: 'Nombre de jours',
+        });
+        durationGroup.appendChild(this._durationInput);
+        durationRow.appendChild(durationGroup);
+
+        // Parent phase selector
+        const parentGroup = createElement('div', { className: 'form-group' });
+        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, 'Phase parente'));
+        this._parentSelect = createElement('select', { className: 'select', id: 'taskParent' });
+        parentGroup.appendChild(this._parentSelect);
+        durationRow.appendChild(parentGroup);
+        body.appendChild(durationRow);
+
         // Type row
         const typeRow = createElement('div', { className: 'form-row' });
 
@@ -220,14 +243,18 @@ class TaskModal {
             }
         });
 
-        // Milestone checkbox: auto-sync end date
+        // Milestone checkbox: auto-sync end date and duration
         this._milestoneCheck.input.addEventListener('change', () => {
             if (this._milestoneCheck.input.checked) {
                 this._taskEnd.disabled = true;
                 this._taskEnd.value = this._taskStart.value;
+                this._durationInput.value = 1;
+                this._durationInput.disabled = true;
                 this._phaseCheck.input.checked = false;
             } else {
                 this._taskEnd.disabled = false;
+                this._durationInput.disabled = false;
+                this._updateDurationFromDates();
             }
         });
 
@@ -236,14 +263,28 @@ class TaskModal {
             if (this._phaseCheck.input.checked) {
                 this._milestoneCheck.input.checked = false;
                 this._taskEnd.disabled = false;
+                this._durationInput.disabled = false;
             }
         });
 
-        // Start date change: sync if milestone
+        // Start date change: update end date from duration
         this._taskStart.addEventListener('change', () => {
             if (this._milestoneCheck.input.checked) {
                 this._taskEnd.value = this._taskStart.value;
+                this._durationInput.value = 1;
+            } else {
+                this._updateEndFromDuration();
             }
+        });
+
+        // End date change: update duration
+        this._taskEnd.addEventListener('change', () => {
+            this._updateDurationFromDates();
+        });
+
+        // Duration change: update end date
+        this._durationInput.addEventListener('input', () => {
+            this._updateEndFromDuration();
         });
     }
 
@@ -270,13 +311,18 @@ class TaskModal {
         this._milestoneCheck.input.checked = false;
         this._phaseCheck.input.checked = false;
 
+        // Duration
+        this._durationInput.value = 7;
+        this._durationInput.disabled = false;
+
         // Reset color
         $$('.color-swatch', this._colorPicker).forEach((s, i) => s.classList.toggle('active', i === 0));
 
         // Populate assignees
         this._populateAssignees(null);
 
-        // Store parent
+        // Populate parent phases
+        this._populateParents(parentId);
         this._parentId = parentId;
 
         this._show();
@@ -306,6 +352,11 @@ class TaskModal {
         this._milestoneCheck.input.checked = task.isMilestone;
         this._phaseCheck.input.checked = task.isPhase;
 
+        // Duration
+        const days = Math.round((new Date(task.endDate) - new Date(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+        this._durationInput.value = Math.max(1, days);
+        this._durationInput.disabled = task.isMilestone;
+
         // Color
         $$('.color-swatch', this._colorPicker).forEach(s => {
             s.classList.toggle('active', s.dataset.color === task.color);
@@ -313,6 +364,9 @@ class TaskModal {
 
         // Assignee
         this._populateAssignees(task.assignee);
+
+        // Parent phase
+        this._populateParents(task.parentId);
         this._parentId = task.parentId;
 
         this._show();
@@ -336,6 +390,40 @@ class TaskModal {
             const opt = createElement('option', { value: r.id }, `${r.name} (${r.role})`);
             if (r.id === selectedId) opt.selected = true;
             this._assigneeSelect.appendChild(opt);
+        });
+    }
+
+    /* ---- Duration <-> Dates sync ---- */
+
+    _updateEndFromDuration() {
+        const start = this._taskStart.value;
+        const dur = parseInt(this._durationInput.value, 10);
+        if (start && dur > 0) {
+            this._taskEnd.value = formatDateISO(addDays(new Date(start), dur - 1));
+        }
+    }
+
+    _updateDurationFromDates() {
+        const start = this._taskStart.value;
+        const end = this._taskEnd.value;
+        if (start && end) {
+            const days = Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+            this._durationInput.value = Math.max(1, days);
+        }
+    }
+
+    /* ---- Populate Parents ---- */
+
+    _populateParents(selectedParentId) {
+        this._parentSelect.innerHTML = '';
+        this._parentSelect.appendChild(createElement('option', { value: '' }, '— Aucune (racine) —'));
+        const phases = store.getTasks().filter(t => t.isPhase);
+        phases.forEach(phase => {
+            // Don't allow a task to be its own parent
+            if (this._editingTaskId && phase.id === this._editingTaskId) return;
+            const opt = createElement('option', { value: phase.id }, phase.name);
+            if (phase.id === selectedParentId) opt.selected = true;
+            this._parentSelect.appendChild(opt);
         });
     }
 
@@ -365,10 +453,14 @@ class TaskModal {
             isPhase: this._phaseCheck.input.checked,
         };
 
+        // Parent from the dropdown
+        const selectedParent = this._parentSelect.value || null;
+
         if (this._mode === 'create') {
-            data.parentId = this._parentId || null;
+            data.parentId = selectedParent;
             store.addTask(data);
         } else {
+            data.parentId = selectedParent;
             store.updateTask(this._editingTaskId, data);
         }
 
