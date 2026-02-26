@@ -606,10 +606,15 @@ class TaskModal {
 
         if (this._mode === 'create') {
             data.parentId = selectedParent;
-            store.addTask(data);
+            const newTask = store.addTask(data);
+            // Apply predecessor constraints to position the new task
+            store.applyPredecessorConstraints(newTask.id);
         } else {
             data.parentId = selectedParent;
             store.updateTask(this._editingTaskId, data);
+
+            // Apply predecessor constraints (adjusts dates based on predecessors)
+            store.applyPredecessorConstraints(this._editingTaskId);
 
             // Update successors: sync the reverse links (only changed ones)
             const selectedSuccessors = this._getSelectedSuccessors();
@@ -627,6 +632,8 @@ class TaskModal {
                     deps.push({ taskId: this._editingTaskId, type: succEntry.type });
                 }
                 store.updateTask(t.id, { dependencies: deps });
+                // Apply constraints on the successor too
+                store.applyPredecessorConstraints(t.id);
             });
         }
 

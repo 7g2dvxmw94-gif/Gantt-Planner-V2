@@ -507,6 +507,64 @@ class Store {
     }
 
     /**
+     * Apply predecessor constraints to a task.
+     * Adjusts task dates based on its predecessors, then cascades to successors.
+     */
+    applyPredecessorConstraints(taskId) {
+        const task = this.getTask(taskId);
+        if (!task || !task.dependencies || !task.dependencies.length) return;
+
+        const duration = daysBetween(task.startDate, task.endDate);
+        let latestStart = null;
+        let latestEnd = null;
+
+        task.dependencies.forEach(dep => {
+            const pred = this.getTask(dep.taskId);
+            if (!pred) return;
+
+            const predStart = new Date(pred.startDate);
+            const predEnd = new Date(pred.endDate);
+
+            if (dep.type === 'FS') {
+                const candidate = addDays(predEnd, 1);
+                if (!latestStart || candidate > latestStart) latestStart = candidate;
+            } else if (dep.type === 'SS') {
+                if (!latestStart || predStart > latestStart) latestStart = predStart;
+            } else if (dep.type === 'FF') {
+                if (!latestEnd || predEnd > latestEnd) latestEnd = predEnd;
+            } else if (dep.type === 'SF') {
+                if (!latestEnd || predStart > latestEnd) latestEnd = predStart;
+            }
+        });
+
+        let changed = false;
+
+        if (latestStart) {
+            const ns = formatDateISO(latestStart);
+            if (new Date(ns) > new Date(task.startDate)) {
+                task.startDate = ns;
+                task.endDate = formatDateISO(addDays(latestStart, duration));
+                changed = true;
+            }
+        }
+        if (latestEnd) {
+            const ne = formatDateISO(latestEnd);
+            if (new Date(ne) > new Date(task.endDate)) {
+                task.endDate = ne;
+                task.startDate = formatDateISO(addDays(latestEnd, -duration));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            if (task.parentId) this._recalculatePhase(task.parentId);
+            this.propagateDependencies(taskId);
+            this._save();
+            this._emit('task:update', task);
+        }
+    }
+
+    /**
      * Get tasks that depend on this task (successors)
      */
     getSuccessors(taskId) {
