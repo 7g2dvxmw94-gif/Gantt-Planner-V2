@@ -448,23 +448,25 @@ class GanttRenderer {
         const rows = body.querySelectorAll('.gantt-row');
         if (!rows.length) return;
 
-        // Build map: taskId -> { row index, bar element }
+        // Build map: taskId -> { row DOM, bar element }
         const taskMap = {};
-        rows.forEach((row, index) => {
+        rows.forEach((row) => {
             const taskId = row.dataset.taskId;
             if (taskId) {
                 const bar = row.querySelector('.gantt-bar, .gantt-milestone');
-                taskMap[taskId] = { index, row, bar };
+                taskMap[taskId] = { row, bar };
             }
         });
 
-        // Collect dependencies
+        // Collect dependencies with link type
         const deps = [];
         tasks.forEach(task => {
             if (task.dependencies && task.dependencies.length) {
-                task.dependencies.forEach(depId => {
+                task.dependencies.forEach(dep => {
+                    const depId = typeof dep === 'string' ? dep : dep.taskId;
+                    const type = typeof dep === 'string' ? 'FS' : (dep.type || 'FS');
                     if (taskMap[depId] && taskMap[task.id]) {
-                        deps.push({ from: depId, to: task.id });
+                        deps.push({ from: depId, to: task.id, type });
                     }
                 });
             }
@@ -472,63 +474,113 @@ class GanttRenderer {
 
         if (!deps.length) return;
 
-        const rowHeight = 48; // var(--gantt-row-height)
-        const totalHeight = rows.length * rowHeight;
+        // Use actual DOM positions for Y coordinates (row.offsetTop)
+        // Wait for layout to be ready
+        requestAnimationFrame(() => {
+            const bodyRect = body.getBoundingClientRect();
+            const totalHeight = body.scrollHeight;
 
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.classList.add('gantt-dependencies-layer');
-        svg.setAttribute('width', this._timelineWidth);
-        svg.setAttribute('height', totalHeight);
-        svg.style.width = this._timelineWidth + 'px';
-        svg.style.height = totalHeight + 'px';
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.classList.add('gantt-dependencies-layer');
+            svg.setAttribute('width', this._timelineWidth);
+            svg.setAttribute('height', totalHeight);
+            svg.style.width = this._timelineWidth + 'px';
+            svg.style.height = totalHeight + 'px';
 
-        deps.forEach(dep => {
-            const fromInfo = taskMap[dep.from];
-            const toInfo = taskMap[dep.to];
-            if (!fromInfo.bar || !toInfo.bar) return;
+            deps.forEach(dep => {
+                const fromInfo = taskMap[dep.from];
+                const toInfo = taskMap[dep.to];
+                if (!fromInfo.bar || !toInfo.bar) return;
 
-            // From bar: right edge, vertical center of its row
-            const fromLeft = parseFloat(fromInfo.bar.style.left) || 0;
-            const fromWidth = parseFloat(fromInfo.bar.style.width) || 16;
-            const fromX = fromLeft + fromWidth;
-            const fromY = fromInfo.index * rowHeight + rowHeight / 2;
+                const fromBar = fromInfo.bar;
+                const toBar = toInfo.bar;
 
-            // To bar: left edge, vertical center
-            const toLeft = parseFloat(toInfo.bar.style.left) || 0;
-            const toX = toLeft;
-            const toY = toInfo.index * rowHeight + rowHeight / 2;
+                // Get actual Y positions via row offsetTop + half row height
+                const fromRowTop = fromInfo.row.offsetTop;
+                const fromRowH = fromInfo.row.offsetHeight;
+                const toRowTop = toInfo.row.offsetTop;
+                const toRowH = toInfo.row.offsetHeight;
+                const fromY = fromRowTop + fromRowH / 2;
+                const toY = toRowTop + toRowH / 2;
 
-            // Draw path with elbow connector
-            const midX = fromX + 12;
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.classList.add('dep-line');
+                // Bar X positions
+                const fromLeft = parseFloat(fromBar.style.left) || 0;
+                const fromWidth = parseFloat(fromBar.style.width) || 16;
+                const toLeft = parseFloat(toBar.style.left) || 0;
+                const toWidth = parseFloat(toBar.style.width) || 16;
 
-            if (toX > fromX + 20) {
-                // Straight-ish path with elbows
-                path.setAttribute('d', `M${fromX} ${fromY} H${midX} V${toY} H${toX - 6}`);
-            } else {
-                // Need to go around
-                const detourY = (fromY < toY) ? fromY + rowHeight * 0.6 : fromY - rowHeight * 0.6;
-                path.setAttribute('d', `M${fromX} ${fromY} H${midX} V${detourY} H${toX - 16} V${toY} H${toX - 6}`);
-            }
-            svg.appendChild(path);
+                // Determine start/end points based on link type
+                let startX, endX, arrowDir;
+                if (dep.type === 'FS') {
+                    // Fin → Début: from right edge of predecessor to left edge of successor
+                    startX = fromLeft + fromWidth;
+                    endX = toLeft;
+                    arrowDir = 'right'; // arrow points right
+                } else if (dep.type === 'SS') {
+                    // Début → Début: from left edge to left edge
+                    startX = fromLeft;
+                    endX = toLeft;
+                    arrowDir = 'right';
+                } else if (dep.type === 'FF') {
+                    // Fin → Fin: from right edge to right edge
+                    startX = fromLeft + fromWidth;
+                    endX = toLeft + toWidth;
+                    arrowDir = 'left';
+                } else if (dep.type === 'SF') {
+                    // Début → Fin: from left edge of predecessor to right edge of successor
+                    startX = fromLeft;
+                    endX = toLeft + toWidth;
+                    arrowDir = 'left';
+                }
 
-            // Arrowhead
-            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            arrow.classList.add('dep-arrow');
-            arrow.setAttribute('points', `${toX - 6} ${toY - 4}, ${toX} ${toY}, ${toX - 6} ${toY + 4}`);
-            svg.appendChild(arrow);
+                // Draw elbow path
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.classList.add('dep-line');
+
+                const gap = 12;
+                const arrowSize = 6;
+                const arrowEnd = arrowDir === 'right' ? endX - arrowSize : endX + arrowSize;
+
+                if (dep.type === 'FS' || dep.type === 'SS') {
+                    const midX = startX + (dep.type === 'FS' ? gap : -gap);
+                    if (arrowEnd > startX + gap) {
+                        path.setAttribute('d', `M${startX} ${fromY} H${midX} V${toY} H${arrowEnd}`);
+                    } else {
+                        const detourY = fromY < toY ? Math.max(fromY + fromRowH * 0.8, toY - toRowH * 0.8) : Math.min(fromY - fromRowH * 0.8, toY + toRowH * 0.8);
+                        path.setAttribute('d', `M${startX} ${fromY} H${midX} V${detourY} H${arrowEnd - gap} V${toY} H${arrowEnd}`);
+                    }
+                } else {
+                    // FF, SF
+                    const midX = startX + (dep.type === 'SF' ? -gap : gap);
+                    if (arrowEnd < startX - gap) {
+                        path.setAttribute('d', `M${startX} ${fromY} H${midX} V${toY} H${arrowEnd}`);
+                    } else {
+                        const detourY = fromY < toY ? Math.max(fromY + fromRowH * 0.8, toY - toRowH * 0.8) : Math.min(fromY - fromRowH * 0.8, toY + toRowH * 0.8);
+                        path.setAttribute('d', `M${startX} ${fromY} H${midX} V${detourY} H${arrowEnd + gap} V${toY} H${arrowEnd}`);
+                    }
+                }
+
+                svg.appendChild(path);
+
+                // Arrowhead
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrow.classList.add('dep-arrow');
+                if (arrowDir === 'right') {
+                    arrow.setAttribute('points', `${endX - arrowSize} ${toY - 4}, ${endX} ${toY}, ${endX - arrowSize} ${toY + 4}`);
+                } else {
+                    arrow.setAttribute('points', `${endX + arrowSize} ${toY - 4}, ${endX} ${toY}, ${endX + arrowSize} ${toY + 4}`);
+                }
+                svg.appendChild(arrow);
+            });
+
+            svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = 'var(--gantt-task-col-width)';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '4';
+            body.style.position = 'relative';
+            body.appendChild(svg);
         });
-
-        // Position the SVG inside the body, overlaying the timeline cells
-        // We need to offset it to the left by the task column width
-        svg.style.position = 'absolute';
-        svg.style.top = '0';
-        svg.style.left = 'var(--gantt-task-col-width)';
-        svg.style.pointerEvents = 'none';
-        svg.style.zIndex = '4';
-        body.style.position = 'relative';
-        body.appendChild(svg);
     }
 
     /* ---- Empty State ---- */

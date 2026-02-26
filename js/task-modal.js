@@ -151,12 +151,19 @@ class TaskModal {
         progressRow.appendChild(assigneeGroup);
         body.appendChild(progressRow);
 
-        // Dependencies (multi-select checkboxes)
-        const depGroup = createElement('div', { className: 'form-group' });
-        depGroup.appendChild(createElement('label', { className: 'form-label' }, 'Dépendances (précédée par)'));
-        this._depList = createElement('div', { className: 'dep-list' });
-        depGroup.appendChild(this._depList);
-        body.appendChild(depGroup);
+        // Predecessors (with link type)
+        const predGroup = createElement('div', { className: 'form-group' });
+        predGroup.appendChild(createElement('label', { className: 'form-label' }, 'Précédée par'));
+        this._predList = createElement('div', { className: 'dep-list' });
+        predGroup.appendChild(this._predList);
+        body.appendChild(predGroup);
+
+        // Successors (with link type)
+        const succGroup = createElement('div', { className: 'form-group' });
+        succGroup.appendChild(createElement('label', { className: 'form-label' }, 'Succédée par'));
+        this._succList = createElement('div', { className: 'dep-list' });
+        succGroup.appendChild(this._succList);
+        body.appendChild(succGroup);
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
@@ -328,8 +335,9 @@ class TaskModal {
         // Populate assignees (multi)
         this._populateAssignees([]);
 
-        // Populate dependencies
-        this._populateDependencies(null, []);
+        // Populate predecessors/successors
+        this._populatePredecessors(null, []);
+        this._populateSuccessors(null);
 
         // Populate parent phases
         this._populateParents(parentId);
@@ -375,8 +383,9 @@ class TaskModal {
         // Assignees (multi)
         this._populateAssignees(task.assignees || (task.assignee ? [task.assignee] : []));
 
-        // Dependencies
-        this._populateDependencies(task.id, task.dependencies || []);
+        // Predecessors / Successors
+        this._populatePredecessors(task.id, task.dependencies || []);
+        this._populateSuccessors(task.id);
 
         // Parent phase
         this._populateParents(task.parentId);
@@ -422,39 +431,111 @@ class TaskModal {
         return checked;
     }
 
-    _populateDependencies(taskId, selectedDeps) {
-        this._depList.innerHTML = '';
-        const deps = selectedDeps || [];
+    _populatePredecessors(taskId, currentDeps) {
+        this._predList.innerHTML = '';
+        const deps = currentDeps || [];
         const tasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
         if (tasks.length === 0) {
-            this._depList.appendChild(createElement('div', {
+            this._predList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
             }, 'Aucune tâche disponible'));
             return;
         }
+        const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
         tasks.forEach(t => {
-            const label = createElement('label', {});
-            const cb = createElement('input', { type: 'checkbox', value: t.id });
-            if (deps.includes(t.id)) cb.checked = true;
-            label.appendChild(cb);
-            const colorDot = createElement('span', {
-                style: {
-                    width: '8px', height: '8px', borderRadius: '50%',
-                    background: t.color, display: 'inline-block', flexShrink: '0',
-                },
+            const existing = deps.find(d => d.taskId === t.id);
+            const row = createElement('div', {
+                style: { display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-1) var(--space-2)' },
             });
-            label.appendChild(colorDot);
-            label.appendChild(document.createTextNode(t.name));
-            this._depList.appendChild(label);
+            const cb = createElement('input', { type: 'checkbox', value: t.id });
+            if (existing) cb.checked = true;
+            row.appendChild(cb);
+            const colorDot = createElement('span', {
+                style: { width: '8px', height: '8px', borderRadius: '50%', background: t.color, display: 'inline-block', flexShrink: '0' },
+            });
+            row.appendChild(colorDot);
+            row.appendChild(createElement('span', { style: { flex: '1', fontSize: 'var(--font-size-sm)', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, t.name));
+            const sel = createElement('select', {
+                className: 'select',
+                style: { width: '120px', padding: '2px 24px 2px 6px', fontSize: 'var(--font-size-xs)', flexShrink: '0' },
+                dataset: { taskId: t.id },
+            });
+            LINK_TYPES.forEach(([val, lbl]) => {
+                const opt = createElement('option', { value: val }, lbl);
+                if (existing && existing.type === val) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            sel.style.display = existing ? '' : 'none';
+            cb.addEventListener('change', () => { sel.style.display = cb.checked ? '' : 'none'; });
+            row.appendChild(sel);
+            this._predList.appendChild(row);
         });
     }
 
-    _getSelectedDeps() {
-        const checked = [];
-        this._depList.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            checked.push(cb.value);
+    _getSelectedPredecessors() {
+        const result = [];
+        this._predList.querySelectorAll('div').forEach(row => {
+            const cb = row.querySelector('input[type="checkbox"]');
+            const sel = row.querySelector('select');
+            if (cb && cb.checked && sel) {
+                result.push({ taskId: cb.value, type: sel.value });
+            }
         });
-        return checked;
+        return result;
+    }
+
+    _populateSuccessors(taskId) {
+        this._succList.innerHTML = '';
+        if (!taskId) {
+            this._succList.appendChild(createElement('div', {
+                style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
+            }, 'Sauvegardez d\'abord pour ajouter des successeurs'));
+            return;
+        }
+        const successors = store.getSuccessors(taskId);
+        const allTasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
+        const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
+
+        allTasks.forEach(t => {
+            const link = (t.dependencies || []).find(d => d.taskId === taskId);
+            const row = createElement('div', {
+                style: { display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-1) var(--space-2)' },
+            });
+            const cb = createElement('input', { type: 'checkbox', value: t.id });
+            if (link) cb.checked = true;
+            row.appendChild(cb);
+            const colorDot = createElement('span', {
+                style: { width: '8px', height: '8px', borderRadius: '50%', background: t.color, display: 'inline-block', flexShrink: '0' },
+            });
+            row.appendChild(colorDot);
+            row.appendChild(createElement('span', { style: { flex: '1', fontSize: 'var(--font-size-sm)', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, t.name));
+            const sel = createElement('select', {
+                className: 'select',
+                style: { width: '120px', padding: '2px 24px 2px 6px', fontSize: 'var(--font-size-xs)', flexShrink: '0' },
+                dataset: { taskId: t.id },
+            });
+            LINK_TYPES.forEach(([val, lbl]) => {
+                const opt = createElement('option', { value: val }, lbl);
+                if (link && link.type === val) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            sel.style.display = link ? '' : 'none';
+            cb.addEventListener('change', () => { sel.style.display = cb.checked ? '' : 'none'; });
+            row.appendChild(sel);
+            this._succList.appendChild(row);
+        });
+    }
+
+    _getSelectedSuccessors() {
+        const result = [];
+        this._succList.querySelectorAll('div').forEach(row => {
+            const cb = row.querySelector('input[type="checkbox"]');
+            const sel = row.querySelector('select');
+            if (cb && cb.checked && sel) {
+                result.push({ taskId: cb.value, type: sel.value });
+            }
+        });
+        return result;
     }
 
     /* ---- Duration <-> Dates sync ---- */
@@ -515,7 +596,7 @@ class TaskModal {
             color: activeColor ? activeColor.dataset.color : '#6366F1',
             assignee: selectedAssignees[0] || null,
             assignees: selectedAssignees,
-            dependencies: this._getSelectedDeps(),
+            dependencies: this._getSelectedPredecessors(),
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,
         };
@@ -529,6 +610,18 @@ class TaskModal {
         } else {
             data.parentId = selectedParent;
             store.updateTask(this._editingTaskId, data);
+
+            // Update successors: sync the reverse links
+            const selectedSuccessors = this._getSelectedSuccessors();
+            const allTasks = store.getTasks().filter(t => !t.isPhase && t.id !== this._editingTaskId);
+            allTasks.forEach(t => {
+                const succEntry = selectedSuccessors.find(s => s.taskId === t.id);
+                let deps = (t.dependencies || []).filter(d => d.taskId !== this._editingTaskId);
+                if (succEntry) {
+                    deps.push({ taskId: this._editingTaskId, type: succEntry.type });
+                }
+                store.updateTask(t.id, { dependencies: deps });
+            });
         }
 
         this.close();

@@ -275,8 +275,11 @@ class Store {
                         if (!t.assignees) {
                             t.assignees = t.assignee ? [t.assignee] : [];
                         }
+                        // Migrate dependencies: string[] → {taskId, type}[]
                         if (!t.dependencies) {
                             t.dependencies = [];
+                        } else if (t.dependencies.length && typeof t.dependencies[0] === 'string') {
+                            t.dependencies = t.dependencies.map(id => ({ taskId: id, type: 'FS' }));
                         }
                     });
                     return parsed;
@@ -474,6 +477,9 @@ class Store {
             this._recalculatePhase(task.parentId);
         }
 
+        // Propagate to successors
+        this.propagateDependencies(taskId);
+
         this._save();
         this._emit('task:update', this._data.tasks[idx]);
         return this._data.tasks[idx];
@@ -496,6 +502,84 @@ class Store {
 
         this._save();
         this._emit('task:delete', taskId);
+    }
+
+    /**
+     * Get tasks that depend on this task (successors)
+     */
+    getSuccessors(taskId) {
+        return this._data.tasks.filter(t =>
+            t.dependencies && t.dependencies.some(d => d.taskId === taskId)
+        );
+    }
+
+    /**
+     * Propagate date changes to successors based on link type
+     * FS: successor.start = predecessor.end + 1
+     * SS: successor.start = predecessor.start
+     * FF: successor.end = predecessor.end
+     * SF: successor.end = predecessor.start
+     */
+    propagateDependencies(taskId, visited = new Set()) {
+        if (visited.has(taskId)) return; // prevent cycles
+        visited.add(taskId);
+
+        const task = this.getTask(taskId);
+        if (!task) return;
+
+        const successors = this.getSuccessors(taskId);
+        successors.forEach(succ => {
+            const link = succ.dependencies.find(d => d.taskId === taskId);
+            if (!link) return;
+
+            const predStart = new Date(task.startDate);
+            const predEnd = new Date(task.endDate);
+            const succDuration = daysBetween(succ.startDate, succ.endDate);
+            let changed = false;
+
+            if (link.type === 'FS') {
+                // Successor starts after predecessor finishes
+                const newStart = addDays(predEnd, 1);
+                const ns = formatDateISO(newStart);
+                if (ns !== succ.startDate) {
+                    succ.startDate = ns;
+                    succ.endDate = formatDateISO(addDays(newStart, succDuration));
+                    changed = true;
+                }
+            } else if (link.type === 'SS') {
+                // Successor starts when predecessor starts
+                const ns = formatDateISO(predStart);
+                if (ns !== succ.startDate) {
+                    succ.startDate = ns;
+                    succ.endDate = formatDateISO(addDays(predStart, succDuration));
+                    changed = true;
+                }
+            } else if (link.type === 'FF') {
+                // Successor finishes when predecessor finishes
+                const ne = formatDateISO(predEnd);
+                if (ne !== succ.endDate) {
+                    succ.endDate = ne;
+                    succ.startDate = formatDateISO(addDays(predEnd, -succDuration));
+                    changed = true;
+                }
+            } else if (link.type === 'SF') {
+                // Successor finishes when predecessor starts
+                const ne = formatDateISO(predStart);
+                if (ne !== succ.endDate) {
+                    succ.endDate = ne;
+                    succ.startDate = formatDateISO(addDays(predStart, -succDuration));
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                if (succ.parentId) this._recalculatePhase(succ.parentId);
+                // Recursively propagate
+                this.propagateDependencies(succ.id, visited);
+            }
+        });
+
+        this._save();
     }
 
     toggleTaskCollapse(taskId) {
