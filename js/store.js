@@ -77,6 +77,7 @@ function createDefaultProject(resources) {
             status: 'done',
             color: '#8B5CF6',
             assignee: resources[0].id,
+            assignees: [resources[0].id],
             isMilestone: false,
             isPhase: false,
             order: 1,
@@ -97,6 +98,7 @@ function createDefaultProject(resources) {
             status: 'in_progress',
             color: '#EC4899',
             assignee: resources[1].id,
+            assignees: [resources[1].id],
             isMilestone: false,
             isPhase: false,
             order: 2,
@@ -117,6 +119,7 @@ function createDefaultProject(resources) {
             status: 'in_progress',
             color: '#10B981',
             assignee: resources[2].id,
+            assignees: [resources[2].id],
             isMilestone: false,
             isPhase: false,
             order: 3,
@@ -177,6 +180,7 @@ function createDefaultProject(resources) {
             status: 'todo',
             color: '#3B82F6',
             assignee: resources[3].id,
+            assignees: [resources[3].id],
             isMilestone: false,
             isPhase: false,
             order: 6,
@@ -197,6 +201,7 @@ function createDefaultProject(resources) {
             status: 'todo',
             color: '#6366F1',
             assignee: resources[4].id,
+            assignees: [resources[4].id],
             isMilestone: false,
             isPhase: false,
             order: 7,
@@ -217,6 +222,7 @@ function createDefaultProject(resources) {
             status: 'todo',
             color: '#06B6D4',
             assignee: resources[3].id,
+            assignees: [resources[3].id],
             isMilestone: false,
             isPhase: false,
             order: 8,
@@ -264,6 +270,15 @@ class Store {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed.projects && parsed.tasks && parsed.resources) {
+                    // Migrate: ensure all tasks have assignees array
+                    parsed.tasks.forEach(t => {
+                        if (!t.assignees) {
+                            t.assignees = t.assignee ? [t.assignee] : [];
+                        }
+                        if (!t.dependencies) {
+                            t.dependencies = [];
+                        }
+                    });
                     return parsed;
                 }
             }
@@ -421,6 +436,7 @@ class Store {
             status: 'todo',
             color: '#6366F1',
             assignee: null,
+            assignees: [],
             isMilestone: false,
             isPhase: false,
             order: tasks.length,
@@ -541,6 +557,9 @@ class Store {
         // Unassign from tasks
         this._data.tasks.forEach(t => {
             if (t.assignee === resourceId) t.assignee = null;
+            if (t.assignees) {
+                t.assignees = t.assignees.filter(id => id !== resourceId);
+            }
         });
         this._save();
         this._emit('resource:delete', resourceId);

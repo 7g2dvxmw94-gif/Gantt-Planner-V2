@@ -57,6 +57,10 @@ class GanttRenderer {
         // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
 
+        // Calculate total timeline width for horizontal scrolling
+        const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+        this._timelineWidth = this._dayColumns.length * colWidth;
+
         this._container.innerHTML = '';
 
         // Build header
@@ -72,6 +76,9 @@ class GanttRenderer {
         }
 
         this._container.appendChild(body);
+
+        // Render dependency arrows
+        this._renderDependencies(body, tasks);
     }
 
     /* ---- Header ---- */
@@ -184,7 +191,7 @@ class GanttRenderer {
         const isMilestone = task.isMilestone;
         const hasChildren = task.children && task.children.length > 0;
         const resources = store.getResources();
-        const assignee = task.assignee ? resources.find(r => r.id === task.assignee) : null;
+        const assignees = (task.assignees || []).map(id => resources.find(r => r.id === id)).filter(Boolean);
 
         let rowClass = 'gantt-row';
         if (isPhase) rowClass += ' phase';
@@ -231,7 +238,11 @@ class GanttRenderer {
 
         // Meta line
         const metaParts = [];
-        if (assignee) metaParts.push(`@${assignee.name.split(' ')[0]}`);
+        if (assignees.length === 1) {
+            metaParts.push(`@${assignees[0].name.split(' ')[0]}`);
+        } else if (assignees.length > 1) {
+            metaParts.push(`${assignees.length} personnes`);
+        }
         if (isMilestone) {
             metaParts.push(`Jalon \u00b7 ${formatDateShort(task.startDate)}`);
         } else if (isPhase) {
@@ -429,6 +440,95 @@ class GanttRenderer {
             }
             return offset;
         }
+    }
+
+    /* ---- Dependency Arrows ---- */
+
+    _renderDependencies(body, tasks) {
+        const rows = body.querySelectorAll('.gantt-row');
+        if (!rows.length) return;
+
+        // Build map: taskId -> { row index, bar element }
+        const taskMap = {};
+        rows.forEach((row, index) => {
+            const taskId = row.dataset.taskId;
+            if (taskId) {
+                const bar = row.querySelector('.gantt-bar, .gantt-milestone');
+                taskMap[taskId] = { index, row, bar };
+            }
+        });
+
+        // Collect dependencies
+        const deps = [];
+        tasks.forEach(task => {
+            if (task.dependencies && task.dependencies.length) {
+                task.dependencies.forEach(depId => {
+                    if (taskMap[depId] && taskMap[task.id]) {
+                        deps.push({ from: depId, to: task.id });
+                    }
+                });
+            }
+        });
+
+        if (!deps.length) return;
+
+        const rowHeight = 48; // var(--gantt-row-height)
+        const totalHeight = rows.length * rowHeight;
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('gantt-dependencies-layer');
+        svg.setAttribute('width', this._timelineWidth);
+        svg.setAttribute('height', totalHeight);
+        svg.style.width = this._timelineWidth + 'px';
+        svg.style.height = totalHeight + 'px';
+
+        deps.forEach(dep => {
+            const fromInfo = taskMap[dep.from];
+            const toInfo = taskMap[dep.to];
+            if (!fromInfo.bar || !toInfo.bar) return;
+
+            // From bar: right edge, vertical center of its row
+            const fromLeft = parseFloat(fromInfo.bar.style.left) || 0;
+            const fromWidth = parseFloat(fromInfo.bar.style.width) || 16;
+            const fromX = fromLeft + fromWidth;
+            const fromY = fromInfo.index * rowHeight + rowHeight / 2;
+
+            // To bar: left edge, vertical center
+            const toLeft = parseFloat(toInfo.bar.style.left) || 0;
+            const toX = toLeft;
+            const toY = toInfo.index * rowHeight + rowHeight / 2;
+
+            // Draw path with elbow connector
+            const midX = fromX + 12;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('dep-line');
+
+            if (toX > fromX + 20) {
+                // Straight-ish path with elbows
+                path.setAttribute('d', `M${fromX} ${fromY} H${midX} V${toY} H${toX - 6}`);
+            } else {
+                // Need to go around
+                const detourY = (fromY < toY) ? fromY + rowHeight * 0.6 : fromY - rowHeight * 0.6;
+                path.setAttribute('d', `M${fromX} ${fromY} H${midX} V${detourY} H${toX - 16} V${toY} H${toX - 6}`);
+            }
+            svg.appendChild(path);
+
+            // Arrowhead
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            arrow.classList.add('dep-arrow');
+            arrow.setAttribute('points', `${toX - 6} ${toY - 4}, ${toX} ${toY}, ${toX - 6} ${toY + 4}`);
+            svg.appendChild(arrow);
+        });
+
+        // Position the SVG inside the body, overlaying the timeline cells
+        // We need to offset it to the left by the task column width
+        svg.style.position = 'absolute';
+        svg.style.top = '0';
+        svg.style.left = 'var(--gantt-task-col-width)';
+        svg.style.pointerEvents = 'none';
+        svg.style.zIndex = '4';
+        body.style.position = 'relative';
+        body.appendChild(svg);
     }
 
     /* ---- Empty State ---- */

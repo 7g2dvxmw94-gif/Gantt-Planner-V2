@@ -208,11 +208,11 @@ class App {
                 taskName.textContent = task.name;
                 card.appendChild(taskName);
 
-                const resource = task.assignee ? store.getResource(task.assignee) : null;
-                if (resource) {
+                const taskAssignees = (task.assignees || (task.assignee ? [task.assignee] : [])).map(id => store.getResource(id)).filter(Boolean);
+                if (taskAssignees.length) {
                     const meta = document.createElement('div');
                     meta.style.cssText = 'font-size: var(--font-size-xs); color: var(--text-muted);';
-                    meta.textContent = `@${resource.name.split(' ')[0]}`;
+                    meta.textContent = taskAssignees.map(r => `@${r.name.split(' ')[0]}`).join(', ');
                     card.appendChild(meta);
                 }
 
@@ -259,7 +259,7 @@ class App {
         `;
 
         resources.forEach(resource => {
-            const assignedTasks = tasks.filter(t => t.assignee === resource.id);
+            const assignedTasks = tasks.filter(t => (t.assignees || []).includes(resource.id) || t.assignee === resource.id);
             const card = document.createElement('div');
             card.style.cssText = `
                 background: var(--bg-base); border-radius: var(--radius-lg);

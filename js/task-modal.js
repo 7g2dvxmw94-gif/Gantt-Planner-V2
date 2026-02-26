@@ -143,13 +143,20 @@ class TaskModal {
         progressGroup.appendChild(progressWrap);
         progressRow.appendChild(progressGroup);
 
-        // Assignee
+        // Assignees (multi-select checkboxes)
         const assigneeGroup = createElement('div', { className: 'form-group' });
-        assigneeGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskAssignee' }, 'Assigné à'));
-        this._assigneeSelect = createElement('select', { className: 'select', id: 'taskAssignee' });
-        assigneeGroup.appendChild(this._assigneeSelect);
+        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Assigné à'));
+        this._assigneeList = createElement('div', { className: 'assignee-list' });
+        assigneeGroup.appendChild(this._assigneeList);
         progressRow.appendChild(assigneeGroup);
         body.appendChild(progressRow);
+
+        // Dependencies (multi-select checkboxes)
+        const depGroup = createElement('div', { className: 'form-group' });
+        depGroup.appendChild(createElement('label', { className: 'form-label' }, 'Dépendances (précédée par)'));
+        this._depList = createElement('div', { className: 'dep-list' });
+        depGroup.appendChild(this._depList);
+        body.appendChild(depGroup);
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
@@ -318,8 +325,11 @@ class TaskModal {
         // Reset color
         $$('.color-swatch', this._colorPicker).forEach((s, i) => s.classList.toggle('active', i === 0));
 
-        // Populate assignees
-        this._populateAssignees(null);
+        // Populate assignees (multi)
+        this._populateAssignees([]);
+
+        // Populate dependencies
+        this._populateDependencies(null, []);
 
         // Populate parent phases
         this._populateParents(parentId);
@@ -362,8 +372,11 @@ class TaskModal {
             s.classList.toggle('active', s.dataset.color === task.color);
         });
 
-        // Assignee
-        this._populateAssignees(task.assignee);
+        // Assignees (multi)
+        this._populateAssignees(task.assignees || (task.assignee ? [task.assignee] : []));
+
+        // Dependencies
+        this._populateDependencies(task.id, task.dependencies || []);
 
         // Parent phase
         this._populateParents(task.parentId);
@@ -383,14 +396,65 @@ class TaskModal {
 
     /* ---- Populate ---- */
 
-    _populateAssignees(selectedId) {
-        this._assigneeSelect.innerHTML = '';
-        this._assigneeSelect.appendChild(createElement('option', { value: '' }, '— Non assigné —'));
+    _populateAssignees(selectedIds) {
+        this._assigneeList.innerHTML = '';
+        const ids = selectedIds || [];
         store.getResources().forEach(r => {
-            const opt = createElement('option', { value: r.id }, `${r.name} (${r.role})`);
-            if (r.id === selectedId) opt.selected = true;
-            this._assigneeSelect.appendChild(opt);
+            const label = createElement('label', {});
+            const cb = createElement('input', { type: 'checkbox', value: r.id });
+            if (ids.includes(r.id)) cb.checked = true;
+            label.appendChild(cb);
+            const avatar = createElement('span', {
+                className: 'assignee-avatar-sm',
+                style: { background: `linear-gradient(135deg, ${r.color}, ${r.color}dd)` },
+            }, r.avatar);
+            label.appendChild(avatar);
+            label.appendChild(document.createTextNode(`${r.name} (${r.role})`));
+            this._assigneeList.appendChild(label);
         });
+    }
+
+    _getSelectedAssignees() {
+        const checked = [];
+        this._assigneeList.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            checked.push(cb.value);
+        });
+        return checked;
+    }
+
+    _populateDependencies(taskId, selectedDeps) {
+        this._depList.innerHTML = '';
+        const deps = selectedDeps || [];
+        const tasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
+        if (tasks.length === 0) {
+            this._depList.appendChild(createElement('div', {
+                style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
+            }, 'Aucune tâche disponible'));
+            return;
+        }
+        tasks.forEach(t => {
+            const label = createElement('label', {});
+            const cb = createElement('input', { type: 'checkbox', value: t.id });
+            if (deps.includes(t.id)) cb.checked = true;
+            label.appendChild(cb);
+            const colorDot = createElement('span', {
+                style: {
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: t.color, display: 'inline-block', flexShrink: '0',
+                },
+            });
+            label.appendChild(colorDot);
+            label.appendChild(document.createTextNode(t.name));
+            this._depList.appendChild(label);
+        });
+    }
+
+    _getSelectedDeps() {
+        const checked = [];
+        this._depList.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            checked.push(cb.value);
+        });
+        return checked;
     }
 
     /* ---- Duration <-> Dates sync ---- */
@@ -439,6 +503,7 @@ class TaskModal {
         }
 
         const activeColor = $('.color-swatch.active', this._colorPicker);
+        const selectedAssignees = this._getSelectedAssignees();
         const data = {
             name,
             description: this._descInput.value.trim(),
@@ -448,7 +513,9 @@ class TaskModal {
             status: this._statusSelect.value,
             progress: parseInt(this._progressInput.value, 10),
             color: activeColor ? activeColor.dataset.color : '#6366F1',
-            assignee: this._assigneeSelect.value || null,
+            assignee: selectedAssignees[0] || null,
+            assignees: selectedAssignees,
+            dependencies: this._getSelectedDeps(),
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,
         };
