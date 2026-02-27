@@ -80,10 +80,24 @@ class GanttRenderer {
             this._renderTree(tree, body, 0);
         }
 
+        // Set min-width on container so the timeline never collapses when rows are filtered
+        const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+        this._container.style.minWidth = (this._timelineWidth + taskColWidth) + 'px';
+
         this._container.appendChild(body);
 
         // Render dependency arrows
+        this._lastBody = body;
+        this._lastTasks = tasks;
         this._renderDependencies(body, tasks);
+    }
+
+    /** Re-render dependency arrows (called after filter changes) */
+    refreshDependencies() {
+        if (!this._lastBody || !this._lastTasks) return;
+        const existing = this._lastBody.querySelector('.gantt-dependencies-layer');
+        if (existing) existing.remove();
+        this._renderDependencies(this._lastBody, this._lastTasks);
     }
 
     /* ---- Header ---- */
@@ -454,9 +468,10 @@ class GanttRenderer {
         const rows = body.querySelectorAll('.gantt-row');
         if (!rows.length) return;
 
-        // Build map: taskId -> { row DOM, bar element }
+        // Build map: taskId -> { row DOM, bar element } — skip hidden (filtered) rows
         const taskMap = {};
         rows.forEach((row) => {
+            if (row.style.display === 'none') return;
             const taskId = row.dataset.taskId;
             if (taskId) {
                 const bar = row.querySelector('.gantt-bar, .gantt-milestone');

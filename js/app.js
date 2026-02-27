@@ -821,6 +821,9 @@ class App {
 
             row.style.display = visible ? '' : 'none';
         });
+
+        // Refresh dependency arrows to hide links for filtered-out tasks
+        ganttRenderer.refreshDependencies();
     }
 
     /* ---- Project Selector ---- */
