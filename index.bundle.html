@@ -3794,15 +3794,8 @@ var themeManager = new ThemeManager();
    Gantt Planner Pro
    ======================================== */
 
-    createElement, $, $$,
-    daysBetween, addDays, formatDateISO, formatDateShort,
-    getMonthsBetween, getWeeksBetween, getDaysBetween,
-    getMonthName, getWeekNumber, isToday, isWeekend,
-    getTaskColor, TASK_COLORS,
-} from './utils.js';
-
 /* ---- Constants ---- */
-const ZOOM_CONFIG = {
+var ZOOM_CONFIG = {
     day:     { colWidth: 36,  label: 'Jour' },
     week:    { colWidth: 50,  label: 'Semaine' },
     month:   { colWidth: 120, label: 'Mois' },
