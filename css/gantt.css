@@ -5,7 +5,6 @@
 .gantt-wrapper {
     flex: 1;
     overflow: auto;
-    padding: var(--space-5);
 }
 
 .gantt-container {
@@ -16,6 +15,7 @@
     box-shadow: var(--shadow-sm);
     transition: background var(--transition-base), border-color var(--transition-base);
     min-width: fit-content;
+    margin: var(--space-5);
 }
 
 /* ---- Gantt Header ---- */
@@ -140,7 +140,7 @@
     min-width: 0;
     position: sticky;
     left: 0;
-    z-index: 5;
+    z-index: 8;
     background-color: var(--bg-base);
 }
 
