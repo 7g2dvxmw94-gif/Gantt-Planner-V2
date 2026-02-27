@@ -8,11 +8,13 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce } from './utils.js';
+import { $, $$, debounce, formatDateISO, addDays } from './utils.js';
 
 class App {
     constructor() {
         this._activeView = 'timeline';
+        this._showCriticalPath = false;
+        this._filters = { status: 'all', assignee: 'all', search: '' };
     }
 
     init() {
@@ -47,6 +49,9 @@ class App {
         this._bindMobileNav();
         this._bindZoomControls();
         this._bindKeyboardShortcuts();
+        this._bindContextMenu();
+        this._bindProjectSelector();
+        this._buildFilterBar();
 
         // Render stats
         this._renderStats();
@@ -331,6 +336,40 @@ class App {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this._exportProject());
         }
+
+        const importBtn = $('#importBtn');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => this._importProject());
+        }
+
+        const criticalPathBtn = $('#criticalPathBtn');
+        if (criticalPathBtn) {
+            criticalPathBtn.addEventListener('click', () => this._toggleCriticalPath());
+        }
+
+        const undoBtn = $('#undoBtn');
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                if (store.undo()) {
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast('Action annulée', 'info');
+                }
+            });
+        }
+
+        const redoBtn = $('#redoBtn');
+        if (redoBtn) {
+            redoBtn.addEventListener('click', () => {
+                if (store.redo()) {
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast('Action rétablie', 'info');
+                }
+            });
+        }
     }
 
     _showAddTaskDialog() {
@@ -427,6 +466,30 @@ class App {
 
     _bindKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            // Ctrl+Z: Undo
+            if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+                e.preventDefault();
+                if (store.undo()) {
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast('Action annulée', 'info');
+                }
+                return;
+            }
+
+            // Ctrl+Y or Ctrl+Shift+Z: Redo
+            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+                e.preventDefault();
+                if (store.redo()) {
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast('Action rétablie', 'info');
+                }
+                return;
+            }
+
             // Ctrl+F: Focus search
             if (e.ctrlKey && e.key === 'f') {
                 const searchInput = $('#searchInput');
@@ -442,8 +505,9 @@ class App {
                 this._showAddTaskDialog();
             }
 
-            // Escape: Close modals / clear search
+            // Escape: Close modals / clear search / close context menu
             if (e.key === 'Escape') {
+                this._closeContextMenu();
                 const searchInput = $('#searchInput');
                 if (searchInput && document.activeElement === searchInput) {
                     searchInput.value = '';
@@ -526,6 +590,342 @@ class App {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    /* ---- Import ---- */
+
+    _importProject() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const result = store.importProject(evt.target.result);
+                if (result) {
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast(`Projet "${result.name}" importé`, 'success');
+                } else {
+                    this._showToast('Erreur lors de l\'import', 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+        input.click();
+    }
+
+    /* ---- Critical Path ---- */
+
+    _toggleCriticalPath() {
+        this._showCriticalPath = !this._showCriticalPath;
+        const btn = $('#criticalPathBtn');
+        if (btn) btn.classList.toggle('active', this._showCriticalPath);
+
+        if (this._showCriticalPath) {
+            ganttRenderer.setCriticalPath(store.getCriticalPath());
+            this._showToast('Chemin critique affiché', 'info');
+        } else {
+            ganttRenderer.setCriticalPath(null);
+            this._showToast('Chemin critique masqué', 'info');
+        }
+        ganttRenderer.render();
+    }
+
+    /* ---- Context Menu ---- */
+
+    _bindContextMenu() {
+        const container = document.getElementById('ganttContainer');
+        if (!container) return;
+
+        container.addEventListener('contextmenu', (e) => {
+            const row = e.target.closest('.gantt-row');
+            const bar = e.target.closest('.gantt-bar, .gantt-milestone');
+            if (!row && !bar) return;
+
+            e.preventDefault();
+            const taskId = bar?.dataset.taskId || row?.dataset.taskId;
+            if (!taskId) return;
+
+            this._showContextMenu(e.clientX, e.clientY, taskId);
+        });
+
+        // Close context menu on click outside
+        document.addEventListener('click', () => this._closeContextMenu());
+    }
+
+    _showContextMenu(x, y, taskId) {
+        this._closeContextMenu();
+
+        const task = store.getTask(taskId);
+        if (!task) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        menu.id = 'ctxMenu';
+
+        const items = [
+            { label: 'Modifier', icon: 'edit', action: () => taskModal.openEdit(taskId) },
+            { label: 'Dupliquer', icon: 'copy', action: () => this._duplicateTask(taskId) },
+            { label: 'divider' },
+            { label: 'Marquer terminé', icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
+            { label: 'Marquer en cours', icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
+            { label: 'divider' },
+            { label: 'Supprimer', icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
+        ];
+
+        items.forEach(item => {
+            if (item.hide) return;
+            if (item.label === 'divider') {
+                menu.appendChild(document.createElement('hr'));
+                return;
+            }
+            const btn = document.createElement('button');
+            btn.className = 'context-menu-item' + (item.danger ? ' danger' : '');
+            btn.innerHTML = `<span>${item.label}</span>`;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._closeContextMenu();
+                item.action();
+            });
+            menu.appendChild(btn);
+        });
+
+        document.body.appendChild(menu);
+
+        // Reposition if out of viewport
+        requestAnimationFrame(() => {
+            const rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) menu.style.left = (x - rect.width) + 'px';
+            if (rect.bottom > window.innerHeight) menu.style.top = (y - rect.height) + 'px';
+        });
+    }
+
+    _closeContextMenu() {
+        const existing = document.getElementById('ctxMenu');
+        if (existing) existing.remove();
+    }
+
+    _duplicateTask(taskId) {
+        const task = store.getTask(taskId);
+        if (!task) return;
+        const { id, createdAt, updatedAt, ...data } = task;
+        data.name = task.name + ' (copie)';
+        data.dependencies = [];
+        store.addTask(data);
+        ganttRenderer.render();
+        this._renderStats();
+        this._showToast('Tâche dupliquée', 'success');
+    }
+
+    _markDone(taskId) {
+        store.updateTask(taskId, { status: 'done', progress: 100 });
+        ganttRenderer.render();
+        this._renderStats();
+        this._showToast('Tâche terminée', 'success');
+    }
+
+    _markInProgress(taskId) {
+        store.updateTask(taskId, { status: 'in_progress' });
+        ganttRenderer.render();
+        this._renderStats();
+    }
+
+    _deleteTask(taskId) {
+        const task = store.getTask(taskId);
+        if (!task) return;
+        if (confirm(`Supprimer "${task.name}" ?`)) {
+            store.deleteTask(taskId);
+            ganttRenderer.render();
+            this._renderStats();
+            this._showToast('Tâche supprimée', 'success');
+        }
+    }
+
+    /* ---- Filter Bar ---- */
+
+    _buildFilterBar() {
+        const toolbar = $('.toolbar-actions');
+        if (!toolbar) return;
+
+        // Insert filter controls before zoom controls
+        const filterWrap = document.createElement('div');
+        filterWrap.className = 'filter-bar';
+        filterWrap.id = 'filterBar';
+
+        // Status filter
+        const statusSel = document.createElement('select');
+        statusSel.className = 'select filter-select';
+        statusSel.id = 'filterStatus';
+        statusSel.innerHTML = `
+            <option value="all">Tous les statuts</option>
+            <option value="todo">À faire</option>
+            <option value="in_progress">En cours</option>
+            <option value="done">Terminé</option>
+        `;
+        statusSel.addEventListener('change', () => this._applyFilters());
+
+        // Assignee filter
+        const assigneeSel = document.createElement('select');
+        assigneeSel.className = 'select filter-select';
+        assigneeSel.id = 'filterAssignee';
+        this._populateAssigneeFilter(assigneeSel);
+        assigneeSel.addEventListener('change', () => this._applyFilters());
+
+        filterWrap.appendChild(statusSel);
+        filterWrap.appendChild(assigneeSel);
+
+        toolbar.insertBefore(filterWrap, toolbar.firstChild);
+    }
+
+    _populateAssigneeFilter(select) {
+        const resources = store.getResources();
+        select.innerHTML = '<option value="all">Toutes les ressources</option>';
+        resources.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = r.name;
+            select.appendChild(opt);
+        });
+    }
+
+    _applyFilters() {
+        const status = $('#filterStatus')?.value || 'all';
+        const assignee = $('#filterAssignee')?.value || 'all';
+
+        const rows = $$('.gantt-row');
+        rows.forEach(row => {
+            const taskId = row.dataset.taskId;
+            if (!taskId) return;
+            const task = store.getTask(taskId);
+            if (!task) return;
+
+            let visible = true;
+
+            // Phases always visible if they have visible children
+            if (task.isPhase) {
+                row.style.display = '';
+                return;
+            }
+
+            if (status !== 'all' && task.status !== status) visible = false;
+            if (assignee !== 'all') {
+                const assignees = task.assignees || (task.assignee ? [task.assignee] : []);
+                if (!assignees.includes(assignee)) visible = false;
+            }
+
+            row.style.display = visible ? '' : 'none';
+        });
+    }
+
+    /* ---- Project Selector ---- */
+
+    _bindProjectSelector() {
+        const btn = $('.project-selector');
+        if (!btn) return;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleProjectDropdown();
+        });
+
+        document.addEventListener('click', () => {
+            const dd = document.getElementById('projectDropdown');
+            if (dd) dd.remove();
+        });
+    }
+
+    _toggleProjectDropdown() {
+        const existing = document.getElementById('projectDropdown');
+        if (existing) { existing.remove(); return; }
+
+        const btn = $('.project-selector');
+        const rect = btn.getBoundingClientRect();
+
+        const dropdown = document.createElement('div');
+        dropdown.id = 'projectDropdown';
+        dropdown.className = 'project-dropdown';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+
+        const projects = store.getProjects();
+        const activeProject = store.getActiveProject();
+
+        projects.forEach(p => {
+            const item = document.createElement('button');
+            item.className = 'project-dropdown-item' + (p.id === activeProject.id ? ' active' : '');
+            item.textContent = p.name;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                store.setActiveProject(p.id);
+                ganttRenderer.render();
+                this._renderStats();
+                this._renderProjectName();
+                dropdown.remove();
+            });
+            dropdown.appendChild(item);
+        });
+
+        // Divider
+        dropdown.appendChild(document.createElement('hr'));
+
+        // New project
+        const newBtn = document.createElement('button');
+        newBtn.className = 'project-dropdown-item new-project';
+        newBtn.textContent = '+ Nouveau projet';
+        newBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.remove();
+            this._createNewProject();
+        });
+        dropdown.appendChild(newBtn);
+
+        // Delete current project (only if more than one)
+        if (projects.length > 1) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'project-dropdown-item danger';
+            delBtn.textContent = 'Supprimer ce projet';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.remove();
+                if (confirm(`Supprimer le projet "${activeProject.name}" ?`)) {
+                    store.deleteProject(activeProject.id);
+                    ganttRenderer.render();
+                    this._renderStats();
+                    this._renderProjectName();
+                    this._showToast('Projet supprimé', 'success');
+                }
+            });
+            dropdown.appendChild(delBtn);
+        }
+
+        document.body.appendChild(dropdown);
+    }
+
+    _createNewProject() {
+        const name = prompt('Nom du nouveau projet:');
+        if (!name || !name.trim()) return;
+
+        const today = new Date();
+        const project = store.addProject({
+            name: name.trim(),
+            description: '',
+            startDate: formatDateISO(today),
+            endDate: formatDateISO(addDays(today, 90)),
+            budget: 0,
+            budgetUsed: 0,
+        });
+
+        store.setActiveProject(project.id);
+        ganttRenderer.render();
+        this._renderStats();
+        this._renderProjectName();
+        this._showToast(`Projet "${project.name}" créé`, 'success');
     }
 
     /* ---- Accessibility ---- */

@@ -260,6 +260,11 @@ class Store {
     constructor() {
         this._listeners = new Map();
         this._data = this._load();
+        // Undo/Redo history
+        this._undoStack = [];
+        this._redoStack = [];
+        this._maxHistory = 50;
+        this._batchingUndo = false;
     }
 
     /* ---- Persistence ---- */
@@ -342,6 +347,38 @@ class Store {
         }
     }
 
+    /* ---- Undo / Redo ---- */
+
+    _snapshot() {
+        if (this._batchingUndo) return;
+        this._undoStack.push(JSON.stringify(this._data));
+        if (this._undoStack.length > this._maxHistory) {
+            this._undoStack.shift();
+        }
+        this._redoStack = [];
+    }
+
+    undo() {
+        if (this._undoStack.length === 0) return false;
+        this._redoStack.push(JSON.stringify(this._data));
+        this._data = JSON.parse(this._undoStack.pop());
+        this._save();
+        this._emit('undo', null);
+        return true;
+    }
+
+    redo() {
+        if (this._redoStack.length === 0) return false;
+        this._undoStack.push(JSON.stringify(this._data));
+        this._data = JSON.parse(this._redoStack.pop());
+        this._save();
+        this._emit('redo', null);
+        return true;
+    }
+
+    canUndo() { return this._undoStack.length > 0; }
+    canRedo() { return this._redoStack.length > 0; }
+
     /* ---- Projects ---- */
 
     getProjects() {
@@ -360,6 +397,7 @@ class Store {
     }
 
     addProject(project) {
+        this._snapshot();
         const newProject = {
             id: generateId(),
             createdAt: new Date().toISOString(),
@@ -373,6 +411,7 @@ class Store {
     }
 
     updateProject(projectId, updates) {
+        this._snapshot();
         const idx = this._data.projects.findIndex(p => p.id === projectId);
         if (idx === -1) return null;
         this._data.projects[idx] = {
@@ -386,6 +425,7 @@ class Store {
     }
 
     deleteProject(projectId) {
+        this._snapshot();
         this._data.projects = this._data.projects.filter(p => p.id !== projectId);
         this._data.tasks = this._data.tasks.filter(t => t.projectId !== projectId);
         if (this._data.settings.activeProjectId === projectId) {
@@ -428,6 +468,7 @@ class Store {
     }
 
     addTask(task) {
+        this._snapshot();
         const tasks = this.getTasks();
         const newTask = {
             id: generateId(),
@@ -462,6 +503,7 @@ class Store {
     }
 
     updateTask(taskId, updates) {
+        if (!this._batchingUndo) this._snapshot();
         const idx = this._data.tasks.findIndex(t => t.id === taskId);
         if (idx === -1) return null;
 
@@ -488,6 +530,7 @@ class Store {
     }
 
     deleteTask(taskId) {
+        if (!this._batchingUndo) this._snapshot();
         const task = this.getTask(taskId);
         if (!task) return;
 
@@ -677,6 +720,7 @@ class Store {
     }
 
     addResource(resource) {
+        this._snapshot();
         const newResource = {
             id: generateId(),
             ...resource,
@@ -688,6 +732,7 @@ class Store {
     }
 
     updateResource(resourceId, updates) {
+        this._snapshot();
         const idx = this._data.resources.findIndex(r => r.id === resourceId);
         if (idx === -1) return null;
         this._data.resources[idx] = { ...this._data.resources[idx], ...updates };
@@ -697,6 +742,7 @@ class Store {
     }
 
     deleteResource(resourceId) {
+        this._snapshot();
         this._data.resources = this._data.resources.filter(r => r.id !== resourceId);
         // Unassign from tasks
         this._data.tasks.forEach(t => {
@@ -768,6 +814,180 @@ class Store {
             start: addDays(minDate, -7),
             end: addDays(maxDate, 14),
         };
+    }
+
+    /* ---- Critical Path ---- */
+
+    /**
+     * Compute the critical path: the longest chain of dependent tasks
+     * that determines the project minimum duration.
+     * Returns an array of task IDs on the critical path.
+     */
+    getCriticalPath() {
+        const tasks = this.getTasks().filter(t => !t.isPhase);
+        if (tasks.length === 0) return [];
+
+        const taskMap = {};
+        tasks.forEach(t => { taskMap[t.id] = t; });
+
+        // Build adjacency: task -> successors
+        const successorsOf = {};
+        const predecessorsOf = {};
+        tasks.forEach(t => {
+            successorsOf[t.id] = [];
+            predecessorsOf[t.id] = [];
+        });
+        tasks.forEach(t => {
+            (t.dependencies || []).forEach(dep => {
+                const predId = dep.taskId;
+                if (taskMap[predId]) {
+                    successorsOf[predId].push(t.id);
+                    predecessorsOf[t.id].push(predId);
+                }
+            });
+        });
+
+        // Forward pass: earliest start / earliest finish
+        const es = {}; // earliest start
+        const ef = {}; // earliest finish
+        const duration = {};
+        tasks.forEach(t => {
+            duration[t.id] = daysBetween(t.startDate, t.endDate) + 1;
+            es[t.id] = 0;
+            ef[t.id] = 0;
+        });
+
+        // Topological sort
+        const visited = new Set();
+        const order = [];
+        const visit = (id) => {
+            if (visited.has(id)) return;
+            visited.add(id);
+            predecessorsOf[id].forEach(pid => visit(pid));
+            order.push(id);
+        };
+        tasks.forEach(t => visit(t.id));
+
+        // Forward pass
+        order.forEach(id => {
+            if (predecessorsOf[id].length === 0) {
+                es[id] = 0;
+            } else {
+                es[id] = Math.max(...predecessorsOf[id].map(pid => ef[pid]));
+            }
+            ef[id] = es[id] + duration[id];
+        });
+
+        const projectEnd = Math.max(...tasks.map(t => ef[t.id]));
+
+        // Backward pass: latest start / latest finish
+        const ls = {}; // latest start
+        const lf = {}; // latest finish
+        tasks.forEach(t => {
+            lf[t.id] = projectEnd;
+            ls[t.id] = projectEnd;
+        });
+
+        for (let i = order.length - 1; i >= 0; i--) {
+            const id = order[i];
+            if (successorsOf[id].length === 0) {
+                lf[id] = projectEnd;
+            } else {
+                lf[id] = Math.min(...successorsOf[id].map(sid => ls[sid]));
+            }
+            ls[id] = lf[id] - duration[id];
+        }
+
+        // Critical path: tasks where float (ls - es) === 0
+        const critical = [];
+        tasks.forEach(t => {
+            const float = ls[t.id] - es[t.id];
+            if (Math.abs(float) < 0.001) {
+                critical.push(t.id);
+            }
+        });
+
+        return critical;
+    }
+
+    /* ---- Import ---- */
+
+    importProject(jsonData) {
+        this._snapshot();
+        try {
+            const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            if (data.project && data.tasks) {
+                // Assign new IDs to avoid conflicts
+                const idMap = {};
+                const newProjectId = generateId();
+                idMap[data.project.id] = newProjectId;
+
+                const newProject = {
+                    ...data.project,
+                    id: newProjectId,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+                this._data.projects.push(newProject);
+
+                // Map task IDs
+                data.tasks.forEach(t => {
+                    idMap[t.id] = generateId();
+                });
+
+                // Import tasks with remapped IDs
+                data.tasks.forEach(t => {
+                    const newTask = {
+                        ...t,
+                        id: idMap[t.id],
+                        projectId: newProjectId,
+                        parentId: t.parentId ? (idMap[t.parentId] || null) : null,
+                        assignees: t.assignees || (t.assignee ? [t.assignee] : []),
+                        dependencies: (t.dependencies || []).map(d => {
+                            if (typeof d === 'string') {
+                                return { taskId: idMap[d] || d, type: 'FS' };
+                            }
+                            return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS' };
+                        }),
+                    };
+                    this._data.tasks.push(newTask);
+                });
+
+                // Import resources if present
+                if (data.resources) {
+                    data.resources.forEach(r => {
+                        const exists = this._data.resources.find(
+                            existing => existing.name === r.name && existing.role === r.role
+                        );
+                        if (!exists) {
+                            const newId = generateId();
+                            idMap[r.id] = newId;
+                            this._data.resources.push({ ...r, id: newId });
+                        } else {
+                            idMap[r.id] = exists.id;
+                        }
+                    });
+
+                    // Remap assignee IDs in imported tasks
+                    this._data.tasks
+                        .filter(t => t.projectId === newProjectId)
+                        .forEach(t => {
+                            if (t.assignee && idMap[t.assignee]) t.assignee = idMap[t.assignee];
+                            if (t.assignees) {
+                                t.assignees = t.assignees.map(id => idMap[id] || id);
+                            }
+                        });
+                }
+
+                this._data.settings.activeProjectId = newProjectId;
+                this._save();
+                this._emit('project:import', newProjectId);
+                return newProject;
+            }
+        } catch (e) {
+            console.error('Import failed:', e);
+        }
+        return null;
     }
 
     /* ---- Reset ---- */

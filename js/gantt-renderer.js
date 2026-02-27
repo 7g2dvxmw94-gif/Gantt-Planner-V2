@@ -26,6 +26,7 @@ class GanttRenderer {
         this._zoomLevel = 'week';
         this._timelineRange = null;
         this._dayColumns = [];
+        this._criticalPath = null;
     }
 
     init() {
@@ -45,6 +46,10 @@ class GanttRenderer {
         if (!ZOOM_CONFIG[level]) return;
         this._zoomLevel = level;
         store.updateSettings({ zoomLevel: level });
+    }
+
+    setCriticalPath(taskIds) {
+        this._criticalPath = taskIds;
     }
 
     render() {
@@ -332,8 +337,9 @@ class GanttRenderer {
         const colorObj = TASK_COLORS.find(c => c.value === task.color);
         const gradient = colorObj ? colorObj.gradient : `linear-gradient(135deg, ${task.color}, ${task.color})`;
 
+        const isCritical = this._criticalPath && this._criticalPath.includes(task.id);
         const bar = createElement('div', {
-            className: 'gantt-bar',
+            className: 'gantt-bar' + (isCritical ? ' critical-path' : ''),
             style: { left: left + 'px', width: width + 'px', background: gradient },
             role: 'button',
             tabindex: '0',

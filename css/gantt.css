@@ -513,6 +513,17 @@
     flex-shrink: 0;
 }
 
+/* ---- Critical Path ---- */
+.gantt-bar.critical-path {
+    box-shadow: 0 0 0 2px var(--color-error), var(--shadow-md);
+    animation: criticalPulse 2s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--color-error), var(--shadow-md); }
+    50% { box-shadow: 0 0 0 3px var(--color-error), 0 0 8px rgba(239, 68, 68, 0.4); }
+}
+
 /* ---- Empty State ---- */
 .gantt-empty {
     display: flex;

@@ -134,6 +134,30 @@
             </div>
 
             <div class="toolbar-actions">
+                <!-- Undo/Redo -->
+                <div class="undo-redo-group" role="group" aria-label="Annuler/Rétablir">
+                    <button class="icon-btn" id="undoBtn" aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="redoBtn" aria-label="Rétablir (Ctrl+Y)" title="Rétablir (Ctrl+Y)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Critical Path -->
+                <button class="btn btn-secondary" id="criticalPathBtn" aria-label="Chemin critique" title="Afficher/masquer le chemin critique">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    <span>Chemin critique</span>
+                </button>
+
                 <!-- Zoom Controls -->
                 <div class="zoom-controls" role="group" aria-label="Niveau de zoom">
                     <button class="zoom-btn" data-zoom="day" aria-label="Zoom jour" title="Vue par jour">J</button>
@@ -142,6 +166,16 @@
                     <button class="zoom-btn" data-zoom="quarter" aria-label="Zoom trimestre" title="Vue par trimestre">T</button>
                     <span class="zoom-label" aria-live="polite">Semaine</span>
                 </div>
+
+                <!-- Import -->
+                <button class="btn btn-secondary" id="importBtn" aria-label="Importer un projet" title="Importer un fichier JSON">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Importer</span>
+                </button>
 
                 <!-- Export -->
                 <button class="btn btn-secondary" id="exportBtn" aria-label="Exporter le projet">
