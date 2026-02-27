@@ -1583,6 +1583,8 @@ textarea.input {
 .gantt-timeline-cell {
     position: relative;
     min-height: var(--gantt-row-height);
+    z-index: 1;
+    overflow: hidden;
 }
 
 .gantt-timeline-grid {
@@ -1965,6 +1967,41 @@ textarea.input {
     color: var(--text-secondary);
     min-width: 60px;
     text-align: center;
+}
+
+/* ---- Drag Tooltip (date display during resize) ---- */
+.gantt-drag-tooltip {
+    position: fixed;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-elevated, #1a1a2e);
+    color: var(--text-on-emphasis, #fff);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    z-index: 10000;
+    white-space: nowrap;
+}
+
+/* ---- Drop Indicator (vertical drag & drop) ---- */
+.gantt-drop-indicator {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    transition: top 0.08s ease, height 0.08s ease;
+}
+
+.gantt-drop-indicator.line {
+    background: var(--color-primary);
+    border-radius: 1px;
+    box-shadow: 0 0 4px var(--color-primary);
+}
+
+.gantt-drop-indicator.inside {
+    background: rgba(99, 102, 241, 0.1);
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-sm);
 }
 /* ========================================
    RESPONSIVE STYLES
@@ -5103,6 +5140,10 @@ var taskModal = new TaskModal();
    Gantt Planner Pro - Step 2
    ======================================== */
 
+function _formatDateFR(date) {
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 class GanttInteractions {
     constructor() {
@@ -5113,15 +5154,10 @@ class GanttInteractions {
         this._dragData = null;
         this._zoomColWidthFn = null;
         this._timelineStartFn = null;
+        this._tooltip = null;
+        this._dropIndicator = null;
     }
 
-    /**
-     * @param {Object} opts
-     * @param {Function} opts.onTaskClick - Called when a task bar/milestone is clicked
-     * @param {Function} opts.onUpdate - Called after drag/resize completes
-     * @param {Function} opts.getColWidth - Returns pixel width of one day column
-     * @param {Function} opts.getTimelineStart - Returns the timeline start Date
-     */
     init(opts) {
         this._container = document.getElementById('ganttContainer');
         if (!this._container) return;
@@ -5131,17 +5167,11 @@ class GanttInteractions {
         this._zoomColWidthFn = opts.getColWidth;
         this._timelineStartFn = opts.getTimelineStart;
 
-        // Delegate click events
         this._container.addEventListener('click', (e) => this._handleClick(e));
-
-        // Delegate mousedown for drag/resize
         this._container.addEventListener('mousedown', (e) => this._handleMouseDown(e));
-
-        // Global mouse events for dragging
         document.addEventListener('mousemove', (e) => this._handleMouseMove(e));
         document.addEventListener('mouseup', (e) => this._handleMouseUp(e));
 
-        // Touch support
         this._container.addEventListener('touchstart', (e) => this._handleTouchStart(e), { passive: false });
         document.addEventListener('touchmove', (e) => this._handleTouchMove(e), { passive: false });
         document.addEventListener('touchend', (e) => this._handleTouchEnd(e));
@@ -5150,19 +5180,12 @@ class GanttInteractions {
     /* ---- Click ---- */
 
     _handleClick(e) {
-        // Find the closest bar, milestone, or row with a task-id
         const bar = e.target.closest('.gantt-bar, .gantt-milestone');
         if (bar && bar.dataset.taskId) {
-            // Don't fire click if we just finished dragging
-            if (this._justDragged) {
-                this._justDragged = false;
-                return;
-            }
+            if (this._justDragged) { this._justDragged = false; return; }
             if (this._onTaskClick) this._onTaskClick(bar.dataset.taskId);
             return;
         }
-
-        // Click on task name in left column
         const taskCell = e.target.closest('.task-info');
         if (taskCell) {
             const row = taskCell.closest('.gantt-row');
@@ -5177,7 +5200,6 @@ class GanttInteractions {
     _handleMouseDown(e) {
         const handle = e.target.closest('.gantt-bar-handle');
         const bar = e.target.closest('.gantt-bar:not(.phase-bar)');
-
         if (!handle && !bar) return;
         if (bar && bar.classList.contains('phase-bar')) return;
 
@@ -5185,12 +5207,12 @@ class GanttInteractions {
         if (!targetBar || !targetBar.dataset.taskId) return;
 
         e.preventDefault();
-
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
 
         const isLeftHandle = handle && handle.classList.contains('gantt-bar-handle-left');
         const isRightHandle = handle && handle.classList.contains('gantt-bar-handle-right');
+        const sourceRow = targetBar.closest('.gantt-row');
 
         this._isDragging = true;
         this._justDragged = false;
@@ -5199,11 +5221,16 @@ class GanttInteractions {
             bar: targetBar,
             mode: isLeftHandle ? 'resize-left' : (isRightHandle ? 'resize-right' : 'move'),
             startX: e.clientX,
+            startY: e.clientY,
             origLeft: parseFloat(targetBar.style.left),
             origWidth: parseFloat(targetBar.style.width),
             origStartDate: task.startDate,
             origEndDate: task.endDate,
+            origParentId: task.parentId,
+            sourceRow: sourceRow,
             moved: false,
+            verticalMove: false,
+            dropTarget: null,
         };
 
         targetBar.style.opacity = '0.8';
@@ -5216,11 +5243,19 @@ class GanttInteractions {
         if (!this._isDragging || !this._dragData) return;
 
         const dx = e.clientX - this._dragData.startX;
-        if (Math.abs(dx) < 3 && !this._dragData.moved) return;
+        const dy = e.clientY - this._dragData.startY;
+        if (Math.abs(dx) < 3 && Math.abs(dy) < 3 && !this._dragData.moved) return;
 
         this._dragData.moved = true;
         this._justDragged = true;
         this._applyDrag(dx);
+
+        if (this._dragData.mode === 'resize-left' || this._dragData.mode === 'resize-right') {
+            this._updateResizeTooltip(e);
+        }
+        if (this._dragData.mode === 'move') {
+            this._updateVerticalDrag(e);
+        }
     }
 
     _handleMouseUp(e) {
@@ -5232,7 +5267,7 @@ class GanttInteractions {
 
     _handleTouchStart(e) {
         const touch = e.touches[0];
-        const fakeEvent = { clientX: touch.clientX, target: e.target, preventDefault: () => e.preventDefault() };
+        const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target, preventDefault: () => e.preventDefault() };
         this._handleMouseDown(fakeEvent);
     }
 
@@ -5240,7 +5275,7 @@ class GanttInteractions {
         if (!this._isDragging) return;
         e.preventDefault();
         const touch = e.touches[0];
-        this._handleMouseMove({ clientX: touch.clientX });
+        this._handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
     }
 
     _handleTouchEnd() {
@@ -5271,10 +5306,189 @@ class GanttInteractions {
         }
     }
 
+    /* ---- Resize Tooltip ---- */
+
+    _updateResizeTooltip(e) {
+        const d = this._dragData;
+        const colWidth = this._zoomColWidthFn();
+        const timelineStart = this._timelineStartFn();
+        const newLeft = parseFloat(d.bar.style.left);
+        const newWidth = parseFloat(d.bar.style.width);
+
+        let dateStr;
+        if (d.mode === 'resize-left') {
+            const startDayOffset = Math.round(newLeft / colWidth);
+            const newStart = addDays(timelineStart, startDayOffset);
+            dateStr = _formatDateFR(newStart);
+        } else {
+            const rightEdge = newLeft + newWidth;
+            const endDayOffset = Math.round(rightEdge / colWidth) - 1;
+            const newEnd = addDays(timelineStart, endDayOffset);
+            dateStr = _formatDateFR(newEnd);
+        }
+
+        if (!this._tooltip) {
+            this._tooltip = document.createElement('div');
+            this._tooltip.className = 'gantt-drag-tooltip';
+            document.body.appendChild(this._tooltip);
+        }
+
+        this._tooltip.textContent = dateStr;
+        this._tooltip.style.left = (e.clientX + 12) + 'px';
+        this._tooltip.style.top = (e.clientY - 32) + 'px';
+    }
+
+    _removeTooltip() {
+        if (this._tooltip) { this._tooltip.remove(); this._tooltip = null; }
+    }
+
+    /* ---- Vertical Drag & Drop ---- */
+
+    _updateVerticalDrag(e) {
+        const d = this._dragData;
+        const dy = Math.abs(e.clientY - d.startY);
+
+        if (dy < 15) {
+            this._removeDropIndicator();
+            d.verticalMove = false;
+            d.dropTarget = null;
+            return;
+        }
+
+        d.verticalMove = true;
+
+        const rows = this._container.querySelectorAll('.gantt-row');
+        let targetRow = null;
+        let insertPosition = null;
+
+        for (const row of rows) {
+            if (row.style.display === 'none') continue;
+            const rowId = row.dataset.taskId;
+            if (rowId === d.taskId) continue;
+
+            const rect = row.getBoundingClientRect();
+            if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                const rowTask = store.getTask(rowId);
+                if (!rowTask) continue;
+
+                const third = rect.height / 3;
+                if (rowTask.isPhase) {
+                    if (e.clientY < rect.top + third) insertPosition = 'before';
+                    else if (e.clientY > rect.bottom - third) insertPosition = 'after';
+                    else insertPosition = 'inside';
+                } else {
+                    insertPosition = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                }
+                targetRow = row;
+                break;
+            }
+        }
+
+        if (targetRow) {
+            d.dropTarget = { rowId: targetRow.dataset.taskId, position: insertPosition };
+            this._showDropIndicator(targetRow, insertPosition);
+        } else {
+            d.dropTarget = null;
+            this._removeDropIndicator();
+        }
+    }
+
+    _showDropIndicator(targetRow, position) {
+        if (!this._dropIndicator) {
+            this._dropIndicator = document.createElement('div');
+            this._dropIndicator.className = 'gantt-drop-indicator';
+            document.body.appendChild(this._dropIndicator);
+        }
+
+        const rect = targetRow.getBoundingClientRect();
+        const indicator = this._dropIndicator;
+
+        if (position === 'inside') {
+            indicator.style.left = rect.left + 'px';
+            indicator.style.top = rect.top + 'px';
+            indicator.style.width = rect.width + 'px';
+            indicator.style.height = rect.height + 'px';
+            indicator.className = 'gantt-drop-indicator inside';
+        } else {
+            const y = position === 'before' ? rect.top : rect.bottom;
+            indicator.style.left = rect.left + 'px';
+            indicator.style.top = (y - 1) + 'px';
+            indicator.style.width = rect.width + 'px';
+            indicator.style.height = '2px';
+            indicator.className = 'gantt-drop-indicator line';
+        }
+    }
+
+    _removeDropIndicator() {
+        if (this._dropIndicator) { this._dropIndicator.remove(); this._dropIndicator = null; }
+    }
+
+    _applyVerticalDrop() {
+        const d = this._dragData;
+        if (!d.dropTarget) return;
+
+        const { rowId, position } = d.dropTarget;
+        const targetTask = store.getTask(rowId);
+        if (!targetTask) return;
+
+        const task = store.getTask(d.taskId);
+        if (!task) return;
+
+        if (task.isPhase && this._isDescendant(task.id, rowId)) return;
+
+        let newParentId;
+        let newOrder;
+
+        if (position === 'inside' && targetTask.isPhase) {
+            newParentId = targetTask.id;
+            const siblings = store.getChildTasks(targetTask.id);
+            newOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+        } else {
+            newParentId = targetTask.parentId;
+            const siblings = newParentId
+                ? store.getChildTasks(newParentId)
+                : store.getTasks().filter(t => !t.parentId);
+
+            const targetOrder = targetTask.order;
+            if (position === 'before') {
+                newOrder = targetOrder;
+                siblings.forEach(s => {
+                    if (s.id !== d.taskId && s.order >= newOrder) {
+                        store.updateTask(s.id, { order: s.order + 1 });
+                    }
+                });
+            } else {
+                newOrder = targetOrder + 1;
+                siblings.forEach(s => {
+                    if (s.id !== d.taskId && s.order > targetOrder) {
+                        store.updateTask(s.id, { order: s.order + 1 });
+                    }
+                });
+            }
+        }
+
+        store.updateTask(d.taskId, { parentId: newParentId, order: newOrder });
+    }
+
+    _isDescendant(ancestorId, taskId) {
+        let current = store.getTask(taskId);
+        while (current) {
+            if (current.id === ancestorId) return true;
+            if (!current.parentId) return false;
+            current = store.getTask(current.parentId);
+        }
+        return false;
+    }
+
+    /* ---- Finish Drag ---- */
+
     _finishDrag() {
         const d = this._dragData;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+
+        this._removeTooltip();
+        this._removeDropIndicator();
 
         if (d && d.bar) {
             d.bar.style.opacity = '';
@@ -5282,7 +5496,14 @@ class GanttInteractions {
         }
 
         if (d && d.moved) {
-            // Calculate date changes
+            if (d.mode === 'move' && d.verticalMove && d.dropTarget) {
+                this._applyVerticalDrop();
+                if (this._onUpdate) this._onUpdate();
+                this._isDragging = false;
+                this._dragData = null;
+                return;
+            }
+
             const colWidth = this._zoomColWidthFn();
             const timelineStart = this._timelineStartFn();
             const newLeft = parseFloat(d.bar.style.left);
@@ -5301,14 +5522,12 @@ class GanttInteractions {
             } else if (d.mode === 'resize-left') {
                 updates.startDate = formatDateISO(newStart);
             } else if (d.mode === 'resize-right') {
-                const origStartLeft = d.origLeft;
                 const rightEdge = newLeft + newWidth;
                 const endDayOffset = Math.round(rightEdge / colWidth) - 1;
                 updates.endDate = formatDateISO(addDays(timelineStart, endDayOffset));
             }
 
             store.updateTask(d.taskId, updates);
-
             if (this._onUpdate) this._onUpdate();
         }
 
@@ -5883,6 +6102,51 @@ class App {
         if (project) {
             nameEl.textContent = project.name;
         }
+
+        if (!nameEl._renamebound) {
+            nameEl._renamebound = true;
+            nameEl.style.cursor = 'pointer';
+            nameEl.title = 'Double-cliquer pour renommer';
+            nameEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                this._startProjectRename();
+            });
+        }
+    }
+
+    _startProjectRename() {
+        const nameEl = $('#projectName');
+        if (!nameEl) return;
+        const project = store.getActiveProject();
+        if (!project) return;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = project.name;
+        input.className = 'project-rename-input';
+        input.style.cssText = 'font: inherit; background: var(--bg-base); color: var(--text-primary); border: 1px solid var(--color-primary); border-radius: var(--radius-sm); padding: 2px 6px; width: 180px; outline: none;';
+
+        nameEl.textContent = '';
+        nameEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finish = (save) => {
+            if (input._done) return;
+            input._done = true;
+            const newName = input.value.trim();
+            if (save && newName && newName !== project.name) {
+                store.updateProject(project.id, { name: newName });
+                this._showToast('Projet renommé', 'success');
+            }
+            this._renderProjectName();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+            if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener('blur', () => finish(true));
     }
 
     /* ---- Toast ---- */
@@ -6190,6 +6454,17 @@ class App {
 
         // Divider
         dropdown.appendChild(document.createElement('hr'));
+
+        // Rename current project
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'project-dropdown-item';
+        renameBtn.textContent = 'Renommer le projet';
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.remove();
+            this._startProjectRename();
+        });
+        dropdown.appendChild(renameBtn);
 
         // New project
         const newBtn = document.createElement('button');

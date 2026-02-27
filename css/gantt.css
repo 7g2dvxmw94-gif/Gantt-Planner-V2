@@ -234,6 +234,8 @@
 .gantt-timeline-cell {
     position: relative;
     min-height: var(--gantt-row-height);
+    z-index: 1;
+    overflow: hidden;
 }
 
 .gantt-timeline-grid {
@@ -616,4 +618,39 @@
     color: var(--text-secondary);
     min-width: 60px;
     text-align: center;
+}
+
+/* ---- Drag Tooltip (date display during resize) ---- */
+.gantt-drag-tooltip {
+    position: fixed;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-elevated, #1a1a2e);
+    color: var(--text-on-emphasis, #fff);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    z-index: 10000;
+    white-space: nowrap;
+}
+
+/* ---- Drop Indicator (vertical drag & drop) ---- */
+.gantt-drop-indicator {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    transition: top 0.08s ease, height 0.08s ease;
+}
+
+.gantt-drop-indicator.line {
+    background: var(--color-primary);
+    border-radius: 1px;
+    box-shadow: 0 0 4px var(--color-primary);
+}
+
+.gantt-drop-indicator.inside {
+    background: rgba(99, 102, 241, 0.1);
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-sm);
 }

@@ -569,6 +569,53 @@ class App {
         if (project) {
             nameEl.textContent = project.name;
         }
+
+        // Bind double-click to rename (only once)
+        if (!nameEl._renamebound) {
+            nameEl._renamebound = true;
+            nameEl.style.cursor = 'pointer';
+            nameEl.title = 'Double-cliquer pour renommer';
+            nameEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                this._startProjectRename();
+            });
+        }
+    }
+
+    _startProjectRename() {
+        const nameEl = $('#projectName');
+        if (!nameEl) return;
+        const project = store.getActiveProject();
+        if (!project) return;
+
+        // Replace the span content with an input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = project.name;
+        input.className = 'project-rename-input';
+        input.style.cssText = 'font: inherit; background: var(--bg-base); color: var(--text-primary); border: 1px solid var(--color-primary); border-radius: var(--radius-sm); padding: 2px 6px; width: 180px; outline: none;';
+
+        nameEl.textContent = '';
+        nameEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finish = (save) => {
+            if (input._done) return;
+            input._done = true;
+            const newName = input.value.trim();
+            if (save && newName && newName !== project.name) {
+                store.updateProject(project.id, { name: newName });
+                this._showToast('Projet renommé', 'success');
+            }
+            this._renderProjectName();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+            if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener('blur', () => finish(true));
     }
 
     /* ---- Toast ---- */
@@ -876,6 +923,17 @@ class App {
 
         // Divider
         dropdown.appendChild(document.createElement('hr'));
+
+        // Rename current project
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'project-dropdown-item';
+        renameBtn.textContent = 'Renommer le projet';
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.remove();
+            this._startProjectRename();
+        });
+        dropdown.appendChild(renameBtn);
 
         // New project
         const newBtn = document.createElement('button');

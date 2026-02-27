@@ -15,6 +15,8 @@ class GanttInteractions {
         this._dragData = null;
         this._zoomColWidthFn = null;
         this._timelineStartFn = null;
+        this._tooltip = null;
+        this._dropIndicator = null;
     }
 
     /**
@@ -94,6 +96,9 @@ class GanttInteractions {
         const isLeftHandle = handle && handle.classList.contains('gantt-bar-handle-left');
         const isRightHandle = handle && handle.classList.contains('gantt-bar-handle-right');
 
+        // Get the source row for vertical drag
+        const sourceRow = targetBar.closest('.gantt-row');
+
         this._isDragging = true;
         this._justDragged = false;
         this._dragData = {
@@ -101,11 +106,16 @@ class GanttInteractions {
             bar: targetBar,
             mode: isLeftHandle ? 'resize-left' : (isRightHandle ? 'resize-right' : 'move'),
             startX: e.clientX,
+            startY: e.clientY,
             origLeft: parseFloat(targetBar.style.left),
             origWidth: parseFloat(targetBar.style.width),
             origStartDate: task.startDate,
             origEndDate: task.endDate,
+            origParentId: task.parentId,
+            sourceRow: sourceRow,
             moved: false,
+            verticalMove: false,
+            dropTarget: null,
         };
 
         targetBar.style.opacity = '0.8';
@@ -118,11 +128,22 @@ class GanttInteractions {
         if (!this._isDragging || !this._dragData) return;
 
         const dx = e.clientX - this._dragData.startX;
-        if (Math.abs(dx) < 3 && !this._dragData.moved) return;
+        const dy = e.clientY - this._dragData.startY;
+        if (Math.abs(dx) < 3 && Math.abs(dy) < 3 && !this._dragData.moved) return;
 
         this._dragData.moved = true;
         this._justDragged = true;
         this._applyDrag(dx);
+
+        // Update tooltip for resize modes
+        if (this._dragData.mode === 'resize-left' || this._dragData.mode === 'resize-right') {
+            this._updateResizeTooltip(e);
+        }
+
+        // Vertical drag for move mode
+        if (this._dragData.mode === 'move') {
+            this._updateVerticalDrag(e);
+        }
     }
 
     _handleMouseUp(e) {
@@ -134,7 +155,7 @@ class GanttInteractions {
 
     _handleTouchStart(e) {
         const touch = e.touches[0];
-        const fakeEvent = { clientX: touch.clientX, target: e.target, preventDefault: () => e.preventDefault() };
+        const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target, preventDefault: () => e.preventDefault() };
         this._handleMouseDown(fakeEvent);
     }
 
@@ -142,7 +163,7 @@ class GanttInteractions {
         if (!this._isDragging) return;
         e.preventDefault();
         const touch = e.touches[0];
-        this._handleMouseMove({ clientX: touch.clientX });
+        this._handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
     }
 
     _handleTouchEnd() {
@@ -173,10 +194,217 @@ class GanttInteractions {
         }
     }
 
+    /* ---- Resize Tooltip ---- */
+
+    _updateResizeTooltip(e) {
+        const d = this._dragData;
+        const colWidth = this._zoomColWidthFn();
+        const timelineStart = this._timelineStartFn();
+        const newLeft = parseFloat(d.bar.style.left);
+        const newWidth = parseFloat(d.bar.style.width);
+
+        let dateStr;
+        if (d.mode === 'resize-left') {
+            const startDayOffset = Math.round(newLeft / colWidth);
+            const newStart = addDays(timelineStart, startDayOffset);
+            dateStr = _formatDateFR(newStart);
+        } else {
+            const rightEdge = newLeft + newWidth;
+            const endDayOffset = Math.round(rightEdge / colWidth) - 1;
+            const newEnd = addDays(timelineStart, endDayOffset);
+            dateStr = _formatDateFR(newEnd);
+        }
+
+        if (!this._tooltip) {
+            this._tooltip = document.createElement('div');
+            this._tooltip.className = 'gantt-drag-tooltip';
+            document.body.appendChild(this._tooltip);
+        }
+
+        this._tooltip.textContent = dateStr;
+        this._tooltip.style.left = (e.clientX + 12) + 'px';
+        this._tooltip.style.top = (e.clientY - 32) + 'px';
+    }
+
+    _removeTooltip() {
+        if (this._tooltip) {
+            this._tooltip.remove();
+            this._tooltip = null;
+        }
+    }
+
+    /* ---- Vertical Drag & Drop ---- */
+
+    _updateVerticalDrag(e) {
+        const d = this._dragData;
+        const dy = Math.abs(e.clientY - d.startY);
+
+        // Only activate vertical mode after sufficient vertical movement
+        if (dy < 15) {
+            this._removeDropIndicator();
+            d.verticalMove = false;
+            d.dropTarget = null;
+            return;
+        }
+
+        d.verticalMove = true;
+
+        // Find which row the mouse is over
+        const rows = this._container.querySelectorAll('.gantt-row');
+        let targetRow = null;
+        let insertPosition = null; // 'before', 'inside', 'after'
+
+        for (const row of rows) {
+            if (row.style.display === 'none') continue;
+            const rowId = row.dataset.taskId;
+            if (rowId === d.taskId) continue; // skip self
+
+            const rect = row.getBoundingClientRect();
+            if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                const rowTask = store.getTask(rowId);
+                if (!rowTask) continue;
+
+                // Determine drop zone: top third = before, middle = inside (if phase), bottom third = after
+                const third = rect.height / 3;
+                if (rowTask.isPhase) {
+                    if (e.clientY < rect.top + third) {
+                        insertPosition = 'before';
+                    } else if (e.clientY > rect.bottom - third) {
+                        insertPosition = 'after';
+                    } else {
+                        insertPosition = 'inside';
+                    }
+                } else {
+                    if (e.clientY < rect.top + rect.height / 2) {
+                        insertPosition = 'before';
+                    } else {
+                        insertPosition = 'after';
+                    }
+                }
+                targetRow = row;
+                break;
+            }
+        }
+
+        if (targetRow) {
+            d.dropTarget = { rowId: targetRow.dataset.taskId, position: insertPosition };
+            this._showDropIndicator(targetRow, insertPosition);
+        } else {
+            d.dropTarget = null;
+            this._removeDropIndicator();
+        }
+    }
+
+    _showDropIndicator(targetRow, position) {
+        if (!this._dropIndicator) {
+            this._dropIndicator = document.createElement('div');
+            this._dropIndicator.className = 'gantt-drop-indicator';
+            document.body.appendChild(this._dropIndicator);
+        }
+
+        const rect = targetRow.getBoundingClientRect();
+        const indicator = this._dropIndicator;
+
+        if (position === 'inside') {
+            // Highlight the whole row
+            indicator.style.left = rect.left + 'px';
+            indicator.style.top = rect.top + 'px';
+            indicator.style.width = rect.width + 'px';
+            indicator.style.height = rect.height + 'px';
+            indicator.className = 'gantt-drop-indicator inside';
+        } else {
+            // Show a line above or below
+            const y = position === 'before' ? rect.top : rect.bottom;
+            indicator.style.left = rect.left + 'px';
+            indicator.style.top = (y - 1) + 'px';
+            indicator.style.width = rect.width + 'px';
+            indicator.style.height = '2px';
+            indicator.className = 'gantt-drop-indicator line';
+        }
+    }
+
+    _removeDropIndicator() {
+        if (this._dropIndicator) {
+            this._dropIndicator.remove();
+            this._dropIndicator = null;
+        }
+    }
+
+    _applyVerticalDrop() {
+        const d = this._dragData;
+        if (!d.dropTarget) return;
+
+        const { rowId, position } = d.dropTarget;
+        const targetTask = store.getTask(rowId);
+        if (!targetTask) return;
+
+        const task = store.getTask(d.taskId);
+        if (!task) return;
+
+        // Prevent dropping a phase into itself or its descendants
+        if (task.isPhase && this._isDescendant(task.id, rowId)) return;
+
+        let newParentId;
+        let newOrder;
+
+        if (position === 'inside' && targetTask.isPhase) {
+            // Drop inside a phase
+            newParentId = targetTask.id;
+            const siblings = store.getChildTasks(targetTask.id);
+            newOrder = siblings.length > 0 ? Math.max(...siblings.map(s => s.order)) + 1 : 0;
+        } else {
+            // Drop before or after a task - adopt its parent
+            newParentId = targetTask.parentId;
+            const siblings = newParentId
+                ? store.getChildTasks(newParentId)
+                : store.getTasks().filter(t => !t.parentId);
+
+            const targetOrder = targetTask.order;
+            if (position === 'before') {
+                newOrder = targetOrder;
+                // Shift siblings at or after this order
+                siblings.forEach(s => {
+                    if (s.id !== d.taskId && s.order >= newOrder) {
+                        store.updateTask(s.id, { order: s.order + 1 });
+                    }
+                });
+            } else {
+                newOrder = targetOrder + 1;
+                siblings.forEach(s => {
+                    if (s.id !== d.taskId && s.order > targetOrder) {
+                        store.updateTask(s.id, { order: s.order + 1 });
+                    }
+                });
+            }
+        }
+
+        // Apply the move
+        store.updateTask(d.taskId, {
+            parentId: newParentId,
+            order: newOrder,
+        });
+    }
+
+    _isDescendant(ancestorId, taskId) {
+        let current = store.getTask(taskId);
+        while (current) {
+            if (current.id === ancestorId) return true;
+            if (!current.parentId) return false;
+            current = store.getTask(current.parentId);
+        }
+        return false;
+    }
+
+    /* ---- Finish Drag ---- */
+
     _finishDrag() {
         const d = this._dragData;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+
+        // Clean up tooltip and drop indicator
+        this._removeTooltip();
+        this._removeDropIndicator();
 
         if (d && d.bar) {
             d.bar.style.opacity = '';
@@ -184,7 +412,16 @@ class GanttInteractions {
         }
 
         if (d && d.moved) {
-            // Calculate date changes
+            // Handle vertical drop first
+            if (d.mode === 'move' && d.verticalMove && d.dropTarget) {
+                this._applyVerticalDrop();
+                if (this._onUpdate) this._onUpdate();
+                this._isDragging = false;
+                this._dragData = null;
+                return;
+            }
+
+            // Calculate date changes (horizontal)
             const colWidth = this._zoomColWidthFn();
             const timelineStart = this._timelineStartFn();
             const newLeft = parseFloat(d.bar.style.left);
@@ -203,7 +440,6 @@ class GanttInteractions {
             } else if (d.mode === 'resize-left') {
                 updates.startDate = formatDateISO(newStart);
             } else if (d.mode === 'resize-right') {
-                const origStartLeft = d.origLeft;
                 const rightEdge = newLeft + newWidth;
                 const endDayOffset = Math.round(rightEdge / colWidth) - 1;
                 updates.endDate = formatDateISO(addDays(timelineStart, endDayOffset));
@@ -217,6 +453,17 @@ class GanttInteractions {
         this._isDragging = false;
         this._dragData = null;
     }
+}
+
+/* ---- Helper ---- */
+
+function _formatDateFR(date) {
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
 }
 
 export const ganttInteractions = new GanttInteractions();
