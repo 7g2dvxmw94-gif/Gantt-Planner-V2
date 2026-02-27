@@ -1361,8 +1361,7 @@ textarea.input {
     background: var(--bg-base);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-default);
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: visible;
     box-shadow: var(--shadow-sm);
     transition: background var(--transition-base), border-color var(--transition-base);
     min-width: fit-content;
@@ -1387,6 +1386,10 @@ textarea.input {
     border-right: 1px solid var(--border-default);
     display: flex;
     align-items: center;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--bg-subtle);
 }
 
 .gantt-timeline-header {
@@ -1484,6 +1487,22 @@ textarea.input {
     gap: var(--space-3);
     border-right: 1px solid var(--border-default);
     min-width: 0;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background-color: var(--bg-base);
+}
+
+.gantt-row:hover .gantt-task-cell {
+    background-color: var(--bg-subtle);
+}
+
+.gantt-row.phase .gantt-task-cell {
+    background-color: var(--bg-subtle);
+}
+
+.gantt-row.selected .gantt-task-cell {
+    background-color: var(--color-primary-light);
 }
 
 .gantt-task-cell.indent-1 { padding-left: calc(var(--space-4) + 24px); }
