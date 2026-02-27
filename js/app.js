@@ -407,6 +407,7 @@ class App {
             if (!query) {
                 // Show all rows
                 $$('.gantt-row').forEach(row => row.style.display = '');
+                ganttRenderer.refreshDependencies();
                 return;
             }
 
@@ -418,6 +419,7 @@ class App {
                     row.style.display = 'none';
                 }
             });
+            ganttRenderer.refreshDependencies();
         }, 200));
     }
 

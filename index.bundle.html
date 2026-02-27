@@ -1973,8 +1973,8 @@ textarea.input {
 .gantt-drag-tooltip {
     position: fixed;
     padding: var(--space-2) var(--space-3);
-    background: var(--bg-elevated, #1a1a2e);
-    color: var(--text-on-emphasis, #fff);
+    background: #1e293b;
+    color: #f1f5f9;
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     border-radius: var(--radius-md);
@@ -5940,6 +5940,7 @@ class App {
             if (!query) {
                 // Show all rows
                 $$('.gantt-row').forEach(row => row.style.display = '');
+                ganttRenderer.refreshDependencies();
                 return;
             }
 
@@ -5951,6 +5952,7 @@ class App {
                     row.style.display = 'none';
                 }
             });
+            ganttRenderer.refreshDependencies();
         }, 200));
     }
 
