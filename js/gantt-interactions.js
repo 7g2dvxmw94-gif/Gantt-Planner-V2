@@ -6,6 +6,9 @@
 import { store } from './store.js';
 import { formatDateISO, addDays, daysBetween } from './utils.js';
 
+const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
+const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
+
 class GanttInteractions {
     constructor() {
         this._container = null;
@@ -17,6 +20,8 @@ class GanttInteractions {
         this._timelineStartFn = null;
         this._tooltip = null;
         this._dropIndicator = null;
+        this._autoScrollRAF = null;
+        this._autoScrollSpeed = 0;
     }
 
     /**
@@ -98,6 +103,7 @@ class GanttInteractions {
 
         // Get the source row for vertical drag
         const sourceRow = targetBar.closest('.gantt-row');
+        const wrapper = this._container.closest('.gantt-wrapper');
 
         this._isDragging = true;
         this._justDragged = false;
@@ -113,6 +119,11 @@ class GanttInteractions {
             origEndDate: task.endDate,
             origParentId: task.parentId,
             sourceRow: sourceRow,
+            wrapper: wrapper,
+            origScrollLeft: wrapper ? wrapper.scrollLeft : 0,
+            lastDx: 0,
+            lastMouseX: e.clientX,
+            lastMouseY: e.clientY,
             moved: false,
             verticalMove: false,
             dropTarget: null,
@@ -133,6 +144,10 @@ class GanttInteractions {
 
         this._dragData.moved = true;
         this._justDragged = true;
+        this._dragData.lastDx = dx;
+        this._dragData.lastMouseX = e.clientX;
+        this._dragData.lastMouseY = e.clientY;
+
         this._applyDrag(dx);
 
         // Update tooltip for resize modes
@@ -144,6 +159,9 @@ class GanttInteractions {
         if (this._dragData.mode === 'move') {
             this._updateVerticalDrag(e);
         }
+
+        // Auto-scroll when near edges
+        this._updateAutoScroll(e);
     }
 
     _handleMouseUp(e) {
@@ -176,22 +194,86 @@ class GanttInteractions {
     _applyDrag(dx) {
         const d = this._dragData;
         const colWidth = this._zoomColWidthFn();
+        // Account for wrapper scroll delta so the bar tracks the cursor
+        const scrollDelta = d.wrapper ? d.wrapper.scrollLeft - d.origScrollLeft : 0;
+        const totalDx = dx + scrollDelta;
 
         if (d.mode === 'move') {
-            d.bar.style.left = (d.origLeft + dx) + 'px';
+            d.bar.style.left = (d.origLeft + totalDx) + 'px';
         } else if (d.mode === 'resize-left') {
-            const newLeft = d.origLeft + dx;
-            const newWidth = d.origWidth - dx;
+            const newLeft = d.origLeft + totalDx;
+            const newWidth = d.origWidth - totalDx;
             if (newWidth >= colWidth) {
                 d.bar.style.left = newLeft + 'px';
                 d.bar.style.width = newWidth + 'px';
             }
         } else if (d.mode === 'resize-right') {
-            const newWidth = d.origWidth + dx;
+            const newWidth = d.origWidth + totalDx;
             if (newWidth >= colWidth) {
                 d.bar.style.width = newWidth + 'px';
             }
         }
+    }
+
+    /* ---- Auto-Scroll ---- */
+
+    _updateAutoScroll(e) {
+        const d = this._dragData;
+        if (!d || !d.wrapper) return;
+
+        const rect = d.wrapper.getBoundingClientRect();
+        const mouseX = e.clientX;
+        let speed = 0;
+
+        if (mouseX < rect.left + AUTO_SCROLL_EDGE) {
+            // Near left edge — scroll left
+            const distance = rect.left + AUTO_SCROLL_EDGE - mouseX;
+            speed = -Math.ceil((distance / AUTO_SCROLL_EDGE) * AUTO_SCROLL_MAX_SPEED);
+        } else if (mouseX > rect.right - AUTO_SCROLL_EDGE) {
+            // Near right edge — scroll right
+            const distance = mouseX - (rect.right - AUTO_SCROLL_EDGE);
+            speed = Math.ceil((distance / AUTO_SCROLL_EDGE) * AUTO_SCROLL_MAX_SPEED);
+        }
+
+        if (speed !== 0) {
+            this._autoScrollSpeed = speed;
+            if (!this._autoScrollRAF) {
+                this._autoScrollLoop();
+            }
+        } else {
+            this._stopAutoScroll();
+        }
+    }
+
+    _autoScrollLoop() {
+        const d = this._dragData;
+        if (!d || !d.wrapper || !this._autoScrollSpeed) {
+            this._stopAutoScroll();
+            return;
+        }
+
+        d.wrapper.scrollLeft += this._autoScrollSpeed;
+
+        // Re-apply drag to update bar position with new scroll offset
+        this._applyDrag(d.lastDx);
+
+        // Update tooltip content (date changed due to scroll)
+        if (d.mode === 'resize-left' || d.mode === 'resize-right') {
+            this._updateResizeTooltip({
+                clientX: d.lastMouseX,
+                clientY: d.lastMouseY,
+            });
+        }
+
+        this._autoScrollRAF = requestAnimationFrame(() => this._autoScrollLoop());
+    }
+
+    _stopAutoScroll() {
+        if (this._autoScrollRAF) {
+            cancelAnimationFrame(this._autoScrollRAF);
+            this._autoScrollRAF = null;
+        }
+        this._autoScrollSpeed = 0;
     }
 
     /* ---- Resize Tooltip ---- */
@@ -402,9 +484,10 @@ class GanttInteractions {
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
 
-        // Clean up tooltip and drop indicator
+        // Clean up tooltip, drop indicator, auto-scroll
         this._removeTooltip();
         this._removeDropIndicator();
+        this._stopAutoScroll();
 
         if (d && d.bar) {
             d.bar.style.opacity = '';
