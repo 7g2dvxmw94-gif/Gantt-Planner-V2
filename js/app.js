@@ -590,12 +590,11 @@ class App {
         const project = store.getActiveProject();
         if (!project) return;
 
-        // Replace the span content with an input
         const input = document.createElement('input');
         input.type = 'text';
         input.value = project.name;
         input.className = 'project-rename-input';
-        input.style.cssText = 'font: inherit; background: var(--bg-base); color: var(--text-primary); border: 1px solid var(--color-primary); border-radius: var(--radius-sm); padding: 2px 6px; width: 180px; outline: none;';
+        input.style.width = '180px';
 
         nameEl.textContent = '';
         nameEl.appendChild(input);
@@ -909,10 +908,15 @@ class App {
         const activeProject = store.getActiveProject();
 
         projects.forEach(p => {
-            const item = document.createElement('button');
+            const item = document.createElement('div');
             item.className = 'project-dropdown-item' + (p.id === activeProject.id ? ' active' : '');
-            item.textContent = p.name;
-            item.addEventListener('click', (e) => {
+            item.dataset.projectId = p.id;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'project-item-name';
+            nameSpan.textContent = p.name;
+            nameSpan.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;';
+            nameSpan.addEventListener('click', (e) => {
                 e.stopPropagation();
                 store.setActiveProject(p.id);
                 ganttRenderer.render();
@@ -920,22 +924,25 @@ class App {
                 this._renderProjectName();
                 dropdown.remove();
             });
+            item.appendChild(nameSpan);
+
+            // Rename (pencil) button
+            const renameBtn = document.createElement('button');
+            renameBtn.className = 'project-item-action';
+            renameBtn.title = 'Renommer';
+            renameBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._startDropdownRename(item, p, dropdown);
+            });
+            item.appendChild(renameBtn);
+
+            item.style.cssText = 'display: flex; align-items: center; gap: 4px;';
             dropdown.appendChild(item);
         });
 
         // Divider
         dropdown.appendChild(document.createElement('hr'));
-
-        // Rename current project
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'project-dropdown-item';
-        renameBtn.textContent = 'Renommer le projet';
-        renameBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.remove();
-            this._startProjectRename();
-        });
-        dropdown.appendChild(renameBtn);
 
         // New project
         const newBtn = document.createElement('button');
@@ -968,6 +975,40 @@ class App {
         }
 
         document.body.appendChild(dropdown);
+    }
+
+    _startDropdownRename(item, project, dropdown) {
+        // Replace content with an input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = project.name;
+        input.className = 'project-rename-input';
+
+        item.textContent = '';
+        item.style.cssText = 'display: flex; align-items: center; padding: 0 var(--space-1);';
+        item.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finish = (save) => {
+            if (input._done) return;
+            input._done = true;
+            const newName = input.value.trim();
+            if (save && newName && newName !== project.name) {
+                store.updateProject(project.id, { name: newName });
+                this._renderProjectName();
+                this._showToast('Projet renommé', 'success');
+            }
+            dropdown.remove();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+            if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener('blur', () => finish(true));
+        input.addEventListener('click', (e) => e.stopPropagation());
     }
 
     _createNewProject() {

@@ -713,6 +713,50 @@ textarea.input {
     background: var(--color-error-light);
 }
 
+/* ---- Project Item Actions (rename pencil) ---- */
+.project-item-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.project-dropdown-item:hover .project-item-action {
+    opacity: 1;
+}
+
+.project-item-action:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+/* ---- Project Rename Input ---- */
+.project-rename-input {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.project-rename-input:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
 /* ---- Filter Bar ---- */
 .filter-bar {
     display: flex;
