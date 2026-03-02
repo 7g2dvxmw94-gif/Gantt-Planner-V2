@@ -2045,6 +2045,435 @@ textarea.input {
     border: 2px dashed var(--color-primary);
     border-radius: var(--radius-sm);
 }
+
+/* ========================================
+   TABLE VIEW (Vue Tableau)
+   ======================================== */
+
+.table-view {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-5);
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.task-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.task-table th {
+    background: var(--bg-subtle);
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border-default);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.task-table th.sortable {
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.task-table th.sortable:hover {
+    color: var(--text-primary);
+    background: var(--bg-muted);
+}
+
+.task-table th.sort-asc::after,
+.task-table th.sort-desc::after {
+    margin-left: var(--space-1);
+    color: var(--color-primary);
+}
+
+.task-table th.sort-asc::after {
+    content: ' \u25B2';
+}
+
+.task-table th.sort-desc::after {
+    content: ' \u25BC';
+}
+
+.task-table td {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+}
+
+.task-table tbody tr {
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.task-table tbody tr:hover {
+    background: var(--bg-subtle);
+}
+
+.task-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-task-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--font-weight-medium);
+}
+
+.table-task-color {
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.table-task-phase {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.table-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 120px;
+}
+
+.table-progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-muted);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.table-progress-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
+}
+
+.table-progress-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    min-width: 32px;
+    text-align: right;
+}
+
+.table-assignees {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+}
+
+.table-assignee-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    background: var(--bg-muted);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+}
+
+.table-assignee-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.table-empty {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.badge-priority-high {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-priority-medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: #F59E0B;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-priority-low {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-status-todo {
+    background: var(--bg-muted);
+    color: var(--text-muted);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-status-in_progress {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge-status-done {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ========================================
+   RESOURCE VIEW (Vue Ressources)
+   ======================================== */
+
+.resource-view {
+    flex: 1;
+    overflow: auto;
+    padding: var(--space-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: var(--space-4);
+    align-content: start;
+}
+
+.resource-card {
+    background: var(--bg-base);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-fast);
+}
+
+.resource-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.resource-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.resource-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.resource-card-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.resource-card-role {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.resource-card-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    background: var(--bg-muted);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.resource-workload {
+    margin-bottom: var(--space-4);
+}
+
+.resource-workload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.resource-workload-header .overload {
+    color: #EF4444;
+    font-weight: var(--font-weight-semibold);
+}
+
+.resource-workload-track {
+    height: 8px;
+    background: var(--bg-muted);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.resource-workload-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width var(--transition-base);
+}
+
+.resource-workload-fill.warning {
+    background: #F59E0B;
+}
+
+.resource-workload-fill.overload {
+    background: #EF4444;
+}
+
+.resource-overload-warning {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: #EF4444;
+    font-weight: var(--font-weight-medium);
+}
+
+.resource-task-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.resource-task-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.resource-task-item:hover {
+    background: var(--bg-subtle);
+    margin: 0 calc(-1 * var(--space-2));
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.resource-task-color {
+    width: 4px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.resource-task-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.resource-task-dates {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* ========================================
+   ADVANCED FILTER BAR
+   ======================================== */
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    font-size: var(--font-size-xs) !important;
+    padding: var(--space-1) var(--space-2) !important;
+    height: 30px;
+    min-width: 0;
+}
+
+.filter-date {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-2);
+    height: 30px;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.filter-date:focus {
+    border-color: var(--color-primary);
+}
+
+.filter-reset-btn {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-2);
+    height: 30px;
+    background: none;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.filter-reset-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-default);
+    background: var(--bg-subtle);
+}
+
 /* ========================================
    RESPONSIVE STYLES
    ======================================== */
@@ -5662,7 +6091,9 @@ class App {
     constructor() {
         this._activeView = 'timeline';
         this._showCriticalPath = false;
-        this._filters = { status: 'all', assignee: 'all', search: '' };
+        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._tableSortKey = 'name';
+        this._tableSortDir = 'asc';
     }
 
     init() {
@@ -5779,6 +6210,7 @@ class App {
             case 'timeline':
                 if (ganttWrapper) ganttWrapper.style.display = '';
                 ganttRenderer.render();
+                this._applyFiltersToTimeline();
                 break;
             case 'board':
                 if (boardView) {
@@ -5800,176 +6232,419 @@ class App {
         });
     }
 
-    /* ---- Board View (Placeholder for Step 4) ---- */
+    _refreshCurrentView() {
+        switch (this._activeView) {
+            case 'timeline':
+                this._applyFiltersToTimeline();
+                break;
+            case 'board':
+                this._renderBoardView();
+                break;
+            case 'resources':
+                this._renderResourceView();
+                break;
+        }
+    }
 
-    _renderBoardView() {
-        const container = $('#boardView');
-        if (!container) return;
+    /* ---- Board / Table View (Vue Tableau) ---- */
 
-        const tasks = store.getTasks().filter(t => !t.isPhase);
-        const statuses = [
-            { key: 'todo', label: 'À faire', color: 'var(--text-muted)' },
-            { key: 'in_progress', label: 'En cours', color: 'var(--color-info)' },
-            { key: 'done', label: 'Terminé', color: 'var(--color-success)' },
-        ];
+    _getFilteredTasks(includePhases = false) {
+        var tasks = store.getTasks();
+        var status = this._filters.status;
+        var assignee = this._filters.assignee;
+        var priority = this._filters.priority;
+        var dateStart = this._filters.dateStart;
+        var dateEnd = this._filters.dateEnd;
+        var search = this._filters.search;
 
-        container.innerHTML = '';
-        container.style.display = 'flex';
-        container.style.gap = 'var(--space-4)';
-        container.style.padding = 'var(--space-5)';
-        container.style.flex = '1';
-        container.style.overflow = 'auto';
+        return tasks.filter(function(task) {
+            if (!includePhases && task.isPhase) return false;
+            if (task.isPhase) return true;
 
-        statuses.forEach(status => {
-            const column = document.createElement('div');
-            column.style.cssText = `
-                flex: 1; min-width: 250px; background: var(--bg-base);
-                border-radius: var(--radius-lg); border: 1px solid var(--border-default);
-                padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
-            `;
+            if (status !== 'all' && task.status !== status) return false;
 
-            const header = document.createElement('div');
-            header.style.cssText = `
-                display: flex; align-items: center; gap: var(--space-2);
-                font-weight: 600; font-size: var(--font-size-sm);
-                padding-bottom: var(--space-3); border-bottom: 2px solid ${status.color};
-                margin-bottom: var(--space-2);
-            `;
-            const count = tasks.filter(t => t.status === status.key).length;
-            header.textContent = `${status.label} (${count})`;
-            column.appendChild(header);
+            if (assignee !== 'all') {
+                var assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+                if (!assigneeIds.includes(assignee)) return false;
+            }
 
-            tasks.filter(t => t.status === status.key).forEach(task => {
-                const card = document.createElement('div');
-                card.style.cssText = `
-                    padding: var(--space-3); background: var(--bg-subtle);
-                    border-radius: var(--radius-md); border: 1px solid var(--border-subtle);
-                    cursor: pointer; transition: all 150ms ease-out;
-                    border-left: 3px solid ${task.color};
-                `;
-                card.addEventListener('mouseenter', () => {
-                    card.style.borderColor = 'var(--border-strong)';
-                    card.style.boxShadow = 'var(--shadow-sm)';
+            if (priority !== 'all' && task.priority !== priority) return false;
+
+            if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
+            if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
+
+            if (search) {
+                var q = search.toLowerCase();
+                var nameMatch = task.name.toLowerCase().includes(q);
+                var descMatch = (task.description || '').toLowerCase().includes(q);
+                var assigneeMatch = (task.assignees || []).some(function(id) {
+                    var r = store.getResource(id);
+                    return r && r.name.toLowerCase().includes(q);
                 });
-                card.addEventListener('mouseleave', () => {
-                    card.style.borderColor = 'var(--border-subtle)';
-                    card.style.boxShadow = 'none';
-                });
+                if (!nameMatch && !descMatch && !assigneeMatch) return false;
+            }
 
-                const taskName = document.createElement('div');
-                taskName.style.cssText = 'font-weight: 500; margin-bottom: var(--space-1);';
-                taskName.textContent = task.name;
-                card.appendChild(taskName);
-
-                const taskAssignees = (task.assignees || (task.assignee ? [task.assignee] : [])).map(id => store.getResource(id)).filter(Boolean);
-                if (taskAssignees.length) {
-                    const meta = document.createElement('div');
-                    meta.style.cssText = 'font-size: var(--font-size-xs); color: var(--text-muted);';
-                    meta.textContent = taskAssignees.map(r => `@${r.name.split(' ')[0]}`).join(', ');
-                    card.appendChild(meta);
-                }
-
-                if (task.progress > 0) {
-                    const progressBar = document.createElement('div');
-                    progressBar.style.cssText = `
-                        margin-top: var(--space-2); height: 4px; background: var(--bg-muted);
-                        border-radius: var(--radius-full); overflow: hidden;
-                    `;
-                    const fill = document.createElement('div');
-                    fill.style.cssText = `
-                        height: 100%; border-radius: var(--radius-full); background: ${task.color};
-                        width: ${task.progress}%;
-                    `;
-                    progressBar.appendChild(fill);
-                    card.appendChild(progressBar);
-                }
-
-                column.appendChild(card);
-            });
-
-            container.appendChild(column);
+            return true;
         });
     }
 
-    /* ---- Resource View (Placeholder for Step 4) ---- */
-
-    _renderResourceView() {
-        const container = $('#resourceView');
+    _renderBoardView() {
+        var container = $('#boardView');
         if (!container) return;
 
-        const resources = store.getResources();
-        const tasks = store.getTasks().filter(t => !t.isPhase);
-
+        var tasks = this._getFilteredTasks(false);
         container.innerHTML = '';
-        container.style.padding = 'var(--space-5)';
-        container.style.flex = '1';
-        container.style.overflow = 'auto';
+        container.className = 'table-view';
 
-        const grid = document.createElement('div');
-        grid.style.cssText = `
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--space-4);
-        `;
+        // Sort tasks
+        var self = this;
+        var sorted = tasks.slice().sort(function(a, b) {
+            var dir = self._tableSortDir === 'asc' ? 1 : -1;
+            var key = self._tableSortKey;
+            var va, vb;
 
-        resources.forEach(resource => {
-            const assignedTasks = tasks.filter(t => (t.assignees || []).includes(resource.id) || t.assignee === resource.id);
-            const card = document.createElement('div');
-            card.style.cssText = `
-                background: var(--bg-base); border-radius: var(--radius-lg);
-                border: 1px solid var(--border-default); padding: var(--space-5);
-                transition: box-shadow 150ms ease-out;
-            `;
-            card.addEventListener('mouseenter', () => card.style.boxShadow = 'var(--shadow-md)');
-            card.addEventListener('mouseleave', () => card.style.boxShadow = 'none');
-
-            // Header
-            const hdr = document.createElement('div');
-            hdr.style.cssText = 'display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);';
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar';
-            avatar.style.background = `linear-gradient(135deg, ${resource.color}, ${resource.color}dd)`;
-            avatar.textContent = resource.avatar;
-            hdr.appendChild(avatar);
-
-            const info = document.createElement('div');
-            const nameEl = document.createElement('div');
-            nameEl.style.cssText = 'font-weight: 600;';
-            nameEl.textContent = resource.name;
-            info.appendChild(nameEl);
-            const roleEl = document.createElement('div');
-            roleEl.style.cssText = 'font-size: var(--font-size-xs); color: var(--text-muted);';
-            roleEl.textContent = resource.role;
-            info.appendChild(roleEl);
-            hdr.appendChild(info);
-            card.appendChild(hdr);
-
-            // Task list
-            const taskCount = document.createElement('div');
-            taskCount.style.cssText = 'font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--space-3);';
-            taskCount.textContent = `${assignedTasks.length} tâche${assignedTasks.length > 1 ? 's' : ''} assignée${assignedTasks.length > 1 ? 's' : ''}`;
-            card.appendChild(taskCount);
-
-            assignedTasks.forEach(task => {
-                const row = document.createElement('div');
-                row.style.cssText = `
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle);
-                    font-size: var(--font-size-sm);
-                `;
-                const taskNameEl = document.createElement('span');
-                taskNameEl.textContent = task.name;
-                row.appendChild(taskNameEl);
-                const badge = document.createElement('span');
-                badge.className = `badge badge-${task.status === 'done' ? 'success' : task.status === 'in_progress' ? 'info' : 'primary'}`;
-                badge.textContent = `${task.progress}%`;
-                row.appendChild(badge);
-                card.appendChild(row);
-            });
-
-            grid.appendChild(card);
+            switch (key) {
+                case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+                case 'startDate': va = a.startDate; vb = b.startDate; break;
+                case 'endDate': va = a.endDate; vb = b.endDate; break;
+                case 'status': va = a.status; vb = b.status; break;
+                case 'priority':
+                    var po = { high: 0, medium: 1, low: 2 };
+                    va = po[a.priority] !== undefined ? po[a.priority] : 1;
+                    vb = po[b.priority] !== undefined ? po[b.priority] : 1;
+                    break;
+                case 'progress': va = a.progress; vb = b.progress; break;
+                case 'assignees':
+                    var na = (a.assignees || []).map(function(id) { return (store.getResource(id) || {}).name || ''; }).join(',');
+                    var nb = (b.assignees || []).map(function(id) { return (store.getResource(id) || {}).name || ''; }).join(',');
+                    va = na.toLowerCase(); vb = nb.toLowerCase(); break;
+                default: va = a.name.toLowerCase(); vb = b.name.toLowerCase();
+            }
+            if (va < vb) return -1 * dir;
+            if (va > vb) return 1 * dir;
+            return 0;
         });
 
-        container.appendChild(grid);
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="table-empty">Aucune tâche ne correspond aux filtres sélectionnés.</div>';
+            return;
+        }
+
+        var table = document.createElement('table');
+        table.className = 'task-table';
+
+        // Header
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        var columns = [
+            { key: 'name', label: 'Tâche' },
+            { key: 'startDate', label: 'Début' },
+            { key: 'endDate', label: 'Fin' },
+            { key: 'assignees', label: 'Assigné(s)' },
+            { key: 'status', label: 'Statut' },
+            { key: 'priority', label: 'Priorité' },
+            { key: 'progress', label: 'Progression' },
+        ];
+
+        columns.forEach(function(col) {
+            var th = document.createElement('th');
+            th.textContent = col.label;
+            th.className = 'sortable';
+            if (self._tableSortKey === col.key) {
+                th.classList.add(self._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+            th.addEventListener('click', function() {
+                if (self._tableSortKey === col.key) {
+                    self._tableSortDir = self._tableSortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    self._tableSortKey = col.key;
+                    self._tableSortDir = 'asc';
+                }
+                self._renderBoardView();
+            });
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body
+        var statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
+        var priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        var tbody = document.createElement('tbody');
+
+        sorted.forEach(function(task) {
+            var row = document.createElement('tr');
+            row.dataset.taskId = task.id;
+            row.addEventListener('click', function() { taskModal.openEdit(task.id); });
+
+            // Name
+            var tdName = document.createElement('td');
+            var nameWrap = document.createElement('div');
+            nameWrap.className = 'table-task-name';
+            var colorBar = document.createElement('span');
+            colorBar.className = 'table-task-color';
+            colorBar.style.background = task.color;
+            nameWrap.appendChild(colorBar);
+            var nameText = document.createElement('span');
+            nameText.textContent = task.name;
+            nameWrap.appendChild(nameText);
+            tdName.appendChild(nameWrap);
+            if (task.parentId) {
+                var phase = store.getTask(task.parentId);
+                if (phase) {
+                    var phaseLabel = document.createElement('div');
+                    phaseLabel.className = 'table-task-phase';
+                    phaseLabel.textContent = phase.name;
+                    tdName.appendChild(phaseLabel);
+                }
+            }
+            row.appendChild(tdName);
+
+            // Start Date
+            var tdStart = document.createElement('td');
+            tdStart.textContent = formatDateDisplay(task.startDate);
+            row.appendChild(tdStart);
+
+            // End Date
+            var tdEnd = document.createElement('td');
+            tdEnd.textContent = formatDateDisplay(task.endDate);
+            row.appendChild(tdEnd);
+
+            // Assignees
+            var tdAssignees = document.createElement('td');
+            var assignees = (task.assignees || []).map(function(id) { return store.getResource(id); }).filter(Boolean);
+            if (assignees.length) {
+                var wrap = document.createElement('div');
+                wrap.className = 'table-assignees';
+                assignees.forEach(function(r) {
+                    var chip = document.createElement('span');
+                    chip.className = 'table-assignee-chip';
+                    var dot = document.createElement('span');
+                    dot.className = 'table-assignee-dot';
+                    dot.style.background = r.color;
+                    chip.appendChild(dot);
+                    chip.appendChild(document.createTextNode(r.name.split(' ')[0]));
+                    wrap.appendChild(chip);
+                });
+                tdAssignees.appendChild(wrap);
+            } else {
+                tdAssignees.textContent = '\u2014';
+                tdAssignees.style.color = 'var(--text-muted)';
+            }
+            row.appendChild(tdAssignees);
+
+            // Status
+            var tdStatus = document.createElement('td');
+            var statusBadge = document.createElement('span');
+            statusBadge.className = 'badge-status-' + task.status;
+            statusBadge.textContent = statusLabels[task.status] || task.status;
+            tdStatus.appendChild(statusBadge);
+            row.appendChild(tdStatus);
+
+            // Priority
+            var tdPriority = document.createElement('td');
+            var priorityBadge = document.createElement('span');
+            priorityBadge.className = 'badge-priority-' + task.priority;
+            priorityBadge.textContent = priorityLabels[task.priority] || task.priority;
+            tdPriority.appendChild(priorityBadge);
+            row.appendChild(tdPriority);
+
+            // Progress
+            var tdProgress = document.createElement('td');
+            var progressWrap = document.createElement('div');
+            progressWrap.className = 'table-progress';
+            var track = document.createElement('div');
+            track.className = 'table-progress-track';
+            var bar = document.createElement('div');
+            bar.className = 'table-progress-bar';
+            bar.style.width = task.progress + '%';
+            bar.style.background = task.color;
+            track.appendChild(bar);
+            progressWrap.appendChild(track);
+            var label = document.createElement('span');
+            label.className = 'table-progress-label';
+            label.textContent = task.progress + '%';
+            progressWrap.appendChild(label);
+            tdProgress.appendChild(progressWrap);
+            row.appendChild(tdProgress);
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+    /* ---- Resource View (Vue Ressources) ---- */
+
+    _calculateResourceWorkload(resource, assignedTasks) {
+        if (assignedTasks.length === 0) return { percent: 0, concurrent: 0 };
+
+        var project = store.getActiveProject();
+        if (!project) return { percent: 0, concurrent: 0 };
+
+        var projectStart = new Date(project.startDate);
+        var projectEnd = new Date(project.endDate);
+
+        var totalWorkDays = 0;
+        var allocatedDays = 0;
+        var maxConcurrent = 0;
+
+        var current = new Date(projectStart);
+        while (current <= projectEnd) {
+            var day = current.getDay();
+            if (day !== 0 && day !== 6) {
+                totalWorkDays++;
+                var active = assignedTasks.filter(function(t) {
+                    var ts = new Date(t.startDate);
+                    var te = new Date(t.endDate);
+                    return current >= ts && current <= te;
+                }).length;
+                allocatedDays += active;
+                if (active > maxConcurrent) maxConcurrent = active;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+
+        var percent = totalWorkDays > 0 ? Math.round((allocatedDays / totalWorkDays) * 100) : 0;
+        return { percent: percent, concurrent: maxConcurrent, totalWorkDays: totalWorkDays, allocatedDays: allocatedDays };
+    }
+
+    _renderResourceView() {
+        var container = $('#resourceView');
+        if (!container) return;
+
+        var resources = store.getResources();
+        var allTasks = this._getFilteredTasks(false);
+
+        container.innerHTML = '';
+        container.className = 'resource-view';
+
+        if (resources.length === 0) {
+            container.innerHTML = '<div class="table-empty">Aucune ressource disponible.</div>';
+            return;
+        }
+
+        var self = this;
+
+        resources.forEach(function(resource) {
+            var assignedTasks = allTasks.filter(function(t) {
+                return (t.assignees || []).includes(resource.id) || t.assignee === resource.id;
+            });
+
+            var workload = self._calculateResourceWorkload(resource, assignedTasks);
+
+            var card = document.createElement('div');
+            card.className = 'resource-card';
+
+            // Header
+            var header = document.createElement('div');
+            header.className = 'resource-card-header';
+            var avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.style.background = 'linear-gradient(135deg, ' + resource.color + ', ' + resource.color + 'dd)';
+            avatar.textContent = resource.avatar;
+            header.appendChild(avatar);
+
+            var info = document.createElement('div');
+            info.className = 'resource-card-info';
+            var nameEl = document.createElement('div');
+            nameEl.className = 'resource-card-name';
+            nameEl.textContent = resource.name;
+            info.appendChild(nameEl);
+            var roleEl = document.createElement('div');
+            roleEl.className = 'resource-card-role';
+            roleEl.textContent = resource.role;
+            info.appendChild(roleEl);
+            header.appendChild(info);
+
+            var countBadge = document.createElement('div');
+            countBadge.className = 'resource-card-count';
+            countBadge.textContent = assignedTasks.length + ' tâche' + (assignedTasks.length !== 1 ? 's' : '');
+            header.appendChild(countBadge);
+            card.appendChild(header);
+
+            // Workload bar
+            var workloadSection = document.createElement('div');
+            workloadSection.className = 'resource-workload';
+
+            var workloadHeader = document.createElement('div');
+            workloadHeader.className = 'resource-workload-header';
+            var workloadLabel = document.createElement('span');
+            workloadLabel.textContent = 'Charge de travail';
+            workloadHeader.appendChild(workloadLabel);
+            var workloadValue = document.createElement('span');
+            workloadValue.textContent = workload.percent + '%';
+            if (workload.percent > 100) workloadValue.className = 'overload';
+            workloadHeader.appendChild(workloadValue);
+            workloadSection.appendChild(workloadHeader);
+
+            var workloadTrack = document.createElement('div');
+            workloadTrack.className = 'resource-workload-track';
+            var workloadFill = document.createElement('div');
+            workloadFill.className = 'resource-workload-fill';
+            if (workload.percent > 100) workloadFill.classList.add('overload');
+            else if (workload.percent > 80) workloadFill.classList.add('warning');
+            workloadFill.style.width = Math.min(workload.percent, 100) + '%';
+            workloadTrack.appendChild(workloadFill);
+            workloadSection.appendChild(workloadTrack);
+
+            if (workload.percent > 100) {
+                var warning = document.createElement('div');
+                warning.className = 'resource-overload-warning';
+                warning.textContent = 'Surcharge détectée (' + workload.concurrent + ' tâches simultanées)';
+                workloadSection.appendChild(warning);
+            }
+
+            card.appendChild(workloadSection);
+
+            // Task list
+            if (assignedTasks.length > 0) {
+                var taskList = document.createElement('div');
+                taskList.className = 'resource-task-list';
+
+                assignedTasks.forEach(function(task) {
+                    var item = document.createElement('div');
+                    item.className = 'resource-task-item';
+                    item.dataset.taskId = task.id;
+
+                    var colorDot = document.createElement('span');
+                    colorDot.className = 'resource-task-color';
+                    colorDot.style.background = task.color;
+                    item.appendChild(colorDot);
+
+                    var taskName = document.createElement('span');
+                    taskName.className = 'resource-task-name';
+                    taskName.textContent = task.name;
+                    item.appendChild(taskName);
+
+                    var dates = document.createElement('span');
+                    dates.className = 'resource-task-dates';
+                    var daysLeft = daysBetween(new Date(), task.endDate);
+                    if (task.status === 'done') {
+                        dates.textContent = 'Terminé';
+                    } else if (daysLeft < 0) {
+                        dates.textContent = 'En retard';
+                        dates.style.color = '#EF4444';
+                    } else {
+                        dates.textContent = daysLeft + 'j';
+                    }
+                    item.appendChild(dates);
+
+                    var badge = document.createElement('span');
+                    badge.className = 'badge-status-' + task.status;
+                    badge.textContent = task.progress + '%';
+                    item.appendChild(badge);
+
+                    item.addEventListener('click', function() { taskModal.openEdit(task.id); });
+                    taskList.appendChild(item);
+                });
+
+                card.appendChild(taskList);
+            }
+
+            container.appendChild(card);
+        });
     }
 
     /* ---- Toolbar ---- */
@@ -6047,27 +6722,13 @@ class App {
     /* ---- Search ---- */
 
     _bindSearch() {
-        const searchInput = $('#searchInput');
+        var self = this;
+        var searchInput = $('#searchInput');
         if (!searchInput) return;
 
-        searchInput.addEventListener('input', debounce((e) => {
-            const query = e.target.value.toLowerCase().trim();
-            if (!query) {
-                // Show all rows
-                $$('.gantt-row').forEach(row => row.style.display = '');
-                ganttRenderer.refreshDependencies();
-                return;
-            }
-
-            $$('.gantt-row').forEach(row => {
-                const name = row.querySelector('.task-name');
-                if (name && name.textContent.toLowerCase().includes(query)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            ganttRenderer.refreshDependencies();
+        searchInput.addEventListener('input', debounce(function(e) {
+            self._filters.search = e.target.value.toLowerCase().trim();
+            self._refreshCurrentView();
         }, 200));
     }
 
@@ -6445,44 +7106,72 @@ class App {
     /* ---- Filter Bar ---- */
 
     _buildFilterBar() {
-        const toolbar = $('.toolbar-actions');
+        var self = this;
+        var toolbar = $('.toolbar-actions');
         if (!toolbar) return;
 
-        // Insert filter controls before zoom controls
-        const filterWrap = document.createElement('div');
+        var filterWrap = document.createElement('div');
         filterWrap.className = 'filter-bar';
         filterWrap.id = 'filterBar';
 
         // Status filter
-        const statusSel = document.createElement('select');
+        var statusSel = document.createElement('select');
         statusSel.className = 'select filter-select';
         statusSel.id = 'filterStatus';
-        statusSel.innerHTML = `
-            <option value="all">Tous les statuts</option>
-            <option value="todo">À faire</option>
-            <option value="in_progress">En cours</option>
-            <option value="done">Terminé</option>
-        `;
-        statusSel.addEventListener('change', () => this._applyFilters());
+        statusSel.innerHTML = '<option value="all">Tous les statuts</option><option value="todo">À faire</option><option value="in_progress">En cours</option><option value="done">Terminé</option>';
+        statusSel.addEventListener('change', function() { self._applyFilters(); });
 
         // Assignee filter
-        const assigneeSel = document.createElement('select');
+        var assigneeSel = document.createElement('select');
         assigneeSel.className = 'select filter-select';
         assigneeSel.id = 'filterAssignee';
         this._populateAssigneeFilter(assigneeSel);
-        assigneeSel.addEventListener('change', () => this._applyFilters());
+        assigneeSel.addEventListener('change', function() { self._applyFilters(); });
+
+        // Priority filter
+        var prioritySel = document.createElement('select');
+        prioritySel.className = 'select filter-select';
+        prioritySel.id = 'filterPriority';
+        prioritySel.innerHTML = '<option value="all">Toutes priorités</option><option value="high">Haute</option><option value="medium">Moyenne</option><option value="low">Basse</option>';
+        prioritySel.addEventListener('change', function() { self._applyFilters(); });
+
+        // Date range filters
+        var dateStart = document.createElement('input');
+        dateStart.type = 'date';
+        dateStart.className = 'filter-date';
+        dateStart.id = 'filterDateStart';
+        dateStart.title = 'Date de début minimum';
+        dateStart.addEventListener('change', function() { self._applyFilters(); });
+
+        var dateEnd = document.createElement('input');
+        dateEnd.type = 'date';
+        dateEnd.className = 'filter-date';
+        dateEnd.id = 'filterDateEnd';
+        dateEnd.title = 'Date de fin maximum';
+        dateEnd.addEventListener('change', function() { self._applyFilters(); });
+
+        // Reset filters button
+        var resetBtn = document.createElement('button');
+        resetBtn.className = 'filter-reset-btn';
+        resetBtn.textContent = 'Réinitialiser';
+        resetBtn.title = 'Réinitialiser tous les filtres';
+        resetBtn.addEventListener('click', function() { self._resetFilters(); });
 
         filterWrap.appendChild(statusSel);
         filterWrap.appendChild(assigneeSel);
+        filterWrap.appendChild(prioritySel);
+        filterWrap.appendChild(dateStart);
+        filterWrap.appendChild(dateEnd);
+        filterWrap.appendChild(resetBtn);
 
         toolbar.insertBefore(filterWrap, toolbar.firstChild);
     }
 
     _populateAssigneeFilter(select) {
-        const resources = store.getResources();
+        var resources = store.getResources();
         select.innerHTML = '<option value="all">Toutes les ressources</option>';
-        resources.forEach(r => {
-            const opt = document.createElement('option');
+        resources.forEach(function(r) {
+            var opt = document.createElement('option');
             opt.value = r.id;
             opt.textContent = r.name;
             select.appendChild(opt);
@@ -6490,34 +7179,54 @@ class App {
     }
 
     _applyFilters() {
-        const status = $('#filterStatus')?.value || 'all';
-        const assignee = $('#filterAssignee')?.value || 'all';
+        this._filters.status = ($('#filterStatus') || {}).value || 'all';
+        this._filters.assignee = ($('#filterAssignee') || {}).value || 'all';
+        this._filters.priority = ($('#filterPriority') || {}).value || 'all';
+        this._filters.dateStart = ($('#filterDateStart') || {}).value || '';
+        this._filters.dateEnd = ($('#filterDateEnd') || {}).value || '';
 
-        const rows = $$('.gantt-row');
-        rows.forEach(row => {
-            const taskId = row.dataset.taskId;
+        this._refreshCurrentView();
+    }
+
+    _resetFilters() {
+        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+
+        var filterStatus = $('#filterStatus');
+        var filterAssignee = $('#filterAssignee');
+        var filterPriority = $('#filterPriority');
+        var filterDateStart = $('#filterDateStart');
+        var filterDateEnd = $('#filterDateEnd');
+        var searchInput = $('#searchInput');
+
+        if (filterStatus) filterStatus.value = 'all';
+        if (filterAssignee) filterAssignee.value = 'all';
+        if (filterPriority) filterPriority.value = 'all';
+        if (filterDateStart) filterDateStart.value = '';
+        if (filterDateEnd) filterDateEnd.value = '';
+        if (searchInput) searchInput.value = '';
+
+        this._refreshCurrentView();
+    }
+
+    _applyFiltersToTimeline() {
+        var tasks = this._getFilteredTasks(true);
+        var visibleIds = new Set(tasks.map(function(t) { return t.id; }));
+
+        $$('.gantt-row').forEach(function(row) {
+            var taskId = row.dataset.taskId;
             if (!taskId) return;
-            const task = store.getTask(taskId);
+            var task = store.getTask(taskId);
             if (!task) return;
 
-            let visible = true;
-
-            // Phases always visible if they have visible children
             if (task.isPhase) {
-                row.style.display = '';
-                return;
+                var children = store.getChildTasks(task.id);
+                var hasVisibleChild = children.some(function(c) { return visibleIds.has(c.id); });
+                row.style.display = hasVisibleChild ? '' : 'none';
+            } else {
+                row.style.display = visibleIds.has(taskId) ? '' : 'none';
             }
-
-            if (status !== 'all' && task.status !== status) visible = false;
-            if (assignee !== 'all') {
-                const assignees = task.assignees || (task.assignee ? [task.assignee] : []);
-                if (!assignees.includes(assignee)) visible = false;
-            }
-
-            row.style.display = visible ? '' : 'none';
         });
 
-        // Refresh dependency arrows to hide links for filtered-out tasks
         ganttRenderer.refreshDependencies();
     }
 

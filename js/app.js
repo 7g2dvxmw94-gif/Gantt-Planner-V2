@@ -8,13 +8,15 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, addDays } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 
 class App {
     constructor() {
         this._activeView = 'timeline';
         this._showCriticalPath = false;
-        this._filters = { status: 'all', assignee: 'all', search: '' };
+        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._tableSortKey = 'name';
+        this._tableSortDir = 'asc';
     }
 
     init() {
@@ -131,6 +133,7 @@ class App {
             case 'timeline':
                 if (ganttWrapper) ganttWrapper.style.display = '';
                 ganttRenderer.render();
+                this._applyFiltersToTimeline();
                 break;
             case 'board':
                 if (boardView) {
@@ -152,176 +155,412 @@ class App {
         });
     }
 
-    /* ---- Board View (Placeholder for Step 4) ---- */
+    _refreshCurrentView() {
+        switch (this._activeView) {
+            case 'timeline':
+                this._applyFiltersToTimeline();
+                break;
+            case 'board':
+                this._renderBoardView();
+                break;
+            case 'resources':
+                this._renderResourceView();
+                break;
+        }
+    }
+
+    /* ---- Board / Table View (Vue Tableau) ---- */
+
+    _getFilteredTasks(includePhases = false) {
+        let tasks = store.getTasks();
+        const { status, assignee, priority, dateStart, dateEnd, search } = this._filters;
+
+        return tasks.filter(task => {
+            if (!includePhases && task.isPhase) return false;
+            if (task.isPhase) return true;
+
+            if (status !== 'all' && task.status !== status) return false;
+
+            if (assignee !== 'all') {
+                const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+                if (!assigneeIds.includes(assignee)) return false;
+            }
+
+            if (priority !== 'all' && task.priority !== priority) return false;
+
+            if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
+            if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
+
+            if (search) {
+                const q = search.toLowerCase();
+                const nameMatch = task.name.toLowerCase().includes(q);
+                const descMatch = (task.description || '').toLowerCase().includes(q);
+                const assigneeMatch = (task.assignees || []).some(id => {
+                    const r = store.getResource(id);
+                    return r && r.name.toLowerCase().includes(q);
+                });
+                if (!nameMatch && !descMatch && !assigneeMatch) return false;
+            }
+
+            return true;
+        });
+    }
 
     _renderBoardView() {
         const container = $('#boardView');
         if (!container) return;
 
-        const tasks = store.getTasks().filter(t => !t.isPhase);
-        const statuses = [
-            { key: 'todo', label: 'À faire', color: 'var(--text-muted)' },
-            { key: 'in_progress', label: 'En cours', color: 'var(--color-info)' },
-            { key: 'done', label: 'Terminé', color: 'var(--color-success)' },
+        const tasks = this._getFilteredTasks(false);
+        container.innerHTML = '';
+        container.className = 'table-view';
+
+        // Sort tasks
+        const sorted = [...tasks].sort((a, b) => {
+            const dir = this._tableSortDir === 'asc' ? 1 : -1;
+            const key = this._tableSortKey;
+            let va, vb;
+
+            switch (key) {
+                case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+                case 'startDate': va = a.startDate; vb = b.startDate; break;
+                case 'endDate': va = a.endDate; vb = b.endDate; break;
+                case 'status': va = a.status; vb = b.status; break;
+                case 'priority': {
+                    const po = { high: 0, medium: 1, low: 2 };
+                    va = po[a.priority] ?? 1; vb = po[b.priority] ?? 1; break;
+                }
+                case 'progress': va = a.progress; vb = b.progress; break;
+                case 'assignees': {
+                    const na = (a.assignees || []).map(id => store.getResource(id)?.name || '').join(',');
+                    const nb = (b.assignees || []).map(id => store.getResource(id)?.name || '').join(',');
+                    va = na.toLowerCase(); vb = nb.toLowerCase(); break;
+                }
+                default: va = a.name.toLowerCase(); vb = b.name.toLowerCase();
+            }
+            if (va < vb) return -1 * dir;
+            if (va > vb) return 1 * dir;
+            return 0;
+        });
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="table-empty">Aucune tâche ne correspond aux filtres sélectionnés.</div>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'task-table';
+
+        // Header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        const columns = [
+            { key: 'name', label: 'Tâche' },
+            { key: 'startDate', label: 'Début' },
+            { key: 'endDate', label: 'Fin' },
+            { key: 'assignees', label: 'Assigné(s)' },
+            { key: 'status', label: 'Statut' },
+            { key: 'priority', label: 'Priorité' },
+            { key: 'progress', label: 'Progression' },
         ];
 
-        container.innerHTML = '';
-        container.style.display = 'flex';
-        container.style.gap = 'var(--space-4)';
-        container.style.padding = 'var(--space-5)';
-        container.style.flex = '1';
-        container.style.overflow = 'auto';
-
-        statuses.forEach(status => {
-            const column = document.createElement('div');
-            column.style.cssText = `
-                flex: 1; min-width: 250px; background: var(--bg-base);
-                border-radius: var(--radius-lg); border: 1px solid var(--border-default);
-                padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
-            `;
-
-            const header = document.createElement('div');
-            header.style.cssText = `
-                display: flex; align-items: center; gap: var(--space-2);
-                font-weight: 600; font-size: var(--font-size-sm);
-                padding-bottom: var(--space-3); border-bottom: 2px solid ${status.color};
-                margin-bottom: var(--space-2);
-            `;
-            const count = tasks.filter(t => t.status === status.key).length;
-            header.textContent = `${status.label} (${count})`;
-            column.appendChild(header);
-
-            tasks.filter(t => t.status === status.key).forEach(task => {
-                const card = document.createElement('div');
-                card.style.cssText = `
-                    padding: var(--space-3); background: var(--bg-subtle);
-                    border-radius: var(--radius-md); border: 1px solid var(--border-subtle);
-                    cursor: pointer; transition: all 150ms ease-out;
-                    border-left: 3px solid ${task.color};
-                `;
-                card.addEventListener('mouseenter', () => {
-                    card.style.borderColor = 'var(--border-strong)';
-                    card.style.boxShadow = 'var(--shadow-sm)';
-                });
-                card.addEventListener('mouseleave', () => {
-                    card.style.borderColor = 'var(--border-subtle)';
-                    card.style.boxShadow = 'none';
-                });
-
-                const taskName = document.createElement('div');
-                taskName.style.cssText = 'font-weight: 500; margin-bottom: var(--space-1);';
-                taskName.textContent = task.name;
-                card.appendChild(taskName);
-
-                const taskAssignees = (task.assignees || (task.assignee ? [task.assignee] : [])).map(id => store.getResource(id)).filter(Boolean);
-                if (taskAssignees.length) {
-                    const meta = document.createElement('div');
-                    meta.style.cssText = 'font-size: var(--font-size-xs); color: var(--text-muted);';
-                    meta.textContent = taskAssignees.map(r => `@${r.name.split(' ')[0]}`).join(', ');
-                    card.appendChild(meta);
+        columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col.label;
+            th.className = 'sortable';
+            if (this._tableSortKey === col.key) {
+                th.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+            th.addEventListener('click', () => {
+                if (this._tableSortKey === col.key) {
+                    this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this._tableSortKey = col.key;
+                    this._tableSortDir = 'asc';
                 }
-
-                if (task.progress > 0) {
-                    const progressBar = document.createElement('div');
-                    progressBar.style.cssText = `
-                        margin-top: var(--space-2); height: 4px; background: var(--bg-muted);
-                        border-radius: var(--radius-full); overflow: hidden;
-                    `;
-                    const fill = document.createElement('div');
-                    fill.style.cssText = `
-                        height: 100%; border-radius: var(--radius-full); background: ${task.color};
-                        width: ${task.progress}%;
-                    `;
-                    progressBar.appendChild(fill);
-                    card.appendChild(progressBar);
-                }
-
-                column.appendChild(card);
+                this._renderBoardView();
             });
-
-            container.appendChild(column);
+            headerRow.appendChild(th);
         });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body
+        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
+        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const tbody = document.createElement('tbody');
+
+        sorted.forEach(task => {
+            const row = document.createElement('tr');
+            row.dataset.taskId = task.id;
+            row.addEventListener('click', () => taskModal.openEdit(task.id));
+
+            // Name
+            const tdName = document.createElement('td');
+            const nameWrap = document.createElement('div');
+            nameWrap.className = 'table-task-name';
+            const colorBar = document.createElement('span');
+            colorBar.className = 'table-task-color';
+            colorBar.style.background = task.color;
+            nameWrap.appendChild(colorBar);
+            const nameText = document.createElement('span');
+            nameText.textContent = task.name;
+            nameWrap.appendChild(nameText);
+            tdName.appendChild(nameWrap);
+            // Show phase name
+            if (task.parentId) {
+                const phase = store.getTask(task.parentId);
+                if (phase) {
+                    const phaseLabel = document.createElement('div');
+                    phaseLabel.className = 'table-task-phase';
+                    phaseLabel.textContent = phase.name;
+                    tdName.appendChild(phaseLabel);
+                }
+            }
+            row.appendChild(tdName);
+
+            // Start Date
+            const tdStart = document.createElement('td');
+            tdStart.textContent = formatDateDisplay(task.startDate);
+            row.appendChild(tdStart);
+
+            // End Date
+            const tdEnd = document.createElement('td');
+            tdEnd.textContent = formatDateDisplay(task.endDate);
+            row.appendChild(tdEnd);
+
+            // Assignees
+            const tdAssignees = document.createElement('td');
+            const assignees = (task.assignees || []).map(id => store.getResource(id)).filter(Boolean);
+            if (assignees.length) {
+                const wrap = document.createElement('div');
+                wrap.className = 'table-assignees';
+                assignees.forEach(r => {
+                    const chip = document.createElement('span');
+                    chip.className = 'table-assignee-chip';
+                    const dot = document.createElement('span');
+                    dot.className = 'table-assignee-dot';
+                    dot.style.background = r.color;
+                    chip.appendChild(dot);
+                    chip.appendChild(document.createTextNode(r.name.split(' ')[0]));
+                    wrap.appendChild(chip);
+                });
+                tdAssignees.appendChild(wrap);
+            } else {
+                tdAssignees.textContent = '—';
+                tdAssignees.style.color = 'var(--text-muted)';
+            }
+            row.appendChild(tdAssignees);
+
+            // Status
+            const tdStatus = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `badge-status-${task.status}`;
+            statusBadge.textContent = statusLabels[task.status] || task.status;
+            tdStatus.appendChild(statusBadge);
+            row.appendChild(tdStatus);
+
+            // Priority
+            const tdPriority = document.createElement('td');
+            const priorityBadge = document.createElement('span');
+            priorityBadge.className = `badge-priority-${task.priority}`;
+            priorityBadge.textContent = priorityLabels[task.priority] || task.priority;
+            tdPriority.appendChild(priorityBadge);
+            row.appendChild(tdPriority);
+
+            // Progress
+            const tdProgress = document.createElement('td');
+            const progressWrap = document.createElement('div');
+            progressWrap.className = 'table-progress';
+            const track = document.createElement('div');
+            track.className = 'table-progress-track';
+            const bar = document.createElement('div');
+            bar.className = 'table-progress-bar';
+            bar.style.width = task.progress + '%';
+            bar.style.background = task.color;
+            track.appendChild(bar);
+            progressWrap.appendChild(track);
+            const label = document.createElement('span');
+            label.className = 'table-progress-label';
+            label.textContent = task.progress + '%';
+            progressWrap.appendChild(label);
+            tdProgress.appendChild(progressWrap);
+            row.appendChild(tdProgress);
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        container.appendChild(table);
     }
 
-    /* ---- Resource View (Placeholder for Step 4) ---- */
+    /* ---- Resource View (Vue Ressources) ---- */
+
+    _calculateResourceWorkload(resource, assignedTasks) {
+        if (assignedTasks.length === 0) return { percent: 0, concurrent: 0 };
+
+        const project = store.getActiveProject();
+        if (!project) return { percent: 0, concurrent: 0 };
+
+        const projectStart = new Date(project.startDate);
+        const projectEnd = new Date(project.endDate);
+
+        let totalWorkDays = 0;
+        let allocatedDays = 0;
+        let maxConcurrent = 0;
+
+        const current = new Date(projectStart);
+        while (current <= projectEnd) {
+            const day = current.getDay();
+            if (day !== 0 && day !== 6) {
+                totalWorkDays++;
+                const active = assignedTasks.filter(t => {
+                    const ts = new Date(t.startDate);
+                    const te = new Date(t.endDate);
+                    return current >= ts && current <= te;
+                }).length;
+                allocatedDays += active;
+                if (active > maxConcurrent) maxConcurrent = active;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+
+        const percent = totalWorkDays > 0 ? Math.round((allocatedDays / totalWorkDays) * 100) : 0;
+        return { percent, concurrent: maxConcurrent, totalWorkDays, allocatedDays };
+    }
 
     _renderResourceView() {
         const container = $('#resourceView');
         if (!container) return;
 
         const resources = store.getResources();
-        const tasks = store.getTasks().filter(t => !t.isPhase);
+        const allTasks = this._getFilteredTasks(false);
 
         container.innerHTML = '';
-        container.style.padding = 'var(--space-5)';
-        container.style.flex = '1';
-        container.style.overflow = 'auto';
+        container.className = 'resource-view';
 
-        const grid = document.createElement('div');
-        grid.style.cssText = `
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--space-4);
-        `;
+        if (resources.length === 0) {
+            container.innerHTML = '<div class="table-empty">Aucune ressource disponible.</div>';
+            return;
+        }
 
         resources.forEach(resource => {
-            const assignedTasks = tasks.filter(t => (t.assignees || []).includes(resource.id) || t.assignee === resource.id);
+            const assignedTasks = allTasks.filter(t =>
+                (t.assignees || []).includes(resource.id) || t.assignee === resource.id
+            );
+
+            const workload = this._calculateResourceWorkload(resource, assignedTasks);
+
             const card = document.createElement('div');
-            card.style.cssText = `
-                background: var(--bg-base); border-radius: var(--radius-lg);
-                border: 1px solid var(--border-default); padding: var(--space-5);
-                transition: box-shadow 150ms ease-out;
-            `;
-            card.addEventListener('mouseenter', () => card.style.boxShadow = 'var(--shadow-md)');
-            card.addEventListener('mouseleave', () => card.style.boxShadow = 'none');
+            card.className = 'resource-card';
 
             // Header
-            const hdr = document.createElement('div');
-            hdr.style.cssText = 'display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);';
+            const header = document.createElement('div');
+            header.className = 'resource-card-header';
             const avatar = document.createElement('div');
             avatar.className = 'avatar';
             avatar.style.background = `linear-gradient(135deg, ${resource.color}, ${resource.color}dd)`;
             avatar.textContent = resource.avatar;
-            hdr.appendChild(avatar);
+            header.appendChild(avatar);
 
             const info = document.createElement('div');
+            info.className = 'resource-card-info';
             const nameEl = document.createElement('div');
-            nameEl.style.cssText = 'font-weight: 600;';
+            nameEl.className = 'resource-card-name';
             nameEl.textContent = resource.name;
             info.appendChild(nameEl);
             const roleEl = document.createElement('div');
-            roleEl.style.cssText = 'font-size: var(--font-size-xs); color: var(--text-muted);';
+            roleEl.className = 'resource-card-role';
             roleEl.textContent = resource.role;
             info.appendChild(roleEl);
-            hdr.appendChild(info);
-            card.appendChild(hdr);
+            header.appendChild(info);
+
+            const countBadge = document.createElement('div');
+            countBadge.className = 'resource-card-count';
+            countBadge.textContent = `${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}`;
+            header.appendChild(countBadge);
+            card.appendChild(header);
+
+            // Workload bar
+            const workloadSection = document.createElement('div');
+            workloadSection.className = 'resource-workload';
+
+            const workloadHeader = document.createElement('div');
+            workloadHeader.className = 'resource-workload-header';
+            const workloadLabel = document.createElement('span');
+            workloadLabel.textContent = 'Charge de travail';
+            workloadHeader.appendChild(workloadLabel);
+            const workloadValue = document.createElement('span');
+            workloadValue.textContent = workload.percent + '%';
+            if (workload.percent > 100) workloadValue.className = 'overload';
+            workloadHeader.appendChild(workloadValue);
+            workloadSection.appendChild(workloadHeader);
+
+            const workloadTrack = document.createElement('div');
+            workloadTrack.className = 'resource-workload-track';
+            const workloadFill = document.createElement('div');
+            workloadFill.className = 'resource-workload-fill';
+            if (workload.percent > 100) workloadFill.classList.add('overload');
+            else if (workload.percent > 80) workloadFill.classList.add('warning');
+            workloadFill.style.width = Math.min(workload.percent, 100) + '%';
+            workloadTrack.appendChild(workloadFill);
+            workloadSection.appendChild(workloadTrack);
+
+            if (workload.percent > 100) {
+                const warning = document.createElement('div');
+                warning.className = 'resource-overload-warning';
+                warning.textContent = 'Surcharge détectée (' + workload.concurrent + ' tâches simultanées)';
+                workloadSection.appendChild(warning);
+            }
+
+            card.appendChild(workloadSection);
 
             // Task list
-            const taskCount = document.createElement('div');
-            taskCount.style.cssText = 'font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: var(--space-3);';
-            taskCount.textContent = `${assignedTasks.length} tâche${assignedTasks.length > 1 ? 's' : ''} assignée${assignedTasks.length > 1 ? 's' : ''}`;
-            card.appendChild(taskCount);
+            if (assignedTasks.length > 0) {
+                const taskList = document.createElement('div');
+                taskList.className = 'resource-task-list';
 
-            assignedTasks.forEach(task => {
-                const row = document.createElement('div');
-                row.style.cssText = `
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle);
-                    font-size: var(--font-size-sm);
-                `;
-                const taskNameEl = document.createElement('span');
-                taskNameEl.textContent = task.name;
-                row.appendChild(taskNameEl);
-                const badge = document.createElement('span');
-                badge.className = `badge badge-${task.status === 'done' ? 'success' : task.status === 'in_progress' ? 'info' : 'primary'}`;
-                badge.textContent = `${task.progress}%`;
-                row.appendChild(badge);
-                card.appendChild(row);
-            });
+                assignedTasks.forEach(task => {
+                    const item = document.createElement('div');
+                    item.className = 'resource-task-item';
+                    item.dataset.taskId = task.id;
 
-            grid.appendChild(card);
+                    const colorDot = document.createElement('span');
+                    colorDot.className = 'resource-task-color';
+                    colorDot.style.background = task.color;
+                    item.appendChild(colorDot);
+
+                    const taskName = document.createElement('span');
+                    taskName.className = 'resource-task-name';
+                    taskName.textContent = task.name;
+                    item.appendChild(taskName);
+
+                    const dates = document.createElement('span');
+                    dates.className = 'resource-task-dates';
+                    const daysLeft = daysBetween(new Date(), task.endDate);
+                    if (task.status === 'done') {
+                        dates.textContent = 'Terminé';
+                    } else if (daysLeft < 0) {
+                        dates.textContent = 'En retard';
+                        dates.style.color = '#EF4444';
+                    } else {
+                        dates.textContent = daysLeft + 'j';
+                    }
+                    item.appendChild(dates);
+
+                    const badge = document.createElement('span');
+                    badge.className = `badge-status-${task.status}`;
+                    badge.textContent = task.progress + '%';
+                    item.appendChild(badge);
+
+                    item.addEventListener('click', () => taskModal.openEdit(task.id));
+                    taskList.appendChild(item);
+                });
+
+                card.appendChild(taskList);
+            }
+
+            container.appendChild(card);
         });
-
-        container.appendChild(grid);
     }
 
     /* ---- Toolbar ---- */
@@ -403,23 +642,8 @@ class App {
         if (!searchInput) return;
 
         searchInput.addEventListener('input', debounce((e) => {
-            const query = e.target.value.toLowerCase().trim();
-            if (!query) {
-                // Show all rows
-                $$('.gantt-row').forEach(row => row.style.display = '');
-                ganttRenderer.refreshDependencies();
-                return;
-            }
-
-            $$('.gantt-row').forEach(row => {
-                const name = row.querySelector('.task-name');
-                if (name && name.textContent.toLowerCase().includes(query)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            ganttRenderer.refreshDependencies();
+            this._filters.search = e.target.value.toLowerCase().trim();
+            this._refreshCurrentView();
         }, 200));
     }
 
@@ -801,7 +1025,6 @@ class App {
         const toolbar = $('.toolbar-actions');
         if (!toolbar) return;
 
-        // Insert filter controls before zoom controls
         const filterWrap = document.createElement('div');
         filterWrap.className = 'filter-bar';
         filterWrap.id = 'filterBar';
@@ -825,8 +1048,46 @@ class App {
         this._populateAssigneeFilter(assigneeSel);
         assigneeSel.addEventListener('change', () => this._applyFilters());
 
+        // Priority filter
+        const prioritySel = document.createElement('select');
+        prioritySel.className = 'select filter-select';
+        prioritySel.id = 'filterPriority';
+        prioritySel.innerHTML = `
+            <option value="all">Toutes priorités</option>
+            <option value="high">Haute</option>
+            <option value="medium">Moyenne</option>
+            <option value="low">Basse</option>
+        `;
+        prioritySel.addEventListener('change', () => this._applyFilters());
+
+        // Date range filters
+        const dateStart = document.createElement('input');
+        dateStart.type = 'date';
+        dateStart.className = 'filter-date';
+        dateStart.id = 'filterDateStart';
+        dateStart.title = 'Date de début minimum';
+        dateStart.addEventListener('change', () => this._applyFilters());
+
+        const dateEnd = document.createElement('input');
+        dateEnd.type = 'date';
+        dateEnd.className = 'filter-date';
+        dateEnd.id = 'filterDateEnd';
+        dateEnd.title = 'Date de fin maximum';
+        dateEnd.addEventListener('change', () => this._applyFilters());
+
+        // Reset filters button
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'filter-reset-btn';
+        resetBtn.textContent = 'Réinitialiser';
+        resetBtn.title = 'Réinitialiser tous les filtres';
+        resetBtn.addEventListener('click', () => this._resetFilters());
+
         filterWrap.appendChild(statusSel);
         filterWrap.appendChild(assigneeSel);
+        filterWrap.appendChild(prioritySel);
+        filterWrap.appendChild(dateStart);
+        filterWrap.appendChild(dateEnd);
+        filterWrap.appendChild(resetBtn);
 
         toolbar.insertBefore(filterWrap, toolbar.firstChild);
     }
@@ -843,34 +1104,55 @@ class App {
     }
 
     _applyFilters() {
-        const status = $('#filterStatus')?.value || 'all';
-        const assignee = $('#filterAssignee')?.value || 'all';
+        this._filters.status = $('#filterStatus')?.value || 'all';
+        this._filters.assignee = $('#filterAssignee')?.value || 'all';
+        this._filters.priority = $('#filterPriority')?.value || 'all';
+        this._filters.dateStart = $('#filterDateStart')?.value || '';
+        this._filters.dateEnd = $('#filterDateEnd')?.value || '';
 
-        const rows = $$('.gantt-row');
-        rows.forEach(row => {
+        this._refreshCurrentView();
+    }
+
+    _resetFilters() {
+        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+
+        const filterStatus = $('#filterStatus');
+        const filterAssignee = $('#filterAssignee');
+        const filterPriority = $('#filterPriority');
+        const filterDateStart = $('#filterDateStart');
+        const filterDateEnd = $('#filterDateEnd');
+        const searchInput = $('#searchInput');
+
+        if (filterStatus) filterStatus.value = 'all';
+        if (filterAssignee) filterAssignee.value = 'all';
+        if (filterPriority) filterPriority.value = 'all';
+        if (filterDateStart) filterDateStart.value = '';
+        if (filterDateEnd) filterDateEnd.value = '';
+        if (searchInput) searchInput.value = '';
+
+        this._refreshCurrentView();
+    }
+
+    _applyFiltersToTimeline() {
+        const tasks = this._getFilteredTasks(true);
+        const visibleIds = new Set(tasks.map(t => t.id));
+
+        $$('.gantt-row').forEach(row => {
             const taskId = row.dataset.taskId;
             if (!taskId) return;
             const task = store.getTask(taskId);
             if (!task) return;
 
-            let visible = true;
-
-            // Phases always visible if they have visible children
             if (task.isPhase) {
-                row.style.display = '';
-                return;
+                // Show phase if any child is visible
+                const children = store.getChildTasks(task.id);
+                const hasVisibleChild = children.some(c => visibleIds.has(c.id));
+                row.style.display = hasVisibleChild ? '' : 'none';
+            } else {
+                row.style.display = visibleIds.has(taskId) ? '' : 'none';
             }
-
-            if (status !== 'all' && task.status !== status) visible = false;
-            if (assignee !== 'all') {
-                const assignees = task.assignees || (task.assignee ? [task.assignee] : []);
-                if (!assignees.includes(assignee)) visible = false;
-            }
-
-            row.style.display = visible ? '' : 'none';
         });
 
-        // Refresh dependency arrows to hide links for filtered-out tasks
         ganttRenderer.refreshDependencies();
     }
 
