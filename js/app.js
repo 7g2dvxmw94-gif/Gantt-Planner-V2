@@ -17,6 +17,7 @@ class App {
         this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
         this._tableSortKey = 'name';
         this._tableSortDir = 'asc';
+        this._selectedTaskIds = new Set();
     }
 
     init() {
@@ -256,6 +257,22 @@ class App {
         // Header
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
+
+        // Checkbox column
+        const thCb = document.createElement('th');
+        thCb.className = 'table-cb-col';
+        const selectAllCb = document.createElement('input');
+        selectAllCb.type = 'checkbox';
+        selectAllCb.id = 'tableSelectAll';
+        selectAllCb.title = 'Tout sélectionner (Ctrl+A)';
+        selectAllCb.addEventListener('change', (e) => {
+            e.stopPropagation();
+            if (selectAllCb.checked) this._selectAllTasks();
+            else this._clearSelection();
+        });
+        thCb.appendChild(selectAllCb);
+        headerRow.appendChild(thCb);
+
         const columns = [
             { key: 'name', label: 'Tâche' },
             { key: 'startDate', label: 'Début' },
@@ -295,7 +312,31 @@ class App {
         sorted.forEach(task => {
             const row = document.createElement('tr');
             row.dataset.taskId = task.id;
-            row.addEventListener('click', () => taskModal.openEdit(task.id));
+            if (this._selectedTaskIds.has(task.id)) row.classList.add('selected');
+            row.addEventListener('click', (e) => {
+                if (e.target.type === 'checkbox') return;
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this._toggleTaskSelection(task.id, true);
+                    return;
+                }
+                taskModal.openEdit(task.id);
+            });
+
+            // Checkbox
+            const tdCb = document.createElement('td');
+            tdCb.className = 'table-cb-col';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'table-select-cb';
+            cb.dataset.taskId = task.id;
+            cb.checked = this._selectedTaskIds.has(task.id);
+            cb.addEventListener('change', (e) => {
+                e.stopPropagation();
+                this._toggleTaskSelection(task.id, true);
+            });
+            tdCb.appendChild(cb);
+            row.appendChild(tdCb);
 
             // Name
             const tdName = document.createElement('td');
@@ -576,7 +617,10 @@ class App {
 
         const exportBtn = $('#exportBtn');
         if (exportBtn) {
-            exportBtn.addEventListener('click', () => this._exportProject());
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._showExportDropdown(exportBtn);
+            });
         }
 
         const importBtn = $('#importBtn');
@@ -618,24 +662,189 @@ class App {
         taskModal.openCreate();
     }
 
-    _exportProject() {
+    _showExportDropdown(btn) {
+        const existing = document.getElementById('exportDropdown');
+        if (existing) { existing.remove(); return; }
+
+        const rect = btn.getBoundingClientRect();
+        const dd = document.createElement('div');
+        dd.id = 'exportDropdown';
+        dd.className = 'export-dropdown';
+        dd.style.top = (rect.bottom + 4) + 'px';
+        dd.style.right = (window.innerWidth - rect.right) + 'px';
+
+        const formats = [
+            { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: () => this._exportJSON() },
+            { label: 'CSV', icon: 'CSV', desc: 'Tableur / Excel', action: () => this._exportCSV() },
+            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._exportPDF() },
+        ];
+
+        formats.forEach(f => {
+            const item = document.createElement('button');
+            item.className = 'export-dropdown-item';
+            item.innerHTML = `<span class="export-dropdown-icon">${f.icon}</span><div><div class="export-dropdown-label">${f.label}</div><div class="export-dropdown-desc">${f.desc}</div></div>`;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dd.remove();
+                f.action();
+            });
+            dd.appendChild(item);
+        });
+
+        document.body.appendChild(dd);
+        const close = () => { dd.remove(); document.removeEventListener('click', close); };
+        setTimeout(() => document.addEventListener('click', close), 0);
+    }
+
+    _exportJSON() {
         const project = store.getActiveProject();
         const tasks = store.getTasks();
         const resources = store.getResources();
 
         const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
+        this._showToast('Projet exporté en JSON', 'success');
+    }
 
+    _exportCSV() {
+        const project = store.getActiveProject();
+        const tasks = store.getTasks().filter(t => !t.isPhase);
+        const resources = store.getResources();
+
+        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
+        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+
+        const headers = ['Nom', 'Phase', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
+        const rows = tasks.map(task => {
+            const phase = task.parentId ? store.getTask(task.parentId) : null;
+            const assignees = (task.assignees || []).map(id => {
+                const r = resources.find(r => r.id === id);
+                return r ? r.name : '';
+            }).filter(Boolean).join('; ');
+            return [
+                this._csvEscape(task.name),
+                this._csvEscape(phase ? phase.name : ''),
+                task.startDate,
+                task.endDate,
+                this._csvEscape(assignees),
+                statusLabels[task.status] || task.status,
+                priorityLabels[task.priority] || task.priority,
+                task.progress,
+            ].join(',');
+        });
+
+        const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.csv`);
+        this._showToast('Projet exporté en CSV', 'success');
+    }
+
+    _csvEscape(value) {
+        if (!value) return '';
+        const str = String(value);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+
+    _exportPDF() {
+        const project = store.getActiveProject();
+        const tasks = store.getTasks();
+        const resources = store.getResources();
+
+        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
+        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const stats = store.getProjectStats();
+
+        // Build an HTML document for printing
+        const phases = tasks.filter(t => t.isPhase);
+        const nonPhases = tasks.filter(t => !t.isPhase);
+
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}
+h1{font-size:20px;margin-bottom:4px;color:#6366F1}
+.subtitle{color:#64748b;font-size:12px;margin-bottom:20px}
+.stats{display:flex;gap:20px;margin-bottom:20px;padding:12px;background:#f8fafc;border-radius:6px}
+.stat{text-align:center;flex:1}.stat-val{font-size:18px;font-weight:700;color:#6366F1}.stat-lbl{color:#64748b;font-size:10px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;color:#64748b}
+td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px}
+tr:nth-child(even){background:#fafbfc}
+.phase-row{background:#f1f5f9;font-weight:600}
+.badge{padding:1px 6px;border-radius:10px;font-size:9px;font-weight:500}
+.badge-high{background:#fef2f2;color:#ef4444}.badge-medium{background:#fffbeb;color:#f59e0b}.badge-low{background:#f0fdf4;color:#10b981}
+.badge-done{background:#f0fdf4;color:#10b981}.badge-in_progress{background:#eff6ff;color:#3b82f6}.badge-todo{background:#f8fafc;color:#64748b}
+.progress-bar{width:60px;height:6px;background:#e2e8f0;border-radius:3px;display:inline-block;vertical-align:middle}
+.progress-fill{height:100%;border-radius:3px;background:#6366F1}
+.footer{margin-top:20px;text-align:center;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:10px}
+@media print{body{padding:15px}@page{margin:15mm}}
+</style></head><body>
+<h1>${project.name}</h1>
+<div class="subtitle">${project.description || 'Exporté le ' + new Date().toLocaleDateString('fr-FR')}</div>
+<div class="stats">
+<div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">Tâches</div></div>
+<div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">Progression</div></div>
+<div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">Jours restants</div></div>
+<div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">Terminées</div></div>
+</div>
+<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>`;
+
+        // Render tasks grouped by phase
+        const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+        rootTasks.forEach(task => {
+            if (task.isPhase) {
+                html += `<tr class="phase-row"><td colspan="7">${task.name} (${task.progress}%)</td></tr>`;
+                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
+                children.forEach(child => {
+                    html += this._pdfTaskRow(child, resources, statusLabels, priorityLabels);
+                });
+            } else {
+                html += this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
+            }
+        });
+
+        html += `</tbody></table>
+<div class="footer">Gantt Planner Pro — ${project.name} — Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+</body></html>`;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.print();
+        };
+        this._showToast('Impression PDF prête', 'success');
+    }
+
+    _pdfTaskRow(task, resources, statusLabels, priorityLabels) {
+        const assignees = (task.assignees || []).map(id => {
+            const r = resources.find(r => r.id === id);
+            return r ? r.name : '';
+        }).filter(Boolean).join(', ');
+        return `<tr>
+<td>&nbsp;&nbsp;${task.name}</td>
+<td>${formatDateDisplay(task.startDate)}</td>
+<td>${formatDateDisplay(task.endDate)}</td>
+<td>${assignees || '—'}</td>
+<td><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span></td>
+<td><span class="badge badge-${task.priority}">${priorityLabels[task.priority] || task.priority}</span></td>
+<td><div class="progress-bar"><div class="progress-fill" style="width:${task.progress}%"></div></div> ${task.progress}%</td>
+</tr>`;
+    }
+
+    _downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${project.name.replace(/\s+/g, '_')}_export.json`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        this._showToast('Projet exporté avec succès', 'success');
     }
 
     /* ---- Search ---- */
@@ -734,8 +943,28 @@ class App {
                 this._showAddTaskDialog();
             }
 
-            // Escape: Close modals / clear search / close context menu
+            // Ctrl+A: Select all tasks (in table view)
+            if (e.ctrlKey && e.key === 'a' && this._activeView === 'board') {
+                e.preventDefault();
+                this._selectAllTasks();
+            }
+
+            // Delete/Backspace: Delete selected tasks
+            if ((e.key === 'Delete' || e.key === 'Backspace') && this._selectedTaskIds.size > 0) {
+                const activeEl = document.activeElement;
+                const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+                if (!isInput) {
+                    e.preventDefault();
+                    this._batchDelete();
+                }
+            }
+
+            // Escape: Close modals / clear search / close context menu / clear selection
             if (e.key === 'Escape') {
+                if (this._selectedTaskIds.size > 0) {
+                    this._clearSelection();
+                    return;
+                }
                 this._closeContextMenu();
                 const searchInput = $('#searchInput');
                 if (searchInput && document.activeElement === searchInput) {
@@ -1379,6 +1608,126 @@ class App {
         this._renderStats();
         this._renderProjectName();
         this._showToast(`Projet "${project.name}" créé`, 'success');
+    }
+
+    /* ---- Multi-Selection ---- */
+
+    _toggleTaskSelection(taskId, append = false) {
+        if (!append) {
+            this._selectedTaskIds.clear();
+        }
+        if (this._selectedTaskIds.has(taskId)) {
+            this._selectedTaskIds.delete(taskId);
+        } else {
+            this._selectedTaskIds.add(taskId);
+        }
+        this._updateSelectionUI();
+    }
+
+    _selectAllTasks() {
+        const tasks = this._getFilteredTasks(false);
+        tasks.forEach(t => this._selectedTaskIds.add(t.id));
+        this._updateSelectionUI();
+    }
+
+    _clearSelection() {
+        this._selectedTaskIds.clear();
+        this._updateSelectionUI();
+    }
+
+    _updateSelectionUI() {
+        // Update checkboxes in table view
+        $$('.table-select-cb').forEach(cb => {
+            cb.checked = this._selectedTaskIds.has(cb.dataset.taskId);
+        });
+
+        // Update header checkbox
+        const headerCb = $('#tableSelectAll');
+        if (headerCb) {
+            const tasks = this._getFilteredTasks(false);
+            headerCb.checked = tasks.length > 0 && tasks.every(t => this._selectedTaskIds.has(t.id));
+            headerCb.indeterminate = this._selectedTaskIds.size > 0 && !headerCb.checked;
+        }
+
+        // Update gantt bar highlighting
+        $$('.gantt-bar, .gantt-milestone').forEach(bar => {
+            bar.classList.toggle('selected', this._selectedTaskIds.has(bar.dataset.taskId));
+        });
+
+        // Show/hide batch action bar
+        this._updateBatchBar();
+    }
+
+    _updateBatchBar() {
+        let bar = $('#batchActionBar');
+        const count = this._selectedTaskIds.size;
+
+        if (count === 0) {
+            if (bar) bar.remove();
+            return;
+        }
+
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'batchActionBar';
+            bar.className = 'batch-action-bar';
+            document.body.appendChild(bar);
+        }
+
+        bar.innerHTML = '';
+
+        const countLabel = document.createElement('span');
+        countLabel.className = 'batch-count';
+        countLabel.textContent = `${count} tâche${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`;
+        bar.appendChild(countLabel);
+
+        const actions = [
+            { label: 'Terminé', icon: '✓', action: () => this._batchSetStatus('done') },
+            { label: 'En cours', icon: '▶', action: () => this._batchSetStatus('in_progress') },
+            { label: 'À faire', icon: '○', action: () => this._batchSetStatus('todo') },
+            { label: 'Supprimer', icon: '✕', action: () => this._batchDelete(), danger: true },
+        ];
+
+        actions.forEach(a => {
+            const btn = document.createElement('button');
+            btn.className = 'batch-btn' + (a.danger ? ' danger' : '');
+            btn.innerHTML = `<span>${a.icon}</span> ${a.label}`;
+            btn.addEventListener('click', a.action);
+            bar.appendChild(btn);
+        });
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'batch-btn close';
+        closeBtn.textContent = '✕';
+        closeBtn.title = 'Annuler la sélection';
+        closeBtn.addEventListener('click', () => this._clearSelection());
+        bar.appendChild(closeBtn);
+    }
+
+    _batchSetStatus(status) {
+        const statusLabels = { done: 'Terminé', in_progress: 'En cours', todo: 'À faire' };
+        this._selectedTaskIds.forEach(id => {
+            const updates = { status };
+            if (status === 'done') updates.progress = 100;
+            store.updateTask(id, updates);
+        });
+        const count = this._selectedTaskIds.size;
+        this._clearSelection();
+        ganttRenderer.render();
+        this._renderStats();
+        this._refreshCurrentView();
+        this._showToast(`${count} tâche${count > 1 ? 's' : ''} → ${statusLabels[status]}`, 'success');
+    }
+
+    _batchDelete() {
+        const count = this._selectedTaskIds.size;
+        if (!confirm(`Supprimer ${count} tâche${count > 1 ? 's' : ''} ?`)) return;
+        this._selectedTaskIds.forEach(id => store.deleteTask(id));
+        this._clearSelection();
+        ganttRenderer.render();
+        this._renderStats();
+        this._refreshCurrentView();
+        this._showToast(`${count} tâche${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`, 'success');
     }
 
     /* ---- Accessibility ---- */
