@@ -181,7 +181,10 @@ class App {
 
             if (status !== 'all' && task.status !== status) return false;
 
-            if (assignee !== 'all') {
+            if (assignee === 'none') {
+                const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+                if (assigneeIds.length > 0) return false;
+            } else if (assignee !== 'all') {
                 const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
                 if (!assigneeIds.includes(assignee)) return false;
             }
@@ -1022,79 +1025,143 @@ class App {
     /* ---- Filter Bar ---- */
 
     _buildFilterBar() {
-        const toolbar = $('.toolbar-actions');
-        if (!toolbar) return;
+        const mainContainer = $('.main-container');
+        const content = $('#mainContent');
+        if (!mainContainer || !content) return;
 
-        const filterWrap = document.createElement('div');
-        filterWrap.className = 'filter-bar';
-        filterWrap.id = 'filterBar';
+        const filterBar = document.createElement('div');
+        filterBar.className = 'filter-bar';
+        filterBar.id = 'filterBar';
+
+        // Filter icon
+        const filterIcon = document.createElement('span');
+        filterIcon.className = 'filter-bar-icon';
+        filterIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+        filterBar.appendChild(filterIcon);
 
         // Status filter
-        const statusSel = document.createElement('select');
-        statusSel.className = 'select filter-select';
-        statusSel.id = 'filterStatus';
-        statusSel.innerHTML = `
-            <option value="all">Tous les statuts</option>
-            <option value="todo">À faire</option>
-            <option value="in_progress">En cours</option>
-            <option value="done">Terminé</option>
-        `;
-        statusSel.addEventListener('change', () => this._applyFilters());
+        const statusGroup = this._createFilterGroup('Statut', 'filterStatus', [
+            { value: 'all', label: 'Tous' },
+            { value: 'todo', label: 'À faire' },
+            { value: 'in_progress', label: 'En cours' },
+            { value: 'done', label: 'Terminé' },
+        ]);
+        filterBar.appendChild(statusGroup);
+
+        // Separator
+        filterBar.appendChild(this._createFilterSep());
 
         // Assignee filter
+        const assigneeGroup = document.createElement('div');
+        assigneeGroup.className = 'filter-group';
+        const assigneeLabel = document.createElement('label');
+        assigneeLabel.className = 'filter-label';
+        assigneeLabel.textContent = 'Ressource';
+        assigneeGroup.appendChild(assigneeLabel);
         const assigneeSel = document.createElement('select');
         assigneeSel.className = 'select filter-select';
         assigneeSel.id = 'filterAssignee';
         this._populateAssigneeFilter(assigneeSel);
         assigneeSel.addEventListener('change', () => this._applyFilters());
+        assigneeGroup.appendChild(assigneeSel);
+        filterBar.appendChild(assigneeGroup);
+
+        // Separator
+        filterBar.appendChild(this._createFilterSep());
 
         // Priority filter
-        const prioritySel = document.createElement('select');
-        prioritySel.className = 'select filter-select';
-        prioritySel.id = 'filterPriority';
-        prioritySel.innerHTML = `
-            <option value="all">Toutes priorités</option>
-            <option value="high">Haute</option>
-            <option value="medium">Moyenne</option>
-            <option value="low">Basse</option>
-        `;
-        prioritySel.addEventListener('change', () => this._applyFilters());
+        const priorityGroup = this._createFilterGroup('Priorité', 'filterPriority', [
+            { value: 'all', label: 'Toutes' },
+            { value: 'high', label: 'Haute' },
+            { value: 'medium', label: 'Moyenne' },
+            { value: 'low', label: 'Basse' },
+        ]);
+        filterBar.appendChild(priorityGroup);
 
-        // Date range filters
+        // Separator
+        filterBar.appendChild(this._createFilterSep());
+
+        // Date range
+        const dateGroup = document.createElement('div');
+        dateGroup.className = 'filter-group';
+        const dateLabel = document.createElement('label');
+        dateLabel.className = 'filter-label';
+        dateLabel.textContent = 'Période';
+        dateGroup.appendChild(dateLabel);
+
+        const dateInputs = document.createElement('div');
+        dateInputs.className = 'filter-date-range';
+
         const dateStart = document.createElement('input');
         dateStart.type = 'date';
         dateStart.className = 'filter-date';
         dateStart.id = 'filterDateStart';
-        dateStart.title = 'Date de début minimum';
+        dateStart.title = 'Les tâches terminées avant cette date seront masquées';
         dateStart.addEventListener('change', () => this._applyFilters());
+
+        const dateSep = document.createElement('span');
+        dateSep.className = 'filter-date-sep';
+        dateSep.textContent = '→';
 
         const dateEnd = document.createElement('input');
         dateEnd.type = 'date';
         dateEnd.className = 'filter-date';
         dateEnd.id = 'filterDateEnd';
-        dateEnd.title = 'Date de fin maximum';
+        dateEnd.title = 'Les tâches commençant après cette date seront masquées';
         dateEnd.addEventListener('change', () => this._applyFilters());
 
-        // Reset filters button
+        dateInputs.appendChild(dateStart);
+        dateInputs.appendChild(dateSep);
+        dateInputs.appendChild(dateEnd);
+        dateGroup.appendChild(dateInputs);
+        filterBar.appendChild(dateGroup);
+
+        // Spacer
+        const spacer = document.createElement('div');
+        spacer.className = 'filter-spacer';
+        filterBar.appendChild(spacer);
+
+        // Reset button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'filter-reset-btn';
-        resetBtn.textContent = 'Réinitialiser';
+        resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Réinitialiser';
         resetBtn.title = 'Réinitialiser tous les filtres';
         resetBtn.addEventListener('click', () => this._resetFilters());
+        filterBar.appendChild(resetBtn);
 
-        filterWrap.appendChild(statusSel);
-        filterWrap.appendChild(assigneeSel);
-        filterWrap.appendChild(prioritySel);
-        filterWrap.appendChild(dateStart);
-        filterWrap.appendChild(dateEnd);
-        filterWrap.appendChild(resetBtn);
+        mainContainer.insertBefore(filterBar, content);
+    }
 
-        toolbar.insertBefore(filterWrap, toolbar.firstChild);
+    _createFilterGroup(labelText, selectId, options) {
+        const group = document.createElement('div');
+        group.className = 'filter-group';
+        const label = document.createElement('label');
+        label.className = 'filter-label';
+        label.textContent = labelText;
+        group.appendChild(label);
+        const select = document.createElement('select');
+        select.className = 'select filter-select';
+        select.id = selectId;
+        options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            select.appendChild(o);
+        });
+        select.addEventListener('change', () => this._applyFilters());
+        group.appendChild(select);
+        return group;
+    }
+
+    _createFilterSep() {
+        const sep = document.createElement('div');
+        sep.className = 'filter-sep';
+        return sep;
     }
 
     _populateAssigneeFilter(select) {
         const resources = store.getResources();
-        select.innerHTML = '<option value="all">Toutes les ressources</option>';
+        select.innerHTML = '<option value="all">Toutes les ressources</option><option value="none">Non assigné</option>';
         resources.forEach(r => {
             const opt = document.createElement('option');
             opt.value = r.id;

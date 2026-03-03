@@ -2104,11 +2104,11 @@ textarea.input {
 }
 
 .task-table th.sort-asc::after {
-    content: ' \u25B2';
+    content: ' ▲';
 }
 
 .task-table th.sort-desc::after {
-    content: ' \u25BC';
+    content: ' ▼';
 }
 
 .task-table td {
@@ -2426,39 +2426,94 @@ textarea.input {
 .filter-bar {
     display: flex;
     align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-5);
+    background: var(--bg-base);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.filter-bar-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
     gap: var(--space-2);
-    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.filter-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-muted);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.filter-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle);
+    flex-shrink: 0;
 }
 
 .filter-select {
     font-size: var(--font-size-xs) !important;
     padding: var(--space-1) var(--space-2) !important;
-    height: 30px;
+    height: 28px;
     min-width: 0;
+    border-radius: var(--radius-md);
+}
+
+.filter-date-range {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.filter-date-sep {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
 }
 
 .filter-date {
     font-family: var(--font-sans);
     font-size: var(--font-size-xs);
     padding: var(--space-1) var(--space-2);
-    height: 30px;
+    height: 28px;
     background: var(--bg-base);
     color: var(--text-primary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     outline: none;
     transition: border-color var(--transition-fast);
+    width: 130px;
 }
 
 .filter-date:focus {
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.filter-spacer {
+    flex: 1;
 }
 
 .filter-reset-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
     font-family: var(--font-sans);
     font-size: var(--font-size-xs);
-    padding: var(--space-1) var(--space-2);
-    height: 30px;
+    padding: var(--space-1) var(--space-3);
+    height: 28px;
     background: none;
     color: var(--text-muted);
     border: 1px solid var(--border-subtle);
@@ -2466,12 +2521,17 @@ textarea.input {
     cursor: pointer;
     transition: all var(--transition-fast);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .filter-reset-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--border-default);
-    background: var(--bg-subtle);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.filter-reset-btn svg {
+    flex-shrink: 0;
 }
 
 /* ========================================
@@ -6263,7 +6323,10 @@ class App {
 
             if (status !== 'all' && task.status !== status) return false;
 
-            if (assignee !== 'all') {
+            if (assignee === 'none') {
+                var assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+                if (assigneeIds.length > 0) return false;
+            } else if (assignee !== 'all') {
                 var assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
                 if (!assigneeIds.includes(assignee)) return false;
             }
@@ -7107,69 +7170,141 @@ class App {
 
     _buildFilterBar() {
         var self = this;
-        var toolbar = $('.toolbar-actions');
-        if (!toolbar) return;
+        var mainContainer = $('.main-container');
+        var content = $('#mainContent');
+        if (!mainContainer || !content) return;
 
-        var filterWrap = document.createElement('div');
-        filterWrap.className = 'filter-bar';
-        filterWrap.id = 'filterBar';
+        var filterBar = document.createElement('div');
+        filterBar.className = 'filter-bar';
+        filterBar.id = 'filterBar';
+
+        // Filter icon
+        var filterIcon = document.createElement('span');
+        filterIcon.className = 'filter-bar-icon';
+        filterIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+        filterBar.appendChild(filterIcon);
 
         // Status filter
-        var statusSel = document.createElement('select');
-        statusSel.className = 'select filter-select';
-        statusSel.id = 'filterStatus';
-        statusSel.innerHTML = '<option value="all">Tous les statuts</option><option value="todo">À faire</option><option value="in_progress">En cours</option><option value="done">Terminé</option>';
-        statusSel.addEventListener('change', function() { self._applyFilters(); });
+        var statusGroup = this._createFilterGroup('Statut', 'filterStatus', [
+            { value: 'all', label: 'Tous' },
+            { value: 'todo', label: 'À faire' },
+            { value: 'in_progress', label: 'En cours' },
+            { value: 'done', label: 'Terminé' },
+        ]);
+        filterBar.appendChild(statusGroup);
+
+        filterBar.appendChild(this._createFilterSep());
 
         // Assignee filter
+        var assigneeGroup = document.createElement('div');
+        assigneeGroup.className = 'filter-group';
+        var assigneeLabel = document.createElement('label');
+        assigneeLabel.className = 'filter-label';
+        assigneeLabel.textContent = 'Ressource';
+        assigneeGroup.appendChild(assigneeLabel);
         var assigneeSel = document.createElement('select');
         assigneeSel.className = 'select filter-select';
         assigneeSel.id = 'filterAssignee';
         this._populateAssigneeFilter(assigneeSel);
         assigneeSel.addEventListener('change', function() { self._applyFilters(); });
+        assigneeGroup.appendChild(assigneeSel);
+        filterBar.appendChild(assigneeGroup);
+
+        filterBar.appendChild(this._createFilterSep());
 
         // Priority filter
-        var prioritySel = document.createElement('select');
-        prioritySel.className = 'select filter-select';
-        prioritySel.id = 'filterPriority';
-        prioritySel.innerHTML = '<option value="all">Toutes priorités</option><option value="high">Haute</option><option value="medium">Moyenne</option><option value="low">Basse</option>';
-        prioritySel.addEventListener('change', function() { self._applyFilters(); });
+        var priorityGroup = this._createFilterGroup('Priorité', 'filterPriority', [
+            { value: 'all', label: 'Toutes' },
+            { value: 'high', label: 'Haute' },
+            { value: 'medium', label: 'Moyenne' },
+            { value: 'low', label: 'Basse' },
+        ]);
+        filterBar.appendChild(priorityGroup);
 
-        // Date range filters
+        filterBar.appendChild(this._createFilterSep());
+
+        // Date range
+        var dateGroup = document.createElement('div');
+        dateGroup.className = 'filter-group';
+        var dateLabel = document.createElement('label');
+        dateLabel.className = 'filter-label';
+        dateLabel.textContent = 'Période';
+        dateGroup.appendChild(dateLabel);
+
+        var dateInputs = document.createElement('div');
+        dateInputs.className = 'filter-date-range';
+
         var dateStart = document.createElement('input');
         dateStart.type = 'date';
         dateStart.className = 'filter-date';
         dateStart.id = 'filterDateStart';
-        dateStart.title = 'Date de début minimum';
+        dateStart.title = 'Les tâches terminées avant cette date seront masquées';
         dateStart.addEventListener('change', function() { self._applyFilters(); });
+
+        var dateSep = document.createElement('span');
+        dateSep.className = 'filter-date-sep';
+        dateSep.textContent = '→';
 
         var dateEnd = document.createElement('input');
         dateEnd.type = 'date';
         dateEnd.className = 'filter-date';
         dateEnd.id = 'filterDateEnd';
-        dateEnd.title = 'Date de fin maximum';
+        dateEnd.title = 'Les tâches commençant après cette date seront masquées';
         dateEnd.addEventListener('change', function() { self._applyFilters(); });
 
-        // Reset filters button
+        dateInputs.appendChild(dateStart);
+        dateInputs.appendChild(dateSep);
+        dateInputs.appendChild(dateEnd);
+        dateGroup.appendChild(dateInputs);
+        filterBar.appendChild(dateGroup);
+
+        // Spacer
+        var spacer = document.createElement('div');
+        spacer.className = 'filter-spacer';
+        filterBar.appendChild(spacer);
+
+        // Reset button
         var resetBtn = document.createElement('button');
         resetBtn.className = 'filter-reset-btn';
-        resetBtn.textContent = 'Réinitialiser';
+        resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Réinitialiser';
         resetBtn.title = 'Réinitialiser tous les filtres';
         resetBtn.addEventListener('click', function() { self._resetFilters(); });
+        filterBar.appendChild(resetBtn);
 
-        filterWrap.appendChild(statusSel);
-        filterWrap.appendChild(assigneeSel);
-        filterWrap.appendChild(prioritySel);
-        filterWrap.appendChild(dateStart);
-        filterWrap.appendChild(dateEnd);
-        filterWrap.appendChild(resetBtn);
+        mainContainer.insertBefore(filterBar, content);
+    }
 
-        toolbar.insertBefore(filterWrap, toolbar.firstChild);
+    _createFilterGroup(labelText, selectId, options) {
+        var self = this;
+        var group = document.createElement('div');
+        group.className = 'filter-group';
+        var label = document.createElement('label');
+        label.className = 'filter-label';
+        label.textContent = labelText;
+        group.appendChild(label);
+        var select = document.createElement('select');
+        select.className = 'select filter-select';
+        select.id = selectId;
+        options.forEach(function(opt) {
+            var o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            select.appendChild(o);
+        });
+        select.addEventListener('change', function() { self._applyFilters(); });
+        group.appendChild(select);
+        return group;
+    }
+
+    _createFilterSep() {
+        var sep = document.createElement('div');
+        sep.className = 'filter-sep';
+        return sep;
     }
 
     _populateAssigneeFilter(select) {
         var resources = store.getResources();
-        select.innerHTML = '<option value="all">Toutes les ressources</option>';
+        select.innerHTML = '<option value="all">Toutes les ressources</option><option value="none">Non assigné</option>';
         resources.forEach(function(r) {
             var opt = document.createElement('option');
             opt.value = r.id;
