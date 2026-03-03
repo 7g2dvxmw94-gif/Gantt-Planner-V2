@@ -1305,3 +1305,146 @@
     opacity: 1;
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* ========================================
+   PDF EXPORT DIALOG
+   ======================================== */
+
+.pdf-export-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 150ms ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.pdf-export-dialog {
+    background: var(--bg-base);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    width: 420px;
+    max-width: 90vw;
+    padding: var(--space-5);
+    animation: dialogSlideUp 200ms ease-out;
+}
+
+@keyframes dialogSlideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.pdf-export-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.pdf-export-header h3 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.pdf-export-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.pdf-export-close:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+.pdf-export-desc {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.pdf-export-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+
+.pdf-export-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pdf-export-option:hover {
+    background: var(--bg-subtle);
+    border-color: var(--border-strong);
+}
+
+.pdf-export-option:has(input:checked) {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.pdf-export-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pdf-export-option-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-muted);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    flex-shrink: 0;
+}
+
+.pdf-export-option-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+}
+
+.pdf-export-option-desc {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.pdf-export-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.pdf-export-actions .btn {
+    min-width: 100px;
+}

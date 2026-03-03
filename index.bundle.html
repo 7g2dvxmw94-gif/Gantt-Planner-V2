@@ -2694,6 +2694,149 @@ textarea.input {
 }
 
 /* ========================================
+   PDF EXPORT DIALOG
+   ======================================== */
+
+.pdf-export-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-overlay);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 150ms ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.pdf-export-dialog {
+    background: var(--bg-base);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    width: 420px;
+    max-width: 90vw;
+    padding: var(--space-5);
+    animation: dialogSlideUp 200ms ease-out;
+}
+
+@keyframes dialogSlideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.pdf-export-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.pdf-export-header h3 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.pdf-export-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.pdf-export-close:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+.pdf-export-desc {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.pdf-export-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+
+.pdf-export-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.pdf-export-option:hover {
+    background: var(--bg-subtle);
+    border-color: var(--border-strong);
+}
+
+.pdf-export-option:has(input:checked) {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.pdf-export-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pdf-export-option-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-muted);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    flex-shrink: 0;
+}
+
+.pdf-export-option-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+}
+
+.pdf-export-option-desc {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.pdf-export-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.pdf-export-actions .btn {
+    min-width: 100px;
+}
+
+/* ========================================
    RESPONSIVE STYLES
    ======================================== */
 
@@ -3001,22 +3144,22 @@ textarea.input {
                     <span class="zoom-label" aria-live="polite">Semaine</span>
                 </div>
 
-                <!-- Import -->
+                <!-- Import (arrow down = download into app) -->
                 <button class="btn btn-secondary" id="importBtn" aria-label="Importer un projet" title="Importer un fichier JSON">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    <span>Importer</span>
-                </button>
-
-                <!-- Export -->
-                <button class="btn btn-secondary" id="exportBtn" aria-label="Exporter le projet">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Importer</span>
+                </button>
+
+                <!-- Export (arrow up = send out) -->
+                <button class="btn btn-secondary" id="exportBtn" aria-label="Exporter le projet">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                     <span>Exporter</span>
                 </button>
@@ -6980,7 +7123,7 @@ class App {
         var formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: function() { self._exportJSON(); } },
             { label: 'CSV', icon: 'CSV', desc: 'Tableur / Excel', action: function() { self._exportCSV(); } },
-            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: function() { self._exportPDF(); } },
+            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: function() { self._showPDFExportDialog(); } },
         ];
 
         formats.forEach(function(f) {
@@ -7054,8 +7197,84 @@ class App {
         return str;
     }
 
-    _exportPDF() {
+    _showPDFExportDialog() {
         var self = this;
+        var existing = document.getElementById('pdfExportDialog');
+        if (existing) existing.remove();
+
+        var overlay = document.createElement('div');
+        overlay.id = 'pdfExportDialog';
+        overlay.className = 'pdf-export-overlay';
+
+        var dialog = document.createElement('div');
+        dialog.className = 'pdf-export-dialog';
+
+        dialog.innerHTML =
+            '<div class="pdf-export-header">' +
+                '<h3>Export PDF</h3>' +
+                '<button class="pdf-export-close" aria-label="Fermer">&times;</button>' +
+            '</div>' +
+            '<p class="pdf-export-desc">Sélectionnez les vues à inclure dans le PDF :</p>' +
+            '<div class="pdf-export-options">' +
+                '<label class="pdf-export-option">' +
+                    '<input type="checkbox" value="table" checked>' +
+                    '<span class="pdf-export-option-icon">☰</span>' +
+                    '<div>' +
+                        '<div class="pdf-export-option-label">Tableau des tâches</div>' +
+                        '<div class="pdf-export-option-desc">Liste détaillée avec statut, priorité et progression</div>' +
+                    '</div>' +
+                '</label>' +
+                '<label class="pdf-export-option">' +
+                    '<input type="checkbox" value="timeline" checked>' +
+                    '<span class="pdf-export-option-icon">▸</span>' +
+                    '<div>' +
+                        '<div class="pdf-export-option-label">Timeline (Gantt)</div>' +
+                        '<div class="pdf-export-option-desc">Diagramme de Gantt avec barres de tâches</div>' +
+                    '</div>' +
+                '</label>' +
+                '<label class="pdf-export-option">' +
+                    '<input type="checkbox" value="resources" checked>' +
+                    '<span class="pdf-export-option-icon">👤</span>' +
+                    '<div>' +
+                        '<div class="pdf-export-option-label">Ressources</div>' +
+                        '<div class="pdf-export-option-desc">Charge de travail et tâches par ressource</div>' +
+                    '</div>' +
+                '</label>' +
+            '</div>' +
+            '<div class="pdf-export-actions">' +
+                '<button class="btn btn-secondary pdf-export-cancel">Annuler</button>' +
+                '<button class="btn btn-primary pdf-export-confirm">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>' +
+                    ' Générer le PDF' +
+                '</button>' +
+            '</div>';
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        var close = function() { overlay.remove(); };
+        overlay.querySelector('.pdf-export-close').addEventListener('click', close);
+        overlay.querySelector('.pdf-export-cancel').addEventListener('click', close);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+
+        overlay.querySelector('.pdf-export-confirm').addEventListener('click', function() {
+            var checks = overlay.querySelectorAll('.pdf-export-options input[type="checkbox"]');
+            var sections = [];
+            checks.forEach(function(cb) { if (cb.checked) sections.push(cb.value); });
+            if (sections.length === 0) {
+                self._showToast('Sélectionnez au moins une vue', 'warning');
+                return;
+            }
+            close();
+            self._exportPDF(sections);
+        });
+
+        setTimeout(function() { dialog.querySelector('.pdf-export-confirm').focus(); }, 50);
+    }
+
+    _exportPDF(sections) {
+        var self = this;
+        if (!sections) sections = ['table'];
         var project = store.getActiveProject();
         var tasks = store.getTasks();
         var resources = store.getResources();
@@ -7064,14 +7283,12 @@ class App {
         var priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
         var stats = store.getProjectStats();
 
-        var phases = tasks.filter(function(t) { return t.isPhase; });
-        var nonPhases = tasks.filter(function(t) { return !t.isPhase; });
-
         var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + project.name + '</title>' +
 '<style>' +
 '*{margin:0;padding:0;box-sizing:border-box}' +
 'body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}' +
 'h1{font-size:20px;margin-bottom:4px;color:#6366F1}' +
+'h2{font-size:15px;color:#1e293b;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #6366F1}' +
 '.subtitle{color:#64748b;font-size:12px;margin-bottom:20px}' +
 '.stats{display:flex;gap:20px;margin-bottom:20px;padding:12px;background:#f8fafc;border-radius:6px}' +
 '.stat{text-align:center;flex:1}.stat-val{font-size:18px;font-weight:700;color:#6366F1}.stat-lbl{color:#64748b;font-size:10px}' +
@@ -7086,7 +7303,29 @@ class App {
 '.progress-bar{width:60px;height:6px;background:#e2e8f0;border-radius:3px;display:inline-block;vertical-align:middle}' +
 '.progress-fill{height:100%;border-radius:3px;background:#6366F1}' +
 '.footer{margin-top:20px;text-align:center;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:10px}' +
-'@media print{body{padding:15px}@page{margin:15mm}}' +
+'.gantt-section{margin-bottom:20px;overflow-x:auto}' +
+'.gantt-tl{position:relative;min-height:40px}' +
+'.gantt-tl-header{display:flex;border-bottom:1px solid #e2e8f0;font-size:9px;color:#64748b;text-transform:uppercase}' +
+'.gantt-tl-header div{padding:3px 0;text-align:center;border-right:1px solid #f1f5f9;flex-shrink:0}' +
+'.gantt-tl-row{display:flex;align-items:center;height:28px;position:relative}' +
+'.gantt-tl-label{width:180px;flex-shrink:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}' +
+'.gantt-tl-track{flex:1;position:relative;height:20px}' +
+'.gantt-tl-bar{position:absolute;height:16px;border-radius:3px;top:2px;display:flex;align-items:center;padding:0 4px;font-size:8px;color:#fff;overflow:hidden;white-space:nowrap}' +
+'.gantt-tl-phase{position:absolute;height:8px;border-radius:2px;top:6px}' +
+'.gantt-tl-grid{position:absolute;top:0;bottom:0;border-right:1px solid #f8fafc}' +
+'.resource-section{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px}' +
+'.res-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;width:calc(50% - 8px);box-sizing:border-box}' +
+'.res-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}' +
+'.res-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;flex-shrink:0}' +
+'.res-name{font-weight:600;font-size:12px}.res-role{font-size:10px;color:#64748b}' +
+'.res-workload{height:6px;background:#e2e8f0;border-radius:3px;margin:6px 0;overflow:hidden}' +
+'.res-workload-fill{height:100%;border-radius:3px}' +
+'.res-workload-label{font-size:9px;color:#64748b;margin-bottom:6px}' +
+'.res-task{font-size:10px;padding:3px 0;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between}' +
+'.res-task-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}' +
+'.res-task-dates{color:#64748b;white-space:nowrap;margin-left:8px}' +
+'@media print{body{padding:15px}@page{margin:10mm;size:landscape}}' +
+'.page-break{page-break-before:always}' +
 '</style></head><body>' +
 '<h1>' + project.name + '</h1>' +
 '<div class="subtitle">' + (project.description || 'Exporté le ' + new Date().toLocaleDateString('fr-FR')) + '</div>' +
@@ -7095,24 +7334,40 @@ class App {
 '<div class="stat"><div class="stat-val">' + stats.progress + '%</div><div class="stat-lbl">Progression</div></div>' +
 '<div class="stat"><div class="stat-val">' + stats.daysRemaining + '</div><div class="stat-lbl">Jours restants</div></div>' +
 '<div class="stat"><div class="stat-val">' + stats.completedTasks + '/' + stats.totalTasks + '</div><div class="stat-lbl">Terminées</div></div>' +
-'</div>' +
-'<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>';
+'</div>';
 
-        var rootTasks = tasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; });
-        rootTasks.forEach(function(task) {
-            if (task.isPhase) {
-                html += '<tr class="phase-row"><td colspan="7">' + task.name + ' (' + task.progress + '%)</td></tr>';
-                var children = tasks.filter(function(t) { return t.parentId === task.id; }).sort(function(a, b) { return a.order - b.order; });
-                children.forEach(function(child) {
-                    html += self._pdfTaskRow(child, resources, statusLabels, priorityLabels);
-                });
-            } else {
-                html += self._pdfTaskRow(task, resources, statusLabels, priorityLabels);
-            }
-        });
+        // TABLE SECTION
+        if (sections.indexOf('table') !== -1) {
+            html += '<h2>Tableau des tâches</h2>';
+            html += '<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>';
+            var rootTasks = tasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; });
+            rootTasks.forEach(function(task) {
+                if (task.isPhase) {
+                    html += '<tr class="phase-row"><td colspan="7">' + task.name + ' (' + task.progress + '%)</td></tr>';
+                    var children = tasks.filter(function(t) { return t.parentId === task.id; }).sort(function(a, b) { return a.order - b.order; });
+                    children.forEach(function(child) {
+                        html += self._pdfTaskRow(child, resources, statusLabels, priorityLabels);
+                    });
+                } else {
+                    html += self._pdfTaskRow(task, resources, statusLabels, priorityLabels);
+                }
+            });
+            html += '</tbody></table>';
+        }
 
-        html += '</tbody></table>' +
-'<div class="footer">Gantt Planner Pro — ' + project.name + ' — Exporté le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR') + '</div>' +
+        // TIMELINE SECTION
+        if (sections.indexOf('timeline') !== -1) {
+            if (sections.indexOf('table') !== -1) html += '<div class="page-break"></div>';
+            html += self._pdfTimelineSection(tasks, resources);
+        }
+
+        // RESOURCES SECTION
+        if (sections.indexOf('resources') !== -1) {
+            if (sections.indexOf('table') !== -1 || sections.indexOf('timeline') !== -1) html += '<div class="page-break"></div>';
+            html += self._pdfResourceSection(tasks, resources, statusLabels);
+        }
+
+        html += '<div class="footer">Gantt Planner Pro — ' + project.name + ' — Exporté le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR') + '</div>' +
 '</body></html>';
 
         var printWindow = window.open('', '_blank');
@@ -7122,6 +7377,106 @@ class App {
             printWindow.print();
         };
         self._showToast('Impression PDF prête', 'success');
+    }
+
+    _pdfTimelineSection(tasks, resources) {
+        var range = store.getTimelineRange();
+        var start = new Date(range.start);
+        var end = new Date(range.end);
+
+        var totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        var colWidth = 18;
+        var totalWidth = totalDays * colWidth;
+
+        var html = '<h2>Timeline (Gantt)</h2><div class="gantt-section" style="overflow-x:auto">';
+
+        // Month headers
+        html += '<div class="gantt-tl-header" style="width:' + (180 + totalWidth) + 'px"><div style="width:180px">Tâche</div>';
+        var monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (monthCursor <= end) {
+            var monthStart = new Date(Math.max(monthCursor.getTime(), start.getTime()));
+            var nextMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+            var monthEnd = new Date(Math.min(nextMonth.getTime(), end.getTime()));
+            var daysInSlice = Math.ceil((monthEnd - monthStart) / (1000 * 60 * 60 * 24));
+            var monthName = monthCursor.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            html += '<div style="width:' + (daysInSlice * colWidth) + 'px">' + monthName + '</div>';
+            monthCursor.setMonth(monthCursor.getMonth() + 1);
+        }
+        html += '</div>';
+
+        // Task rows
+        var rootTasks = tasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; });
+        var renderRow = function(task, indent) {
+            var ts = new Date(task.startDate);
+            var te = new Date(task.endDate);
+            var leftDays = Math.max(0, (ts - start) / (1000 * 60 * 60 * 24));
+            var widthDays = Math.max(1, (te - ts) / (1000 * 60 * 60 * 24) + 1);
+            var leftPx = leftDays * colWidth;
+            var widthPx = widthDays * colWidth;
+
+            html += '<div class="gantt-tl-row" style="width:' + (180 + totalWidth) + 'px">';
+            html += '<div class="gantt-tl-label" style="padding-left:' + (indent * 12) + 'px">' + (task.isPhase ? '▾ ' : '') + task.name + '</div>';
+            html += '<div class="gantt-tl-track">';
+
+            if (task.isPhase) {
+                html += '<div class="gantt-tl-phase" style="left:' + leftPx + 'px;width:' + widthPx + 'px;background:' + task.color + '"></div>';
+            } else {
+                html += '<div class="gantt-tl-bar" style="left:' + leftPx + 'px;width:' + widthPx + 'px;background:' + task.color + '">' + task.progress + '%</div>';
+            }
+            html += '</div></div>';
+        };
+
+        rootTasks.forEach(function(task) {
+            renderRow(task, 0);
+            if (task.isPhase) {
+                var children = tasks.filter(function(t) { return t.parentId === task.id; }).sort(function(a, b) { return a.order - b.order; });
+                children.forEach(function(child) { renderRow(child, 1); });
+            }
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    _pdfResourceSection(tasks, resources, statusLabels) {
+        var self = this;
+        var nonPhaseTasks = tasks.filter(function(t) { return !t.isPhase; });
+
+        var html = '<h2>Ressources</h2><div class="resource-section">';
+
+        resources.forEach(function(resource) {
+            var assignedTasks = nonPhaseTasks.filter(function(t) {
+                return (t.assignees || []).indexOf(resource.id) !== -1 || t.assignee === resource.id;
+            });
+            var workload = self._calculateResourceWorkload(resource, assignedTasks);
+            var fillColor = workload.percent > 100 ? '#ef4444' : workload.percent > 80 ? '#f59e0b' : '#6366F1';
+
+            html += '<div class="res-card">';
+            html += '<div class="res-header">';
+            html += '<div class="res-avatar" style="background:' + resource.color + '">' + resource.avatar + '</div>';
+            html += '<div><div class="res-name">' + resource.name + '</div><div class="res-role">' + (resource.role || '') + '</div></div>';
+            html += '<div style="margin-left:auto;font-size:10px;color:#64748b">' + assignedTasks.length + ' tâche' + (assignedTasks.length !== 1 ? 's' : '') + '</div>';
+            html += '</div>';
+
+            html += '<div class="res-workload-label">Charge : ' + workload.percent + '%' + (workload.percent > 100 ? ' ⚠ Surcharge' : '') + '</div>';
+            html += '<div class="res-workload"><div class="res-workload-fill" style="width:' + Math.min(workload.percent, 100) + '%;background:' + fillColor + '"></div></div>';
+
+            if (assignedTasks.length > 0) {
+                assignedTasks.sort(function(a, b) { return new Date(a.startDate) - new Date(b.startDate); }).forEach(function(task) {
+                    html += '<div class="res-task">';
+                    html += '<span class="res-task-name"><span class="badge badge-' + task.status + '">' + (statusLabels[task.status] || task.status) + '</span> ' + task.name + '</span>';
+                    html += '<span class="res-task-dates">' + formatDateDisplay(task.startDate) + ' → ' + formatDateDisplay(task.endDate) + '</span>';
+                    html += '</div>';
+                });
+            } else {
+                html += '<div class="res-task" style="color:#94a3b8">Aucune tâche assignée</div>';
+            }
+
+            html += '</div>';
+        });
+
+        html += '</div>';
+        return html;
     }
 
     _pdfTaskRow(task, resources, statusLabels, priorityLabels) {

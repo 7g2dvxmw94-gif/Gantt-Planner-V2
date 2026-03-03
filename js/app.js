@@ -676,7 +676,7 @@ class App {
         const formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: () => this._exportJSON() },
             { label: 'CSV', icon: 'CSV', desc: 'Tableur / Excel', action: () => this._exportCSV() },
-            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._exportPDF() },
+            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._showPDFExportDialog() },
         ];
 
         formats.forEach(f => {
@@ -749,7 +749,85 @@ class App {
         return str;
     }
 
-    _exportPDF() {
+    _showPDFExportDialog() {
+        // Remove existing dialog if any
+        const existing = document.getElementById('pdfExportDialog');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'pdfExportDialog';
+        overlay.className = 'pdf-export-overlay';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'pdf-export-dialog';
+
+        dialog.innerHTML = `
+            <div class="pdf-export-header">
+                <h3>Export PDF</h3>
+                <button class="pdf-export-close" aria-label="Fermer">&times;</button>
+            </div>
+            <p class="pdf-export-desc">Sélectionnez les vues à inclure dans le PDF :</p>
+            <div class="pdf-export-options">
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="table" checked>
+                    <span class="pdf-export-option-icon">☰</span>
+                    <div>
+                        <div class="pdf-export-option-label">Tableau des tâches</div>
+                        <div class="pdf-export-option-desc">Liste détaillée avec statut, priorité et progression</div>
+                    </div>
+                </label>
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="timeline" checked>
+                    <span class="pdf-export-option-icon">▸</span>
+                    <div>
+                        <div class="pdf-export-option-label">Timeline (Gantt)</div>
+                        <div class="pdf-export-option-desc">Diagramme de Gantt avec barres de tâches</div>
+                    </div>
+                </label>
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="resources" checked>
+                    <span class="pdf-export-option-icon">👤</span>
+                    <div>
+                        <div class="pdf-export-option-label">Ressources</div>
+                        <div class="pdf-export-option-desc">Charge de travail et tâches par ressource</div>
+                    </div>
+                </label>
+            </div>
+            <div class="pdf-export-actions">
+                <button class="btn btn-secondary pdf-export-cancel">Annuler</button>
+                <button class="btn btn-primary pdf-export-confirm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
+                    Générer le PDF
+                </button>
+            </div>`;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Close handlers
+        const close = () => overlay.remove();
+        overlay.querySelector('.pdf-export-close').addEventListener('click', close);
+        overlay.querySelector('.pdf-export-cancel').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        // Confirm handler
+        overlay.querySelector('.pdf-export-confirm').addEventListener('click', () => {
+            const checks = overlay.querySelectorAll('.pdf-export-options input[type="checkbox"]');
+            const sections = [];
+            checks.forEach(cb => { if (cb.checked) sections.push(cb.value); });
+            if (sections.length === 0) {
+                this._showToast('Sélectionnez au moins une vue', 'warning');
+                return;
+            }
+            close();
+            this._exportPDF(sections);
+        });
+
+        // Focus trap
+        setTimeout(() => dialog.querySelector('.pdf-export-confirm').focus(), 50);
+    }
+
+    _exportPDF(sections = ['table']) {
         const project = store.getActiveProject();
         const tasks = store.getTasks();
         const resources = store.getResources();
@@ -758,15 +836,12 @@ class App {
         const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
         const stats = store.getProjectStats();
 
-        // Build an HTML document for printing
-        const phases = tasks.filter(t => t.isPhase);
-        const nonPhases = tasks.filter(t => !t.isPhase);
-
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}
 h1{font-size:20px;margin-bottom:4px;color:#6366F1}
+h2{font-size:15px;color:#1e293b;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #6366F1}
 .subtitle{color:#64748b;font-size:12px;margin-bottom:20px}
 .stats{display:flex;gap:20px;margin-bottom:20px;padding:12px;background:#f8fafc;border-radius:6px}
 .stat{text-align:center;flex:1}.stat-val{font-size:18px;font-weight:700;color:#6366F1}.stat-lbl{color:#64748b;font-size:10px}
@@ -781,7 +856,29 @@ tr:nth-child(even){background:#fafbfc}
 .progress-bar{width:60px;height:6px;background:#e2e8f0;border-radius:3px;display:inline-block;vertical-align:middle}
 .progress-fill{height:100%;border-radius:3px;background:#6366F1}
 .footer{margin-top:20px;text-align:center;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:10px}
-@media print{body{padding:15px}@page{margin:15mm}}
+.gantt-section{margin-bottom:20px;overflow-x:auto}
+.gantt-tl{position:relative;min-height:40px}
+.gantt-tl-header{display:flex;border-bottom:1px solid #e2e8f0;font-size:9px;color:#64748b;text-transform:uppercase}
+.gantt-tl-header div{padding:3px 0;text-align:center;border-right:1px solid #f1f5f9;flex-shrink:0}
+.gantt-tl-row{display:flex;align-items:center;height:28px;position:relative}
+.gantt-tl-label{width:180px;flex-shrink:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}
+.gantt-tl-track{flex:1;position:relative;height:20px}
+.gantt-tl-bar{position:absolute;height:16px;border-radius:3px;top:2px;display:flex;align-items:center;padding:0 4px;font-size:8px;color:#fff;overflow:hidden;white-space:nowrap}
+.gantt-tl-phase{position:absolute;height:8px;border-radius:2px;top:6px}
+.gantt-tl-grid{position:absolute;top:0;bottom:0;border-right:1px solid #f8fafc}
+.resource-section{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px}
+.res-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;width:calc(50% - 8px);box-sizing:border-box}
+.res-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.res-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;flex-shrink:0}
+.res-name{font-weight:600;font-size:12px}.res-role{font-size:10px;color:#64748b}
+.res-workload{height:6px;background:#e2e8f0;border-radius:3px;margin:6px 0;overflow:hidden}
+.res-workload-fill{height:100%;border-radius:3px}
+.res-workload-label{font-size:9px;color:#64748b;margin-bottom:6px}
+.res-task{font-size:10px;padding:3px 0;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between}
+.res-task-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.res-task-dates{color:#64748b;white-space:nowrap;margin-left:8px}
+@media print{body{padding:15px}@page{margin:10mm;size:landscape}}
+.page-break{page-break-before:always}
 </style></head><body>
 <h1>${project.name}</h1>
 <div class="subtitle">${project.description || 'Exporté le ' + new Date().toLocaleDateString('fr-FR')}</div>
@@ -790,25 +887,41 @@ tr:nth-child(even){background:#fafbfc}
 <div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">Progression</div></div>
 <div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">Jours restants</div></div>
 <div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">Terminées</div></div>
-</div>
-<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>`;
+</div>`;
 
-        // Render tasks grouped by phase
-        const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
-        rootTasks.forEach(task => {
-            if (task.isPhase) {
-                html += `<tr class="phase-row"><td colspan="7">${task.name} (${task.progress}%)</td></tr>`;
-                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
-                children.forEach(child => {
-                    html += this._pdfTaskRow(child, resources, statusLabels, priorityLabels);
-                });
-            } else {
-                html += this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
-            }
-        });
+        // ---- TABLE SECTION ----
+        if (sections.includes('table')) {
+            html += `<h2>Tableau des tâches</h2>`;
+            html += `<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>`;
 
-        html += `</tbody></table>
-<div class="footer">Gantt Planner Pro — ${project.name} — Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+            const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+            rootTasks.forEach(task => {
+                if (task.isPhase) {
+                    html += `<tr class="phase-row"><td colspan="7">${task.name} (${task.progress}%)</td></tr>`;
+                    const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
+                    children.forEach(child => {
+                        html += this._pdfTaskRow(child, resources, statusLabels, priorityLabels);
+                    });
+                } else {
+                    html += this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
+                }
+            });
+            html += `</tbody></table>`;
+        }
+
+        // ---- TIMELINE SECTION ----
+        if (sections.includes('timeline')) {
+            if (sections.includes('table')) html += `<div class="page-break"></div>`;
+            html += this._pdfTimelineSection(tasks, resources);
+        }
+
+        // ---- RESOURCES SECTION ----
+        if (sections.includes('resources')) {
+            if (sections.includes('table') || sections.includes('timeline')) html += `<div class="page-break"></div>`;
+            html += this._pdfResourceSection(tasks, resources, statusLabels);
+        }
+
+        html += `<div class="footer">Gantt Planner Pro — ${project.name} — Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
 </body></html>`;
 
         const printWindow = window.open('', '_blank');
@@ -818,6 +931,110 @@ tr:nth-child(even){background:#fafbfc}
             printWindow.print();
         };
         this._showToast('Impression PDF prête', 'success');
+    }
+
+    _pdfTimelineSection(tasks, resources) {
+        const range = store.getTimelineRange();
+        const start = new Date(range.start);
+        const end = new Date(range.end);
+
+        // Calculate total days and col width
+        const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const colWidth = 18; // px per day
+        const totalWidth = totalDays * colWidth;
+
+        let html = `<h2>Timeline (Gantt)</h2><div class="gantt-section" style="overflow-x:auto">`;
+
+        // Month headers
+        html += `<div class="gantt-tl-header" style="width:${180 + totalWidth}px"><div style="width:180px">Tâche</div>`;
+        const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (monthCursor <= end) {
+            const monthStart = new Date(Math.max(monthCursor.getTime(), start.getTime()));
+            const nextMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+            const monthEnd = new Date(Math.min(nextMonth.getTime(), end.getTime()));
+            const daysInSlice = Math.ceil((monthEnd - monthStart) / (1000 * 60 * 60 * 24));
+            const monthName = monthCursor.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            html += `<div style="width:${daysInSlice * colWidth}px">${monthName}</div>`;
+            monthCursor.setMonth(monthCursor.getMonth() + 1);
+        }
+        html += `</div>`;
+
+        // Task rows
+        const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+        const renderRow = (task, indent = 0) => {
+            const ts = new Date(task.startDate);
+            const te = new Date(task.endDate);
+            const leftDays = Math.max(0, (ts - start) / (1000 * 60 * 60 * 24));
+            const widthDays = Math.max(1, (te - ts) / (1000 * 60 * 60 * 24) + 1);
+            const leftPx = leftDays * colWidth;
+            const widthPx = widthDays * colWidth;
+            const label = task.name.length > 22 ? task.name.substring(0, 20) + '…' : task.name;
+
+            html += `<div class="gantt-tl-row" style="width:${180 + totalWidth}px">`;
+            html += `<div class="gantt-tl-label" style="padding-left:${indent * 12}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
+            html += `<div class="gantt-tl-track">`;
+
+            if (task.isPhase) {
+                html += `<div class="gantt-tl-phase" style="left:${leftPx}px;width:${widthPx}px;background:${task.color}"></div>`;
+            } else {
+                const progressWidth = Math.round(widthPx * task.progress / 100);
+                html += `<div class="gantt-tl-bar" style="left:${leftPx}px;width:${widthPx}px;background:${task.color}">${task.progress}%</div>`;
+            }
+            html += `</div></div>`;
+        };
+
+        rootTasks.forEach(task => {
+            renderRow(task, 0);
+            if (task.isPhase) {
+                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
+                children.forEach(child => renderRow(child, 1));
+            }
+        });
+
+        html += `</div>`;
+        return html;
+    }
+
+    _pdfResourceSection(tasks, resources, statusLabels) {
+        const nonPhaseTasks = tasks.filter(t => !t.isPhase);
+
+        let html = `<h2>Ressources</h2><div class="resource-section">`;
+
+        resources.forEach(resource => {
+            const assignedTasks = nonPhaseTasks.filter(t =>
+                (t.assignees || []).includes(resource.id) || t.assignee === resource.id
+            );
+            const workload = this._calculateResourceWorkload(resource, assignedTasks);
+            const fillColor = workload.percent > 100 ? '#ef4444' : workload.percent > 80 ? '#f59e0b' : '#6366F1';
+
+            html += `<div class="res-card">`;
+            html += `<div class="res-header">`;
+            html += `<div class="res-avatar" style="background:${resource.color}">${resource.avatar}</div>`;
+            html += `<div><div class="res-name">${resource.name}</div><div class="res-role">${resource.role || ''}</div></div>`;
+            html += `<div style="margin-left:auto;font-size:10px;color:#64748b">${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}</div>`;
+            html += `</div>`;
+
+            // Workload bar
+            html += `<div class="res-workload-label">Charge : ${workload.percent}%${workload.percent > 100 ? ' ⚠ Surcharge' : ''}</div>`;
+            html += `<div class="res-workload"><div class="res-workload-fill" style="width:${Math.min(workload.percent, 100)}%;background:${fillColor}"></div></div>`;
+
+            // Task list
+            if (assignedTasks.length > 0) {
+                assignedTasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).forEach(task => {
+                    html += `<div class="res-task">`;
+                    html += `<span class="res-task-name"><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span> ${task.name}</span>`;
+                    html += `<span class="res-task-dates">${formatDateDisplay(task.startDate)} → ${formatDateDisplay(task.endDate)}</span>`;
+                    html += `</div>`;
+                });
+            } else {
+                html += `<div class="res-task" style="color:#94a3b8">Aucune tâche assignée</div>`;
+            }
+
+            html += `</div>`;
+        });
+
+        html += `</div>`;
+        return html;
     }
 
     _pdfTaskRow(task, resources, statusLabels, priorityLabels) {
