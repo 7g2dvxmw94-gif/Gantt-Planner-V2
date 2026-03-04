@@ -746,7 +746,7 @@ class App {
             }
         });
 
-        const csvStr = 'sep=;\n' + headers.join(SEP) + '\n' + rows.join('\n');
+        const csvStr = headers.join(SEP) + '\n' + rows.join('\n');
         const bytes = new Uint8Array(csvStr.length);
         for (let i = 0; i < csvStr.length; i++) {
             bytes[i] = csvStr.charCodeAt(i) & 0xFF;
@@ -761,26 +761,40 @@ class App {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
-            <div class="modal" style="max-width:520px">
+            <div class="modal" style="max-width:560px">
                 <div class="modal-header">
                     <h3>Import dans MS Project</h3>
                     <button class="modal-close" id="msHelpClose">&times;</button>
                 </div>
-                <div class="modal-body" style="font-size:13px;line-height:1.6">
-                    <p><strong>Si vous obtenez l'erreur « ancien format de fichier » :</strong></p>
+                <div class="modal-body" style="font-size:13px;line-height:1.7">
+                    <p><strong>Si erreur « ancien format de fichier » :</strong></p>
                     <ol style="padding-left:18px;margin:8px 0">
-                        <li>Dans MS Project : <strong>Fichier → Options → Centre de gestion de la confidentialité</strong></li>
+                        <li><strong>Fichier → Options → Centre de gestion de la confidentialité</strong></li>
                         <li>Cliquez sur <strong>Paramètres du Centre de gestion de la confidentialité</strong></li>
-                        <li>Onglet <strong>Formats hérités</strong></li>
-                        <li>Sélectionnez <strong>« Autoriser le chargement des fichiers avec des formats hérités ou non définis par défaut »</strong></li>
-                        <li>Cliquez sur OK, puis réimportez le fichier CSV</li>
+                        <li>Onglet <strong>Formats hérités</strong> → cochez <strong>« Autoriser le chargement des fichiers avec des formats hérités ou non définis par défaut »</strong></li>
+                        <li>OK → relancez l'import</li>
                     </ol>
-                    <p style="margin-top:12px"><strong>Pour importer :</strong></p>
+                    <hr style="margin:12px 0;border:none;border-top:1px solid #e0e0e0">
+                    <p><strong>Procédure d'import :</strong></p>
                     <ol style="padding-left:18px;margin:8px 0">
-                        <li><strong>Fichier → Ouvrir</strong> → sélectionner le fichier .csv</li>
-                        <li>L'assistant d'importation s'ouvre</li>
-                        <li>Choisir <strong>« Nouveau mappage »</strong></li>
-                        <li>Les colonnes correspondent aux champs MS Project standard</li>
+                        <li><strong>Fichier → Ouvrir</strong> → type « Fichiers CSV » → sélectionnez le .csv</li>
+                        <li>L'assistant d'importation s'ouvre → <strong>Suivant</strong></li>
+                        <li>Choisissez <strong>« Nouveau mappage »</strong> → <strong>Suivant</strong></li>
+                        <li>Vérifiez : <em>Type de données</em> = <strong>Tâches</strong>, cochez <strong>« Importer les en-têtes »</strong>, séparateur = <strong>Point-virgule</strong></li>
+                        <li>À l'étape <strong>Mappage</strong>, vérifiez la correspondance :</li>
+                    </ol>
+                    <table style="width:100%;font-size:12px;border-collapse:collapse;margin:6px 0 8px">
+                        <tr style="background:#f5f5f5"><th style="text-align:left;padding:4px 8px;border:1px solid #ddd">Colonne CSV (De)</th><th style="text-align:left;padding:4px 8px;border:1px solid #ddd">Champ MS Project (Vers)</th></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Niveau hiérarchique</td><td style="padding:3px 8px;border:1px solid #eee">Niveau hiérarchique</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Nom</td><td style="padding:3px 8px;border:1px solid #eee">Nom</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Durée</td><td style="padding:3px 8px;border:1px solid #eee">Durée</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Début</td><td style="padding:3px 8px;border:1px solid #eee">Début</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Fin</td><td style="padding:3px 8px;border:1px solid #eee">Fin</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">Noms ressources</td><td style="padding:3px 8px;border:1px solid #eee">Noms ressources</td></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">% achevé</td><td style="padding:3px 8px;border:1px solid #eee">% achevé</td></tr>
+                    </table>
+                    <ol start="6" style="padding-left:18px;margin:4px 0">
+                        <li>Cliquez <strong>Terminer</strong> → le projet s'importe avec la hiérarchie phases/tâches</li>
                     </ol>
                 </div>
                 <div class="modal-footer">
