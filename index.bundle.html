@@ -7171,7 +7171,7 @@ class App {
 
         var formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: function() { self._exportJSON(); } },
-            { label: 'CSV', icon: 'CSV', desc: 'Tableur / Excel', action: function() { self._exportCSV(); } },
+            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: function() { self._exportCSV(); } },
             { label: 'PDF', icon: 'PDF', desc: 'Impression', action: function() { self._showPDFExportDialog(); } },
         ];
 
@@ -7206,35 +7206,51 @@ class App {
     _exportCSV() {
         var self = this;
         var project = store.getActiveProject();
-        var tasks = store.getTasks().filter(function(t) { return !t.isPhase; });
+        var allTasks = store.getTasks();
         var resources = store.getResources();
 
         var statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
         var priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
 
-        var headers = ['Nom', 'Phase', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
-        var rows = tasks.map(function(task) {
-            var phase = task.parentId ? store.getTask(task.parentId) : null;
-            var assignees = (task.assignees || []).map(function(id) {
+        var dur = function(task) {
+            return task.startDate && task.endDate
+                ? Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1)
+                : '';
+        };
+        var assigneeNames = function(task) {
+            return (task.assignees || []).map(function(id) {
                 var r = resources.find(function(r) { return r.id === id; });
                 return r ? r.name : '';
             }).filter(Boolean).join('; ');
+        };
+        var makeRow = function(task, level) {
             return [
+                level,
                 self._csvEscape(task.name),
-                self._csvEscape(phase ? phase.name : ''),
+                dur(task),
                 task.startDate,
                 task.endDate,
-                self._csvEscape(assignees),
+                self._csvEscape(assigneeNames(task)),
                 statusLabels[task.status] || task.status,
                 priorityLabels[task.priority] || task.priority,
                 task.progress,
             ].join(',');
+        };
+
+        var headers = ['Niveau', 'Nom', 'Durée (jours)', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
+        var rows = [];
+        allTasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; }).forEach(function(task) {
+            rows.push(makeRow(task, 1));
+            if (task.isPhase) {
+                allTasks.filter(function(t) { return t.parentId === task.id; }).sort(function(a, b) { return a.order - b.order; })
+                    .forEach(function(child) { rows.push(makeRow(child, 2)); });
+            }
         });
 
         var csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        this._downloadBlob(blob, project.name.replace(/\s+/g, '_') + '_export.csv');
-        this._showToast('Projet exporté en CSV', 'success');
+        this._downloadBlob(blob, project.name.replace(/\s+/g, '_') + '_msproject.csv');
+        this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
     }
 
     _csvEscape(value) {

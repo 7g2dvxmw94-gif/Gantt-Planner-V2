@@ -675,7 +675,7 @@ class App {
 
         const formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: () => this._exportJSON() },
-            { label: 'CSV', icon: 'CSV', desc: 'Tableur / Excel', action: () => this._exportCSV() },
+            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: () => this._exportCSV() },
             { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._showPDFExportDialog() },
         ];
 
@@ -709,35 +709,44 @@ class App {
 
     _exportCSV() {
         const project = store.getActiveProject();
-        const tasks = store.getTasks().filter(t => !t.isPhase);
+        const allTasks = store.getTasks();
         const resources = store.getResources();
 
         const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
         const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
 
-        const headers = ['Nom', 'Phase', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
-        const rows = tasks.map(task => {
-            const phase = task.parentId ? store.getTask(task.parentId) : null;
-            const assignees = (task.assignees || []).map(id => {
-                const r = resources.find(r => r.id === id);
-                return r ? r.name : '';
-            }).filter(Boolean).join('; ');
-            return [
-                this._csvEscape(task.name),
-                this._csvEscape(phase ? phase.name : ''),
-                task.startDate,
-                task.endDate,
-                this._csvEscape(assignees),
-                statusLabels[task.status] || task.status,
-                priorityLabels[task.priority] || task.priority,
-                task.progress,
-            ].join(',');
+        const dur = (task) => task.startDate && task.endDate
+            ? Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1)
+            : '';
+        const assigneeNames = (task) => (task.assignees || [])
+            .map(id => { const r = resources.find(r => r.id === id); return r ? r.name : ''; })
+            .filter(Boolean).join('; ');
+        const row = (task, level) => [
+            level,
+            this._csvEscape(task.name),
+            dur(task),
+            task.startDate,
+            task.endDate,
+            this._csvEscape(assigneeNames(task)),
+            statusLabels[task.status] || task.status,
+            priorityLabels[task.priority] || task.priority,
+            task.progress,
+        ].join(',');
+
+        const headers = ['Niveau', 'Nom', 'Durée (jours)', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
+        const rows = [];
+        allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
+            rows.push(row(task, 1));
+            if (task.isPhase) {
+                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order)
+                    .forEach(child => rows.push(row(child, 2)));
+            }
         });
 
         const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.csv`);
-        this._showToast('Projet exporté en CSV', 'success');
+        this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
+        this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
     }
 
     _csvEscape(value) {
