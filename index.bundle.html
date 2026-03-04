@@ -7172,6 +7172,7 @@ class App {
         var formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: function() { self._exportJSON(); } },
             { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: function() { self._exportCSV(); } },
+            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', action: function() { self._exportMSProjectXML(); } },
             { label: 'PDF', icon: 'PDF', desc: 'Impression', action: function() { self._showPDFExportDialog(); } },
         ];
 
@@ -7257,6 +7258,93 @@ class App {
         this._downloadBlob(blob, project.name.replace(/\s+/g, '_') + '_msproject.csv');
         this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
         this._showMSProjectImportHelp();
+    }
+
+    _exportMSProjectXML() {
+        var self = this;
+        var project = store.getActiveProject();
+        var allTasks = store.getTasks();
+        var resources = store.getResources();
+
+        var esc = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+        var fmtDateTime = function(d, time) { return d ? d + 'T' + time : ''; };
+        var durISO = function(task) {
+            if (!task.startDate || !task.endDate) return 'PT8H0M0S';
+            var days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            return 'PT' + (days * 8) + 'H0M0S';
+        };
+
+        var taskUID = 0;
+        var assignUID = 0;
+        var taskUIDMap = {};
+        var resUIDMap = {};
+
+        var taskLines = [];
+        taskLines.push('      <Task><UID>0</UID><ID>0</ID><Name>' + esc(project.name) + '</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary></Task>');
+        taskUID = 1;
+
+        var rootTasks = allTasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; });
+        rootTasks.forEach(function(task) {
+            taskUIDMap[task.id] = taskUID;
+            taskLines.push('      <Task>' +
+                '<UID>' + taskUID + '</UID><ID>' + taskUID + '</ID>' +
+                '<Name>' + esc(task.name) + '</Name>' +
+                '<OutlineLevel>1</OutlineLevel>' +
+                (task.isPhase ? '<Summary>1</Summary>' : '') +
+                (task.startDate ? '<Start>' + fmtDateTime(task.startDate, '08:00:00') + '</Start>' : '') +
+                (task.endDate ? '<Finish>' + fmtDateTime(task.endDate, '17:00:00') + '</Finish>' : '') +
+                '<Duration>' + durISO(task) + '</Duration>' +
+                '<PercentComplete>' + (task.progress || 0) + '</PercentComplete>' +
+                '</Task>');
+            taskUID++;
+
+            if (task.isPhase) {
+                allTasks.filter(function(t) { return t.parentId === task.id; }).sort(function(a, b) { return a.order - b.order; }).forEach(function(child) {
+                    taskUIDMap[child.id] = taskUID;
+                    taskLines.push('      <Task>' +
+                        '<UID>' + taskUID + '</UID><ID>' + taskUID + '</ID>' +
+                        '<Name>' + esc(child.name) + '</Name>' +
+                        '<OutlineLevel>2</OutlineLevel>' +
+                        (child.startDate ? '<Start>' + fmtDateTime(child.startDate, '08:00:00') + '</Start>' : '') +
+                        (child.endDate ? '<Finish>' + fmtDateTime(child.endDate, '17:00:00') + '</Finish>' : '') +
+                        '<Duration>' + durISO(child) + '</Duration>' +
+                        '<PercentComplete>' + (child.progress || 0) + '</PercentComplete>' +
+                        '</Task>');
+                    taskUID++;
+                });
+            }
+        });
+
+        var resLines = [];
+        resLines.push('      <Resource><UID>0</UID><ID>0</ID><Name/></Resource>');
+        resources.forEach(function(r, i) {
+            resUIDMap[r.id] = i + 1;
+            resLines.push('      <Resource><UID>' + (i + 1) + '</UID><ID>' + (i + 1) + '</ID><Name>' + esc(r.name) + '</Name></Resource>');
+        });
+
+        var assignLines = [];
+        allTasks.forEach(function(task) {
+            var tUID = taskUIDMap[task.id];
+            if (tUID === undefined) return;
+            (task.assignees || []).forEach(function(resId) {
+                var rUID = resUIDMap[resId];
+                if (rUID === undefined) return;
+                assignLines.push('      <Assignment><UID>' + assignUID + '</UID><TaskUID>' + tUID + '</TaskUID><ResourceUID>' + rUID + '</ResourceUID></Assignment>');
+                assignUID++;
+            });
+        });
+
+        var xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+            '<Project xmlns="http://schemas.microsoft.com/project">\n' +
+            '   <Name>' + esc(project.name) + '</Name>\n' +
+            '   <Tasks>\n' + taskLines.join('\n') + '\n   </Tasks>\n' +
+            '   <Resources>\n' + resLines.join('\n') + '\n   </Resources>\n' +
+            '   <Assignments>\n' + assignLines.join('\n') + '\n   </Assignments>\n' +
+            '</Project>';
+
+        var blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+        self._downloadBlob(blob, project.name.replace(/\s+/g, '_') + '_msproject.xml');
+        self._showToast('Projet exporté en XML MS Project', 'success');
     }
 
     _showMSProjectImportHelp() {

@@ -676,6 +676,7 @@ class App {
         const formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: () => this._exportJSON() },
             { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: () => this._exportCSV() },
+            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', action: () => this._exportMSProjectXML() },
             { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._showPDFExportDialog() },
         ];
 
@@ -755,6 +756,102 @@ class App {
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
         this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
         this._showMSProjectImportHelp();
+    }
+
+    _exportMSProjectXML() {
+        const project = store.getActiveProject();
+        const allTasks = store.getTasks();
+        const resources = store.getResources();
+
+        const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const fmtDateTime = (d, time) => d ? `${d}T${time}` : '';
+        const durISO = (task) => {
+            if (!task.startDate || !task.endDate) return 'PT8H0M0S';
+            const days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            return `PT${days * 8}H0M0S`;
+        };
+
+        let taskUID = 0;
+        let assignUID = 0;
+        const taskUIDMap = {};
+        const resUIDMap = {};
+
+        // Build task XML
+        const taskLines = [];
+        // Root summary task (UID 0)
+        taskLines.push(`      <Task><UID>0</UID><ID>0</ID><Name>${esc(project.name)}</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary></Task>`);
+        taskUID = 1;
+
+        const rootTasks = allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+        rootTasks.forEach(task => {
+            taskUIDMap[task.id] = taskUID;
+            taskLines.push(`      <Task>` +
+                `<UID>${taskUID}</UID><ID>${taskUID}</ID>` +
+                `<Name>${esc(task.name)}</Name>` +
+                `<OutlineLevel>1</OutlineLevel>` +
+                (task.isPhase ? `<Summary>1</Summary>` : '') +
+                (task.startDate ? `<Start>${fmtDateTime(task.startDate, '08:00:00')}</Start>` : '') +
+                (task.endDate ? `<Finish>${fmtDateTime(task.endDate, '17:00:00')}</Finish>` : '') +
+                `<Duration>${durISO(task)}</Duration>` +
+                `<PercentComplete>${task.progress || 0}</PercentComplete>` +
+                `</Task>`);
+            taskUID++;
+
+            if (task.isPhase) {
+                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order).forEach(child => {
+                    taskUIDMap[child.id] = taskUID;
+                    taskLines.push(`      <Task>` +
+                        `<UID>${taskUID}</UID><ID>${taskUID}</ID>` +
+                        `<Name>${esc(child.name)}</Name>` +
+                        `<OutlineLevel>2</OutlineLevel>` +
+                        (child.startDate ? `<Start>${fmtDateTime(child.startDate, '08:00:00')}</Start>` : '') +
+                        (child.endDate ? `<Finish>${fmtDateTime(child.endDate, '17:00:00')}</Finish>` : '') +
+                        `<Duration>${durISO(child)}</Duration>` +
+                        `<PercentComplete>${child.progress || 0}</PercentComplete>` +
+                        `</Task>`);
+                    taskUID++;
+                });
+            }
+        });
+
+        // Build resources XML
+        const resLines = [];
+        resLines.push(`      <Resource><UID>0</UID><ID>0</ID><Name/></Resource>`);
+        resources.forEach((r, i) => {
+            resUIDMap[r.id] = i + 1;
+            resLines.push(`      <Resource><UID>${i + 1}</UID><ID>${i + 1}</ID><Name>${esc(r.name)}</Name></Resource>`);
+        });
+
+        // Build assignments XML
+        const assignLines = [];
+        allTasks.forEach(task => {
+            const tUID = taskUIDMap[task.id];
+            if (tUID === undefined) return;
+            (task.assignees || []).forEach(resId => {
+                const rUID = resUIDMap[resId];
+                if (rUID === undefined) return;
+                assignLines.push(`      <Assignment><UID>${assignUID}</UID><TaskUID>${tUID}</TaskUID><ResourceUID>${rUID}</ResourceUID></Assignment>`);
+                assignUID++;
+            });
+        });
+
+        const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+   <Name>${esc(project.name)}</Name>
+   <Tasks>
+${taskLines.join('\n')}
+   </Tasks>
+   <Resources>
+${resLines.join('\n')}
+   </Resources>
+   <Assignments>
+${assignLines.join('\n')}
+   </Assignments>
+</Project>`;
+
+        const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+        this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.xml`);
+        this._showToast('Projet exporté en XML MS Project', 'success');
     }
 
     _showMSProjectImportHelp() {
