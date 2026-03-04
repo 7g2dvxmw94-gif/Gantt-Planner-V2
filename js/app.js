@@ -867,7 +867,7 @@ class App {
 
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
 body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}
 h1{font-size:20px;margin-bottom:4px;color:#6366F1}
 h2{font-size:15px;color:#1e293b;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #6366F1}
@@ -885,14 +885,15 @@ tr:nth-child(even){background:#fafbfc}
 .progress-bar{width:60px;height:6px;background:#e2e8f0;border-radius:3px;display:inline-block;vertical-align:middle}
 .progress-fill{height:100%;border-radius:3px;background:#6366F1}
 .footer{margin-top:20px;text-align:center;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:10px}
-.gantt-section{margin-bottom:20px}
+.gantt-section{margin-bottom:20px;width:100%}
 .gantt-tl-header{display:flex;border-bottom:2px solid #e2e8f0;font-size:9px;color:#64748b;text-transform:uppercase;font-weight:600}
-.gantt-tl-header div{padding:4px 0;text-align:center;border-right:1px solid #f1f5f9;flex-shrink:0}
+.gantt-tl-track-header{flex:1;display:flex;min-width:0}
+.gantt-tl-track-header div{padding:4px 0;text-align:center;border-left:1px solid #e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gantt-tl-row{display:flex;align-items:center;height:32px;border-bottom:1px solid #f8fafc}
 .gantt-tl-row:nth-child(even){background:#fafbfc}
-.gantt-tl-label{width:200px;flex-shrink:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;color:#1e293b}
+.gantt-tl-label{width:180px;min-width:180px;max-width:180px;flex-shrink:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;color:#1e293b}
 .gantt-tl-label.phase{font-weight:600;color:#6366F1}
-.gantt-tl-track{flex:1;position:relative;height:24px}
+.gantt-tl-track{flex:1;position:relative;height:24px;min-width:0}
 .gantt-tl-bar{position:absolute;height:18px;border-radius:4px;top:3px;display:flex;align-items:center;padding:0 6px;font-size:8px;color:#fff;font-weight:500;overflow:hidden;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
 .gantt-tl-phase{position:absolute;height:8px;border-radius:2px;top:8px;opacity:0.7}
 .gantt-tl-phase::before,.gantt-tl-phase::after{content:'';position:absolute;bottom:0;width:6px;height:10px;background:inherit;clip-path:polygon(0 0,100% 0,50% 100%)}
@@ -908,7 +909,7 @@ tr:nth-child(even){background:#fafbfc}
 .res-task{font-size:10px;padding:3px 0;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between}
 .res-task-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .res-task-dates{color:#64748b;white-space:nowrap;margin-left:8px}
-@media print{body{padding:15px}@page{margin:10mm;size:landscape}}
+@media print{body{padding:15px}@page{margin:10mm;size:landscape}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}
 .page-break{page-break-before:always}
 </style></head><body>
 <h1>${project.name}</h1>
@@ -962,68 +963,119 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _pdfTimelineSection(tasks, resources, tlStart, tlEnd) {
-        // Use provided date window or fall back to project range
         const range = store.getTimelineRange();
         const start = tlStart ? new Date(tlStart) : new Date(range.start);
         const end = tlEnd ? new Date(tlEnd) : new Date(range.end);
+        const DAY = 86400000;
+        // End date is inclusive; use exclusive boundary for calculations
+        const endExcl = new Date(end.getTime() + DAY);
+        const totalDays = Math.max(1, Math.round((endExcl - start) / DAY));
 
-        const totalDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-        // Scale col width to fit ~900px print width, min 4px/day
-        const labelWidth = 200;
-        const availableWidth = Math.max(700, totalDays * 4);
-        const colWidth = Math.max(4, Math.min(20, Math.floor(availableWidth / totalDays)));
-        const totalWidth = totalDays * colWidth;
+        // Determine best time scale based on duration
+        let scale;
+        if (totalDays <= 45) scale = 'days';
+        else if (totalDays <= 120) scale = 'weeks';
+        else if (totalDays <= 730) scale = 'months';
+        else scale = 'quarters';
 
-        const dateLabel = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const fmtDate = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const scaleLabels = { days: 'Jours', weeks: 'Semaines', months: 'Mois', quarters: 'Trimestres' };
+
         let html = `<h2>Timeline (Gantt)</h2>`;
-        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">Période : ${dateLabel(start)} → ${dateLabel(end)}</p>`;
-        html += `<div class="gantt-section" style="overflow-x:auto">`;
+        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">Période : ${fmtDate(start)} → ${fmtDate(end)} — Échelle : ${scaleLabels[scale]}</p>`;
+        html += `<div class="gantt-section">`;
 
-        // Month headers
-        html += `<div class="gantt-tl-header" style="width:${labelWidth + totalWidth}px">`;
-        html += `<div style="width:${labelWidth}px;text-align:left;padding-left:4px">Tâche</div>`;
-        const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
-        while (monthCursor <= end) {
-            const monthStart = new Date(Math.max(monthCursor.getTime(), start.getTime()));
-            const nextMonth = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-            const monthEnd = new Date(Math.min(nextMonth.getTime(), end.getTime()));
-            const daysInSlice = Math.max(1, Math.ceil((monthEnd - monthStart) / (1000 * 60 * 60 * 24)));
-            const monthName = monthCursor.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-            html += `<div style="width:${daysInSlice * colWidth}px;border-left:1px solid #e2e8f0">${monthName}</div>`;
-            monthCursor.setMonth(monthCursor.getMonth() + 1);
+        // Build header columns based on scale
+        const headerCols = [];
+        if (scale === 'days') {
+            const cursor = new Date(start);
+            while (cursor < endExcl) {
+                const nextDay = new Date(cursor.getTime() + DAY);
+                const sliceEnd = nextDay > endExcl ? endExcl : nextDay;
+                const pct = ((sliceEnd - cursor) / DAY / totalDays) * 100;
+                const label = totalDays <= 14
+                    ? cursor.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' })
+                    : String(cursor.getDate());
+                headerCols.push({ pct, label });
+                cursor.setTime(nextDay.getTime());
+            }
+        } else if (scale === 'weeks') {
+            const cursor = new Date(start);
+            while (cursor < endExcl) {
+                let daysToMon = (8 - cursor.getDay()) % 7;
+                if (daysToMon === 0) daysToMon = 7;
+                const nextMonday = new Date(cursor.getTime() + daysToMon * DAY);
+                const sliceEnd = nextMonday > endExcl ? endExcl : nextMonday;
+                const daysSpan = Math.max(1, Math.round((sliceEnd - cursor) / DAY));
+                const pct = (daysSpan / totalDays) * 100;
+                const label = cursor.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+                headerCols.push({ pct, label });
+                cursor.setTime(sliceEnd.getTime());
+            }
+        } else if (scale === 'months') {
+            const mCur = new Date(start.getFullYear(), start.getMonth(), 1);
+            while (mCur < endExcl) {
+                const mStart = new Date(Math.max(mCur.getTime(), start.getTime()));
+                const nextM = new Date(mCur.getFullYear(), mCur.getMonth() + 1, 1);
+                const mEnd = new Date(Math.min(nextM.getTime(), endExcl.getTime()));
+                const daysSpan = Math.max(1, Math.round((mEnd - mStart) / DAY));
+                const pct = (daysSpan / totalDays) * 100;
+                const label = mCur.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                headerCols.push({ pct, label });
+                mCur.setMonth(mCur.getMonth() + 1);
+            }
+        } else {
+            const qCur = new Date(start.getFullYear(), Math.floor(start.getMonth() / 3) * 3, 1);
+            while (qCur < endExcl) {
+                const qStart = new Date(Math.max(qCur.getTime(), start.getTime()));
+                const nextQ = new Date(qCur.getFullYear(), qCur.getMonth() + 3, 1);
+                const qEnd = new Date(Math.min(nextQ.getTime(), endExcl.getTime()));
+                const daysSpan = Math.max(1, Math.round((qEnd - qStart) / DAY));
+                const pct = (daysSpan / totalDays) * 100;
+                const qNum = Math.floor(qCur.getMonth() / 3) + 1;
+                headerCols.push({ pct, label: `T${qNum} ${qCur.getFullYear()}` });
+                qCur.setMonth(qCur.getMonth() + 3);
+            }
         }
-        html += `</div>`;
+
+        // Render header row
+        html += `<div class="gantt-tl-header">`;
+        html += `<div class="gantt-tl-label" style="padding-left:4px">Tâche</div>`;
+        html += `<div class="gantt-tl-track-header">`;
+        headerCols.forEach(h => {
+            html += `<div style="width:${h.pct}%">${h.label}</div>`;
+        });
+        html += `</div></div>`;
 
         // Task rows grouped by phase
         const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+        const estTrackPx = 860; // Approx track width in A4 landscape print
         const renderRow = (task, indent = 0) => {
             const ts = new Date(task.startDate);
             const te = new Date(task.endDate);
-            // Clamp to visible window
             const visStart = new Date(Math.max(ts.getTime(), start.getTime()));
-            const visEnd = new Date(Math.min(te.getTime(), end.getTime()));
-            if (visStart > end || visEnd < start) {
-                // Task outside window - still show label but no bar
-                html += `<div class="gantt-tl-row" style="width:${labelWidth + totalWidth}px">`;
-                html += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
-                html += `<div class="gantt-tl-track"></div></div>`;
-                return;
-            }
-            const leftDays = Math.max(0, (visStart - start) / (1000 * 60 * 60 * 24));
-            const widthDays = Math.max(1, (visEnd - visStart) / (1000 * 60 * 60 * 24) + 1);
-            const leftPx = Math.round(leftDays * colWidth);
-            const widthPx = Math.max(colWidth, Math.round(widthDays * colWidth));
+            const visEnd = new Date(Math.min(te.getTime() + DAY, endExcl.getTime()));
 
-            html += `<div class="gantt-tl-row" style="width:${labelWidth + totalWidth}px">`;
+            html += `<div class="gantt-tl-row">`;
             html += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
             html += `<div class="gantt-tl-track">`;
 
-            if (task.isPhase) {
-                html += `<div class="gantt-tl-phase" style="left:${leftPx}px;width:${widthPx}px;background:${task.color}"></div>`;
-            } else {
-                const barLabel = widthPx > 40 ? `${task.name.substring(0, Math.floor(widthPx / 6))} ${task.progress}%` : `${task.progress}%`;
-                html += `<div class="gantt-tl-bar" style="left:${leftPx}px;width:${widthPx}px;background:${task.color}">${barLabel}</div>`;
+            if (visStart < endExcl && visEnd > start) {
+                const leftPct = ((visStart - start) / DAY / totalDays) * 100;
+                const widthPct = Math.min(100 - leftPct, Math.max(0.5, ((visEnd - visStart) / DAY / totalDays) * 100));
+                const color = task.color || '#6366F1';
+
+                if (task.isPhase) {
+                    html += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${color}"></div>`;
+                } else {
+                    const approxPx = (widthPct / 100) * estTrackPx;
+                    const barLabel = approxPx > 60
+                        ? `${task.name.substring(0, Math.floor(approxPx / 8))} ${task.progress}%`
+                        : (approxPx > 25 ? `${task.progress}%` : '');
+                    html += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${color}">${barLabel}</div>`;
+                }
             }
+
             html += `</div></div>`;
         };
 
