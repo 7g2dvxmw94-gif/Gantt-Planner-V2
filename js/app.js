@@ -1575,25 +1575,84 @@ tr:nth-child(even){background:#fafbfc}
     _importProject() {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json';
+        input.accept = '.json,.xml,.xlsx,.xls';
         input.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const result = store.importProject(evt.target.result);
-                if (result) {
-                    ganttRenderer.render();
-                    this._renderStats();
-                    this._renderProjectName();
-                    this._showToast(`Projet "${result.name}" importé`, 'success');
-                } else {
-                    this._showToast('Erreur lors de l\'import', 'error');
-                }
-            };
-            reader.readAsText(file);
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'json') {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const result = store.importProject(evt.target.result);
+                    if (result) {
+                        ganttRenderer.render();
+                        this._renderStats();
+                        this._renderProjectName();
+                        this._showToast(`Projet "${result.name}" importé`, 'success');
+                    } else {
+                        this._showToast('Erreur lors de l\'import JSON', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else if (ext === 'xml') {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const result = store.importFromMSProjectXML(evt.target.result);
+                    if (result) {
+                        ganttRenderer.render();
+                        this._renderStats();
+                        this._renderProjectName();
+                        this._showToast(`Projet "${result.name}" importé depuis MS Project XML`, 'success');
+                    } else {
+                        this._showToast('Erreur lors de l\'import XML', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            } else if (ext === 'xlsx' || ext === 'xls') {
+                this._importExcelFile(file);
+            } else {
+                this._showToast('Format non supporté', 'error');
+            }
         });
         input.click();
+    }
+
+    async _importExcelFile(file) {
+        try {
+            // Load SheetJS dynamically if not already loaded
+            if (typeof XLSX === 'undefined') {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Impossible de charger la bibliothèque Excel'));
+                    document.head.appendChild(script);
+                });
+            }
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+            if (!rows.length) {
+                this._showToast('Le fichier Excel est vide', 'error');
+                return;
+            }
+
+            const result = store.importFromExcel(rows, file.name);
+            if (result) {
+                ganttRenderer.render();
+                this._renderStats();
+                this._renderProjectName();
+                this._showToast(`Projet "${result.name}" importé depuis Excel (${rows.length} lignes)`, 'success');
+            } else {
+                this._showToast('Erreur lors de l\'import Excel', 'error');
+            }
+        } catch (e) {
+            console.error('Excel import failed:', e);
+            this._showToast('Erreur: ' + e.message, 'error');
+        }
     }
 
     /* ---- Critical Path ---- */

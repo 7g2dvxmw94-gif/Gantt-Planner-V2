@@ -990,6 +990,280 @@ class Store {
         return null;
     }
 
+    importFromMSProjectXML(xmlString) {
+        this._snapshot();
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xmlString, 'application/xml');
+            const ns = 'http://schemas.microsoft.com/project';
+
+            const getTag = (el, tag) => {
+                const node = el.getElementsByTagNameNS(ns, tag)[0] || el.getElementsByTagName(tag)[0];
+                return node ? node.textContent.trim() : '';
+            };
+
+            const projectName = getTag(doc.documentElement, 'Name') || 'Projet importé (XML)';
+            const taskEls = Array.from(doc.getElementsByTagNameNS(ns, 'Task').length
+                ? doc.getElementsByTagNameNS(ns, 'Task')
+                : doc.getElementsByTagName('Task'));
+            const resEls = Array.from(doc.getElementsByTagNameNS(ns, 'Resource').length
+                ? doc.getElementsByTagNameNS(ns, 'Resource')
+                : doc.getElementsByTagName('Resource'));
+            const assignEls = Array.from(doc.getElementsByTagNameNS(ns, 'Assignment').length
+                ? doc.getElementsByTagNameNS(ns, 'Assignment')
+                : doc.getElementsByTagName('Assignment'));
+
+            const newProjectId = generateId();
+            const uidToId = {};
+            const resUidToId = {};
+            const tasks = [];
+            const resources = [];
+
+            // Parse resources (skip UID 0 which is the blank resource)
+            resEls.forEach(el => {
+                const uid = getTag(el, 'UID');
+                const name = getTag(el, 'Name');
+                if (uid === '0' || !name) return;
+                const id = generateId();
+                resUidToId[uid] = id;
+                resources.push({ id, name, role: '', color: this._randomColor() });
+            });
+
+            // Parse tasks (skip UID 0 which is the project summary)
+            const parentMap = {};
+            taskEls.forEach(el => {
+                const uid = getTag(el, 'UID');
+                if (uid === '0') return;
+
+                const outlineLevel = parseInt(getTag(el, 'OutlineLevel')) || 1;
+                const isSummary = getTag(el, 'Summary') === '1';
+                const startStr = getTag(el, 'Start');
+                const finishStr = getTag(el, 'Finish');
+                const name = getTag(el, 'Name') || 'Tâche sans nom';
+                const pct = parseInt(getTag(el, 'PercentComplete')) || 0;
+
+                const startDate = startStr ? startStr.substring(0, 10) : '';
+                const endDate = finishStr ? finishStr.substring(0, 10) : '';
+
+                const id = generateId();
+                uidToId[uid] = id;
+
+                // Track parent relationship by outline level
+                parentMap[outlineLevel] = id;
+                const parentId = outlineLevel > 1 ? (parentMap[outlineLevel - 1] || null) : null;
+
+                tasks.push({
+                    id,
+                    projectId: newProjectId,
+                    name,
+                    startDate,
+                    endDate,
+                    progress: pct,
+                    isPhase: isSummary,
+                    parentId,
+                    assignees: [],
+                    dependencies: [],
+                    order: tasks.length,
+                    color: isSummary ? '#6366F1' : '#3B82F6',
+                });
+            });
+
+            // Parse assignments
+            assignEls.forEach(el => {
+                const taskUID = getTag(el, 'TaskUID');
+                const resUID = getTag(el, 'ResourceUID');
+                const taskId = uidToId[taskUID];
+                const resId = resUidToId[resUID];
+                if (taskId && resId) {
+                    const task = tasks.find(t => t.id === taskId);
+                    if (task) task.assignees.push(resId);
+                }
+            });
+
+            // Commit to store
+            const newProject = {
+                id: newProjectId,
+                name: projectName,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            this._data.projects.push(newProject);
+            tasks.forEach(t => this._data.tasks.push(t));
+            resources.forEach(r => {
+                const exists = this._data.resources.find(e => e.name === r.name);
+                if (!exists) {
+                    this._data.resources.push(r);
+                } else {
+                    // Remap assignees to existing resource
+                    tasks.filter(t => t.projectId === newProjectId).forEach(t => {
+                        t.assignees = t.assignees.map(id => id === r.id ? exists.id : id);
+                    });
+                }
+            });
+
+            this._data.settings.activeProjectId = newProjectId;
+            this._save();
+            this._emit('project:import', newProjectId);
+            return newProject;
+        } catch (e) {
+            console.error('MS Project XML import failed:', e);
+        }
+        return null;
+    }
+
+    importFromExcel(rows, fileName) {
+        this._snapshot();
+        try {
+            // Auto-detect column mapping from headers
+            const headers = Object.keys(rows[0]).map(h => h.toLowerCase().trim());
+            const headerMap = Object.keys(rows[0]);
+
+            const find = (keywords) => {
+                for (const kw of keywords) {
+                    const idx = headers.findIndex(h => h.includes(kw));
+                    if (idx >= 0) return headerMap[idx];
+                }
+                return null;
+            };
+
+            const colName = find(['nom', 'name', 'tâche', 'tache', 'task', 'titre', 'title', 'libellé', 'libelle']);
+            const colStart = find(['début', 'debut', 'start', 'date début', 'date debut', 'begin', 'from']);
+            const colEnd = find(['fin', 'end', 'finish', 'date fin', 'to', 'échéance', 'echeance']);
+            const colProgress = find(['progress', 'avancement', '%', 'pct', 'percent', '% achevé', 'acheve']);
+            const colPhase = find(['phase', 'groupe', 'group', 'catégorie', 'categorie', 'section', 'wbs']);
+            const colAssignee = find(['ressource', 'resource', 'assigné', 'assigne', 'assignee', 'responsable']);
+
+            if (!colName) {
+                console.error('No name column found. Headers:', headers);
+                return null;
+            }
+
+            const projectName = fileName.replace(/\.(xlsx|xls)$/i, '').replace(/_/g, ' ') || 'Projet importé (Excel)';
+            const newProjectId = generateId();
+            const tasks = [];
+            const phaseMap = {};
+            const resourceMap = {};
+
+            const fmtDate = (v) => {
+                if (!v) return '';
+                if (v instanceof Date) return v.toISOString().substring(0, 10);
+                const s = String(v).trim();
+                // Try ISO
+                if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+                // Try DD/MM/YYYY
+                const m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+                if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+                return '';
+            };
+
+            rows.forEach((row, i) => {
+                const name = String(row[colName] || '').trim();
+                if (!name) return;
+
+                const startDate = colStart ? fmtDate(row[colStart]) : '';
+                const endDate = colEnd ? fmtDate(row[colEnd]) : '';
+                const progress = colProgress ? (parseInt(row[colProgress]) || 0) : 0;
+                const phaseName = colPhase ? String(row[colPhase] || '').trim() : '';
+                const assigneeName = colAssignee ? String(row[colAssignee] || '').trim() : '';
+
+                let parentId = null;
+                if (phaseName && phaseName !== name) {
+                    if (!phaseMap[phaseName]) {
+                        const phaseId = generateId();
+                        phaseMap[phaseName] = phaseId;
+                        tasks.push({
+                            id: phaseId,
+                            projectId: newProjectId,
+                            name: phaseName,
+                            startDate: '',
+                            endDate: '',
+                            progress: 0,
+                            isPhase: true,
+                            parentId: null,
+                            assignees: [],
+                            dependencies: [],
+                            order: tasks.length,
+                            color: '#6366F1',
+                        });
+                    }
+                    parentId = phaseMap[phaseName];
+                }
+
+                // Handle assignee
+                const assignees = [];
+                if (assigneeName) {
+                    if (!resourceMap[assigneeName]) {
+                        const resId = generateId();
+                        resourceMap[assigneeName] = resId;
+                    }
+                    assignees.push(resourceMap[assigneeName]);
+                }
+
+                tasks.push({
+                    id: generateId(),
+                    projectId: newProjectId,
+                    name,
+                    startDate,
+                    endDate,
+                    progress,
+                    isPhase: false,
+                    parentId,
+                    assignees,
+                    dependencies: [],
+                    order: tasks.length,
+                    color: '#3B82F6',
+                });
+            });
+
+            // Auto-calculate phase dates
+            tasks.filter(t => t.isPhase).forEach(phase => {
+                const children = tasks.filter(t => t.parentId === phase.id && t.startDate && t.endDate);
+                if (children.length) {
+                    phase.startDate = children.reduce((min, c) => (!min || c.startDate < min) ? c.startDate : min, '');
+                    phase.endDate = children.reduce((max, c) => (!max || c.endDate > max) ? c.endDate : max, '');
+                    const totalPct = children.reduce((s, c) => s + c.progress, 0);
+                    phase.progress = Math.round(totalPct / children.length);
+                }
+            });
+
+            // Commit to store
+            const newProject = {
+                id: newProjectId,
+                name: projectName,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            this._data.projects.push(newProject);
+            tasks.forEach(t => this._data.tasks.push(t));
+
+            // Add resources
+            Object.entries(resourceMap).forEach(([name, id]) => {
+                const exists = this._data.resources.find(e => e.name === name);
+                if (!exists) {
+                    this._data.resources.push({ id, name, role: '', color: this._randomColor() });
+                } else {
+                    // Remap
+                    tasks.filter(t => t.projectId === newProjectId).forEach(t => {
+                        t.assignees = t.assignees.map(aid => aid === id ? exists.id : aid);
+                    });
+                }
+            });
+
+            this._data.settings.activeProjectId = newProjectId;
+            this._save();
+            this._emit('project:import', newProjectId);
+            return newProject;
+        } catch (e) {
+            console.error('Excel import failed:', e);
+        }
+        return null;
+    }
+
+    _randomColor() {
+        const colors = ['#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
     /* ---- Reset ---- */
 
     reset() {
