@@ -746,8 +746,12 @@ class App {
             }
         });
 
-        const csv = '\uFEFF' + 'sep=;\n' + headers.join(SEP) + '\n' + rows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const csvStr = 'sep=;\n' + headers.join(SEP) + '\n' + rows.join('\n');
+        const bytes = new Uint8Array(csvStr.length);
+        for (let i = 0; i < csvStr.length; i++) {
+            bytes[i] = csvStr.charCodeAt(i) & 0xFF;
+        }
+        const blob = new Blob([bytes], { type: 'text/csv;charset=windows-1252' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
         this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
         this._showMSProjectImportHelp();
