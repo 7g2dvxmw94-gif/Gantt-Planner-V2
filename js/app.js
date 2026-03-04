@@ -711,29 +711,32 @@ class App {
         const project = store.getActiveProject();
         const allTasks = store.getTasks();
         const resources = store.getResources();
+        const SEP = ';';
 
-        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
-
-        const dur = (task) => task.startDate && task.endDate
-            ? Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1)
-            : '';
+        const fmtDate = (d) => {
+            if (!d) return '';
+            const [y, m, day] = d.split('-');
+            return `${day}/${m}/${y}`;
+        };
+        const dur = (task) => {
+            if (!task.startDate || !task.endDate) return '';
+            const days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            return days + ' jour' + (days > 1 ? 's' : '');
+        };
         const assigneeNames = (task) => (task.assignees || [])
             .map(id => { const r = resources.find(r => r.id === id); return r ? r.name : ''; })
-            .filter(Boolean).join('; ');
+            .filter(Boolean).join(', ');
         const row = (task, level) => [
             level,
-            this._csvEscape(task.name),
+            this._csvEscape(task.name, SEP),
             dur(task),
-            task.startDate,
-            task.endDate,
-            this._csvEscape(assigneeNames(task)),
-            statusLabels[task.status] || task.status,
-            priorityLabels[task.priority] || task.priority,
+            fmtDate(task.startDate),
+            fmtDate(task.endDate),
+            this._csvEscape(assigneeNames(task), SEP),
             task.progress,
-        ].join(',');
+        ].join(SEP);
 
-        const headers = ['Niveau', 'Nom', 'Durée (jours)', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
+        const headers = ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé'];
         const rows = [];
         allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
             rows.push(row(task, 1));
@@ -743,16 +746,54 @@ class App {
             }
         });
 
-        const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+        const csv = '\uFEFF' + 'sep=;\n' + headers.join(SEP) + '\n' + rows.join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
         this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
+        this._showMSProjectImportHelp();
     }
 
-    _csvEscape(value) {
+    _showMSProjectImportHelp() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:520px">
+                <div class="modal-header">
+                    <h3>Import dans MS Project</h3>
+                    <button class="modal-close" id="msHelpClose">&times;</button>
+                </div>
+                <div class="modal-body" style="font-size:13px;line-height:1.6">
+                    <p><strong>Si vous obtenez l'erreur « ancien format de fichier » :</strong></p>
+                    <ol style="padding-left:18px;margin:8px 0">
+                        <li>Dans MS Project : <strong>Fichier → Options → Centre de gestion de la confidentialité</strong></li>
+                        <li>Cliquez sur <strong>Paramètres du Centre de gestion de la confidentialité</strong></li>
+                        <li>Onglet <strong>Formats hérités</strong></li>
+                        <li>Sélectionnez <strong>« Autoriser le chargement des fichiers avec des formats hérités ou non définis par défaut »</strong></li>
+                        <li>Cliquez sur OK, puis réimportez le fichier CSV</li>
+                    </ol>
+                    <p style="margin-top:12px"><strong>Pour importer :</strong></p>
+                    <ol style="padding-left:18px;margin:8px 0">
+                        <li><strong>Fichier → Ouvrir</strong> → sélectionner le fichier .csv</li>
+                        <li>L'assistant d'importation s'ouvre</li>
+                        <li>Choisir <strong>« Nouveau mappage »</strong></li>
+                        <li>Les colonnes correspondent aux champs MS Project standard</li>
+                    </ol>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="msHelpOk">Compris</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => overlay.remove();
+        overlay.querySelector('#msHelpClose').addEventListener('click', close);
+        overlay.querySelector('#msHelpOk').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    }
+
+    _csvEscape(value, sep = ',') {
         if (!value) return '';
         const str = String(value);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        if (str.includes(sep) || str.includes('"') || str.includes('\n')) {
             return '"' + str.replace(/"/g, '""') + '"';
         }
         return str;

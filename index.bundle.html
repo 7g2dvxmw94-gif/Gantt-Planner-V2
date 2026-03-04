@@ -7208,36 +7208,37 @@ class App {
         var project = store.getActiveProject();
         var allTasks = store.getTasks();
         var resources = store.getResources();
+        var SEP = ';';
 
-        var statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        var priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
-
+        var fmtDate = function(d) {
+            if (!d) return '';
+            var parts = d.split('-');
+            return parts[2] + '/' + parts[1] + '/' + parts[0];
+        };
         var dur = function(task) {
-            return task.startDate && task.endDate
-                ? Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1)
-                : '';
+            if (!task.startDate || !task.endDate) return '';
+            var days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            return days + ' jour' + (days > 1 ? 's' : '');
         };
         var assigneeNames = function(task) {
             return (task.assignees || []).map(function(id) {
                 var r = resources.find(function(r) { return r.id === id; });
                 return r ? r.name : '';
-            }).filter(Boolean).join('; ');
+            }).filter(Boolean).join(', ');
         };
         var makeRow = function(task, level) {
             return [
                 level,
-                self._csvEscape(task.name),
+                self._csvEscape(task.name, SEP),
                 dur(task),
-                task.startDate,
-                task.endDate,
-                self._csvEscape(assigneeNames(task)),
-                statusLabels[task.status] || task.status,
-                priorityLabels[task.priority] || task.priority,
+                fmtDate(task.startDate),
+                fmtDate(task.endDate),
+                self._csvEscape(assigneeNames(task), SEP),
                 task.progress,
-            ].join(',');
+            ].join(SEP);
         };
 
-        var headers = ['Niveau', 'Nom', 'Durée (jours)', 'Date début', 'Date fin', 'Assigné(s)', 'Statut', 'Priorité', 'Progression (%)'];
+        var headers = ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé'];
         var rows = [];
         allTasks.filter(function(t) { return !t.parentId; }).sort(function(a, b) { return a.order - b.order; }).forEach(function(task) {
             rows.push(makeRow(task, 1));
@@ -7247,16 +7248,55 @@ class App {
             }
         });
 
-        var csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+        var csv = '\uFEFF' + 'sep=;\n' + headers.join(SEP) + '\n' + rows.join('\n');
         var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         this._downloadBlob(blob, project.name.replace(/\s+/g, '_') + '_msproject.csv');
         this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
+        this._showMSProjectImportHelp();
     }
 
-    _csvEscape(value) {
+    _showMSProjectImportHelp() {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML =
+            '<div class="modal" style="max-width:520px">' +
+                '<div class="modal-header">' +
+                    '<h3>Import dans MS Project</h3>' +
+                    '<button class="modal-close" id="msHelpClose">&times;</button>' +
+                '</div>' +
+                '<div class="modal-body" style="font-size:13px;line-height:1.6">' +
+                    '<p><strong>Si vous obtenez l\'erreur « ancien format de fichier » :</strong></p>' +
+                    '<ol style="padding-left:18px;margin:8px 0">' +
+                        '<li>Dans MS Project : <strong>Fichier → Options → Centre de gestion de la confidentialité</strong></li>' +
+                        '<li>Cliquez sur <strong>Paramètres du Centre de gestion de la confidentialité</strong></li>' +
+                        '<li>Onglet <strong>Formats hérités</strong></li>' +
+                        '<li>Sélectionnez <strong>« Autoriser le chargement des fichiers avec des formats hérités ou non définis par défaut »</strong></li>' +
+                        '<li>Cliquez sur OK, puis réimportez le fichier CSV</li>' +
+                    '</ol>' +
+                    '<p style="margin-top:12px"><strong>Pour importer :</strong></p>' +
+                    '<ol style="padding-left:18px;margin:8px 0">' +
+                        '<li><strong>Fichier → Ouvrir</strong> → sélectionner le fichier .csv</li>' +
+                        '<li>L\'assistant d\'importation s\'ouvre</li>' +
+                        '<li>Choisir <strong>« Nouveau mappage »</strong></li>' +
+                        '<li>Les colonnes correspondent aux champs MS Project standard</li>' +
+                    '</ol>' +
+                '</div>' +
+                '<div class="modal-footer">' +
+                    '<button class="btn btn-primary" id="msHelpOk">Compris</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(overlay);
+        var close = function() { overlay.remove(); };
+        overlay.querySelector('#msHelpClose').addEventListener('click', close);
+        overlay.querySelector('#msHelpOk').addEventListener('click', close);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    }
+
+    _csvEscape(value, sep) {
         if (!value) return '';
+        sep = sep || ',';
         var str = String(value);
-        if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
+        if (str.indexOf(sep) !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
             return '"' + str.replace(/"/g, '""') + '"';
         }
         return str;
