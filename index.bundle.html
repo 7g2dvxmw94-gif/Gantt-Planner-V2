@@ -1107,6 +1107,93 @@ textarea.input {
         max-height: 92vh;
     }
 }
+
+/* ---- Notification Badge ---- */
+.notif-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: var(--color-danger, #EF4444);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.notif-panel {
+    position: fixed;
+    z-index: 1000;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    width: 360px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: var(--space-2, 8px) 0;
+}
+
+.notif-panel-title {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 4px;
+}
+
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 16px;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: default;
+    transition: background .15s;
+}
+.notif-item:hover { background: var(--bg-secondary, #f5f5f5); }
+
+.notif-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.notif-icon.danger  { background: rgba(239,68,68,.12); color: #EF4444; }
+.notif-icon.warning { background: rgba(245,158,11,.12); color: #F59E0B; }
+.notif-icon.info    { background: rgba(59,130,246,.12); color: #3B82F6; }
+
+.notif-text { flex: 1; min-width: 0; }
+.notif-text strong { font-weight: 600; }
+.notif-text .notif-sub { color: var(--text-tertiary, #999); font-size: 11px; margin-top: 2px; }
+
+.notif-empty { padding: 24px 16px; text-align: center; color: var(--text-tertiary, #999); font-size: 13px; }
+
+/* ---- Dashboard View ---- */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4, 16px); padding: var(--space-4, 16px); }
+.dashboard-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-lg, 12px); padding: var(--space-4, 16px); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.dashboard-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 12px 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+.dashboard-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.dashboard-kpi { background: var(--bg-secondary, #f8f9fa); border-radius: var(--radius-md, 8px); padding: 14px; text-align: center; }
+.dashboard-kpi .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.2; color: var(--text-primary); }
+.dashboard-kpi .kpi-label { font-size: 11px; color: var(--text-tertiary, #999); margin-top: 4px; text-transform: uppercase; letter-spacing: .3px; }
+.dashboard-project-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+.dashboard-project-row:last-child { border-bottom: none; }
+.dashboard-project-name { flex: 1; min-width: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.dashboard-progress-bar { width: 120px; height: 6px; background: var(--bg-secondary, #e5e7eb); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.dashboard-progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.dashboard-progress-pct { font-size: 12px; font-weight: 600; width: 40px; text-align: right; flex-shrink: 0; }
+.dashboard-alert-list { list-style: none; padding: 0; margin: 0; }
+.dashboard-alert-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border-color); }
+.dashboard-alert-item:last-child { border-bottom: none; }
+.dashboard-alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dashboard-alert-dot.red    { background: #EF4444; }
+.dashboard-alert-dot.orange { background: #F59E0B; }
+.dashboard-alert-dot.blue   { background: #3B82F6; }
+
 /* ========================================
    LAYOUT - HEADER, TOOLBAR, MAIN, FOOTER
    ======================================== */
@@ -3157,6 +3244,16 @@ textarea.input {
                     </svg>
                     <span>Ressources</span>
                 </button>
+                <!-- Dashboard Tab -->
+                <button class="tab" role="tab" aria-selected="false" data-view="dashboard" tabindex="-1" id="tabDashboard" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="9"/>
+                        <rect x="14" y="3" width="7" height="5"/>
+                        <rect x="14" y="12" width="7" height="9"/>
+                        <rect x="3" y="16" width="7" height="5"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
             </div>
 
             <div class="toolbar-actions">
@@ -3213,6 +3310,15 @@ textarea.input {
                     <span>Exporter</span>
                 </button>
 
+                <!-- Notifications -->
+                <button class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications" style="position: relative;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+
                 <!-- Add Task -->
                 <button class="btn btn-primary" id="addTaskBtn" aria-label="Ajouter une nouvelle tâche (Ctrl+N)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -3238,6 +3344,9 @@ textarea.input {
 
             <!-- Resource View (hidden by default) -->
             <div id="resourceView" style="display: none;" aria-label="Vue ressources"></div>
+
+            <!-- Dashboard View (hidden by default) -->
+            <div id="dashboardView" style="display: none;" aria-label="Dashboard multi-projets"></div>
         </main>
 
         <!-- ==================== STATS BAR ==================== -->
@@ -3324,13 +3433,14 @@ textarea.input {
                 </svg>
                 <span>Équipe</span>
             </button>
-            <button class="mobile-nav-item" aria-label="Plus d'options">
+            <button class="mobile-nav-item" data-view="dashboard" aria-label="Vue Dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="12" cy="12" r="1"/>
-                    <circle cx="19" cy="12" r="1"/>
-                    <circle cx="5" cy="12" r="1"/>
+                    <rect x="3" y="3" width="7" height="9"/>
+                    <rect x="14" y="3" width="7" height="5"/>
+                    <rect x="14" y="12" width="7" height="9"/>
+                    <rect x="3" y="16" width="7" height="5"/>
                 </svg>
-                <span>Plus</span>
+                <span>Dashboard</span>
             </button>
         </div>
     </nav>
@@ -6801,6 +6911,7 @@ class App {
         this._bindKeyboardShortcuts();
         this._bindContextMenu();
         this._bindProjectSelector();
+        this._bindNotifications();
         this._buildFilterBar();
 
         // Render stats
@@ -6870,11 +6981,13 @@ class App {
         const ganttWrapper = $('.gantt-wrapper');
         const boardView = $('#boardView');
         const resourceView = $('#resourceView');
+        const dashboardView = $('#dashboardView');
 
         // Hide all views
         if (ganttWrapper) ganttWrapper.style.display = 'none';
         if (boardView) boardView.style.display = 'none';
         if (resourceView) resourceView.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'none';
 
         // Show active view
         switch (view) {
@@ -6895,6 +7008,12 @@ class App {
                     this._renderResourceView();
                 }
                 break;
+            case 'dashboard':
+                if (dashboardView) {
+                    dashboardView.style.display = '';
+                    this._renderDashboard();
+                }
+                break;
         }
 
         // Update mobile nav
@@ -6913,6 +7032,9 @@ class App {
                 break;
             case 'resources':
                 this._renderResourceView();
+                break;
+            case 'dashboard':
+                this._renderDashboard();
                 break;
         }
     }
@@ -8229,13 +8351,252 @@ class App {
         const progress = $('#statProgress');
         const budget = $('#statBudget');
 
-        if (taskCount) taskCount.textContent = stats.activeTasks;
-        if (daysRemaining) daysRemaining.textContent = stats.daysRemaining;
+        if (taskCount) {
+            taskCount.textContent = stats.activeTasks;
+            const parent = taskCount.closest('.stat-item');
+            if (parent) parent.title = stats.completedTasks + '/' + stats.totalTasks + ' terminées';
+        }
+        if (daysRemaining) {
+            daysRemaining.textContent = stats.daysRemaining;
+            if (stats.daysRemaining <= 3 && stats.daysRemaining > 0) {
+                daysRemaining.style.color = 'var(--color-warning, #F59E0B)';
+            } else if (stats.daysRemaining <= 0 && stats.totalTasks > 0) {
+                daysRemaining.style.color = 'var(--color-danger, #EF4444)';
+            } else {
+                daysRemaining.style.color = '';
+            }
+        }
         if (progress) progress.textContent = stats.progress + '%';
         if (budget) {
-            const budgetK = (stats.budgetUsed / 1000).toFixed(1);
-            budget.textContent = budgetK + 'k\u20AC';
+            if (stats.budget > 0) {
+                const pct = Math.round((stats.budgetUsed / stats.budget) * 100);
+                const budgetK = (stats.budgetUsed / 1000).toFixed(1);
+                budget.textContent = budgetK + 'k\u20AC (' + pct + '%)';
+                if (pct > 90) budget.style.color = 'var(--color-danger, #EF4444)';
+                else if (pct > 75) budget.style.color = 'var(--color-warning, #F59E0B)';
+                else budget.style.color = '';
+            } else {
+                budget.textContent = '-';
+                budget.style.color = '';
+            }
         }
+
+        this._updateNotifications();
+    }
+
+    /* ---- Notifications ---- */
+
+    _getNotifications() {
+        const today = formatDateISO(new Date());
+        const soon = formatDateISO(addDays(new Date(), 3));
+        const notifications = [];
+
+        const projects = store.getProjects();
+        projects.forEach(function(p) {
+            const tasks = store.getTasks(p.id);
+            const nonPhase = tasks.filter(function(t) { return !t.isPhase; });
+
+            nonPhase.filter(function(t) { return t.endDate && t.endDate < today && t.progress < 100; }).forEach(function(t) {
+                const days = daysBetween(new Date(t.endDate), new Date());
+                notifications.push({
+                    type: 'danger', icon: '\u26A0',
+                    text: '<strong>' + t.name + '</strong> en retard de ' + days + 'j',
+                    sub: p.name, taskId: t.id, projectId: p.id,
+                });
+            });
+
+            nonPhase.filter(function(t) { return t.isMilestone && t.endDate >= today && t.endDate <= soon && t.progress < 100; }).forEach(function(t) {
+                const days = daysBetween(new Date(), new Date(t.endDate));
+                notifications.push({
+                    type: 'warning', icon: '\u25C6',
+                    text: 'Jalon <strong>' + t.name + '</strong> dans ' + days + 'j',
+                    sub: p.name, taskId: t.id, projectId: p.id,
+                });
+            });
+
+            if (p.budget > 0 && p.budgetUsed > 0) {
+                const pct = Math.round((p.budgetUsed / p.budget) * 100);
+                if (pct > 90) {
+                    notifications.push({
+                        type: pct >= 100 ? 'danger' : 'warning', icon: '\u20AC',
+                        text: 'Budget <strong>' + p.name + '</strong> à ' + pct + '%',
+                        sub: (p.budgetUsed/1000).toFixed(1) + 'k / ' + (p.budget/1000).toFixed(1) + 'k\u20AC',
+                        projectId: p.id,
+                    });
+                }
+            }
+        });
+
+        return notifications;
+    }
+
+    _updateNotifications() {
+        const badge = $('#notifBadge');
+        if (!badge) return;
+        const notifs = this._getNotifications();
+        if (notifs.length > 0) {
+            badge.textContent = notifs.length > 99 ? '99+' : notifs.length;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    _bindNotifications() {
+        const self = this;
+        const btn = $('#notifBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            self._toggleNotifPanel();
+        });
+
+        document.addEventListener('click', function() {
+            const panel = document.getElementById('notifPanel');
+            if (panel) panel.remove();
+        });
+    }
+
+    _toggleNotifPanel() {
+        const self = this;
+        const existing = document.getElementById('notifPanel');
+        if (existing) { existing.remove(); return; }
+
+        const btn = $('#notifBtn');
+        const rect = btn.getBoundingClientRect();
+
+        const panel = document.createElement('div');
+        panel.id = 'notifPanel';
+        panel.className = 'notif-panel';
+        panel.style.right = (window.innerWidth - rect.right) + 'px';
+        panel.style.top = (rect.bottom + 6) + 'px';
+        panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+        const title = document.createElement('div');
+        title.className = 'notif-panel-title';
+        title.textContent = 'Notifications';
+        panel.appendChild(title);
+
+        const notifs = this._getNotifications();
+        if (notifs.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'notif-empty';
+            empty.textContent = 'Aucune alerte pour le moment';
+            panel.appendChild(empty);
+        } else {
+            notifs.forEach(function(n) {
+                const item = document.createElement('div');
+                item.className = 'notif-item';
+                if (n.taskId) item.style.cursor = 'pointer';
+
+                item.innerHTML = '<div class="notif-icon ' + n.type + '">' + n.icon + '</div>' +
+                    '<div class="notif-text">' + n.text +
+                    (n.sub ? '<div class="notif-sub">' + n.sub + '</div>' : '') +
+                    '</div>';
+
+                if (n.taskId) {
+                    item.addEventListener('click', function() {
+                        panel.remove();
+                        if (n.projectId) {
+                            store.setActiveProject(n.projectId);
+                            ganttRenderer.render();
+                            self._renderProjectName();
+                        }
+                        taskModal.openEdit(n.taskId);
+                    });
+                }
+                panel.appendChild(item);
+            });
+        }
+
+        document.body.appendChild(panel);
+    }
+
+    /* ---- Dashboard ---- */
+
+    _renderDashboard() {
+        const self = this;
+        const container = $('#dashboardView');
+        if (!container) return;
+
+        const projects = store.getProjects();
+        const allNotifs = this._getNotifications();
+        const today = formatDateISO(new Date());
+
+        let totalTasks = 0, completedTasks = 0, activeTasks = 0, totalProgress = 0, projectCount = projects.length;
+        let totalBudget = 0, totalBudgetUsed = 0;
+        const projectStats = [];
+
+        projects.forEach(function(p) {
+            const tasks = store.getTasks(p.id).filter(function(t) { return !t.isPhase; });
+            const done = tasks.filter(function(t) { return t.progress >= 100; }).length;
+            const active = tasks.length - done;
+            const avg = tasks.length ? Math.round(tasks.reduce(function(s, t) { return s + (t.progress || 0); }, 0) / tasks.length) : 0;
+            const overdue = tasks.filter(function(t) { return t.endDate && t.endDate < today && t.progress < 100; }).length;
+
+            totalTasks += tasks.length;
+            completedTasks += done;
+            activeTasks += active;
+            totalProgress += avg;
+            totalBudget += (p.budget || 0);
+            totalBudgetUsed += (p.budgetUsed || 0);
+
+            projectStats.push({ project: p, taskCount: tasks.length, done: done, active: active, progress: avg, overdue: overdue });
+        });
+
+        const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
+        const budgetPct = totalBudget > 0 ? Math.round((totalBudgetUsed / totalBudget) * 100) : 0;
+
+        let projectsHTML = projectStats.map(function(ps) {
+            const color = ps.progress >= 100 ? '#10B981' : ps.overdue > 0 ? '#EF4444' : '#6366F1';
+            return '<div class="dashboard-project-row" data-project-id="' + ps.project.id + '" style="cursor:pointer;">' +
+                '<div class="dashboard-project-name">' + ps.project.name + '</div>' +
+                '<div class="dashboard-progress-bar"><div class="dashboard-progress-fill" style="width:' + ps.progress + '%;background:' + color + ';"></div></div>' +
+                '<div class="dashboard-progress-pct" style="color:' + color + '">' + ps.progress + '%</div></div>';
+        }).join('');
+
+        let alertsHTML = '';
+        if (allNotifs.length === 0) {
+            alertsHTML = '<div class="notif-empty">Aucune alerte</div>';
+        } else {
+            alertsHTML = '<ul class="dashboard-alert-list">' + allNotifs.slice(0, 15).map(function(n) {
+                const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
+                return '<li class="dashboard-alert-item"><span class="dashboard-alert-dot ' + dotColor + '"></span><span>' + n.text +
+                    (n.sub ? ' <span style="color:var(--text-tertiary);font-size:11px;">- ' + n.sub + '</span>' : '') + '</span></li>';
+            }).join('') + (allNotifs.length > 15 ? '<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+' + (allNotifs.length - 15) + ' autres alertes</li>' : '') + '</ul>';
+        }
+
+        const budgetStyle = budgetPct > 90 ? 'color:#EF4444' : budgetPct > 75 ? 'color:#F59E0B' : '';
+
+        container.innerHTML = '<div class="dashboard-grid">' +
+            '<div class="dashboard-card" style="grid-column: 1 / -1;"><h3>Vue d\'ensemble</h3>' +
+            '<div class="dashboard-kpi-grid">' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + projectCount + '</div><div class="kpi-label">Projets</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + totalTasks + '</div><div class="kpi-label">Tâches totales</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + activeTasks + '</div><div class="kpi-label">Tâches actives</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + completedTasks + '</div><div class="kpi-label">Terminées</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + avgProgress + '%</div><div class="kpi-label">Progression moy.</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value" style="' + budgetStyle + '">' + (totalBudget > 0 ? budgetPct + '%' : '-') + '</div><div class="kpi-label">Budget utilisé</div></div>' +
+            '</div></div>' +
+            '<div class="dashboard-card"><h3>Projets (' + projectCount + ')</h3>' + projectsHTML + '</div>' +
+            '<div class="dashboard-card"><h3>Alertes (' + allNotifs.length + ')</h3>' + alertsHTML + '</div>' +
+            '</div>';
+
+        container.querySelectorAll('[data-project-id]').forEach(function(row) {
+            row.addEventListener('click', function() {
+                store.setActiveProject(row.dataset.projectId);
+                ganttRenderer.render();
+                self._renderStats();
+                self._renderProjectName();
+                self._switchView('timeline');
+                const tabs = $$('.tab[role="tab"]');
+                tabs.forEach(function(t) {
+                    t.classList.toggle('active', t.dataset.view === 'timeline');
+                    t.setAttribute('aria-selected', t.dataset.view === 'timeline' ? 'true' : 'false');
+                });
+            });
+        });
     }
 
     /* ---- Project Name ---- */

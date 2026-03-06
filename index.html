@@ -131,6 +131,16 @@
                     </svg>
                     <span>Ressources</span>
                 </button>
+                <!-- Dashboard Tab -->
+                <button class="tab" role="tab" aria-selected="false" data-view="dashboard" tabindex="-1" id="tabDashboard" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="9"/>
+                        <rect x="14" y="3" width="7" height="5"/>
+                        <rect x="14" y="12" width="7" height="9"/>
+                        <rect x="3" y="16" width="7" height="5"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
             </div>
 
             <div class="toolbar-actions">
@@ -187,6 +197,15 @@
                     <span>Exporter</span>
                 </button>
 
+                <!-- Notifications -->
+                <button class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications" style="position: relative;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+
                 <!-- Add Task -->
                 <button class="btn btn-primary" id="addTaskBtn" aria-label="Ajouter une nouvelle tâche (Ctrl+N)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -212,6 +231,9 @@
 
             <!-- Resource View (hidden by default) -->
             <div id="resourceView" style="display: none;" aria-label="Vue ressources"></div>
+
+            <!-- Dashboard View (hidden by default) -->
+            <div id="dashboardView" style="display: none;" aria-label="Dashboard multi-projets"></div>
         </main>
 
         <!-- ==================== STATS BAR ==================== -->
@@ -298,13 +320,14 @@
                 </svg>
                 <span>Équipe</span>
             </button>
-            <button class="mobile-nav-item" aria-label="Plus d'options">
+            <button class="mobile-nav-item" data-view="dashboard" aria-label="Vue Dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="12" cy="12" r="1"/>
-                    <circle cx="19" cy="12" r="1"/>
-                    <circle cx="5" cy="12" r="1"/>
+                    <rect x="3" y="3" width="7" height="9"/>
+                    <rect x="14" y="3" width="7" height="5"/>
+                    <rect x="14" y="12" width="7" height="9"/>
+                    <rect x="3" y="16" width="7" height="5"/>
                 </svg>
-                <span>Plus</span>
+                <span>Dashboard</span>
             </button>
         </div>
     </nav>

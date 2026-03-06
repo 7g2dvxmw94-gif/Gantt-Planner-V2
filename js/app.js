@@ -54,6 +54,7 @@ class App {
         this._bindKeyboardShortcuts();
         this._bindContextMenu();
         this._bindProjectSelector();
+        this._bindNotifications();
         this._buildFilterBar();
 
         // Render stats
@@ -123,11 +124,13 @@ class App {
         const ganttWrapper = $('.gantt-wrapper');
         const boardView = $('#boardView');
         const resourceView = $('#resourceView');
+        const dashboardView = $('#dashboardView');
 
         // Hide all views
         if (ganttWrapper) ganttWrapper.style.display = 'none';
         if (boardView) boardView.style.display = 'none';
         if (resourceView) resourceView.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'none';
 
         // Show active view
         switch (view) {
@@ -148,6 +151,12 @@ class App {
                     this._renderResourceView();
                 }
                 break;
+            case 'dashboard':
+                if (dashboardView) {
+                    dashboardView.style.display = '';
+                    this._renderDashboard();
+                }
+                break;
         }
 
         // Update mobile nav
@@ -166,6 +175,9 @@ class App {
                 break;
             case 'resources':
                 this._renderResourceView();
+                break;
+            case 'dashboard':
+                this._renderDashboard();
                 break;
         }
     }
@@ -1483,13 +1495,291 @@ tr:nth-child(even){background:#fafbfc}
         const progress = $('#statProgress');
         const budget = $('#statBudget');
 
-        if (taskCount) taskCount.textContent = stats.activeTasks;
-        if (daysRemaining) daysRemaining.textContent = stats.daysRemaining;
+        if (taskCount) {
+            taskCount.textContent = stats.activeTasks;
+            const parent = taskCount.closest('.stat-item');
+            if (parent) parent.title = `${stats.completedTasks}/${stats.totalTasks} terminées`;
+        }
+        if (daysRemaining) {
+            daysRemaining.textContent = stats.daysRemaining;
+            if (stats.daysRemaining <= 3 && stats.daysRemaining > 0) {
+                daysRemaining.style.color = 'var(--color-warning, #F59E0B)';
+            } else if (stats.daysRemaining <= 0 && stats.totalTasks > 0) {
+                daysRemaining.style.color = 'var(--color-danger, #EF4444)';
+            } else {
+                daysRemaining.style.color = '';
+            }
+        }
         if (progress) progress.textContent = stats.progress + '%';
         if (budget) {
-            const budgetK = (stats.budgetUsed / 1000).toFixed(1);
-            budget.textContent = budgetK + 'k\u20AC';
+            if (stats.budget > 0) {
+                const pct = Math.round((stats.budgetUsed / stats.budget) * 100);
+                const budgetK = (stats.budgetUsed / 1000).toFixed(1);
+                budget.textContent = `${budgetK}k\u20AC (${pct}%)`;
+                if (pct > 90) budget.style.color = 'var(--color-danger, #EF4444)';
+                else if (pct > 75) budget.style.color = 'var(--color-warning, #F59E0B)';
+                else budget.style.color = '';
+            } else {
+                budget.textContent = '-';
+                budget.style.color = '';
+            }
         }
+
+        // Update notification badge
+        this._updateNotifications();
+    }
+
+    /* ---- Notifications ---- */
+
+    _getNotifications() {
+        const today = formatDateISO(new Date());
+        const soon = formatDateISO(addDays(new Date(), 3));
+        const notifications = [];
+
+        const projects = store.getProjects();
+        projects.forEach(p => {
+            const tasks = store.getTasks(p.id);
+            const nonPhase = tasks.filter(t => !t.isPhase);
+
+            // Overdue tasks
+            nonPhase.filter(t => t.endDate && t.endDate < today && t.progress < 100).forEach(t => {
+                const days = daysBetween(new Date(t.endDate), new Date());
+                notifications.push({
+                    type: 'danger',
+                    icon: '\u26A0',
+                    text: `<strong>${t.name}</strong> en retard de ${days}j`,
+                    sub: p.name,
+                    taskId: t.id,
+                    projectId: p.id,
+                });
+            });
+
+            // Milestones approaching (within 3 days)
+            nonPhase.filter(t => t.isMilestone && t.endDate >= today && t.endDate <= soon && t.progress < 100).forEach(t => {
+                const days = daysBetween(new Date(), new Date(t.endDate));
+                notifications.push({
+                    type: 'warning',
+                    icon: '\u25C6',
+                    text: `Jalon <strong>${t.name}</strong> dans ${days}j`,
+                    sub: p.name,
+                    taskId: t.id,
+                    projectId: p.id,
+                });
+            });
+
+            // Budget alert
+            if (p.budget > 0 && p.budgetUsed > 0) {
+                const pct = Math.round((p.budgetUsed / p.budget) * 100);
+                if (pct > 90) {
+                    notifications.push({
+                        type: pct >= 100 ? 'danger' : 'warning',
+                        icon: '\u20AC',
+                        text: `Budget <strong>${p.name}</strong> à ${pct}%`,
+                        sub: `${(p.budgetUsed/1000).toFixed(1)}k / ${(p.budget/1000).toFixed(1)}k\u20AC`,
+                        projectId: p.id,
+                    });
+                }
+            }
+        });
+
+        return notifications;
+    }
+
+    _updateNotifications() {
+        const badge = $('#notifBadge');
+        if (!badge) return;
+        const notifs = this._getNotifications();
+        if (notifs.length > 0) {
+            badge.textContent = notifs.length > 99 ? '99+' : notifs.length;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    _bindNotifications() {
+        const btn = $('#notifBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleNotifPanel();
+        });
+
+        document.addEventListener('click', () => {
+            const panel = document.getElementById('notifPanel');
+            if (panel) panel.remove();
+        });
+    }
+
+    _toggleNotifPanel() {
+        const existing = document.getElementById('notifPanel');
+        if (existing) { existing.remove(); return; }
+
+        const btn = $('#notifBtn');
+        const rect = btn.getBoundingClientRect();
+
+        const panel = document.createElement('div');
+        panel.id = 'notifPanel';
+        panel.className = 'notif-panel';
+        panel.style.right = (window.innerWidth - rect.right) + 'px';
+        panel.style.top = (rect.bottom + 6) + 'px';
+        panel.addEventListener('click', (e) => e.stopPropagation());
+
+        const title = document.createElement('div');
+        title.className = 'notif-panel-title';
+        title.textContent = 'Notifications';
+        panel.appendChild(title);
+
+        const notifs = this._getNotifications();
+        if (notifs.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'notif-empty';
+            empty.textContent = 'Aucune alerte pour le moment';
+            panel.appendChild(empty);
+        } else {
+            notifs.forEach(n => {
+                const item = document.createElement('div');
+                item.className = 'notif-item';
+                if (n.taskId) item.style.cursor = 'pointer';
+
+                item.innerHTML = `<div class="notif-icon ${n.type}">${n.icon}</div>` +
+                    `<div class="notif-text">${n.text}` +
+                    (n.sub ? `<div class="notif-sub">${n.sub}</div>` : '') +
+                    `</div>`;
+
+                if (n.taskId) {
+                    item.addEventListener('click', () => {
+                        panel.remove();
+                        if (n.projectId) {
+                            store.setActiveProject(n.projectId);
+                            ganttRenderer.render();
+                            this._renderProjectName();
+                        }
+                        taskModal.openEdit(n.taskId);
+                    });
+                }
+                panel.appendChild(item);
+            });
+        }
+
+        document.body.appendChild(panel);
+    }
+
+    /* ---- Dashboard ---- */
+
+    _renderDashboard() {
+        const container = $('#dashboardView');
+        if (!container) return;
+
+        const projects = store.getProjects();
+        const allNotifs = this._getNotifications();
+        const today = formatDateISO(new Date());
+
+        // Global KPIs across all projects
+        let totalTasks = 0, completedTasks = 0, activeTasks = 0, totalProgress = 0, projectCount = projects.length;
+        let totalBudget = 0, totalBudgetUsed = 0;
+        const projectStats = [];
+
+        projects.forEach(p => {
+            const tasks = store.getTasks(p.id).filter(t => !t.isPhase);
+            const done = tasks.filter(t => t.progress >= 100).length;
+            const active = tasks.length - done;
+            const avg = tasks.length ? Math.round(tasks.reduce((s, t) => s + (t.progress || 0), 0) / tasks.length) : 0;
+            const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.progress < 100).length;
+
+            totalTasks += tasks.length;
+            completedTasks += done;
+            activeTasks += active;
+            totalProgress += avg;
+            totalBudget += (p.budget || 0);
+            totalBudgetUsed += (p.budgetUsed || 0);
+
+            projectStats.push({ project: p, taskCount: tasks.length, done, active, progress: avg, overdue });
+        });
+
+        const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
+        const budgetPct = totalBudget > 0 ? Math.round((totalBudgetUsed / totalBudget) * 100) : 0;
+
+        container.innerHTML = `
+        <div class="dashboard-grid">
+            <!-- KPI Cards -->
+            <div class="dashboard-card" style="grid-column: 1 / -1;">
+                <h3>Vue d'ensemble</h3>
+                <div class="dashboard-kpi-grid">
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${projectCount}</div>
+                        <div class="kpi-label">Projets</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${totalTasks}</div>
+                        <div class="kpi-label">Tâches totales</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${activeTasks}</div>
+                        <div class="kpi-label">Tâches actives</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${completedTasks}</div>
+                        <div class="kpi-label">Terminées</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${avgProgress}%</div>
+                        <div class="kpi-label">Progression moy.</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value" style="${budgetPct > 90 ? 'color:#EF4444' : budgetPct > 75 ? 'color:#F59E0B' : ''}">${totalBudget > 0 ? budgetPct + '%' : '-'}</div>
+                        <div class="kpi-label">Budget utilisé</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects breakdown -->
+            <div class="dashboard-card">
+                <h3>Projets (${projectCount})</h3>
+                ${projectStats.map(ps => {
+                    const color = ps.progress >= 100 ? '#10B981' : ps.overdue > 0 ? '#EF4444' : '#6366F1';
+                    return `<div class="dashboard-project-row" data-project-id="${ps.project.id}" style="cursor:pointer;">
+                        <div class="dashboard-project-name">${ps.project.name}</div>
+                        <div class="dashboard-progress-bar">
+                            <div class="dashboard-progress-fill" style="width:${ps.progress}%;background:${color};"></div>
+                        </div>
+                        <div class="dashboard-progress-pct" style="color:${color}">${ps.progress}%</div>
+                    </div>`;
+                }).join('')}
+            </div>
+
+            <!-- Alerts -->
+            <div class="dashboard-card">
+                <h3>Alertes (${allNotifs.length})</h3>
+                ${allNotifs.length === 0
+                    ? '<div class="notif-empty">Aucune alerte</div>'
+                    : `<ul class="dashboard-alert-list">${allNotifs.slice(0, 15).map(n => {
+                        const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
+                        return `<li class="dashboard-alert-item">
+                            <span class="dashboard-alert-dot ${dotColor}"></span>
+                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
+                        </li>`;
+                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
+            </div>
+        </div>`;
+
+        // Click handler to switch to project
+        container.querySelectorAll('[data-project-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                store.setActiveProject(row.dataset.projectId);
+                ganttRenderer.render();
+                this._renderStats();
+                this._renderProjectName();
+                // Switch to timeline view
+                this._switchView('timeline');
+                const tabs = $$('.tab[role="tab"]');
+                tabs.forEach(t => {
+                    t.classList.toggle('active', t.dataset.view === 'timeline');
+                    t.setAttribute('aria-selected', t.dataset.view === 'timeline' ? 'true' : 'false');
+                });
+            });
+        });
     }
 
     /* ---- Project Name ---- */
