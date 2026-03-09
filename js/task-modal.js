@@ -47,30 +47,63 @@ class TaskModal {
         // Body
         const body = createElement('div', { className: 'modal-body' });
 
+        // === TYPE SELECTOR (top of modal) ===
+        const typeGroup = createElement('div', { className: 'form-group' });
+        typeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type'));
+        const typeSwitcher = createElement('div', { className: 'type-switcher' });
+        this._typeButtons = {};
+        [['task', 'Tâche', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
+         ['milestone', 'Jalon', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
+         ['phase', 'Phase', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>']
+        ].forEach(([val, lbl, icon]) => {
+            const btn = createElement('button', {
+                className: 'type-switcher-btn' + (val === 'task' ? ' active' : ''),
+                dataset: { type: val },
+                onClick: (e) => {
+                    e.preventDefault();
+                    this._setTaskType(val);
+                },
+            });
+            btn.innerHTML = icon + `<span>${lbl}</span>`;
+            this._typeButtons[val] = btn;
+            typeSwitcher.appendChild(btn);
+        });
+        typeGroup.appendChild(typeSwitcher);
+        body.appendChild(typeGroup);
+
+        // Hidden checkboxes (keep for data binding)
+        this._milestoneCheck = { input: createElement('input', { type: 'checkbox', id: 'taskMilestone', style: { display: 'none' } }) };
+        this._phaseCheck = { input: createElement('input', { type: 'checkbox', id: 'taskPhase', style: { display: 'none' } }) };
+
         // Task name
         body.appendChild(this._createField('Nom de la tâche', 'text', 'taskName', 'Ex: Design de la page d\'accueil'));
 
+        // Name + Parent row
+        const nameParentRow = createElement('div', { className: 'form-row' });
+        // Parent phase selector
+        const parentGroup = createElement('div', { className: 'form-group' });
+        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, 'Phase parente'));
+        this._parentSelect = createElement('select', { className: 'select', id: 'taskParent' });
+        parentGroup.appendChild(this._parentSelect);
+        nameParentRow.appendChild(parentGroup);
         // Description
         const descGroup = createElement('div', { className: 'form-group' });
         descGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDesc' }, 'Description'));
         this._descInput = createElement('textarea', {
             className: 'input',
             id: 'taskDesc',
-            rows: '3',
+            rows: '2',
             placeholder: 'Description optionnelle...',
-            style: { resize: 'vertical', minHeight: '60px' },
+            style: { resize: 'vertical', minHeight: '48px' },
         });
         descGroup.appendChild(this._descInput);
-        body.appendChild(descGroup);
+        nameParentRow.appendChild(descGroup);
+        body.appendChild(nameParentRow);
 
-        // Dates row
-        const datesRow = createElement('div', { className: 'form-row' });
+        // Dates + Duration row (3 columns)
+        const datesRow = createElement('div', { className: 'form-row form-row-3' });
         datesRow.appendChild(this._createField('Date de début', 'date', 'taskStart'));
         datesRow.appendChild(this._createField('Date de fin', 'date', 'taskEnd'));
-        body.appendChild(datesRow);
-
-        // Duration row
-        const durationRow = createElement('div', { className: 'form-row' });
         const durationGroup = createElement('div', { className: 'form-group' });
         durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, 'Durée (jours)'));
         this._durationInput = createElement('input', {
@@ -79,21 +112,14 @@ class TaskModal {
             id: 'taskDuration',
             min: '1',
             value: '7',
-            placeholder: 'Nombre de jours',
+            placeholder: 'Jours',
         });
         durationGroup.appendChild(this._durationInput);
-        durationRow.appendChild(durationGroup);
+        datesRow.appendChild(durationGroup);
+        body.appendChild(datesRow);
 
-        // Parent phase selector
-        const parentGroup = createElement('div', { className: 'form-group' });
-        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, 'Phase parente'));
-        this._parentSelect = createElement('select', { className: 'select', id: 'taskParent' });
-        parentGroup.appendChild(this._parentSelect);
-        durationRow.appendChild(parentGroup);
-        body.appendChild(durationRow);
-
-        // Type row
-        const typeRow = createElement('div', { className: 'form-row' });
+        // Priority + Status + Progress row (3 columns)
+        const metaRow = createElement('div', { className: 'form-row form-row-3' });
 
         // Priority
         const priorityGroup = createElement('div', { className: 'form-group' });
@@ -105,7 +131,7 @@ class TaskModal {
             this._prioritySelect.appendChild(opt);
         });
         priorityGroup.appendChild(this._prioritySelect);
-        typeRow.appendChild(priorityGroup);
+        metaRow.appendChild(priorityGroup);
 
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
@@ -115,11 +141,7 @@ class TaskModal {
             this._statusSelect.appendChild(createElement('option', { value: val }, lbl));
         });
         statusGroup.appendChild(this._statusSelect);
-        typeRow.appendChild(statusGroup);
-        body.appendChild(typeRow);
-
-        // Progress + Assignee row
-        const progressRow = createElement('div', { className: 'form-row' });
+        metaRow.appendChild(statusGroup);
 
         // Progress
         const progressGroup = createElement('div', { className: 'form-group' });
@@ -141,29 +163,11 @@ class TaskModal {
         progressWrap.appendChild(this._progressInput);
         progressWrap.appendChild(this._progressLabel);
         progressGroup.appendChild(progressWrap);
-        progressRow.appendChild(progressGroup);
+        metaRow.appendChild(progressGroup);
+        body.appendChild(metaRow);
 
-        // Assignees (multi-select checkboxes)
-        const assigneeGroup = createElement('div', { className: 'form-group' });
-        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Assigné à'));
-        this._assigneeList = createElement('div', { className: 'assignee-list' });
-        assigneeGroup.appendChild(this._assigneeList);
-        progressRow.appendChild(assigneeGroup);
-        body.appendChild(progressRow);
-
-        // Predecessors (with link type)
-        const predGroup = createElement('div', { className: 'form-group' });
-        predGroup.appendChild(createElement('label', { className: 'form-label' }, 'Précédée par'));
-        this._predList = createElement('div', { className: 'dep-list' });
-        predGroup.appendChild(this._predList);
-        body.appendChild(predGroup);
-
-        // Successors (with link type)
-        const succGroup = createElement('div', { className: 'form-group' });
-        succGroup.appendChild(createElement('label', { className: 'form-label' }, 'Succédée par'));
-        this._succList = createElement('div', { className: 'dep-list' });
-        succGroup.appendChild(this._succList);
-        body.appendChild(succGroup);
+        // Color + Assignees row
+        const colorAssignRow = createElement('div', { className: 'form-row' });
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
@@ -185,15 +189,33 @@ class TaskModal {
             this._colorPicker.appendChild(swatch);
         });
         colorGroup.appendChild(this._colorPicker);
-        body.appendChild(colorGroup);
+        colorAssignRow.appendChild(colorGroup);
 
-        // Checkboxes row
-        const checkRow = createElement('div', { className: 'form-row form-check-row' });
-        this._milestoneCheck = this._createCheckbox('taskMilestone', 'Jalon (milestone)');
-        this._phaseCheck = this._createCheckbox('taskPhase', 'Phase (groupe)');
-        checkRow.appendChild(this._milestoneCheck.wrapper);
-        checkRow.appendChild(this._phaseCheck.wrapper);
-        body.appendChild(checkRow);
+        // Assignees (multi-select checkboxes)
+        const assigneeGroup = createElement('div', { className: 'form-group' });
+        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Assigné à'));
+        this._assigneeList = createElement('div', { className: 'assignee-list' });
+        assigneeGroup.appendChild(this._assigneeList);
+        colorAssignRow.appendChild(assigneeGroup);
+        body.appendChild(colorAssignRow);
+
+        // Dependencies row (predecessors + successors side by side)
+        const depRow = createElement('div', { className: 'form-row' });
+
+        // Predecessors (with link type)
+        const predGroup = createElement('div', { className: 'form-group' });
+        predGroup.appendChild(createElement('label', { className: 'form-label' }, 'Précédée par'));
+        this._predList = createElement('div', { className: 'dep-list' });
+        predGroup.appendChild(this._predList);
+        depRow.appendChild(predGroup);
+
+        // Successors (with link type)
+        const succGroup = createElement('div', { className: 'form-group' });
+        succGroup.appendChild(createElement('label', { className: 'form-label' }, 'Succédée par'));
+        this._succList = createElement('div', { className: 'dep-list' });
+        succGroup.appendChild(this._succList);
+        depRow.appendChild(succGroup);
+        body.appendChild(depRow);
 
         modal.appendChild(body);
 
@@ -242,6 +264,29 @@ class TaskModal {
         return { wrapper, input };
     }
 
+    _setTaskType(type) {
+        // Update visual buttons
+        Object.entries(this._typeButtons).forEach(([key, btn]) => {
+            btn.classList.toggle('active', key === type);
+        });
+
+        // Sync hidden checkboxes
+        this._milestoneCheck.input.checked = (type === 'milestone');
+        this._phaseCheck.input.checked = (type === 'phase');
+
+        // Apply milestone-specific logic
+        if (type === 'milestone') {
+            this._taskEnd.disabled = true;
+            this._taskEnd.value = this._taskStart.value;
+            this._durationInput.value = 1;
+            this._durationInput.disabled = true;
+        } else {
+            this._taskEnd.disabled = false;
+            this._durationInput.disabled = false;
+            this._updateDurationFromDates();
+        }
+    }
+
     /* ---- Events ---- */
 
     _bindEvents() {
@@ -257,29 +302,7 @@ class TaskModal {
             }
         });
 
-        // Milestone checkbox: auto-sync end date and duration
-        this._milestoneCheck.input.addEventListener('change', () => {
-            if (this._milestoneCheck.input.checked) {
-                this._taskEnd.disabled = true;
-                this._taskEnd.value = this._taskStart.value;
-                this._durationInput.value = 1;
-                this._durationInput.disabled = true;
-                this._phaseCheck.input.checked = false;
-            } else {
-                this._taskEnd.disabled = false;
-                this._durationInput.disabled = false;
-                this._updateDurationFromDates();
-            }
-        });
-
-        // Phase checkbox: uncheck milestone
-        this._phaseCheck.input.addEventListener('change', () => {
-            if (this._phaseCheck.input.checked) {
-                this._milestoneCheck.input.checked = false;
-                this._taskEnd.disabled = false;
-                this._durationInput.disabled = false;
-            }
-        });
+        // Type switcher events are handled by _setTaskType() via onClick
 
         // Start date change: update end date from duration
         this._taskStart.addEventListener('change', () => {
@@ -322,8 +345,8 @@ class TaskModal {
         this._statusSelect.value = 'todo';
         this._progressInput.value = 0;
         this._progressLabel.textContent = '0%';
-        this._milestoneCheck.input.checked = false;
-        this._phaseCheck.input.checked = false;
+        // Type
+        this._setTaskType('task');
 
         // Duration
         this._durationInput.value = 7;
@@ -367,8 +390,9 @@ class TaskModal {
         this._statusSelect.value = task.status;
         this._progressInput.value = task.progress;
         this._progressLabel.textContent = task.progress + '%';
-        this._milestoneCheck.input.checked = task.isMilestone;
-        this._phaseCheck.input.checked = task.isPhase;
+        // Type
+        const taskType = task.isMilestone ? 'milestone' : (task.isPhase ? 'phase' : 'task');
+        this._setTaskType(taskType);
 
         // Duration
         const days = Math.round((new Date(task.endDate) - new Date(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;

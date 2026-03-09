@@ -305,7 +305,8 @@
     width: 90%;
     max-width: 560px;
     max-height: 85vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     transform: translateY(20px) scale(0.95);
     transition: transform var(--transition-base);
 }
@@ -320,6 +321,7 @@
     justify-content: space-between;
     padding: var(--space-5);
     border-bottom: 1px solid var(--border-default);
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -330,6 +332,9 @@
 
 .modal-body {
     padding: var(--space-5);
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-footer {
@@ -338,6 +343,9 @@
     gap: var(--space-3);
     padding: var(--space-4) var(--space-5);
     border-top: 1px solid var(--border-default);
+    flex-shrink: 0;
+    background: var(--bg-base);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 /* ---- Form Groups ---- */
@@ -462,13 +470,60 @@
 /* ---- Task Modal Extras (Step 2) ---- */
 
 .task-modal {
-    max-width: 620px;
+    max-width: 700px;
+}
+
+/* ---- Type Switcher ---- */
+.type-switcher {
+    display: flex;
+    gap: var(--space-2);
+    background: var(--bg-muted);
+    border-radius: var(--radius-lg);
+    padding: var(--space-1);
+}
+
+.type-switcher-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.type-switcher-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-base);
+}
+
+.type-switcher-btn.active {
+    background: var(--bg-base);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.type-switcher-btn svg {
+    flex-shrink: 0;
 }
 
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-4);
+}
+
+.form-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 .form-row + .form-group,
@@ -785,10 +840,14 @@ textarea.input {
 
 /* ---- Responsive Modal ---- */
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
     .form-row {
         grid-template-columns: 1fr;
         gap: var(--space-3);
+    }
+
+    .form-row-3 {
+        grid-template-columns: 1fr;
     }
 
     .form-check-row {
@@ -799,6 +858,20 @@ textarea.input {
     .task-modal {
         width: 98%;
         max-height: 92vh;
+    }
+
+    .type-switcher-btn span {
+        display: none;
+    }
+
+    .type-switcher {
+        justify-content: center;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 750px) {
+    .form-row-3 {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
