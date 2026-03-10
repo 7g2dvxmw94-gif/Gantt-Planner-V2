@@ -402,8 +402,8 @@ table {
 
 /* ---- Icon Button ---- */
 .icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1276,6 +1276,23 @@ textarea.input {
 .dashboard-alert-dot.orange { background: #F59E0B; }
 .dashboard-alert-dot.blue   { background: #3B82F6; }
 
+/* ---- Onboarding Guide ---- */
+.onboarding-overlay { position: fixed; inset: 0; z-index: 10000; animation: onboarding-fadein .3s ease; }
+.onboarding-overlay.fade-out { opacity: 0; transition: opacity .3s ease; }
+@keyframes onboarding-fadein { from { opacity: 0; } to { opacity: 1; } }
+.onboarding-mask { position: absolute; inset: 0; width: 100%; height: 100%; }
+.onboarding-tooltip { position: fixed; z-index: 10001; background: var(--bg-elevated, var(--bg-base, #fff)); border: 1px solid var(--border-default, #E2E8F0); border-radius: var(--radius-lg, 12px); box-shadow: 0 12px 40px rgba(0,0,0,.2); padding: var(--space-4, 16px) var(--space-5, 20px); max-width: 340px; width: 90vw; color: var(--text-primary); }
+.onboarding-title { font-size: var(--font-size-base, 14px); font-weight: 700; margin-bottom: var(--space-2, 8px); }
+.onboarding-text { font-size: var(--font-size-sm, 13px); line-height: 1.5; color: var(--text-secondary, #64748B); margin-bottom: var(--space-4, 16px); }
+.onboarding-footer { display: flex; align-items: center; justify-content: space-between; }
+.onboarding-counter { font-size: var(--font-size-xs, 11px); color: var(--text-muted, #999); font-weight: 500; }
+.onboarding-btns { display: flex; gap: var(--space-2, 8px); }
+.onboarding-skip { padding: var(--space-2, 6px) var(--space-3, 12px); border: none; background: transparent; color: var(--text-muted, #999); font-size: var(--font-size-sm, 13px); cursor: pointer; border-radius: var(--radius-md, 6px); font-family: var(--font-sans); }
+.onboarding-skip:hover { background: var(--bg-muted, #f0f0f0); color: var(--text-primary); }
+.onboarding-next { padding: var(--space-2, 6px) var(--space-4, 16px); border: none; background: var(--color-primary, #6366F1); color: #fff; font-size: var(--font-size-sm, 13px); font-weight: 600; cursor: pointer; border-radius: var(--radius-md, 6px); font-family: var(--font-sans); transition: background var(--transition-fast); }
+.onboarding-next:hover { background: var(--color-primary-hover, #4F46E5); }
+.onboarding-next:focus-visible { outline: 2px solid var(--color-primary, #6366F1); outline-offset: 2px; }
+
 /* ========================================
    LAYOUT - HEADER, TOOLBAR, MAIN, FOOTER
    ======================================== */
@@ -1831,6 +1848,7 @@ textarea.input {
     transition: box-shadow var(--transition-fast);
     z-index: 2;
     user-select: none;
+    touch-action: none;
 }
 
 .gantt-bar:hover {
@@ -1930,6 +1948,7 @@ textarea.input {
     cursor: pointer;
     z-index: 2;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    touch-action: none;
 }
 
 .gantt-milestone:hover {
@@ -2146,8 +2165,8 @@ textarea.input {
 }
 
 .zoom-btn {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5229,6 +5248,10 @@ var ZOOM_CONFIG = {
     quarter: { colWidth: 200, label: 'Trimestre' },
 };
 
+const VIRTUAL_THRESHOLD = 80;
+const ROW_HEIGHT = 48;
+const BUFFER_ROWS = 10;
+
 class GanttRenderer {
     constructor() {
         this._container = null;
@@ -5236,6 +5259,8 @@ class GanttRenderer {
         this._timelineRange = null;
         this._dayColumns = [];
         this._criticalPath = null;
+        this._flatNodes = [];
+        this._virtualActive = false;
     }
 
     init() {
@@ -5244,6 +5269,21 @@ class GanttRenderer {
 
         // Listen for store changes
         store.on('change', () => this.render());
+
+        // Bind virtual scroll
+        const wrapper = this._container.closest('.gantt-wrapper');
+        if (wrapper) {
+            this._scrollWrapper = wrapper;
+            let ticking = false;
+            wrapper.addEventListener('scroll', () => {
+                if (!this._virtualActive || ticking) return;
+                ticking = true;
+                requestAnimationFrame(() => {
+                    this._updateVirtualRows();
+                    ticking = false;
+                });
+            });
+        }
 
         // Initial render
         const settings = store.getSettings();
@@ -5268,37 +5308,85 @@ class GanttRenderer {
         const tree = store.getTaskTree();
         this._timelineRange = store.getTimelineRange();
 
-        // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
-
-        // Calculate total timeline width for horizontal scrolling
         const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
         this._timelineWidth = this._dayColumns.length * colWidth;
 
         this._container.innerHTML = '';
-
-        // Build header
         this._container.appendChild(this._renderHeader());
 
-        // Build body
+        // Flatten tree for virtualisation
+        this._flatNodes = [];
+        this._flattenTree(tree, 0);
+
         const body = createElement('div', { className: 'gantt-body', role: 'treegrid', 'aria-label': 'Diagramme de Gantt' });
 
         if (tree.length === 0) {
             body.appendChild(this._renderEmpty());
+            this._virtualActive = false;
+        } else if (this._flatNodes.length > VIRTUAL_THRESHOLD) {
+            this._virtualActive = true;
+            const totalHeight = this._flatNodes.length * ROW_HEIGHT;
+            body.style.height = totalHeight + 'px';
+            body.style.position = 'relative';
+            this._virtualBody = body;
+            this._renderedRange = { start: -1, end: -1 };
+            const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+            this._container.style.minWidth = (this._timelineWidth + taskColWidth) + 'px';
+            this._container.appendChild(body);
+            this._updateVirtualRows();
+            this._lastBody = body;
+            this._lastTasks = tasks;
+            this._renderDependencies(body, tasks);
+            return;
         } else {
-            this._renderTree(tree, body, 0);
+            this._virtualActive = false;
+            this._flatNodes.forEach(({ node, depth }) => {
+                body.appendChild(this._renderRow(node, depth));
+            });
         }
 
-        // Set min-width on container so the timeline never collapses when rows are filtered
         const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
         this._container.style.minWidth = (this._timelineWidth + taskColWidth) + 'px';
-
         this._container.appendChild(body);
 
-        // Render dependency arrows
         this._lastBody = body;
         this._lastTasks = tasks;
         this._renderDependencies(body, tasks);
+    }
+
+    _flattenTree(nodes, depth) {
+        nodes.forEach(node => {
+            this._flatNodes.push({ node, depth });
+            if (node.children && node.children.length > 0 && !node.collapsed) {
+                this._flattenTree(node.children, depth + 1);
+            }
+        });
+    }
+
+    _updateVirtualRows() {
+        const body = this._virtualBody;
+        if (!body || !this._scrollWrapper) return;
+        const scrollTop = this._scrollWrapper.scrollTop;
+        const viewHeight = this._scrollWrapper.clientHeight;
+        const total = this._flatNodes.length;
+        let startIdx = Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS;
+        let endIdx = Math.ceil((scrollTop + viewHeight) / ROW_HEIGHT) + BUFFER_ROWS;
+        startIdx = Math.max(0, startIdx);
+        endIdx = Math.min(total, endIdx);
+        if (startIdx === this._renderedRange.start && endIdx === this._renderedRange.end) return;
+        this._renderedRange = { start: startIdx, end: endIdx };
+        body.querySelectorAll('.gantt-row').forEach(r => r.remove());
+        for (let i = startIdx; i < endIdx; i++) {
+            const { node, depth } = this._flatNodes[i];
+            const row = this._renderRow(node, depth);
+            row.style.position = 'absolute';
+            row.style.top = (i * ROW_HEIGHT) + 'px';
+            row.style.left = '0';
+            row.style.right = '0';
+            row.style.height = ROW_HEIGHT + 'px';
+            body.appendChild(row);
+        }
     }
 
     /** Re-render dependency arrows (called after filter changes) */
@@ -5873,11 +5961,11 @@ class TaskModal {
             id: 'taskModalOverlay',
         });
 
-        const modal = createElement('div', { className: 'modal task-modal' });
+        const modal = createElement('div', { className: 'modal task-modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'taskModalTitle' });
 
         // Header
         const header = createElement('div', { className: 'modal-header' });
-        this._titleEl = createElement('h2', { className: 'modal-title' }, 'Nouvelle tâche');
+        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, 'Nouvelle tâche');
         const closeBtn = createElement('button', {
             className: 'icon-btn',
             'aria-label': 'Fermer',
@@ -6130,10 +6218,21 @@ class TaskModal {
             if (e.target === this._overlay) this.close();
         });
 
-        // Close on Escape
+        // Close on Escape + focus trap
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._overlay.classList.contains('active')) {
-                this.close();
+            if (!this._overlay.classList.contains('active')) return;
+            if (e.key === 'Escape') { this.close(); return; }
+            if (e.key === 'Tab') {
+                const modal = this._overlay.querySelector('.modal');
+                const focusable = modal.querySelectorAll('button, [href], input:not([type="hidden"]):not([style*="display: none"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (!focusable.length) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
             }
         });
 
@@ -6555,6 +6654,7 @@ class GanttInteractions {
 
         this._onTaskClick = opts.onTaskClick;
         this._onUpdate = opts.onUpdate;
+        this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
         this._timelineStartFn = opts.getTimelineStart;
 
@@ -6669,12 +6769,37 @@ class GanttInteractions {
     /* ---- Touch Support ---- */
 
     _handleTouchStart(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this._pinchStartDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            this._pinching = true;
+            return;
+        }
         const touch = e.touches[0];
         const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target, preventDefault: () => e.preventDefault() };
         this._handleMouseDown(fakeEvent);
     }
 
     _handleTouchMove(e) {
+        if (this._pinching && e.touches.length === 2) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const ratio = dist / this._pinchStartDist;
+            if (ratio > 1.3 && !this._pinchFired) {
+                this._pinchFired = true;
+                if (this._onPinchZoom) this._onPinchZoom('in');
+            } else if (ratio < 0.7 && !this._pinchFired) {
+                this._pinchFired = true;
+                if (this._onPinchZoom) this._onPinchZoom('out');
+            }
+            return;
+        }
         if (!this._isDragging) return;
         e.preventDefault();
         const touch = e.touches[0];
@@ -6682,6 +6807,12 @@ class GanttInteractions {
     }
 
     _handleTouchEnd() {
+        if (this._pinching) {
+            this._pinching = false;
+            this._pinchFired = false;
+            this._pinchStartDist = 0;
+            return;
+        }
         if (!this._isDragging) return;
         this._finishDrag();
     }
@@ -7002,6 +7133,106 @@ var ganttInteractions = new GanttInteractions();
    ======================================== */
 
 
+/* ========================================
+   ONBOARDING - Interactive guide
+   ======================================== */
+
+const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
+const ONBOARDING_STEPS = [
+    { target: '.project-selector', title: 'Vos projets', text: 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.', position: 'bottom' },
+    { target: '.tabs', title: 'Vues du projet', text: 'Timeline, Tableau Kanban, Ressources et Dashboard : naviguez entre les différentes vues.', position: 'bottom' },
+    { target: '#addTaskBtn', title: 'Ajouter une tâche', text: 'Créez une tâche, un jalon ou une phase. Raccourci : Ctrl+N.', position: 'bottom' },
+    { target: '.gantt-wrapper', title: 'Diagramme de Gantt', text: 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.', position: 'top' },
+    { target: '.zoom-controls', title: 'Niveau de zoom', text: 'Passez de la vue Jour à Trimestre pour ajuster la granularité.', position: 'bottom' },
+    { target: '#exportBtn', title: 'Import / Export', text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.', position: 'bottom' },
+    { target: '.stats-bar', title: 'Statistiques', text: "Suivez l'avancement, le budget et les tâches actives en un coup d'œil.", position: 'top' },
+];
+
+class Onboarding {
+    constructor() { this._overlay = null; this._step = 0; this._active = false; }
+
+    tryAutoStart() {
+        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
+        setTimeout(() => this.start(), 600);
+    }
+
+    start() {
+        this._step = 0; this._active = true;
+        this._buildOverlay(); this._showStep();
+    }
+
+    _buildOverlay() {
+        if (this._overlay) this._overlay.remove();
+        this._overlay = document.createElement('div');
+        this._overlay.className = 'onboarding-overlay';
+        this._overlay.setAttribute('role', 'dialog');
+        this._overlay.setAttribute('aria-modal', 'true');
+        this._overlay.setAttribute('aria-label', 'Guide de démarrage');
+        this._overlay.innerHTML = '<svg class="onboarding-mask" width="100%" height="100%"><defs><mask id="onboardingMask"><rect width="100%" height="100%" fill="white"/><rect id="onboardingHole" rx="8" ry="8" fill="black"/></mask></defs><rect width="100%" height="100%" fill="rgba(0,0,0,.55)" mask="url(#onboardingMask)"/></svg>';
+        this._tooltip = document.createElement('div');
+        this._tooltip.className = 'onboarding-tooltip';
+        this._tooltip.innerHTML = '<div class="onboarding-title"></div><div class="onboarding-text"></div><div class="onboarding-footer"><span class="onboarding-counter"></span><div class="onboarding-btns"><button class="onboarding-skip">Passer</button><button class="onboarding-next">Suivant</button></div></div>';
+        this._overlay.appendChild(this._tooltip);
+        var self = this;
+        this._tooltip.querySelector('.onboarding-skip').addEventListener('click', function() { self._finish(); });
+        this._tooltip.querySelector('.onboarding-next').addEventListener('click', function() { self._next(); });
+        document.addEventListener('keydown', this._onKey = function(e) {
+            if (!self._active) return;
+            if (e.key === 'Escape') self._finish();
+            if (e.key === 'ArrowRight' || e.key === 'Enter') self._next();
+            if (e.key === 'ArrowLeft') self._prev();
+        });
+        document.body.appendChild(this._overlay);
+    }
+
+    _showStep() {
+        var step = ONBOARDING_STEPS[this._step];
+        if (!step) { this._finish(); return; }
+        var target = document.querySelector(step.target);
+        if (!target || target.offsetParent === null) {
+            this._step++;
+            if (this._step < ONBOARDING_STEPS.length) this._showStep(); else this._finish();
+            return;
+        }
+        var rect = target.getBoundingClientRect(), pad = 6;
+        var hole = this._overlay.querySelector('#onboardingHole');
+        hole.setAttribute('x', rect.left - pad); hole.setAttribute('y', rect.top - pad);
+        hole.setAttribute('width', rect.width + pad * 2); hole.setAttribute('height', rect.height + pad * 2);
+        this._tooltip.querySelector('.onboarding-title').textContent = step.title;
+        this._tooltip.querySelector('.onboarding-text').textContent = step.text;
+        this._tooltip.querySelector('.onboarding-counter').textContent = (this._step + 1) + ' / ' + ONBOARDING_STEPS.length;
+        var nextBtn = this._tooltip.querySelector('.onboarding-next');
+        nextBtn.textContent = this._step === ONBOARDING_STEPS.length - 1 ? 'Terminer' : 'Suivant';
+        var tt = this._tooltip;
+        tt.style.left = ''; tt.style.right = ''; tt.style.top = ''; tt.style.bottom = '';
+        requestAnimationFrame(function() {
+            var ttRect = tt.getBoundingClientRect();
+            var left = rect.left + rect.width / 2 - ttRect.width / 2;
+            left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
+            tt.style.left = left + 'px';
+            tt.style.top = step.position === 'bottom' ? (rect.bottom + pad + 12) + 'px' : (rect.top - pad - ttRect.height - 12) + 'px';
+        });
+        nextBtn.focus();
+    }
+
+    _next() { this._step++; if (this._step >= ONBOARDING_STEPS.length) this._finish(); else this._showStep(); }
+    _prev() { if (this._step > 0) { this._step--; this._showStep(); } }
+
+    _finish() {
+        this._active = false;
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+        if (this._overlay) {
+            this._overlay.classList.add('fade-out');
+            var ov = this._overlay;
+            setTimeout(function() { if (ov) ov.remove(); }, 300);
+            this._overlay = null;
+        }
+        if (this._onKey) { document.removeEventListener('keydown', this._onKey); this._onKey = null; }
+    }
+}
+
+const onboarding = new Onboarding();
+
 class App {
     constructor() {
         this._activeView = 'timeline';
@@ -7035,6 +7266,7 @@ class App {
             },
             getColWidth: () => ganttRenderer.zoomConfig[ganttRenderer.zoomLevel]?.colWidth || 50,
             getTimelineStart: () => store.getTimelineRange().start,
+            onPinchZoom: (direction) => this._handlePinchZoom(direction),
         });
 
         // Bind UI events
@@ -7063,6 +7295,9 @@ class App {
 
         // Announce to screen readers
         this._announceToSR('Gantt Planner Pro chargé');
+
+        // Onboarding for new users
+        onboarding.tryAutoStart();
     }
 
     /* ---- Tab Navigation ---- */
@@ -7867,7 +8102,7 @@ class App {
         var overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML =
-            '<div class="modal" style="max-width:560px">' +
+            '<div class="modal" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Import dans MS Project">' +
                 '<div class="modal-header">' +
                     '<h3>Import dans MS Project</h3>' +
                     '<button class="modal-close" id="msHelpClose">&times;</button>' +
@@ -8377,6 +8612,21 @@ class App {
         });
     }
 
+    _handlePinchZoom(direction) {
+        const levels = ['quarter', 'month', 'week', 'day'];
+        const current = levels.indexOf(ganttRenderer.zoomLevel);
+        const next = direction === 'in'
+            ? Math.min(current + 1, levels.length - 1)
+            : Math.max(current - 1, 0);
+        if (next === current) return;
+        const level = levels[next];
+        ganttRenderer.setZoom(level);
+        ganttRenderer.render();
+        document.querySelectorAll('.zoom-btn[data-zoom]').forEach(b => b.classList.toggle('active', b.dataset.zoom === level));
+        const label = document.querySelector('.zoom-label');
+        if (label) label.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+    }
+
     /* ---- Keyboard Shortcuts ---- */
 
     _bindKeyboardShortcuts() {
@@ -8459,9 +8709,40 @@ class App {
                     if (e.key === '1') this._switchViewByIndex(0);
                     if (e.key === '2') this._switchViewByIndex(1);
                     if (e.key === '3') this._switchViewByIndex(2);
+                    if (e.key === '?') this._showKeyboardHelp();
                 }
             }
         });
+    }
+
+    _showKeyboardHelp() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        const shortcuts = [
+            ['Ctrl+N', 'Nouvelle tâche'],
+            ['Ctrl+Z', 'Annuler'],
+            ['Ctrl+Y', 'Rétablir'],
+            ['Ctrl+F', 'Rechercher'],
+            ['Ctrl+D', 'Mode sombre/clair'],
+            ['1 / 2 / 3', 'Changer de vue'],
+            ['Suppr', 'Supprimer la sélection'],
+            ['Échap', 'Fermer / Annuler'],
+            ['?', 'Afficher cette aide'],
+        ];
+        const rows = shortcuts.map(function(s) {
+            return '<tr><td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap"><kbd style="background:var(--bg-muted,#f0f0f0);padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid var(--border-default,#e0e0e0)">' + s[0] + '</kbd></td><td style="padding:6px 0;font-size:13px">' + s[1] + '</td></tr>';
+        }).join('');
+        overlay.innerHTML =
+            '<div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">' +
+            '<div class="modal-header"><h2 class="modal-title">Raccourcis clavier</h2>' +
+            '<button class="icon-btn kbd-close" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
+            '<div class="modal-body" style="padding:12px 20px 20px"><table style="width:100%">' + rows + '</table>' +
+            '<button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">Relancer le guide de démarrage</button></div></div>';
+        document.body.appendChild(overlay);
+        var close = function() { overlay.remove(); };
+        overlay.querySelector('.kbd-close').addEventListener('click', close);
+        overlay.addEventListener('click', function(ev) { if (ev.target === overlay) close(); });
+        overlay.querySelector('#restartTour').addEventListener('click', function() { close(); onboarding.start(); });
     }
 
     _switchViewByIndex(index) {
