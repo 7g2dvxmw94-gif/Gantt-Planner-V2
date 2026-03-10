@@ -20,6 +20,10 @@ const ZOOM_CONFIG = {
     quarter: { colWidth: 200, label: 'Trimestre' },
 };
 
+const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
+const ROW_HEIGHT = 48;         // Must match --gantt-row-height
+const BUFFER_ROWS = 10;        // Extra rows rendered above/below viewport
+
 class GanttRenderer {
     constructor() {
         this._container = null;
@@ -27,6 +31,8 @@ class GanttRenderer {
         this._timelineRange = null;
         this._dayColumns = [];
         this._criticalPath = null;
+        this._flatNodes = [];
+        this._virtualActive = false;
     }
 
     init() {
@@ -35,6 +41,21 @@ class GanttRenderer {
 
         // Listen for store changes
         store.on('change', () => this.render());
+
+        // Bind virtual scroll
+        const wrapper = this._container.closest('.gantt-wrapper');
+        if (wrapper) {
+            this._scrollWrapper = wrapper;
+            let ticking = false;
+            wrapper.addEventListener('scroll', () => {
+                if (!this._virtualActive || ticking) return;
+                ticking = true;
+                requestAnimationFrame(() => {
+                    this._updateVirtualRows();
+                    ticking = false;
+                });
+            });
+        }
 
         // Initial render
         const settings = store.getSettings();
@@ -71,13 +92,39 @@ class GanttRenderer {
         // Build header
         this._container.appendChild(this._renderHeader());
 
+        // Flatten tree for virtualisation
+        this._flatNodes = [];
+        this._flattenTree(tree, 0);
+
         // Build body
         const body = createElement('div', { className: 'gantt-body', role: 'treegrid', 'aria-label': 'Diagramme de Gantt' });
 
         if (tree.length === 0) {
             body.appendChild(this._renderEmpty());
+            this._virtualActive = false;
+        } else if (this._flatNodes.length > VIRTUAL_THRESHOLD) {
+            // Virtual scrolling mode
+            this._virtualActive = true;
+            const totalHeight = this._flatNodes.length * ROW_HEIGHT;
+            body.style.height = totalHeight + 'px';
+            body.style.position = 'relative';
+            this._virtualBody = body;
+            this._renderedRange = { start: -1, end: -1 };
+            // Set min-width before first virtual update
+            const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+            this._container.style.minWidth = (this._timelineWidth + taskColWidth) + 'px';
+            this._container.appendChild(body);
+            this._updateVirtualRows();
+            // Render dependency arrows
+            this._lastBody = body;
+            this._lastTasks = tasks;
+            this._renderDependencies(body, tasks);
+            return;
         } else {
-            this._renderTree(tree, body, 0);
+            this._virtualActive = false;
+            this._flatNodes.forEach(({ node, depth }) => {
+                body.appendChild(this._renderRow(node, depth));
+            });
         }
 
         // Set min-width on container so the timeline never collapses when rows are filtered
@@ -90,6 +137,48 @@ class GanttRenderer {
         this._lastBody = body;
         this._lastTasks = tasks;
         this._renderDependencies(body, tasks);
+    }
+
+    _flattenTree(nodes, depth) {
+        nodes.forEach(node => {
+            this._flatNodes.push({ node, depth });
+            if (node.children && node.children.length > 0 && !node.collapsed) {
+                this._flattenTree(node.children, depth + 1);
+            }
+        });
+    }
+
+    _updateVirtualRows() {
+        const body = this._virtualBody;
+        if (!body || !this._scrollWrapper) return;
+
+        const scrollTop = this._scrollWrapper.scrollTop;
+        const viewHeight = this._scrollWrapper.clientHeight;
+        const total = this._flatNodes.length;
+
+        let startIdx = Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS;
+        let endIdx = Math.ceil((scrollTop + viewHeight) / ROW_HEIGHT) + BUFFER_ROWS;
+        startIdx = Math.max(0, startIdx);
+        endIdx = Math.min(total, endIdx);
+
+        // Skip re-render if range hasn't changed
+        if (startIdx === this._renderedRange.start && endIdx === this._renderedRange.end) return;
+        this._renderedRange = { start: startIdx, end: endIdx };
+
+        // Remove old rows (keep non-row children like SVG dep layer)
+        body.querySelectorAll('.gantt-row').forEach(r => r.remove());
+
+        // Render visible rows
+        for (let i = startIdx; i < endIdx; i++) {
+            const { node, depth } = this._flatNodes[i];
+            const row = this._renderRow(node, depth);
+            row.style.position = 'absolute';
+            row.style.top = (i * ROW_HEIGHT) + 'px';
+            row.style.left = '0';
+            row.style.right = '0';
+            row.style.height = ROW_HEIGHT + 'px';
+            body.appendChild(row);
+        }
     }
 
     /** Re-render dependency arrows (called after filter changes) */
