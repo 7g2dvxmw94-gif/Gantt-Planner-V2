@@ -2395,6 +2395,24 @@ tr:nth-child(even){background:#fafbfc}
         });
         dropdown.appendChild(newBtn);
 
+        // Duplicate current project
+        const dupBtn = document.createElement('button');
+        dupBtn.className = 'project-dropdown-item';
+        dupBtn.textContent = 'Dupliquer ce projet';
+        dupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.remove();
+            const dup = store.duplicateProject(activeProject.id);
+            if (dup) {
+                store.setActiveProject(dup.id);
+                ganttRenderer.render();
+                this._renderStats();
+                this._renderProjectName();
+                this._showToast(`Projet dupliqué : "${dup.name}"`, 'success');
+            }
+        });
+        dropdown.appendChild(dupBtn);
+
         // Delete current project (only if more than one)
         if (projects.length > 1) {
             const delBtn = document.createElement('button');

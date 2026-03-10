@@ -435,6 +435,47 @@ class Store {
         this._emit('project:delete', projectId);
     }
 
+    duplicateProject(projectId) {
+        this._snapshot();
+        const source = this._data.projects.find(p => p.id === projectId);
+        if (!source) return null;
+
+        const newProjectId = generateId();
+        const newProject = {
+            ...source,
+            id: newProjectId,
+            name: source.name + ' (copie)',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        this._data.projects.push(newProject);
+
+        // Duplicate tasks with new IDs, remapping parentId and dependencies
+        const sourceTasks = this._data.tasks.filter(t => t.projectId === projectId);
+        const idMap = {};
+        sourceTasks.forEach(t => { idMap[t.id] = generateId(); });
+
+        sourceTasks.forEach(t => {
+            const newTask = {
+                ...t,
+                id: idMap[t.id],
+                projectId: newProjectId,
+                parentId: t.parentId ? (idMap[t.parentId] || null) : null,
+                dependencies: (t.dependencies || []).map(d => ({
+                    ...d,
+                    taskId: idMap[d.taskId] || d.taskId,
+                })),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            this._data.tasks.push(newTask);
+        });
+
+        this._save();
+        this._emit('project:add', newProject);
+        return newProject;
+    }
+
     /* ---- Tasks ---- */
 
     getTasks(projectId = null) {
