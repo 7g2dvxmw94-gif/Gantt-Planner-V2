@@ -9,6 +9,7 @@ import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
+import { onboarding } from './onboarding.js';
 
 class App {
     constructor() {
@@ -72,6 +73,9 @@ class App {
 
         // Announce to screen readers
         this._announceToSR('Gantt Planner Pro chargé');
+
+        // Onboarding for new users
+        onboarding.tryAutoStart();
     }
 
     /* ---- Tab Navigation ---- */
@@ -1485,8 +1489,47 @@ tr:nth-child(even){background:#fafbfc}
                     if (e.key === '1') this._switchViewByIndex(0);
                     if (e.key === '2') this._switchViewByIndex(1);
                     if (e.key === '3') this._switchViewByIndex(2);
+                    if (e.key === '?') this._showKeyboardHelp();
                 }
             }
+        });
+    }
+
+    _showKeyboardHelp() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        const shortcuts = [
+            ['Ctrl+N', 'Nouvelle tâche'],
+            ['Ctrl+Z', 'Annuler'],
+            ['Ctrl+Y', 'Rétablir'],
+            ['Ctrl+F', 'Rechercher'],
+            ['Ctrl+D', 'Mode sombre/clair'],
+            ['1 / 2 / 3', 'Changer de vue'],
+            ['Suppr', 'Supprimer la sélection'],
+            ['Échap', 'Fermer / Annuler'],
+            ['?', 'Afficher cette aide'],
+        ];
+        const rows = shortcuts.map(([key, desc]) =>
+            `<tr><td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap"><kbd style="background:var(--bg-muted,#f0f0f0);padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid var(--border-default,#e0e0e0)">${key}</kbd></td><td style="padding:6px 0;font-size:13px">${desc}</td></tr>`
+        ).join('');
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
+                <div class="modal-header">
+                    <h2 class="modal-title">Raccourcis clavier</h2>
+                    <button class="icon-btn kbd-close" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body" style="padding:12px 20px 20px">
+                    <table style="width:100%">${rows}</table>
+                    <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">Relancer le guide de démarrage</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => overlay.remove();
+        overlay.querySelector('.kbd-close').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        overlay.querySelector('#restartTour').addEventListener('click', () => {
+            close();
+            onboarding.start();
         });
     }
 
