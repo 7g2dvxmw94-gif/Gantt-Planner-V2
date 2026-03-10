@@ -271,6 +271,7 @@
     transition: box-shadow var(--transition-fast);
     z-index: 2;
     user-select: none;
+    touch-action: none;
 }
 
 .gantt-bar:hover {
@@ -370,6 +371,7 @@
     cursor: pointer;
     z-index: 2;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    touch-action: none;
 }
 
 .gantt-milestone:hover {
@@ -586,8 +588,8 @@
 }
 
 .zoom-btn {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;

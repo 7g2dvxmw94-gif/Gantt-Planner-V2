@@ -870,7 +870,7 @@ ${assignLines.join('\n')}
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
-            <div class="modal" style="max-width:560px">
+            <div class="modal" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Import dans MS Project">
                 <div class="modal-header">
                     <h3>Import dans MS Project</h3>
                     <button class="modal-close" id="msHelpClose">&times;</button>

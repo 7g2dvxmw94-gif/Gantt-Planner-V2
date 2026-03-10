@@ -29,11 +29,16 @@ class TaskModal {
             id: 'taskModalOverlay',
         });
 
-        const modal = createElement('div', { className: 'modal task-modal' });
+        const modal = createElement('div', {
+            className: 'modal task-modal',
+            role: 'dialog',
+            'aria-modal': 'true',
+            'aria-labelledby': 'taskModalTitle',
+        });
 
         // Header
         const header = createElement('div', { className: 'modal-header' });
-        this._titleEl = createElement('h2', { className: 'modal-title' }, 'Nouvelle tâche');
+        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, 'Nouvelle tâche');
         const closeBtn = createElement('button', {
             className: 'icon-btn',
             'aria-label': 'Fermer',
@@ -295,10 +300,25 @@ class TaskModal {
             if (e.target === this._overlay) this.close();
         });
 
-        // Close on Escape
+        // Close on Escape + focus trap
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._overlay.classList.contains('active')) {
+            if (!this._overlay.classList.contains('active')) return;
+            if (e.key === 'Escape') {
                 this.close();
+                return;
+            }
+            // Focus trap
+            if (e.key === 'Tab') {
+                const modal = this._overlay.querySelector('.modal');
+                const focusable = modal.querySelectorAll('button, [href], input:not([type="hidden"]):not([style*="display: none"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (!focusable.length) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
             }
         });
 
