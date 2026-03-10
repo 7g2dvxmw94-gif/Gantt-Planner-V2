@@ -37,6 +37,7 @@ class GanttInteractions {
 
         this._onTaskClick = opts.onTaskClick;
         this._onUpdate = opts.onUpdate;
+        this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
         this._timelineStartFn = opts.getTimelineStart;
 
@@ -172,12 +173,39 @@ class GanttInteractions {
     /* ---- Touch Support ---- */
 
     _handleTouchStart(e) {
+        // Pinch-to-zoom: 2 fingers
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this._pinchStartDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            this._pinching = true;
+            return;
+        }
         const touch = e.touches[0];
         const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target, preventDefault: () => e.preventDefault() };
         this._handleMouseDown(fakeEvent);
     }
 
     _handleTouchMove(e) {
+        // Pinch-to-zoom handling
+        if (this._pinching && e.touches.length === 2) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const ratio = dist / this._pinchStartDist;
+            if (ratio > 1.3 && !this._pinchFired) {
+                this._pinchFired = true;
+                if (this._onPinchZoom) this._onPinchZoom('in');
+            } else if (ratio < 0.7 && !this._pinchFired) {
+                this._pinchFired = true;
+                if (this._onPinchZoom) this._onPinchZoom('out');
+            }
+            return;
+        }
         if (!this._isDragging) return;
         e.preventDefault();
         const touch = e.touches[0];
@@ -185,6 +213,12 @@ class GanttInteractions {
     }
 
     _handleTouchEnd() {
+        if (this._pinching) {
+            this._pinching = false;
+            this._pinchFired = false;
+            this._pinchStartDist = 0;
+            return;
+        }
         if (!this._isDragging) return;
         this._finishDrag();
     }

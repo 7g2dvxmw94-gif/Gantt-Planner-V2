@@ -43,6 +43,7 @@ class App {
             },
             getColWidth: () => ganttRenderer.zoomConfig[ganttRenderer.zoomLevel]?.colWidth || 50,
             getTimelineStart: () => store.getTimelineRange().start,
+            onPinchZoom: (direction) => this._handlePinchZoom(direction),
         });
 
         // Bind UI events
@@ -1384,6 +1385,22 @@ tr:nth-child(even){background:#fafbfc}
                 }
             });
         });
+    }
+
+    _handlePinchZoom(direction) {
+        const levels = ['quarter', 'month', 'week', 'day'];
+        const current = levels.indexOf(ganttRenderer.zoomLevel);
+        const next = direction === 'in'
+            ? Math.min(current + 1, levels.length - 1)
+            : Math.max(current - 1, 0);
+        if (next === current) return;
+        const level = levels[next];
+        ganttRenderer.setZoom(level);
+        ganttRenderer.render();
+        // Update zoom UI
+        $$('.zoom-btn[data-zoom]').forEach(b => b.classList.toggle('active', b.dataset.zoom === level));
+        const label = $('.zoom-label');
+        if (label) label.textContent = ganttRenderer.zoomConfig[level]?.label || '';
     }
 
     /* ---- Keyboard Shortcuts ---- */
