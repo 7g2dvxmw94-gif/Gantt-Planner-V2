@@ -1244,6 +1244,10 @@ textarea.input {
 .notif-text strong { font-weight: 600; }
 .notif-text .notif-sub { color: var(--text-muted, #999); font-size: 11px; margin-top: 2px; }
 
+.notif-dismiss { flex-shrink: 0; width: 24px; height: 24px; border: none; background: transparent; color: var(--text-muted, #999); font-size: 16px; line-height: 1; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.notif-item:hover .notif-dismiss { opacity: 1; }
+.notif-dismiss:hover { background: var(--bg-muted, #f0f0f0); color: var(--text-primary, #333); }
+
 .notif-empty { padding: 24px 16px; text-align: center; color: var(--text-muted, #999); font-size: 13px; }
 
 /* ---- Dashboard View ---- */
@@ -8475,12 +8479,31 @@ class App {
 
     /* ---- Notifications ---- */
 
+    _notifKey(n) {
+        return n.type + ':' + (n.projectId || '') + ':' + (n.taskId || '');
+    }
+
+    _getDismissedNotifs() {
+        return this._dismissedNotifs || (this._dismissedNotifs = new Set(
+            JSON.parse(localStorage.getItem('gantt_dismissed_notifs') || '[]')
+        ));
+    }
+
+    _dismissNotification(key) {
+        const dismissed = this._getDismissedNotifs();
+        dismissed.add(key);
+        localStorage.setItem('gantt_dismissed_notifs', JSON.stringify([...dismissed]));
+        this._updateNotifications();
+    }
+
     _getNotifications() {
         const today = formatDateISO(new Date());
         const soon = formatDateISO(addDays(new Date(), 3));
         const notifications = [];
+        const dismissed = this._getDismissedNotifs();
 
         const projects = store.getProjects();
+        const self = this;
         projects.forEach(function(p) {
             const tasks = store.getTasks(p.id);
             const nonPhase = tasks.filter(function(t) { return !t.isPhase; });
@@ -8516,7 +8539,7 @@ class App {
             }
         });
 
-        return notifications;
+        return notifications.filter(function(n) { return !dismissed.has(self._notifKey(n)); });
     }
 
     _updateNotifications() {
@@ -8582,7 +8605,27 @@ class App {
                 item.innerHTML = '<div class="notif-icon ' + n.type + '">' + n.icon + '</div>' +
                     '<div class="notif-text">' + n.text +
                     (n.sub ? '<div class="notif-sub">' + n.sub + '</div>' : '') +
-                    '</div>';
+                    '</div>' +
+                    '<button class="notif-dismiss" title="Supprimer">&times;</button>';
+
+                var dismissBtn = item.querySelector('.notif-dismiss');
+                dismissBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    item.style.transition = 'opacity .2s, max-height .2s';
+                    item.style.opacity = '0';
+                    item.style.maxHeight = '0';
+                    item.style.overflow = 'hidden';
+                    setTimeout(function() {
+                        item.remove();
+                        self._dismissNotification(self._notifKey(n));
+                        if (!panel.querySelector('.notif-item')) {
+                            var empty = document.createElement('div');
+                            empty.className = 'notif-empty';
+                            empty.textContent = 'Aucune alerte pour le moment';
+                            panel.appendChild(empty);
+                        }
+                    }, 200);
+                });
 
                 if (n.taskId) {
                     item.addEventListener('click', function() {

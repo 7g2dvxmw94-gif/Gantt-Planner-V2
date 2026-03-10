@@ -947,6 +947,29 @@ textarea.input {
 .notif-text strong { font-weight: 600; }
 .notif-text .notif-sub { color: var(--text-muted, #999); font-size: 11px; margin-top: 2px; }
 
+.notif-dismiss {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #999);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity .15s, background .15s, color .15s;
+}
+.notif-item:hover .notif-dismiss { opacity: 1; }
+.notif-dismiss:hover {
+    background: var(--bg-muted, #f0f0f0);
+    color: var(--text-primary, #333);
+}
+
 .notif-empty {
     padding: 24px 16px;
     text-align: center;

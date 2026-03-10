@@ -1531,10 +1531,28 @@ tr:nth-child(even){background:#fafbfc}
 
     /* ---- Notifications ---- */
 
+    _notifKey(n) {
+        return `${n.type}:${n.projectId || ''}:${n.taskId || ''}`;
+    }
+
+    _getDismissedNotifs() {
+        return this._dismissedNotifs || (this._dismissedNotifs = new Set(
+            JSON.parse(localStorage.getItem('gantt_dismissed_notifs') || '[]')
+        ));
+    }
+
+    _dismissNotification(key) {
+        const dismissed = this._getDismissedNotifs();
+        dismissed.add(key);
+        localStorage.setItem('gantt_dismissed_notifs', JSON.stringify([...dismissed]));
+        this._updateNotifications();
+    }
+
     _getNotifications() {
         const today = formatDateISO(new Date());
         const soon = formatDateISO(addDays(new Date(), 3));
         const notifications = [];
+        const dismissed = this._getDismissedNotifs();
 
         const projects = store.getProjects();
         projects.forEach(p => {
@@ -1582,7 +1600,7 @@ tr:nth-child(even){background:#fafbfc}
             }
         });
 
-        return notifications;
+        return notifications.filter(n => !dismissed.has(this._notifKey(n)));
     }
 
     _updateNotifications() {
@@ -1646,7 +1664,28 @@ tr:nth-child(even){background:#fafbfc}
                 item.innerHTML = `<div class="notif-icon ${n.type}">${n.icon}</div>` +
                     `<div class="notif-text">${n.text}` +
                     (n.sub ? `<div class="notif-sub">${n.sub}</div>` : '') +
-                    `</div>`;
+                    `</div>` +
+                    `<button class="notif-dismiss" title="Supprimer">&times;</button>`;
+
+                const dismissBtn = item.querySelector('.notif-dismiss');
+                dismissBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    item.style.transition = 'opacity .2s, max-height .2s';
+                    item.style.opacity = '0';
+                    item.style.maxHeight = '0';
+                    item.style.overflow = 'hidden';
+                    setTimeout(() => {
+                        item.remove();
+                        this._dismissNotification(this._notifKey(n));
+                        // If no more items, show empty state
+                        if (!panel.querySelector('.notif-item')) {
+                            const empty = document.createElement('div');
+                            empty.className = 'notif-empty';
+                            empty.textContent = 'Aucune alerte pour le moment';
+                            panel.appendChild(empty);
+                        }
+                    }, 200);
+                });
 
                 if (n.taskId) {
                     item.addEventListener('click', () => {
