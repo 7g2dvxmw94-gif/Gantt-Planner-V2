@@ -10,6 +10,7 @@ import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 import { onboarding } from './onboarding.js';
+import { cloudBackup } from './cloud-backup.js';
 
 class App {
     constructor() {
@@ -643,6 +644,11 @@ class App {
         const importBtn = $('#importBtn');
         if (importBtn) {
             importBtn.addEventListener('click', () => this._importProject());
+        }
+
+        const cloudBtn = $('#cloudBackupBtn');
+        if (cloudBtn) {
+            cloudBtn.addEventListener('click', () => this._showCloudBackupModal());
         }
 
         const criticalPathBtn = $('#criticalPathBtn');
@@ -2068,6 +2074,397 @@ tr:nth-child(even){background:#fafbfc}
         } catch (e) {
             console.error('Excel import failed:', e);
             this._showToast('Erreur: ' + e.message, 'error');
+        }
+    }
+
+    /* ---- Cloud Backup ---- */
+
+    _showCloudBackupModal() {
+        // Remove existing
+        const existing = document.getElementById('cloudBackupModal');
+        if (existing) { existing.remove(); return; }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'cloudBackupModal';
+        overlay.className = 'cloud-modal-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'cloudModalTitle');
+
+        const modal = document.createElement('div');
+        modal.className = 'cloud-modal';
+
+        const config = cloudBackup.getConfig();
+        const isConfigured = config && config.apiKey;
+
+        if (!isConfigured) {
+            modal.innerHTML = this._cloudConfigHTML();
+        } else {
+            modal.innerHTML = '<div class="cloud-modal-loading">Connexion à Firebase...</div>';
+            this._initCloudAndShowPanel(modal);
+        }
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        // Bind config form if shown
+        setTimeout(() => this._bindCloudConfigForm(modal), 0);
+    }
+
+    _cloudConfigHTML() {
+        return `
+            <div class="cloud-modal-header">
+                <h2 id="cloudModalTitle">Sauvegarde Cloud</h2>
+                <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="cloud-modal-body">
+                <div class="cloud-setup-info">
+                    <h3>Configuration Firebase</h3>
+                    <p>Pour activer la sauvegarde cloud, vous devez créer un projet Firebase gratuit :</p>
+                    <ol>
+                        <li>Allez sur <strong>console.firebase.google.com</strong></li>
+                        <li>Créez un nouveau projet</li>
+                        <li>Activez <strong>Authentication</strong> (Google et/ou Email)</li>
+                        <li>Activez <strong>Cloud Firestore</strong></li>
+                        <li>Dans Paramètres du projet → Général, copiez la configuration</li>
+                    </ol>
+                </div>
+                <form id="cloudConfigForm" class="cloud-config-form">
+                    <div class="form-group">
+                        <label for="cfgApiKey">API Key *</label>
+                        <input type="text" id="cfgApiKey" required placeholder="AIzaSy...">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgAuthDomain">Auth Domain *</label>
+                        <input type="text" id="cfgAuthDomain" required placeholder="mon-projet.firebaseapp.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgProjectId">Project ID *</label>
+                        <input type="text" id="cfgProjectId" required placeholder="mon-projet">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgStorageBucket">Storage Bucket</label>
+                        <input type="text" id="cfgStorageBucket" placeholder="mon-projet.appspot.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgMessagingSenderId">Messaging Sender ID</label>
+                        <input type="text" id="cfgMessagingSenderId" placeholder="123456789">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgAppId">App ID</label>
+                        <input type="text" id="cfgAppId" placeholder="1:123:web:abc">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter</button>
+                </form>
+            </div>`;
+    }
+
+    _bindCloudConfigForm(modal) {
+        const form = modal.querySelector('#cloudConfigForm');
+        if (!form) return;
+
+        const closeBtn = modal.querySelector('.cloud-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => {
+            document.getElementById('cloudBackupModal')?.remove();
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const config = {
+                apiKey: form.querySelector('#cfgApiKey').value.trim(),
+                authDomain: form.querySelector('#cfgAuthDomain').value.trim(),
+                projectId: form.querySelector('#cfgProjectId').value.trim(),
+                storageBucket: form.querySelector('#cfgStorageBucket').value.trim(),
+                messagingSenderId: form.querySelector('#cfgMessagingSenderId').value.trim(),
+                appId: form.querySelector('#cfgAppId').value.trim(),
+            };
+
+            try {
+                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                await cloudBackup.init(config);
+                modal.innerHTML = '';
+                this._renderCloudPanel(modal);
+            } catch (err) {
+                this._showToast('Erreur Firebase: ' + err.message, 'error');
+                form.querySelector('button[type="submit"]').textContent = 'Connecter';
+            }
+        });
+    }
+
+    async _initCloudAndShowPanel(modal) {
+        try {
+            await cloudBackup.init();
+            this._renderCloudPanel(modal);
+        } catch (err) {
+            modal.innerHTML = this._cloudConfigHTML();
+            this._bindCloudConfigForm(modal);
+            this._showToast('Erreur Firebase: ' + err.message, 'error');
+        }
+    }
+
+    _renderCloudPanel(modal) {
+        const user = cloudBackup.getUser();
+
+        modal.innerHTML = `
+            <div class="cloud-modal-header">
+                <h2 id="cloudModalTitle">Sauvegarde Cloud</h2>
+                <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="cloud-modal-body">
+                ${user ? this._cloudLoggedInHTML(user) : this._cloudLoginHTML()}
+                <div id="cloudBackupList" class="cloud-backup-list"></div>
+            </div>`;
+
+        const closeBtn = modal.querySelector('.cloud-modal-close');
+        closeBtn.addEventListener('click', () => {
+            document.getElementById('cloudBackupModal')?.remove();
+        });
+
+        if (user) {
+            this._bindCloudActions(modal);
+            this._refreshBackupList(modal);
+        } else {
+            this._bindCloudLogin(modal);
+        }
+
+        // Listen for auth changes
+        cloudBackup.on('auth', (u) => {
+            this._renderCloudPanel(modal);
+        });
+    }
+
+    _cloudLoginHTML() {
+        return `
+            <div class="cloud-auth-section">
+                <p>Connectez-vous pour accéder à vos sauvegardes cloud.</p>
+                <button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 8px;">
+                    Connexion avec Google
+                </button>
+                <div class="cloud-email-divider"><span>ou par email</span></div>
+                <div class="cloud-email-form">
+                    <input type="email" id="cloudEmail" placeholder="Email" class="cloud-input">
+                    <input type="password" id="cloudPassword" placeholder="Mot de passe" class="cloud-input">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" id="cloudEmailLogin" style="flex:1;">Connexion</button>
+                        <button class="btn btn-secondary" id="cloudEmailRegister" style="flex:1;">Inscription</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; margin-top: 12px; font-size: 12px;">
+                    Modifier la configuration Firebase
+                </button>
+            </div>`;
+    }
+
+    _cloudLoggedInHTML(user) {
+        const name = user.displayName || user.email || 'Utilisateur';
+        return `
+            <div class="cloud-user-bar">
+                <span class="cloud-user-name">${name}</span>
+                <button class="btn btn-secondary btn-sm" id="cloudSignOut">Déconnexion</button>
+            </div>
+            <div class="cloud-actions">
+                <button class="btn btn-primary" id="cloudSaveAll" style="flex: 1;">
+                    Sauvegarder tous les projets
+                </button>
+                <button class="btn btn-secondary" id="cloudSaveCurrent" style="flex: 1;">
+                    Sauvegarder projet actif
+                </button>
+            </div>`;
+    }
+
+    _bindCloudLogin(modal) {
+        const googleBtn = modal.querySelector('#cloudGoogleLogin');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async () => {
+                try {
+                    await cloudBackup.signInWithGoogle();
+                } catch (err) {
+                    this._showToast('Erreur connexion Google: ' + err.message, 'error');
+                }
+            });
+        }
+
+        const emailLogin = modal.querySelector('#cloudEmailLogin');
+        if (emailLogin) {
+            emailLogin.addEventListener('click', async () => {
+                const email = modal.querySelector('#cloudEmail').value;
+                const password = modal.querySelector('#cloudPassword').value;
+                if (!email || !password) return;
+                try {
+                    await cloudBackup.signInWithEmail(email, password);
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                }
+            });
+        }
+
+        const emailRegister = modal.querySelector('#cloudEmailRegister');
+        if (emailRegister) {
+            emailRegister.addEventListener('click', async () => {
+                const email = modal.querySelector('#cloudEmail').value;
+                const password = modal.querySelector('#cloudPassword').value;
+                if (!email || !password) return;
+                try {
+                    await cloudBackup.registerWithEmail(email, password);
+                    this._showToast('Compte créé avec succès', 'success');
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                }
+            });
+        }
+
+        const resetBtn = modal.querySelector('#cloudResetConfig');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                cloudBackup.clearConfig();
+                modal.innerHTML = this._cloudConfigHTML();
+                this._bindCloudConfigForm(modal);
+            });
+        }
+    }
+
+    _bindCloudActions(modal) {
+        const signOutBtn = modal.querySelector('#cloudSignOut');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', async () => {
+                await cloudBackup.signOut();
+                this._renderCloudPanel(modal);
+            });
+        }
+
+        const saveAllBtn = modal.querySelector('#cloudSaveAll');
+        if (saveAllBtn) {
+            saveAllBtn.addEventListener('click', async () => {
+                try {
+                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.disabled = true;
+                    const data = store.exportAllProjects();
+                    const date = new Date().toLocaleDateString('fr-FR');
+                    await cloudBackup.saveBackup(`Backup complet - ${date}`, data);
+                    this._showToast('Sauvegarde cloud réussie', 'success');
+                    this._refreshBackupList(modal);
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.disabled = false;
+                }
+            });
+        }
+
+        const saveCurrentBtn = modal.querySelector('#cloudSaveCurrent');
+        if (saveCurrentBtn) {
+            saveCurrentBtn.addEventListener('click', async () => {
+                try {
+                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.disabled = true;
+                    const project = store.getActiveProject();
+                    const tasks = store.getTasks();
+                    const resources = store.getResources();
+                    const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
+                    await cloudBackup.saveBackup(project.name, data);
+                    this._showToast(`"${project.name}" sauvegardé`, 'success');
+                    this._refreshBackupList(modal);
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    async _refreshBackupList(modal) {
+        const container = modal.querySelector('#cloudBackupList');
+        if (!container) return;
+
+        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+
+        try {
+            const backups = await cloudBackup.listBackups();
+            if (backups.length === 0) {
+                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde cloud</div>';
+                return;
+            }
+
+            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            backups.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'cloud-backup-item';
+                const date = b.createdAt.toLocaleDateString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                const size = b.size > 1024 * 1024
+                    ? (b.size / (1024 * 1024)).toFixed(1) + ' Mo'
+                    : Math.round(b.size / 1024) + ' Ko';
+
+                item.innerHTML = `
+                    <div class="cloud-backup-info">
+                        <div class="cloud-backup-name">${b.name}</div>
+                        <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
+                    </div>
+                    <div class="cloud-backup-actions">
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                    </div>`;
+                container.appendChild(item);
+            });
+
+            // Bind restore buttons
+            container.querySelectorAll('.cloud-restore-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    try {
+                        btn.textContent = '...';
+                        const data = await cloudBackup.loadBackup(id);
+                        if (data.type === 'full-backup') {
+                            const result = store.importAllProjects(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                            }
+                        } else {
+                            const result = store.importProject(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                            }
+                        }
+                    } catch (err) {
+                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                    } finally {
+                        btn.textContent = 'Restaurer';
+                    }
+                });
+            });
+
+            // Bind delete buttons
+            container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    const id = btn.dataset.id;
+                    try {
+                        await cloudBackup.deleteBackup(id);
+                        this._refreshBackupList(modal);
+                        this._showToast('Sauvegarde supprimée', 'info');
+                    } catch (err) {
+                        this._showToast('Erreur: ' + err.message, 'error');
+                    }
+                });
+            });
+        } catch (err) {
+            container.innerHTML = '<div class="cloud-empty">Erreur de chargement</div>';
+            console.error('Failed to load backups:', err);
         }
     }
 

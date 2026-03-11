@@ -1293,6 +1293,44 @@ textarea.input {
 .onboarding-next:hover { background: var(--color-primary-hover, #4F46E5); }
 .onboarding-next:focus-visible { outline: 2px solid var(--color-primary, #6366F1); outline-offset: 2px; }
 
+/* ---- Cloud Backup Modal ---- */
+.cloud-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9000; animation: fadeIn 0.15s ease; }
+.cloud-modal { background: var(--bg-elevated, #fff); border-radius: 12px; width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); border: 1px solid var(--border-default, #e2e8f0); }
+.cloud-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-default, #e2e8f0); }
+.cloud-modal-header h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-primary, #1e293b); }
+.cloud-modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted, #94a3b8); padding: 0 4px; line-height: 1; }
+.cloud-modal-close:hover { color: var(--text-primary, #1e293b); }
+.cloud-modal-body { padding: 20px; }
+.cloud-modal-loading { padding: 40px 20px; text-align: center; color: var(--text-muted, #94a3b8); }
+.cloud-setup-info { margin-bottom: 20px; }
+.cloud-setup-info h3 { margin: 0 0 8px; font-size: 15px; color: var(--text-primary, #1e293b); }
+.cloud-setup-info p { margin: 0 0 12px; color: var(--text-secondary, #64748b); font-size: 13px; }
+.cloud-setup-info ol { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary, #64748b); line-height: 1.8; }
+.cloud-config-form .form-group { margin-bottom: 10px; }
+.cloud-config-form label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #64748b); margin-bottom: 4px; }
+.cloud-config-form input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; font-size: 13px; background: var(--bg-base, #f8fafc); color: var(--text-primary, #1e293b); box-sizing: border-box; }
+.cloud-config-form input:focus { outline: none; border-color: var(--color-primary, #6366F1); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+.cloud-auth-section { margin-bottom: 20px; }
+.cloud-auth-section p { margin: 0 0 16px; color: var(--text-secondary, #64748b); font-size: 13px; }
+.cloud-email-divider { display: flex; align-items: center; margin: 16px 0; color: var(--text-muted, #94a3b8); font-size: 12px; }
+.cloud-email-divider::before, .cloud-email-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-default, #e2e8f0); }
+.cloud-email-divider span { padding: 0 12px; }
+.cloud-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; font-size: 13px; background: var(--bg-base, #f8fafc); color: var(--text-primary, #1e293b); margin-bottom: 8px; box-sizing: border-box; }
+.cloud-input:focus { outline: none; border-color: var(--color-primary, #6366F1); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+.cloud-user-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-muted, #f1f5f9); border-radius: 8px; margin-bottom: 16px; }
+.cloud-user-name { font-size: 13px; font-weight: 600; color: var(--text-primary, #1e293b); }
+.cloud-actions { display: flex; gap: 8px; margin-bottom: 20px; }
+.cloud-list-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #64748b); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.cloud-backup-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 8px; margin-bottom: 8px; transition: background 0.15s; }
+.cloud-backup-item:hover { background: var(--bg-muted, #f1f5f9); }
+.cloud-backup-name { font-size: 13px; font-weight: 600; color: var(--text-primary, #1e293b); }
+.cloud-backup-meta { font-size: 11px; color: var(--text-muted, #94a3b8); margin-top: 2px; }
+.cloud-backup-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 5px; }
+.btn-danger { background: #ef4444; color: white; border: none; cursor: pointer; padding: 4px 8px; border-radius: 5px; font-size: 14px; line-height: 1; }
+.btn-danger:hover { background: #dc2626; }
+.cloud-empty, .cloud-loading { text-align: center; padding: 24px; color: var(--text-muted, #94a3b8); font-size: 13px; }
+
 /* ========================================
    LAYOUT - HEADER, TOOLBAR, MAIN, FOOTER
    ======================================== */
@@ -3409,6 +3447,14 @@ textarea.input {
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                     <span>Exporter</span>
+                </button>
+
+                <!-- Cloud Backup -->
+                <button class="btn btn-secondary" id="cloudBackupBtn" aria-label="Sauvegarde Cloud" title="Sauvegarde Cloud (Firebase)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    <span>Cloud</span>
                 </button>
 
                 <!-- Notifications -->
@@ -7321,6 +7367,180 @@ class Onboarding {
 
 const onboarding = new Onboarding();
 
+/* ========================================
+   CLOUD BACKUP - Firebase Integration
+   ======================================== */
+
+var CLOUD_CONFIG_KEY = 'gantt-planner-firebase-config';
+
+class CloudBackup {
+    constructor() {
+        this._app = null;
+        this._auth = null;
+        this._db = null;
+        this._user = null;
+        this._config = null;
+        this._ready = false;
+        this._listeners = {};
+    }
+
+    on(event, fn) {
+        if (!this._listeners[event]) this._listeners[event] = [];
+        this._listeners[event].push(fn);
+    }
+
+    _emit(event, data) {
+        (this._listeners[event] || []).forEach(function(fn) { fn(data); });
+    }
+
+    getConfig() {
+        if (this._config) return this._config;
+        try {
+            var raw = localStorage.getItem(CLOUD_CONFIG_KEY);
+            if (raw) { this._config = JSON.parse(raw); return this._config; }
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    saveConfig(config) {
+        this._config = config;
+        localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(config));
+    }
+
+    clearConfig() {
+        this._config = null;
+        localStorage.removeItem(CLOUD_CONFIG_KEY);
+        this._ready = false;
+        this._user = null;
+        this._app = null;
+        this._auth = null;
+        this._db = null;
+    }
+
+    isReady() { return this._ready; }
+    getUser() { return this._user; }
+
+    async _loadFirebaseSDK() {
+        if (window.firebase && window.firebase.apps) return;
+        var scripts = [
+            'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
+            'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
+            'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',
+        ];
+        for (var i = 0; i < scripts.length; i++) {
+            await new Promise(function(resolve, reject) {
+                var s = document.createElement('script');
+                s.src = scripts[i];
+                s.onload = resolve;
+                s.onerror = function() { reject(new Error('Impossible de charger Firebase SDK')); };
+                document.head.appendChild(s);
+            });
+        }
+    }
+
+    async init(config) {
+        if (!config) config = this.getConfig();
+        if (!config || !config.apiKey || !config.projectId) {
+            throw new Error('Configuration Firebase manquante');
+        }
+        await this._loadFirebaseSDK();
+        if (window.firebase.apps.length === 0) {
+            this._app = window.firebase.initializeApp(config);
+        } else {
+            this._app = window.firebase.apps[0];
+        }
+        this._auth = window.firebase.auth();
+        this._db = window.firebase.firestore();
+        this._ready = true;
+        this.saveConfig(config);
+        var self = this;
+        this._auth.onAuthStateChanged(function(user) {
+            self._user = user;
+            self._emit('auth', user);
+        });
+        return true;
+    }
+
+    async signInWithGoogle() {
+        if (!this._auth) throw new Error('Firebase non initialisé');
+        var provider = new window.firebase.auth.GoogleAuthProvider();
+        var result = await this._auth.signInWithPopup(provider);
+        this._user = result.user;
+        return this._user;
+    }
+
+    async signInWithEmail(email, password) {
+        if (!this._auth) throw new Error('Firebase non initialisé');
+        var result = await this._auth.signInWithEmailAndPassword(email, password);
+        this._user = result.user;
+        return this._user;
+    }
+
+    async registerWithEmail(email, password) {
+        if (!this._auth) throw new Error('Firebase non initialisé');
+        var result = await this._auth.createUserWithEmailAndPassword(email, password);
+        this._user = result.user;
+        return this._user;
+    }
+
+    async signOut() {
+        if (!this._auth) return;
+        await this._auth.signOut();
+        this._user = null;
+    }
+
+    _backupsRef() {
+        if (!this._db || !this._user) throw new Error('Non connecté');
+        return this._db.collection('users').doc(this._user.uid).collection('backups');
+    }
+
+    async saveBackup(name, data) {
+        var ref = this._backupsRef();
+        var doc = await ref.add({
+            name: name,
+            projectCount: data.projects ? data.projects.length : 1,
+            taskCount: data.tasks ? data.tasks.length : 0,
+            size: JSON.stringify(data).length,
+            createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+            data: JSON.stringify(data),
+        });
+        return doc.id;
+    }
+
+    async listBackups() {
+        var ref = this._backupsRef();
+        var snapshot = await ref.orderBy('createdAt', 'desc').limit(50).get();
+        var backups = [];
+        snapshot.forEach(function(doc) {
+            var d = doc.data();
+            backups.push({
+                id: doc.id,
+                name: d.name,
+                projectCount: d.projectCount || 0,
+                taskCount: d.taskCount || 0,
+                size: d.size || 0,
+                createdAt: d.createdAt ? d.createdAt.toDate() : new Date(),
+            });
+        });
+        return backups;
+    }
+
+    async loadBackup(backupId) {
+        var ref = this._backupsRef();
+        var doc = await ref.doc(backupId).get();
+        if (!doc.exists) throw new Error('Sauvegarde introuvable');
+        var d = doc.data();
+        return JSON.parse(d.data);
+    }
+
+    async deleteBackup(backupId) {
+        var ref = this._backupsRef();
+        await ref.doc(backupId).delete();
+    }
+}
+
+var cloudBackup = new CloudBackup();
+
 class App {
     constructor() {
         this._activeView = 'timeline';
@@ -7960,6 +8180,11 @@ class App {
         const importBtn = $('#importBtn');
         if (importBtn) {
             importBtn.addEventListener('click', () => this._importProject());
+        }
+
+        const cloudBtn = $('#cloudBackupBtn');
+        if (cloudBtn) {
+            cloudBtn.addEventListener('click', () => this._showCloudBackupModal());
         }
 
         const criticalPathBtn = $('#criticalPathBtn');
@@ -9327,6 +9552,350 @@ class App {
         } catch (e) {
             console.error('Excel import failed:', e);
             this._showToast('Erreur: ' + e.message, 'error');
+        }
+    }
+
+    /* ---- Cloud Backup ---- */
+
+    _showCloudBackupModal() {
+        var existing = document.getElementById('cloudBackupModal');
+        if (existing) { existing.remove(); return; }
+
+        var overlay = document.createElement('div');
+        overlay.id = 'cloudBackupModal';
+        overlay.className = 'cloud-modal-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'cloudModalTitle');
+
+        var modal = document.createElement('div');
+        modal.className = 'cloud-modal';
+
+        var config = cloudBackup.getConfig();
+        var isConfigured = config && config.apiKey;
+
+        if (!isConfigured) {
+            modal.innerHTML = this._cloudConfigHTML();
+        } else {
+            modal.innerHTML = '<div class="cloud-modal-loading">Connexion à Firebase...</div>';
+            this._initCloudAndShowPanel(modal);
+        }
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        var self = this;
+        setTimeout(function() { self._bindCloudConfigForm(modal); }, 0);
+    }
+
+    _cloudConfigHTML() {
+        return '<div class="cloud-modal-header">' +
+            '<h2 id="cloudModalTitle">Sauvegarde Cloud</h2>' +
+            '<button class="cloud-modal-close" aria-label="Fermer">&times;</button>' +
+            '</div>' +
+            '<div class="cloud-modal-body">' +
+            '<div class="cloud-setup-info">' +
+            '<h3>Configuration Firebase</h3>' +
+            '<p>Pour activer la sauvegarde cloud, vous devez créer un projet Firebase gratuit :</p>' +
+            '<ol>' +
+            '<li>Allez sur <strong>console.firebase.google.com</strong></li>' +
+            '<li>Créez un nouveau projet</li>' +
+            '<li>Activez <strong>Authentication</strong> (Google et/ou Email)</li>' +
+            '<li>Activez <strong>Cloud Firestore</strong></li>' +
+            '<li>Dans Paramètres du projet → Général, copiez la configuration</li>' +
+            '</ol></div>' +
+            '<form id="cloudConfigForm" class="cloud-config-form">' +
+            '<div class="form-group"><label for="cfgApiKey">API Key *</label><input type="text" id="cfgApiKey" required placeholder="AIzaSy..."></div>' +
+            '<div class="form-group"><label for="cfgAuthDomain">Auth Domain *</label><input type="text" id="cfgAuthDomain" required placeholder="mon-projet.firebaseapp.com"></div>' +
+            '<div class="form-group"><label for="cfgProjectId">Project ID *</label><input type="text" id="cfgProjectId" required placeholder="mon-projet"></div>' +
+            '<div class="form-group"><label for="cfgStorageBucket">Storage Bucket</label><input type="text" id="cfgStorageBucket" placeholder="mon-projet.appspot.com"></div>' +
+            '<div class="form-group"><label for="cfgMessagingSenderId">Messaging Sender ID</label><input type="text" id="cfgMessagingSenderId" placeholder="123456789"></div>' +
+            '<div class="form-group"><label for="cfgAppId">App ID</label><input type="text" id="cfgAppId" placeholder="1:123:web:abc"></div>' +
+            '<button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter</button>' +
+            '</form></div>';
+    }
+
+    _bindCloudConfigForm(modal) {
+        var form = modal.querySelector('#cloudConfigForm');
+        if (!form) return;
+        var self = this;
+
+        var closeBtn = modal.querySelector('.cloud-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', function() {
+            var m = document.getElementById('cloudBackupModal');
+            if (m) m.remove();
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var config = {
+                apiKey: form.querySelector('#cfgApiKey').value.trim(),
+                authDomain: form.querySelector('#cfgAuthDomain').value.trim(),
+                projectId: form.querySelector('#cfgProjectId').value.trim(),
+                storageBucket: form.querySelector('#cfgStorageBucket').value.trim(),
+                messagingSenderId: form.querySelector('#cfgMessagingSenderId').value.trim(),
+                appId: form.querySelector('#cfgAppId').value.trim(),
+            };
+            try {
+                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                await cloudBackup.init(config);
+                modal.innerHTML = '';
+                self._renderCloudPanel(modal);
+            } catch (err) {
+                self._showToast('Erreur Firebase: ' + err.message, 'error');
+                form.querySelector('button[type="submit"]').textContent = 'Connecter';
+            }
+        });
+    }
+
+    async _initCloudAndShowPanel(modal) {
+        try {
+            await cloudBackup.init();
+            this._renderCloudPanel(modal);
+        } catch (err) {
+            modal.innerHTML = this._cloudConfigHTML();
+            this._bindCloudConfigForm(modal);
+            this._showToast('Erreur Firebase: ' + err.message, 'error');
+        }
+    }
+
+    _renderCloudPanel(modal) {
+        var user = cloudBackup.getUser();
+        var self = this;
+
+        modal.innerHTML = '<div class="cloud-modal-header">' +
+            '<h2 id="cloudModalTitle">Sauvegarde Cloud</h2>' +
+            '<button class="cloud-modal-close" aria-label="Fermer">&times;</button>' +
+            '</div>' +
+            '<div class="cloud-modal-body">' +
+            (user ? this._cloudLoggedInHTML(user) : this._cloudLoginHTML()) +
+            '<div id="cloudBackupList" class="cloud-backup-list"></div>' +
+            '</div>';
+
+        var closeBtn = modal.querySelector('.cloud-modal-close');
+        closeBtn.addEventListener('click', function() {
+            var m = document.getElementById('cloudBackupModal');
+            if (m) m.remove();
+        });
+
+        if (user) {
+            this._bindCloudActions(modal);
+            this._refreshBackupList(modal);
+        } else {
+            this._bindCloudLogin(modal);
+        }
+
+        cloudBackup.on('auth', function() {
+            self._renderCloudPanel(modal);
+        });
+    }
+
+    _cloudLoginHTML() {
+        return '<div class="cloud-auth-section">' +
+            '<p>Connectez-vous pour accéder à vos sauvegardes cloud.</p>' +
+            '<button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 8px;">Connexion avec Google</button>' +
+            '<div class="cloud-email-divider"><span>ou par email</span></div>' +
+            '<div class="cloud-email-form">' +
+            '<input type="email" id="cloudEmail" placeholder="Email" class="cloud-input">' +
+            '<input type="password" id="cloudPassword" placeholder="Mot de passe" class="cloud-input">' +
+            '<div style="display: flex; gap: 8px;">' +
+            '<button class="btn btn-primary" id="cloudEmailLogin" style="flex:1;">Connexion</button>' +
+            '<button class="btn btn-secondary" id="cloudEmailRegister" style="flex:1;">Inscription</button>' +
+            '</div></div>' +
+            '<button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; margin-top: 12px; font-size: 12px;">Modifier la configuration Firebase</button>' +
+            '</div>';
+    }
+
+    _cloudLoggedInHTML(user) {
+        var name = user.displayName || user.email || 'Utilisateur';
+        return '<div class="cloud-user-bar">' +
+            '<span class="cloud-user-name">' + name + '</span>' +
+            '<button class="btn btn-secondary btn-sm" id="cloudSignOut">Déconnexion</button>' +
+            '</div>' +
+            '<div class="cloud-actions">' +
+            '<button class="btn btn-primary" id="cloudSaveAll" style="flex: 1;">Sauvegarder tous les projets</button>' +
+            '<button class="btn btn-secondary" id="cloudSaveCurrent" style="flex: 1;">Sauvegarder projet actif</button>' +
+            '</div>';
+    }
+
+    _bindCloudLogin(modal) {
+        var self = this;
+        var googleBtn = modal.querySelector('#cloudGoogleLogin');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async function() {
+                try { await cloudBackup.signInWithGoogle(); }
+                catch (err) { self._showToast('Erreur connexion Google: ' + err.message, 'error'); }
+            });
+        }
+        var emailLogin = modal.querySelector('#cloudEmailLogin');
+        if (emailLogin) {
+            emailLogin.addEventListener('click', async function() {
+                var email = modal.querySelector('#cloudEmail').value;
+                var password = modal.querySelector('#cloudPassword').value;
+                if (!email || !password) return;
+                try { await cloudBackup.signInWithEmail(email, password); }
+                catch (err) { self._showToast('Erreur: ' + err.message, 'error'); }
+            });
+        }
+        var emailRegister = modal.querySelector('#cloudEmailRegister');
+        if (emailRegister) {
+            emailRegister.addEventListener('click', async function() {
+                var email = modal.querySelector('#cloudEmail').value;
+                var password = modal.querySelector('#cloudPassword').value;
+                if (!email || !password) return;
+                try { await cloudBackup.registerWithEmail(email, password); self._showToast('Compte créé avec succès', 'success'); }
+                catch (err) { self._showToast('Erreur: ' + err.message, 'error'); }
+            });
+        }
+        var resetBtn = modal.querySelector('#cloudResetConfig');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                cloudBackup.clearConfig();
+                modal.innerHTML = self._cloudConfigHTML();
+                self._bindCloudConfigForm(modal);
+            });
+        }
+    }
+
+    _bindCloudActions(modal) {
+        var self = this;
+        var signOutBtn = modal.querySelector('#cloudSignOut');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', async function() {
+                await cloudBackup.signOut();
+                self._renderCloudPanel(modal);
+            });
+        }
+        var saveAllBtn = modal.querySelector('#cloudSaveAll');
+        if (saveAllBtn) {
+            saveAllBtn.addEventListener('click', async function() {
+                try {
+                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.disabled = true;
+                    var data = store.exportAllProjects();
+                    var date = new Date().toLocaleDateString('fr-FR');
+                    await cloudBackup.saveBackup('Backup complet - ' + date, data);
+                    self._showToast('Sauvegarde cloud réussie', 'success');
+                    self._refreshBackupList(modal);
+                } catch (err) {
+                    self._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.disabled = false;
+                }
+            });
+        }
+        var saveCurrentBtn = modal.querySelector('#cloudSaveCurrent');
+        if (saveCurrentBtn) {
+            saveCurrentBtn.addEventListener('click', async function() {
+                try {
+                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.disabled = true;
+                    var project = store.getActiveProject();
+                    var tasks = store.getTasks();
+                    var resources = store.getResources();
+                    var data = { project: project, tasks: tasks, resources: resources, exportedAt: new Date().toISOString() };
+                    await cloudBackup.saveBackup(project.name, data);
+                    self._showToast('"' + project.name + '" sauvegardé', 'success');
+                    self._refreshBackupList(modal);
+                } catch (err) {
+                    self._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    async _refreshBackupList(modal) {
+        var container = modal.querySelector('#cloudBackupList');
+        if (!container) return;
+        var self = this;
+
+        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+
+        try {
+            var backups = await cloudBackup.listBackups();
+            if (backups.length === 0) {
+                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde cloud</div>';
+                return;
+            }
+
+            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            backups.forEach(function(b) {
+                var item = document.createElement('div');
+                item.className = 'cloud-backup-item';
+                var date = b.createdAt.toLocaleDateString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                var size = b.size > 1024 * 1024
+                    ? (b.size / (1024 * 1024)).toFixed(1) + ' Mo'
+                    : Math.round(b.size / 1024) + ' Ko';
+
+                item.innerHTML = '<div class="cloud-backup-info">' +
+                    '<div class="cloud-backup-name">' + b.name + '</div>' +
+                    '<div class="cloud-backup-meta">' + date + ' · ' + b.projectCount + ' projet(s) · ' + b.taskCount + ' tâche(s) · ' + size + '</div>' +
+                    '</div>' +
+                    '<div class="cloud-backup-actions">' +
+                    '<button class="btn btn-sm btn-primary cloud-restore-btn" data-id="' + b.id + '">Restaurer</button>' +
+                    '<button class="btn btn-sm btn-danger cloud-delete-btn" data-id="' + b.id + '" aria-label="Supprimer">&times;</button>' +
+                    '</div>';
+                container.appendChild(item);
+            });
+
+            container.querySelectorAll('.cloud-restore-btn').forEach(function(btn) {
+                btn.addEventListener('click', async function() {
+                    var id = btn.dataset.id;
+                    try {
+                        btn.textContent = '...';
+                        var data = await cloudBackup.loadBackup(id);
+                        if (data.type === 'full-backup') {
+                            var result = store.importAllProjects(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                self._renderStats();
+                                self._renderProjectName();
+                                self._showToast(result.count + ' projet(s) restauré(s)', 'success');
+                            }
+                        } else {
+                            var result = store.importProject(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                self._renderStats();
+                                self._renderProjectName();
+                                self._showToast('Projet "' + result.name + '" restauré', 'success');
+                            }
+                        }
+                    } catch (err) {
+                        self._showToast('Erreur restauration: ' + err.message, 'error');
+                    } finally {
+                        btn.textContent = 'Restaurer';
+                    }
+                });
+            });
+
+            container.querySelectorAll('.cloud-delete-btn').forEach(function(btn) {
+                btn.addEventListener('click', async function() {
+                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    var id = btn.dataset.id;
+                    try {
+                        await cloudBackup.deleteBackup(id);
+                        self._refreshBackupList(modal);
+                        self._showToast('Sauvegarde supprimée', 'info');
+                    } catch (err) {
+                        self._showToast('Erreur: ' + err.message, 'error');
+                    }
+                });
+            });
+        } catch (err) {
+            container.innerHTML = '<div class="cloud-empty">Erreur de chargement</div>';
+            console.error('Failed to load backups:', err);
         }
     }
 
