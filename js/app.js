@@ -692,6 +692,7 @@ class App {
 
         const formats = [
             { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: () => this._exportJSON() },
+            { label: 'Tout exporter', icon: '★', desc: 'Tous les projets (JSON)', action: () => this._exportAllJSON() },
             { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: () => this._exportCSV() },
             { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', action: () => this._exportMSProjectXML() },
             { label: 'PDF', icon: 'PDF', desc: 'Impression', action: () => this._showPDFExportDialog() },
@@ -723,6 +724,14 @@ class App {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
         this._showToast('Projet exporté en JSON', 'success');
+    }
+
+    _exportAllJSON() {
+        const data = store.exportAllProjects();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const date = new Date().toISOString().slice(0, 10);
+        this._downloadBlob(blob, `gantt_planner_backup_${date}.json`);
+        this._showToast(`${data.projects.length} projet(s) exporté(s)`, 'success');
     }
 
     _exportCSV() {
@@ -1973,13 +1982,31 @@ tr:nth-child(even){background:#fafbfc}
             if (ext === 'json') {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
-                    const result = store.importProject(evt.target.result);
-                    if (result) {
-                        ganttRenderer.render();
-                        this._renderStats();
-                        this._renderProjectName();
-                        this._showToast(`Projet "${result.name}" importé`, 'success');
-                    } else {
+                    try {
+                        const parsed = JSON.parse(evt.target.result);
+                        if (parsed.type === 'full-backup') {
+                            const result = store.importAllProjects(parsed);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`${result.count} projet(s) importé(s)`, 'success');
+                            } else {
+                                this._showToast('Erreur lors de l\'import multi-projets', 'error');
+                            }
+                        } else {
+                            const result = store.importProject(parsed);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`Projet "${result.name}" importé`, 'success');
+                            } else {
+                                this._showToast('Erreur lors de l\'import JSON', 'error');
+                            }
+                        }
+                    } catch (e) {
+                        console.error('JSON import failed:', e);
                         this._showToast('Erreur lors de l\'import JSON', 'error');
                     }
                 };

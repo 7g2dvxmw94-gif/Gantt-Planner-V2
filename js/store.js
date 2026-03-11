@@ -1031,6 +1031,98 @@ class Store {
         return null;
     }
 
+    exportAllProjects() {
+        const projects = this.getProjects();
+        const allTasks = [];
+        projects.forEach(p => {
+            const tasks = this.getTasks(p.id);
+            allTasks.push(...tasks);
+        });
+        return {
+            version: 2,
+            type: 'full-backup',
+            projects,
+            tasks: allTasks,
+            resources: this.getResources(),
+            exportedAt: new Date().toISOString(),
+        };
+    }
+
+    importAllProjects(jsonData) {
+        this._snapshot();
+        try {
+            const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            if (data.type !== 'full-backup' || !data.projects || !data.tasks) return null;
+
+            const idMap = {};
+            let lastProjectId = null;
+
+            // Remap resource IDs first
+            if (data.resources) {
+                data.resources.forEach(r => {
+                    const exists = this._data.resources.find(
+                        existing => existing.name === r.name && existing.role === r.role
+                    );
+                    if (!exists) {
+                        const newId = generateId();
+                        idMap[r.id] = newId;
+                        this._data.resources.push({ ...r, id: newId });
+                    } else {
+                        idMap[r.id] = exists.id;
+                    }
+                });
+            }
+
+            // Import each project
+            data.projects.forEach(proj => {
+                const newProjectId = generateId();
+                idMap[proj.id] = newProjectId;
+                lastProjectId = newProjectId;
+
+                this._data.projects.push({
+                    ...proj,
+                    id: newProjectId,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                });
+            });
+
+            // Remap task IDs
+            data.tasks.forEach(t => {
+                idMap[t.id] = generateId();
+            });
+
+            // Import tasks with remapped IDs
+            data.tasks.forEach(t => {
+                const newTask = {
+                    ...t,
+                    id: idMap[t.id],
+                    projectId: idMap[t.projectId] || t.projectId,
+                    parentId: t.parentId ? (idMap[t.parentId] || null) : null,
+                    assignees: (t.assignees || (t.assignee ? [t.assignee] : [])).map(id => idMap[id] || id),
+                    assignee: t.assignee ? (idMap[t.assignee] || t.assignee) : null,
+                    dependencies: (t.dependencies || []).map(d => {
+                        if (typeof d === 'string') {
+                            return { taskId: idMap[d] || d, type: 'FS' };
+                        }
+                        return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS' };
+                    }),
+                };
+                this._data.tasks.push(newTask);
+            });
+
+            if (lastProjectId) {
+                this._data.settings.activeProjectId = lastProjectId;
+            }
+            this._save();
+            this._emit('project:import', lastProjectId);
+            return { count: data.projects.length };
+        } catch (e) {
+            console.error('Import all projects failed:', e);
+        }
+        return null;
+    }
+
     importFromMSProjectXML(xmlString) {
         this._snapshot();
         try {
