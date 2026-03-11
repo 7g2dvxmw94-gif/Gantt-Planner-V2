@@ -87,11 +87,12 @@ class GanttInteractions {
     _handleMouseDown(e) {
         const handle = e.target.closest('.gantt-bar-handle');
         const bar = e.target.closest('.gantt-bar:not(.phase-bar)');
+        const milestone = e.target.closest('.gantt-milestone');
 
-        if (!handle && !bar) return;
+        if (!handle && !bar && !milestone) return;
         if (bar && bar.classList.contains('phase-bar')) return;
 
-        const targetBar = handle ? handle.closest('.gantt-bar') : bar;
+        const targetBar = milestone || (handle ? handle.closest('.gantt-bar') : bar);
         if (!targetBar || !targetBar.dataset.taskId) return;
 
         e.preventDefault();
@@ -99,8 +100,9 @@ class GanttInteractions {
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
 
-        const isLeftHandle = handle && handle.classList.contains('gantt-bar-handle-left');
-        const isRightHandle = handle && handle.classList.contains('gantt-bar-handle-right');
+        const isMilestone = !!milestone;
+        const isLeftHandle = !isMilestone && handle && handle.classList.contains('gantt-bar-handle-left');
+        const isRightHandle = !isMilestone && handle && handle.classList.contains('gantt-bar-handle-right');
 
         // Get the source row for vertical drag
         const sourceRow = targetBar.closest('.gantt-row');
@@ -111,11 +113,12 @@ class GanttInteractions {
         this._dragData = {
             taskId: task.id,
             bar: targetBar,
+            isMilestone: isMilestone,
             mode: isLeftHandle ? 'resize-left' : (isRightHandle ? 'resize-right' : 'move'),
             startX: e.clientX,
             startY: e.clientY,
             origLeft: parseFloat(targetBar.style.left),
-            origWidth: parseFloat(targetBar.style.width),
+            origWidth: isMilestone ? 0 : parseFloat(targetBar.style.width),
             origStartDate: task.startDate,
             origEndDate: task.endDate,
             origParentId: task.parentId,
@@ -542,24 +545,32 @@ class GanttInteractions {
             const colWidth = this._zoomColWidthFn();
             const timelineStart = this._timelineStartFn();
             const newLeft = parseFloat(d.bar.style.left);
-            const newWidth = parseFloat(d.bar.style.width);
-
-            const startDayOffset = Math.round(newLeft / colWidth);
-            const durationDays = Math.max(1, Math.round(newWidth / colWidth) - 1);
-
-            const newStart = addDays(timelineStart, startDayOffset);
-            const newEnd = addDays(newStart, durationDays);
 
             const updates = {};
-            if (d.mode === 'move') {
-                updates.startDate = formatDateISO(newStart);
-                updates.endDate = formatDateISO(newEnd);
-            } else if (d.mode === 'resize-left') {
-                updates.startDate = formatDateISO(newStart);
-            } else if (d.mode === 'resize-right') {
-                const rightEdge = newLeft + newWidth;
-                const endDayOffset = Math.round(rightEdge / colWidth) - 1;
-                updates.endDate = formatDateISO(addDays(timelineStart, endDayOffset));
+
+            if (d.isMilestone) {
+                // Milestone: position is left + 8 (centered), startDate = endDate
+                const dayOffset = Math.round((newLeft + 8) / colWidth);
+                const newDate = formatDateISO(addDays(timelineStart, dayOffset));
+                updates.startDate = newDate;
+                updates.endDate = newDate;
+            } else {
+                const newWidth = parseFloat(d.bar.style.width);
+                const startDayOffset = Math.round(newLeft / colWidth);
+                const durationDays = Math.max(1, Math.round(newWidth / colWidth) - 1);
+                const newStart = addDays(timelineStart, startDayOffset);
+                const newEnd = addDays(newStart, durationDays);
+
+                if (d.mode === 'move') {
+                    updates.startDate = formatDateISO(newStart);
+                    updates.endDate = formatDateISO(newEnd);
+                } else if (d.mode === 'resize-left') {
+                    updates.startDate = formatDateISO(newStart);
+                } else if (d.mode === 'resize-right') {
+                    const rightEdge = newLeft + newWidth;
+                    const endDayOffset = Math.round(rightEdge / colWidth) - 1;
+                    updates.endDate = formatDateISO(addDays(timelineStart, endDayOffset));
+                }
             }
 
             store.updateTask(d.taskId, updates);
