@@ -43,6 +43,7 @@ class BrandingPanel {
         this._resetBtn = document.getElementById('brandingReset');
         this._exportBtn = document.getElementById('brandingExport');
         this._importBtn = document.getElementById('brandingImport');
+        this._okBtn = document.getElementById('brandingOk');
         this._fileInput = document.getElementById('brandingFileInput');
 
         this._bindEvents();
@@ -100,6 +101,9 @@ class BrandingPanel {
                 }
             });
         });
+
+        // OK button
+        this._okBtn?.addEventListener('click', () => this.close());
 
         // Actions
         this._resetBtn?.addEventListener('click', () => this._reset());
