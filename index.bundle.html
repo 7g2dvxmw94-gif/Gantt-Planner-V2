@@ -8766,16 +8766,17 @@ class App {
         dd.style.right = (window.innerWidth - rect.right) + 'px';
 
         var formats = [
-            { label: 'JSON', icon: '{ }', desc: 'Réimportable', action: function() { self._exportJSON(); } },
-            { label: 'Tout exporter', icon: '★', desc: 'Tous les projets (JSON)', action: function() { self._exportAllJSON(); } },
-            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', action: function() { self._exportCSV(); } },
-            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', action: function() { self._exportMSProjectXML(); } },
-            { label: 'PDF', icon: 'PDF', desc: 'Impression', action: function() { self._showPDFExportDialog(); } },
+            { label: 'JSON', icon: '{ }', desc: 'Réimportable', tooltip: 'Exporte le projet actif au format JSON. Ce fichier peut être réimporté dans Gantt Planner pour restaurer toutes les tâches, ressources et paramètres.', action: function() { self._exportJSON(); } },
+            { label: 'Tout exporter', icon: '★', desc: 'Tous les projets (JSON)', tooltip: 'Exporte l\'ensemble de vos projets en un seul fichier JSON. Idéal pour créer une sauvegarde complète ou migrer vers un autre appareil.', action: function() { self._exportAllJSON(); } },
+            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: function() { self._exportCSV(); } },
+            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: function() { self._exportMSProjectXML(); } },
+            { label: 'PDF', icon: 'PDF', desc: 'Impression', tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: function() { self._showPDFExportDialog(); } },
         ];
 
         formats.forEach(function(f) {
             var item = document.createElement('button');
             item.className = 'export-dropdown-item';
+            item.title = f.tooltip;
             item.innerHTML = '<span class="export-dropdown-icon">' + f.icon + '</span><div><div class="export-dropdown-label">' + f.label + '</div><div class="export-dropdown-desc">' + f.desc + '</div></div>';
             item.addEventListener('click', function(e) {
                 e.stopPropagation();
