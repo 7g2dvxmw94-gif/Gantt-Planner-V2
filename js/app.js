@@ -2106,7 +2106,25 @@ tr:nth-child(even){background:#fafbfc}
         } else if (cloudBackup.isSignedIn()) {
             this._renderCloudPanel(modal);
         } else {
-            modal.innerHTML = '<div class="cloud-modal-loading">Connexion à Google Drive...</div>';
+            modal.innerHTML = `
+                <div class="cloud-modal-header">
+                    <h2 id="cloudModalTitle">Google Drive</h2>
+                    <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+                </div>
+                <div class="cloud-modal-body">
+                    <div class="cloud-modal-loading">Connexion à Google Drive...</div>
+                    <button class="btn btn-secondary" id="cloudCancelInit" style="width: 100%; margin-top: 16px; font-size: 12px;">Annuler / Modifier le Client ID</button>
+                </div>`;
+            const closeBtn = modal.querySelector('.cloud-modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => {
+                document.getElementById('cloudBackupModal')?.remove();
+            });
+            const cancelBtn = modal.querySelector('#cloudCancelInit');
+            if (cancelBtn) cancelBtn.addEventListener('click', () => {
+                localStorage.removeItem('gantt-planner-gdrive-clientid');
+                modal.innerHTML = this._gdriveConfigHTML();
+                this._bindGDriveConfigForm(modal);
+            });
             this._initGDriveAndShowPanel(modal, clientId);
         }
 
@@ -2189,7 +2207,10 @@ tr:nth-child(even){background:#fafbfc}
 
     async _initGDriveAndShowPanel(modal, clientId) {
         try {
-            await cloudBackup.init(clientId);
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+            );
+            await Promise.race([cloudBackup.init(clientId), timeout]);
             this._renderCloudPanel(modal);
         } catch (err) {
             modal.innerHTML = this._gdriveConfigHTML();
