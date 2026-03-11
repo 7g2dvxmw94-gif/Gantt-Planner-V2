@@ -12,6 +12,7 @@ import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { brandingManager } from './branding.js';
+import { brandingPanel } from './branding-panel.js';
 
 class App {
     constructor() {
@@ -26,6 +27,7 @@ class App {
     init() {
         // Apply branding
         brandingManager.apply();
+        brandingPanel.init();
 
         // Initialize theme
         themeManager.init();

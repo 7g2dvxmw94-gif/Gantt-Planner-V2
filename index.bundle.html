@@ -1615,8 +1615,46 @@ textarea.input {
 }
 
 /* ---- Branding Footer ---- */
-.branding-footer { text-align: center; padding: 6px 16px; font-size: 11px; color: var(--text-muted, #94a3b8); background: var(--bg-subtle, #f8fafc); border-top: 1px solid var(--border-subtle, #f1f5f9);
-}
+.branding-footer { text-align: center; padding: 6px 16px; font-size: 11px; color: var(--text-muted, #94a3b8); background: var(--bg-subtle, #f8fafc); border-top: 1px solid var(--border-subtle, #f1f5f9); }
+
+/* ---- Branding Panel ---- */
+.branding-overlay { position: fixed; inset: 0; z-index: var(--z-modal, 100); display: flex; justify-content: flex-end; }
+.branding-overlay::before { content: ''; position: absolute; inset: 0; background: var(--bg-overlay, rgba(15, 23, 42, 0.5)); animation: bp-fade-in 200ms ease-out; }
+.branding-overlay[hidden] { display: none; }
+@keyframes bp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bp-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.branding-panel { position: relative; width: 380px; max-width: 90vw; height: 100%; background: var(--bg-base, #fff); border-left: 1px solid var(--border-default, #e2e8f0); box-shadow: var(--shadow-xl); display: flex; flex-direction: column; animation: bp-slide-in 250ms ease-out; overflow: hidden; }
+.branding-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-default, #e2e8f0); flex-shrink: 0; }
+.branding-panel-header h2 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #1e293b); }
+.branding-panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; scrollbar-width: thin; }
+.branding-panel-body::-webkit-scrollbar { width: 4px; }
+.branding-panel-body::-webkit-scrollbar-thumb { background: var(--border-strong, #cbd5e1); border-radius: 4px; }
+.bp-section { margin-bottom: 24px; }
+.bp-section:last-child { margin-bottom: 0; }
+.bp-section-title { margin: 0 0 12px 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #94a3b8); }
+.bp-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.bp-field:last-child { margin-bottom: 0; }
+.bp-label { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary, #64748b); }
+.bp-input { padding: 8px 10px; font-size: 0.875rem; font-family: var(--font-sans, inherit); color: var(--text-primary, #1e293b); background: var(--bg-subtle, #f8fafc); border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; outline: none; transition: border-color 150ms, box-shadow 150ms; }
+.bp-input:focus { border-color: var(--color-primary, #6366f1); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.15); }
+.bp-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+.bp-color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bp-color-field { display: flex; flex-direction: column; gap: 4px; }
+.bp-color-row { display: flex; align-items: center; gap: 8px; }
+.bp-color { width: 36px; height: 36px; border: 2px solid var(--border-default, #e2e8f0); border-radius: 8px; cursor: pointer; padding: 2px; background: none; flex-shrink: 0; }
+.bp-color::-webkit-color-swatch-wrapper { padding: 0; }
+.bp-color::-webkit-color-swatch { border: none; border-radius: 5px; }
+.bp-color::-moz-color-swatch { border: none; border-radius: 5px; }
+.bp-color-hex { flex: 1; padding: 6px 8px; font-size: 0.8rem; font-family: var(--font-mono, monospace); color: var(--text-primary, #1e293b); background: var(--bg-subtle, #f8fafc); border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; outline: none; min-width: 0; transition: border-color 150ms, box-shadow 150ms; }
+.bp-color-hex:focus { border-color: var(--color-primary, #6366f1); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.15); }
+.branding-panel-footer { padding: 12px 20px; border-top: 1px solid var(--border-default, #e2e8f0); flex-shrink: 0; background: var(--bg-subtle, #f8fafc); }
+.bp-actions-row { display: flex; align-items: center; justify-content: space-between; }
+.bp-actions-right { display: flex; gap: 4px; }
+.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+.btn-ghost { background: transparent; color: var(--text-secondary, #64748b); border: 1px solid var(--border-default, #e2e8f0); }
+.btn-ghost:hover { background: var(--bg-muted, #f1f5f9); color: var(--text-primary, #1e293b); }
+@media (max-width: 480px) { .branding-panel { width: 100%; max-width: 100%; } }
+
 /* ========================================
    GANTT CHART STYLES
    ======================================== */
@@ -3327,6 +3365,17 @@ textarea.input {
                 </svg>
             </button>
 
+            <!-- Branding Customization -->
+            <button class="icon-btn" id="brandingToggle" aria-label="Personnaliser l'apparence" title="Personnaliser l'apparence">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.23-.29-.38-.63-.38-1.01 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-9.95-10-9.95z"/>
+                    <circle cx="7.5" cy="11.5" r="1.5"/>
+                    <circle cx="10.5" cy="7.5" r="1.5"/>
+                    <circle cx="16.5" cy="11.5" r="1.5"/>
+                    <circle cx="14.5" cy="7.5" r="1.5"/>
+                </svg>
+            </button>
+
             <!-- Theme Toggle -->
             <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl+D)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon" aria-hidden="true">
@@ -3595,6 +3644,73 @@ textarea.input {
             </button>
         </div>
     </nav>
+
+    <!-- ==================== BRANDING PANEL ==================== -->
+    <div id="brandingOverlay" class="branding-overlay" hidden>
+        <aside id="brandingPanel" class="branding-panel" role="dialog" aria-label="Personnalisation de l'apparence" aria-modal="true">
+            <div class="branding-panel-header">
+                <h2>Personnaliser</h2>
+                <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="branding-panel-body">
+                <section class="bp-section">
+                    <h3 class="bp-section-title">Identit&eacute;</h3>
+                    <label class="bp-field"><span class="bp-label">Nom de l'application</span><input type="text" class="bp-input" data-key="appName"></label>
+                    <label class="bp-field"><span class="bp-label">Nom court</span><input type="text" class="bp-input" data-key="appShortName"></label>
+                    <label class="bp-field"><span class="bp-label">Ic&ocirc;ne logo (2-3 lettres)</span><input type="text" class="bp-input" data-key="logoIcon" maxlength="3"></label>
+                    <label class="bp-field"><span class="bp-label">Image logo (URL)</span><input type="text" class="bp-input" data-key="logoImage" placeholder="https://..."></label>
+                    <label class="bp-field"><span class="bp-label">Favicon (URL)</span><input type="text" class="bp-input" data-key="favicon" placeholder="https://..."></label>
+                </section>
+                <section class="bp-section">
+                    <h3 class="bp-section-title">Couleurs</h3>
+                    <div class="bp-color-grid">
+                        <label class="bp-color-field"><span class="bp-label">Principale</span><div class="bp-color-row"><input type="color" class="bp-color" data-key="primaryColor"><input type="text" class="bp-color-hex" data-key="primaryColor" maxlength="7" spellcheck="false"></div></label>
+                        <label class="bp-color-field"><span class="bp-label">Survol</span><div class="bp-color-row"><input type="color" class="bp-color" data-key="primaryHoverColor"><input type="text" class="bp-color-hex" data-key="primaryHoverColor" maxlength="7" spellcheck="false"></div></label>
+                        <label class="bp-color-field"><span class="bp-label">Claire</span><div class="bp-color-row"><input type="color" class="bp-color" data-key="primaryLightColor"><input type="text" class="bp-color-hex" data-key="primaryLightColor" maxlength="7" spellcheck="false"></div></label>
+                        <label class="bp-color-field"><span class="bp-label">Fonc&eacute;e</span><div class="bp-color-row"><input type="color" class="bp-color" data-key="primaryDarkColor"><input type="text" class="bp-color-hex" data-key="primaryDarkColor" maxlength="7" spellcheck="false"></div></label>
+                        <label class="bp-color-field"><span class="bp-label">Accent</span><div class="bp-color-row"><input type="color" class="bp-color" data-key="accentColor"><input type="text" class="bp-color-hex" data-key="accentColor" maxlength="7" spellcheck="false"></div></label>
+                    </div>
+                </section>
+                <section class="bp-section">
+                    <h3 class="bp-section-title">Typographie</h3>
+                    <label class="bp-field"><span class="bp-label">Police</span>
+                        <select class="bp-input bp-select" data-key="fontFamily">
+                            <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Inter (par d&eacute;faut)</option>
+                            <option value="'Poppins', sans-serif">Poppins</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="'Lato', sans-serif">Lato</option>
+                            <option value="'Nunito', sans-serif">Nunito</option>
+                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                            <option value="system-ui, sans-serif">Syst&egrave;me</option>
+                        </select>
+                    </label>
+                </section>
+                <section class="bp-section">
+                    <h3 class="bp-section-title">Utilisateur</h3>
+                    <label class="bp-field"><span class="bp-label">Nom</span><input type="text" class="bp-input" data-key="defaultUserName"></label>
+                    <label class="bp-field"><span class="bp-label">Initiales</span><input type="text" class="bp-input" data-key="defaultUserInitials" maxlength="3"></label>
+                </section>
+                <section class="bp-section">
+                    <h3 class="bp-section-title">Pied de page</h3>
+                    <label class="bp-field"><span class="bp-label">Texte personnalis&eacute;</span><input type="text" class="bp-input" data-key="footerText" placeholder="Ex: Propuls&eacute; par MonEntreprise"></label>
+                    <label class="bp-field"><span class="bp-label">Copyright</span><input type="text" class="bp-input" data-key="copyrightText" placeholder="&copy; 2026 MonEntreprise"></label>
+                </section>
+            </div>
+            <div class="branding-panel-footer">
+                <div class="bp-actions-row">
+                    <button class="btn btn-sm btn-ghost" id="brandingReset" title="R&eacute;initialiser tout">Réinitialiser</button>
+                    <div class="bp-actions-right">
+                        <button class="btn btn-sm btn-ghost" id="brandingImport" title="Importer JSON">Importer</button>
+                        <button class="btn btn-sm btn-ghost" id="brandingExport" title="Exporter JSON">Exporter</button>
+                    </div>
+                </div>
+            </div>
+            <input type="file" id="brandingFileInput" accept=".json,application/json" hidden>
+        </aside>
+    </div>
 
     <!-- ==================== SCRIPTS ==================== -->
 
@@ -7581,12 +7697,35 @@ class BrandingManager {
     getConfig() { return this._config; }
 
     apply() {
+        this._loadFromStorage();
+        this._applyAll();
+    }
+
+    applyConfig(config) {
+        this._config = config;
+        this._applyAll();
+    }
+
+    _applyAll() {
         this._applyMeta();
         this._applyColors();
         this._applyFont();
         this._applyLogo();
         this._applyUser();
         this._applyFooter();
+    }
+
+    _loadFromStorage() {
+        try {
+            var saved = localStorage.getItem('gantt_branding');
+            if (saved) {
+                var parsed = JSON.parse(saved);
+                var merged = {};
+                for (var k in branding) { merged[k] = branding[k]; }
+                for (var k2 in parsed) { merged[k2] = parsed[k2]; }
+                this._config = merged;
+            }
+        } catch(e) { /* ignore */ }
     }
 
     _applyMeta() {
@@ -7660,13 +7799,13 @@ class BrandingManager {
                 img.style.borderRadius = 'inherit';
                 logoIcon.appendChild(img);
             }
-        } else if (c.logoIcon && logoIcon) {
-            logoIcon.textContent = c.logoIcon;
+        } else if (logoIcon) {
+            var existingImg = logoIcon.querySelector('img');
+            if (existingImg) existingImg.remove();
+            logoIcon.textContent = c.logoIcon || 'GP';
+            logoIcon.style.background = 'linear-gradient(135deg, ' + (c.primaryColor || '#6366F1') + ', ' + (c.accentColor || '#EC4899') + ')';
         }
         if (logoText) logoText.textContent = c.appShortName || c.appName;
-        if (c.accentColor && logoIcon && !c.logoImage) {
-            logoIcon.style.background = 'linear-gradient(135deg, ' + (c.primaryColor || '#6366F1') + ', ' + c.accentColor + ')';
-        }
     }
 
     _applyUser() {
@@ -7680,8 +7819,11 @@ class BrandingManager {
 
     _applyFooter() {
         var c = this._config;
-        if (!c.copyrightText && !c.footerText) return;
         var footer = document.getElementById('brandingFooter');
+        if (!c.copyrightText && !c.footerText) {
+            if (footer) footer.remove();
+            return;
+        }
         if (!footer) {
             footer = document.createElement('div');
             footer.id = 'brandingFooter';
@@ -7696,11 +7838,229 @@ class BrandingManager {
         var parts = [];
         if (c.footerText) parts.push(c.footerText);
         if (c.copyrightText) parts.push(c.copyrightText);
-        footer.textContent = parts.join(' · ');
+        footer.textContent = parts.join(' \u00b7 ');
     }
 }
 
 var brandingManager = new BrandingManager();
+
+/* ========================================
+   BRANDING PANEL
+   ======================================== */
+
+var BRANDING_FONT_URLS = {
+    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif": 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    "'Poppins', sans-serif": 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap',
+    "'Roboto', sans-serif": 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
+    "'Open Sans', sans-serif": 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap',
+    "'Lato', sans-serif": 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap',
+    "'Nunito', sans-serif": 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap',
+    "'Montserrat', sans-serif": 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap',
+    "system-ui, sans-serif": null,
+};
+
+class BrandingPanel {
+    constructor() { this._overlay = null; this._isOpen = false; }
+
+    init() {
+        this._overlay = document.getElementById('brandingOverlay');
+        if (!this._overlay) return;
+        this._panel = document.getElementById('brandingPanel');
+        this._toggleBtn = document.getElementById('brandingToggle');
+        this._closeBtn = document.getElementById('brandingClose');
+        this._resetBtn = document.getElementById('brandingReset');
+        this._exportBtn = document.getElementById('brandingExport');
+        this._importBtn = document.getElementById('brandingImport');
+        this._fileInput = document.getElementById('brandingFileInput');
+        this._bindEvents();
+        this._populateForm();
+    }
+
+    _bindEvents() {
+        var self = this;
+        if (this._toggleBtn) this._toggleBtn.addEventListener('click', function() { self.toggle(); });
+        if (this._closeBtn) this._closeBtn.addEventListener('click', function() { self.close(); });
+        if (this._overlay) this._overlay.addEventListener('click', function(e) {
+            if (!self._panel.contains(e.target)) self.close();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && self._isOpen) self.close();
+        });
+
+        if (this._panel) {
+            this._panel.querySelectorAll('.bp-input').forEach(function(input) {
+                input.addEventListener('input', function() { self._onFieldChange(input); });
+            });
+            this._panel.querySelectorAll('.bp-select').forEach(function(select) {
+                select.addEventListener('change', function() { self._onFieldChange(select); });
+            });
+            this._panel.querySelectorAll('.bp-color').forEach(function(picker) {
+                picker.addEventListener('input', function() {
+                    var key = picker.dataset.key;
+                    var hexInput = self._panel.querySelector('.bp-color-hex[data-key="' + key + '"]');
+                    if (hexInput) hexInput.value = picker.value;
+                    self._onColorChange(key, picker.value);
+                });
+            });
+            this._panel.querySelectorAll('.bp-color-hex').forEach(function(hexInput) {
+                hexInput.addEventListener('input', function() {
+                    var key = hexInput.dataset.key;
+                    var val = hexInput.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                        var picker = self._panel.querySelector('.bp-color[data-key="' + key + '"]');
+                        if (picker) picker.value = val;
+                        self._onColorChange(key, val);
+                    }
+                });
+            });
+        }
+
+        if (this._resetBtn) this._resetBtn.addEventListener('click', function() { self._reset(); });
+        if (this._exportBtn) this._exportBtn.addEventListener('click', function() { self._export(); });
+        if (this._importBtn) this._importBtn.addEventListener('click', function() { self._fileInput && self._fileInput.click(); });
+        if (this._fileInput) this._fileInput.addEventListener('change', function(e) { self._import(e); });
+    }
+
+    toggle() { this._isOpen ? this.close() : this.open(); }
+
+    open() {
+        if (!this._overlay) return;
+        this._populateForm();
+        this._overlay.hidden = false;
+        this._isOpen = true;
+        var panel = this._panel;
+        requestAnimationFrame(function() {
+            var first = panel.querySelector('.bp-input');
+            if (first) first.focus();
+        });
+    }
+
+    close() {
+        if (!this._overlay) return;
+        this._overlay.hidden = true;
+        this._isOpen = false;
+        if (this._toggleBtn) this._toggleBtn.focus();
+    }
+
+    _populateForm() {
+        var config = this._getCurrentConfig();
+        if (this._panel) {
+            this._panel.querySelectorAll('.bp-input:not(.bp-select)').forEach(function(input) {
+                var key = input.dataset.key;
+                if (key && config[key] !== undefined) input.value = config[key] || '';
+            });
+            this._panel.querySelectorAll('.bp-select').forEach(function(select) {
+                var key = select.dataset.key;
+                if (key && config[key]) select.value = config[key];
+            });
+            this._panel.querySelectorAll('.bp-color').forEach(function(picker) {
+                var key = picker.dataset.key;
+                if (key && config[key]) picker.value = config[key];
+            });
+            this._panel.querySelectorAll('.bp-color-hex').forEach(function(hexInput) {
+                var key = hexInput.dataset.key;
+                if (key && config[key]) hexInput.value = config[key];
+            });
+        }
+    }
+
+    _onFieldChange(element) {
+        var key = element.dataset.key;
+        if (!key) return;
+        var config = this._getCurrentConfig();
+        var value = element.value;
+        if (value === '' && ['logoImage', 'favicon', 'footerText', 'copyrightText'].includes(key)) value = null;
+        config[key] = value;
+        if (key === 'fontFamily') config.fontUrl = BRANDING_FONT_URLS[value] || null;
+        this._save(config);
+        brandingManager.applyConfig(config);
+    }
+
+    _onColorChange(key, value) {
+        var config = this._getCurrentConfig();
+        config[key] = value;
+        if (key === 'primaryColor') config.themeColorLight = value;
+        this._save(config);
+        brandingManager.applyConfig(config);
+    }
+
+    _getCurrentConfig() {
+        try {
+            var saved = localStorage.getItem('gantt_branding');
+            if (saved) return JSON.parse(saved);
+        } catch(e) { /* ignore */ }
+        var copy = {};
+        for (var k in branding) copy[k] = branding[k];
+        return copy;
+    }
+
+    _save(config) {
+        try { localStorage.setItem('gantt_branding', JSON.stringify(config)); } catch(e) { /* ignore */ }
+    }
+
+    _reset() {
+        if (!confirm('R\u00e9initialiser toutes les personnalisations ?')) return;
+        try { localStorage.removeItem('gantt_branding'); } catch(e) { /* ignore */ }
+        brandingManager.applyConfig(branding);
+        this._populateForm();
+        this._showToast('Personnalisation r\u00e9initialis\u00e9e');
+    }
+
+    _export() {
+        var config = this._getCurrentConfig();
+        var exportData = {};
+        for (var k in branding) exportData[k] = config[k] !== undefined ? config[k] : branding[k];
+        var json = JSON.stringify(exportData, null, 2);
+        var blob = new Blob([json], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'branding.json';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this._showToast('Configuration export\u00e9e');
+    }
+
+    _import(e) {
+        var self = this;
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                var imported = JSON.parse(ev.target.result);
+                if (typeof imported !== 'object' || !imported.appName) {
+                    self._showToast('Fichier invalide : appName manquant', true);
+                    return;
+                }
+                var merged = {};
+                for (var k in branding) merged[k] = branding[k];
+                for (var k2 in imported) merged[k2] = imported[k2];
+                self._save(merged);
+                brandingManager.applyConfig(merged);
+                self._populateForm();
+                self._showToast('Configuration import\u00e9e avec succ\u00e8s');
+            } catch(err) {
+                self._showToast('Erreur : fichier JSON invalide', true);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    }
+
+    _showToast(message, isError) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+        var toast = document.createElement('div');
+        toast.className = 'toast' + (isError ? ' toast-error' : ' toast-success');
+        toast.textContent = message;
+        toast.setAttribute('role', 'status');
+        container.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3000);
+    }
+}
+
+var brandingPanel = new BrandingPanel();
 
 class App {
     constructor() {
@@ -7715,6 +8075,7 @@ class App {
     init() {
         // Apply branding
         brandingManager.apply();
+        brandingPanel.init();
 
         // Initialize theme
         themeManager.init();

@@ -3,11 +3,13 @@
    Applies white-label config to the DOM
    ======================================== */
 
-import { branding as config } from '../config/branding.js';
+import { branding as defaultConfig } from '../config/branding.js';
+
+const STORAGE_KEY = 'gantt_branding';
 
 class BrandingManager {
     constructor() {
-        this._config = config;
+        this._config = defaultConfig;
     }
 
     getConfig() {
@@ -15,10 +17,23 @@ class BrandingManager {
     }
 
     /**
-     * Apply all branding settings to the DOM.
-     * Call once after DOMContentLoaded.
+     * Apply branding on startup.
+     * Loads from localStorage if available, otherwise uses default config.
      */
     apply() {
+        this._loadFromStorage();
+        this._applyAll();
+    }
+
+    /**
+     * Apply a specific config object (used by the panel for live preview).
+     */
+    applyConfig(config) {
+        this._config = config;
+        this._applyAll();
+    }
+
+    _applyAll() {
         this._applyMeta();
         this._applyColors();
         this._applyFont();
@@ -27,32 +42,37 @@ class BrandingManager {
         this._applyFooter();
     }
 
+    _loadFromStorage() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                this._config = { ...defaultConfig, ...parsed };
+            }
+        } catch { /* ignore */ }
+    }
+
     /* ---- Meta tags ---- */
 
     _applyMeta() {
         const c = this._config;
 
-        // Title
         document.title = c.appName;
 
-        // Description
         const descMeta = document.querySelector('meta[name="description"]');
         if (descMeta) {
             descMeta.content = c.appName + ' - ' + c.description;
         }
 
-        // Theme color
         const themeLight = document.querySelector('meta[name="theme-color"][media*="light"]');
         const themeDark = document.querySelector('meta[name="theme-color"][media*="dark"]');
         if (themeLight) themeLight.content = c.themeColorLight || c.primaryColor;
         if (themeDark) themeDark.content = c.themeColorDark || c.primaryColor;
 
-        // Locale
         if (c.locale) {
             document.documentElement.lang = c.locale;
         }
 
-        // Favicon
         if (c.favicon) {
             let link = document.querySelector('link[rel="icon"]');
             if (!link) {
@@ -72,7 +92,6 @@ class BrandingManager {
 
         if (c.primaryColor) {
             root.style.setProperty('--color-primary', c.primaryColor);
-            // Compute RGB for rgba() usage
             const rgb = this._hexToRgb(c.primaryColor);
             if (rgb) {
                 root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
@@ -87,8 +106,6 @@ class BrandingManager {
         if (c.primaryDarkColor) {
             root.style.setProperty('--color-primary-dark', c.primaryDarkColor);
         }
-
-        // Accent color for logo gradient
         if (c.accentColor) {
             root.style.setProperty('--color-accent', c.accentColor);
         }
@@ -111,7 +128,6 @@ class BrandingManager {
 
         document.documentElement.style.setProperty('--font-sans', c.fontFamily);
 
-        // Load custom font URL if different from default
         if (c.fontUrl) {
             const existing = document.querySelector(`link[href="${c.fontUrl}"]`);
             if (!existing) {
@@ -128,7 +144,6 @@ class BrandingManager {
     _applyLogo() {
         const c = this._config;
 
-        // Logo area
         const logoContainer = document.querySelector('.logo');
         if (!logoContainer) return;
 
@@ -138,7 +153,6 @@ class BrandingManager {
         const logoText = logoContainer.querySelector('span');
 
         if (c.logoImage) {
-            // Replace icon with image
             if (logoIcon) {
                 logoIcon.innerHTML = '';
                 logoIcon.style.background = 'none';
@@ -151,17 +165,16 @@ class BrandingManager {
                 img.style.borderRadius = 'inherit';
                 logoIcon.appendChild(img);
             }
-        } else if (c.logoIcon && logoIcon) {
-            logoIcon.textContent = c.logoIcon;
+        } else if (logoIcon) {
+            // Restore text icon (clear any previous image)
+            const existingImg = logoIcon.querySelector('img');
+            if (existingImg) existingImg.remove();
+            logoIcon.textContent = c.logoIcon || 'GP';
+            logoIcon.style.background = `linear-gradient(135deg, ${c.primaryColor || '#6366F1'}, ${c.accentColor || '#EC4899'})`;
         }
 
         if (logoText) {
             logoText.textContent = c.appShortName || c.appName;
-        }
-
-        // Update accent color on logo gradient
-        if (c.accentColor && logoIcon && !c.logoImage) {
-            logoIcon.style.background = `linear-gradient(135deg, ${c.primaryColor || '#6366F1'}, ${c.accentColor})`;
         }
     }
 
@@ -181,16 +194,20 @@ class BrandingManager {
 
     _applyFooter() {
         const c = this._config;
-        if (!c.copyrightText && !c.footerText) return;
 
-        // Check if branding footer already exists
         let footer = document.getElementById('brandingFooter');
+
+        if (!c.copyrightText && !c.footerText) {
+            // Remove footer if it exists but nothing to show
+            if (footer) footer.remove();
+            return;
+        }
+
         if (!footer) {
             footer = document.createElement('div');
             footer.id = 'brandingFooter';
             footer.className = 'branding-footer';
 
-            // Insert after the stats-bar footer
             const statsBar = document.querySelector('.stats-bar');
             if (statsBar && statsBar.parentNode) {
                 statsBar.parentNode.insertBefore(footer, statsBar.nextSibling);
