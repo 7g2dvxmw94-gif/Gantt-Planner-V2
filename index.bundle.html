@@ -1293,7 +1293,7 @@ textarea.input {
 .onboarding-next:hover { background: var(--color-primary-hover, #4F46E5); }
 .onboarding-next:focus-visible { outline: 2px solid var(--color-primary, #6366F1); outline-offset: 2px; }
 
-/* ---- Cloud Backup Modal ---- */
+/* ---- Cloud Backup Modal (Google Drive) ---- */
 .cloud-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9000; animation: fadeIn 0.15s ease; }
 .cloud-modal { background: var(--bg-elevated, #fff); border-radius: 12px; width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); border: 1px solid var(--border-default, #e2e8f0); }
 .cloud-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-default, #e2e8f0); }
@@ -1303,22 +1303,25 @@ textarea.input {
 .cloud-modal-body { padding: 20px; }
 .cloud-modal-loading { padding: 40px 20px; text-align: center; color: var(--text-muted, #94a3b8); }
 .cloud-setup-info { margin-bottom: 20px; }
+.cloud-gdrive-logo { text-align: center; margin-bottom: 12px; }
 .cloud-setup-info h3 { margin: 0 0 8px; font-size: 15px; color: var(--text-primary, #1e293b); }
 .cloud-setup-info p { margin: 0 0 12px; color: var(--text-secondary, #64748b); font-size: 13px; }
 .cloud-setup-info ol { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary, #64748b); line-height: 1.8; }
+.cloud-setup-info a { color: var(--color-primary, #6366F1); text-decoration: none; }
+.cloud-setup-info a:hover { text-decoration: underline; }
+.cloud-steps-info { margin-top: 16px; padding: 12px; background: var(--bg-muted, #f1f5f9); border-radius: 8px; }
+.cloud-steps-info p { margin: 0 0 8px; }
 .cloud-config-form .form-group { margin-bottom: 10px; }
 .cloud-config-form label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #64748b); margin-bottom: 4px; }
 .cloud-config-form input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; font-size: 13px; background: var(--bg-base, #f8fafc); color: var(--text-primary, #1e293b); box-sizing: border-box; }
 .cloud-config-form input:focus { outline: none; border-color: var(--color-primary, #6366F1); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
 .cloud-auth-section { margin-bottom: 20px; }
-.cloud-auth-section p { margin: 0 0 16px; color: var(--text-secondary, #64748b); font-size: 13px; }
-.cloud-email-divider { display: flex; align-items: center; margin: 16px 0; color: var(--text-muted, #94a3b8); font-size: 12px; }
-.cloud-email-divider::before, .cloud-email-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-default, #e2e8f0); }
-.cloud-email-divider span { padding: 0 12px; }
-.cloud-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 6px; font-size: 13px; background: var(--bg-base, #f8fafc); color: var(--text-primary, #1e293b); margin-bottom: 8px; box-sizing: border-box; }
-.cloud-input:focus { outline: none; border-color: var(--color-primary, #6366F1); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+.cloud-auth-section p { margin: 0 0 16px; color: var(--text-secondary, #64748b); font-size: 13px; text-align: center; }
+.cloud-google-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .cloud-user-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-muted, #f1f5f9); border-radius: 8px; margin-bottom: 16px; }
+.cloud-user-info { display: flex; flex-direction: column; gap: 2px; }
 .cloud-user-name { font-size: 13px; font-weight: 600; color: var(--text-primary, #1e293b); }
+.cloud-user-email { font-size: 11px; color: var(--text-muted, #94a3b8); }
 .cloud-actions { display: flex; gap: 8px; margin-bottom: 20px; }
 .cloud-list-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #64748b); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 .cloud-backup-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border-default, #e2e8f0); border-radius: 8px; margin-bottom: 8px; transition: background 0.15s; }
@@ -3506,12 +3509,12 @@ textarea.input {
                     <span>Exporter</span>
                 </button>
 
-                <!-- Cloud Backup -->
-                <button class="btn btn-secondary" id="cloudBackupBtn" aria-label="Sauvegarde Cloud" title="Sauvegarde Cloud (Firebase)">
+                <!-- Google Drive Backup -->
+                <button class="btn btn-secondary" id="cloudBackupBtn" aria-label="Sauvegarde Google Drive" title="Sauvegarde Google Drive">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
                         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
                     </svg>
-                    <span>Cloud</span>
+                    <span>Google Drive</span>
                 </button>
 
                 <!-- Notifications -->
