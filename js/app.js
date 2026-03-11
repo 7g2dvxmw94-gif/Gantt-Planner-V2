@@ -11,6 +11,7 @@ import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
+import { brandingManager } from './branding.js';
 
 class App {
     constructor() {
@@ -23,6 +24,9 @@ class App {
     }
 
     init() {
+        // Apply branding
+        brandingManager.apply();
+
         // Initialize theme
         themeManager.init();
 

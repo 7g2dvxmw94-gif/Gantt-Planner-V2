@@ -435,7 +435,7 @@ table {
     width: 32px;
     height: 32px;
     border-radius: var(--radius-full);
-    background: linear-gradient(135deg, var(--color-primary), #EC4899);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent, #EC4899));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1364,7 +1364,7 @@ textarea.input {
 .logo-icon {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--color-primary), #EC4899);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent, #EC4899));
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -1612,6 +1612,10 @@ textarea.input {
 .mobile-nav-item svg {
     width: 24px;
     height: 24px;
+}
+
+/* ---- Branding Footer ---- */
+.branding-footer { text-align: center; padding: 6px 16px; font-size: 11px; color: var(--text-muted, #94a3b8); background: var(--bg-subtle, #f8fafc); border-top: 1px solid var(--border-subtle, #f1f5f9);
 }
 /* ========================================
    GANTT CHART STYLES
@@ -7541,6 +7545,163 @@ class CloudBackup {
 
 var cloudBackup = new CloudBackup();
 
+/* ========================================
+   BRANDING CONFIGURATION
+   ======================================== */
+
+var branding = {
+    appName: 'Gantt Planner Pro',
+    appShortName: 'Gantt Planner',
+    logoIcon: 'GP',
+    logoImage: null,
+    favicon: null,
+    description: 'Outil de planification de projets avec diagramme de Gantt interactif',
+    primaryColor: '#6366F1',
+    primaryHoverColor: '#4F46E5',
+    primaryLightColor: '#EEF2FF',
+    primaryDarkColor: '#4338CA',
+    accentColor: '#EC4899',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    defaultUserName: 'Jean Dupont',
+    defaultUserInitials: 'JD',
+    footerText: null,
+    copyrightText: null,
+    themeColorLight: '#6366F1',
+    themeColorDark: '#818CF8',
+    locale: 'fr',
+};
+
+/* ========================================
+   BRANDING MODULE
+   ======================================== */
+
+class BrandingManager {
+    constructor() { this._config = branding; }
+    getConfig() { return this._config; }
+
+    apply() {
+        this._applyMeta();
+        this._applyColors();
+        this._applyFont();
+        this._applyLogo();
+        this._applyUser();
+        this._applyFooter();
+    }
+
+    _applyMeta() {
+        var c = this._config;
+        document.title = c.appName;
+        var descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) descMeta.content = c.appName + ' - ' + c.description;
+        var themeLight = document.querySelector('meta[name="theme-color"][media*="light"]');
+        var themeDark = document.querySelector('meta[name="theme-color"][media*="dark"]');
+        if (themeLight) themeLight.content = c.themeColorLight || c.primaryColor;
+        if (themeDark) themeDark.content = c.themeColorDark || c.primaryColor;
+        if (c.locale) document.documentElement.lang = c.locale;
+        if (c.favicon) {
+            var link = document.querySelector('link[rel="icon"]');
+            if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+            link.href = c.favicon;
+        }
+    }
+
+    _applyColors() {
+        var c = this._config;
+        var root = document.documentElement;
+        if (c.primaryColor) {
+            root.style.setProperty('--color-primary', c.primaryColor);
+            var rgb = this._hexToRgb(c.primaryColor);
+            if (rgb) root.style.setProperty('--color-primary-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+        }
+        if (c.primaryHoverColor) root.style.setProperty('--color-primary-hover', c.primaryHoverColor);
+        if (c.primaryLightColor) root.style.setProperty('--color-primary-light', c.primaryLightColor);
+        if (c.primaryDarkColor) root.style.setProperty('--color-primary-dark', c.primaryDarkColor);
+        if (c.accentColor) root.style.setProperty('--color-accent', c.accentColor);
+    }
+
+    _hexToRgb(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
+    _applyFont() {
+        var c = this._config;
+        if (!c.fontFamily) return;
+        document.documentElement.style.setProperty('--font-sans', c.fontFamily);
+        if (c.fontUrl) {
+            var existing = document.querySelector('link[href="' + c.fontUrl + '"]');
+            if (!existing) {
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = c.fontUrl;
+                document.head.appendChild(link);
+            }
+        }
+    }
+
+    _applyLogo() {
+        var c = this._config;
+        var logoContainer = document.querySelector('.logo');
+        if (!logoContainer) return;
+        logoContainer.setAttribute('aria-label', c.appName);
+        var logoIcon = logoContainer.querySelector('.logo-icon');
+        var logoText = logoContainer.querySelector('span');
+        if (c.logoImage) {
+            if (logoIcon) {
+                logoIcon.innerHTML = '';
+                logoIcon.style.background = 'none';
+                var img = document.createElement('img');
+                img.src = c.logoImage;
+                img.alt = c.appShortName || c.appName;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                img.style.borderRadius = 'inherit';
+                logoIcon.appendChild(img);
+            }
+        } else if (c.logoIcon && logoIcon) {
+            logoIcon.textContent = c.logoIcon;
+        }
+        if (logoText) logoText.textContent = c.appShortName || c.appName;
+        if (c.accentColor && logoIcon && !c.logoImage) {
+            logoIcon.style.background = 'linear-gradient(135deg, ' + (c.primaryColor || '#6366F1') + ', ' + c.accentColor + ')';
+        }
+    }
+
+    _applyUser() {
+        var c = this._config;
+        var avatar = document.querySelector('.avatar');
+        if (avatar) {
+            avatar.textContent = c.defaultUserInitials || 'U';
+            avatar.setAttribute('aria-label', 'Profil utilisateur - ' + (c.defaultUserName || 'Utilisateur'));
+        }
+    }
+
+    _applyFooter() {
+        var c = this._config;
+        if (!c.copyrightText && !c.footerText) return;
+        var footer = document.getElementById('brandingFooter');
+        if (!footer) {
+            footer = document.createElement('div');
+            footer.id = 'brandingFooter';
+            footer.className = 'branding-footer';
+            var statsBar = document.querySelector('.stats-bar');
+            if (statsBar && statsBar.parentNode) {
+                statsBar.parentNode.insertBefore(footer, statsBar.nextSibling);
+            } else {
+                document.body.appendChild(footer);
+            }
+        }
+        var parts = [];
+        if (c.footerText) parts.push(c.footerText);
+        if (c.copyrightText) parts.push(c.copyrightText);
+        footer.textContent = parts.join(' · ');
+    }
+}
+
+var brandingManager = new BrandingManager();
+
 class App {
     constructor() {
         this._activeView = 'timeline';
@@ -7552,6 +7713,9 @@ class App {
     }
 
     init() {
+        // Apply branding
+        brandingManager.apply();
+
         // Initialize theme
         themeManager.init();
 
