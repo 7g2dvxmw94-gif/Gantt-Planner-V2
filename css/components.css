@@ -1270,6 +1270,11 @@ textarea.input {
     margin-bottom: 20px;
 }
 
+.cloud-gdrive-logo {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
 .cloud-setup-info h3 {
     margin: 0 0 8px;
     font-size: 15px;
@@ -1288,6 +1293,26 @@ textarea.input {
     font-size: 13px;
     color: var(--text-secondary, #64748b);
     line-height: 1.8;
+}
+
+.cloud-setup-info a {
+    color: var(--color-primary, #6366F1);
+    text-decoration: none;
+}
+
+.cloud-setup-info a:hover {
+    text-decoration: underline;
+}
+
+.cloud-steps-info {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--bg-muted, #f1f5f9);
+    border-radius: 8px;
+}
+
+.cloud-steps-info p {
+    margin: 0 0 8px;
 }
 
 /* Config form */
@@ -1329,6 +1354,7 @@ textarea.input {
     margin: 0 0 16px;
     color: var(--text-secondary, #64748b);
     font-size: 13px;
+    text-align: center;
 }
 
 .cloud-google-btn {
@@ -1336,44 +1362,6 @@ textarea.input {
     align-items: center;
     justify-content: center;
     gap: 8px;
-}
-
-.cloud-email-divider {
-    display: flex;
-    align-items: center;
-    margin: 16px 0;
-    color: var(--text-muted, #94a3b8);
-    font-size: 12px;
-}
-
-.cloud-email-divider::before,
-.cloud-email-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border-default, #e2e8f0);
-}
-
-.cloud-email-divider span {
-    padding: 0 12px;
-}
-
-.cloud-input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border-default, #e2e8f0);
-    border-radius: 6px;
-    font-size: 13px;
-    background: var(--bg-base, #f8fafc);
-    color: var(--text-primary, #1e293b);
-    margin-bottom: 8px;
-    box-sizing: border-box;
-}
-
-.cloud-input:focus {
-    outline: none;
-    border-color: var(--color-primary, #6366F1);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
 /* User bar */
@@ -1387,10 +1375,21 @@ textarea.input {
     margin-bottom: 16px;
 }
 
+.cloud-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .cloud-user-name {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary, #1e293b);
+}
+
+.cloud-user-email {
+    font-size: 11px;
+    color: var(--text-muted, #94a3b8);
 }
 
 /* Actions */

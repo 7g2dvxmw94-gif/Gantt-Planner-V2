@@ -2084,10 +2084,9 @@ tr:nth-child(even){background:#fafbfc}
         }
     }
 
-    /* ---- Cloud Backup ---- */
+    /* ---- Cloud Backup (Google Drive) ---- */
 
     _showCloudBackupModal() {
-        // Remove existing
         const existing = document.getElementById('cloudBackupModal');
         if (existing) { existing.remove(); return; }
 
@@ -2101,14 +2100,14 @@ tr:nth-child(even){background:#fafbfc}
         const modal = document.createElement('div');
         modal.className = 'cloud-modal';
 
-        const config = cloudBackup.getConfig();
-        const isConfigured = config && config.apiKey;
-
-        if (!isConfigured) {
-            modal.innerHTML = this._cloudConfigHTML();
+        const clientId = localStorage.getItem('gantt-planner-gdrive-clientid');
+        if (!clientId) {
+            modal.innerHTML = this._gdriveConfigHTML();
+        } else if (cloudBackup.isSignedIn()) {
+            this._renderCloudPanel(modal);
         } else {
-            modal.innerHTML = '<div class="cloud-modal-loading">Connexion à Firebase...</div>';
-            this._initCloudAndShowPanel(modal);
+            modal.innerHTML = '<div class="cloud-modal-loading">Connexion à Google Drive...</div>';
+            this._initGDriveAndShowPanel(modal, clientId);
         }
 
         overlay.appendChild(modal);
@@ -2118,60 +2117,52 @@ tr:nth-child(even){background:#fafbfc}
             if (e.target === overlay) overlay.remove();
         });
 
-        // Bind config form if shown
-        setTimeout(() => this._bindCloudConfigForm(modal), 0);
+        setTimeout(() => this._bindGDriveConfigForm(modal), 0);
     }
 
-    _cloudConfigHTML() {
+    _gdriveConfigHTML() {
         return `
             <div class="cloud-modal-header">
-                <h2 id="cloudModalTitle">Sauvegarde Cloud</h2>
+                <h2 id="cloudModalTitle">Google Drive</h2>
                 <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
             </div>
             <div class="cloud-modal-body">
                 <div class="cloud-setup-info">
-                    <h3>Configuration Firebase</h3>
-                    <p>Pour activer la sauvegarde cloud, vous devez créer un projet Firebase gratuit :</p>
-                    <ol>
-                        <li>Allez sur <strong>console.firebase.google.com</strong></li>
-                        <li>Créez un nouveau projet</li>
-                        <li>Activez <strong>Authentication</strong> (Google et/ou Email)</li>
-                        <li>Activez <strong>Cloud Firestore</strong></li>
-                        <li>Dans Paramètres du projet → Général, copiez la configuration</li>
-                    </ol>
+                    <div class="cloud-gdrive-logo">
+                        <svg width="40" height="40" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l11.752 23.8z" fill="#ea4335"/>
+                            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                            <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                        </svg>
+                    </div>
+                    <h3>Sauvegarde Google Drive</h3>
+                    <p>Vos sauvegardes seront stockées dans un dossier <strong>"Gantt Planner Backups"</strong> de votre Google Drive personnel.</p>
+                    <div class="cloud-steps-info">
+                        <p><strong>Configuration (une seule fois) :</strong></p>
+                        <ol>
+                            <li>Allez sur <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">console.cloud.google.com</a></li>
+                            <li>Créez un projet (ou sélectionnez-en un existant)</li>
+                            <li>Activez l'API <strong>Google Drive</strong></li>
+                            <li>Créez des <strong>Identifiants → ID client OAuth 2.0</strong> (type : Application Web)</li>
+                            <li>Copiez le <strong>Client ID</strong> ci-dessous</li>
+                        </ol>
+                    </div>
                 </div>
-                <form id="cloudConfigForm" class="cloud-config-form">
+                <form id="gdriveConfigForm" class="cloud-config-form">
                     <div class="form-group">
-                        <label for="cfgApiKey">API Key *</label>
-                        <input type="text" id="cfgApiKey" required placeholder="AIzaSy...">
+                        <label for="cfgClientId">Client ID Google *</label>
+                        <input type="text" id="cfgClientId" required placeholder="123456789-abc.apps.googleusercontent.com">
                     </div>
-                    <div class="form-group">
-                        <label for="cfgAuthDomain">Auth Domain *</label>
-                        <input type="text" id="cfgAuthDomain" required placeholder="mon-projet.firebaseapp.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="cfgProjectId">Project ID *</label>
-                        <input type="text" id="cfgProjectId" required placeholder="mon-projet">
-                    </div>
-                    <div class="form-group">
-                        <label for="cfgStorageBucket">Storage Bucket</label>
-                        <input type="text" id="cfgStorageBucket" placeholder="mon-projet.appspot.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="cfgMessagingSenderId">Messaging Sender ID</label>
-                        <input type="text" id="cfgMessagingSenderId" placeholder="123456789">
-                    </div>
-                    <div class="form-group">
-                        <label for="cfgAppId">App ID</label>
-                        <input type="text" id="cfgAppId" placeholder="1:123:web:abc">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à Google Drive</button>
                 </form>
             </div>`;
     }
 
-    _bindCloudConfigForm(modal) {
-        const form = modal.querySelector('#cloudConfigForm');
+    _bindGDriveConfigForm(modal) {
+        const form = modal.querySelector('#gdriveConfigForm');
         if (!form) return;
 
         const closeBtn = modal.querySelector('.cloud-modal-close');
@@ -2181,48 +2172,43 @@ tr:nth-child(even){background:#fafbfc}
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const config = {
-                apiKey: form.querySelector('#cfgApiKey').value.trim(),
-                authDomain: form.querySelector('#cfgAuthDomain').value.trim(),
-                projectId: form.querySelector('#cfgProjectId').value.trim(),
-                storageBucket: form.querySelector('#cfgStorageBucket').value.trim(),
-                messagingSenderId: form.querySelector('#cfgMessagingSenderId').value.trim(),
-                appId: form.querySelector('#cfgAppId').value.trim(),
-            };
+            const clientId = form.querySelector('#cfgClientId').value.trim();
+            if (!clientId) return;
 
             try {
                 form.querySelector('button[type="submit"]').textContent = 'Connexion...';
-                await cloudBackup.init(config);
-                modal.innerHTML = '';
+                localStorage.setItem('gantt-planner-gdrive-clientid', clientId);
+                await cloudBackup.init(clientId);
                 this._renderCloudPanel(modal);
             } catch (err) {
-                this._showToast('Erreur Firebase: ' + err.message, 'error');
-                form.querySelector('button[type="submit"]').textContent = 'Connecter';
+                this._showToast('Erreur Google Drive: ' + err.message, 'error');
+                form.querySelector('button[type="submit"]').textContent = 'Connecter à Google Drive';
             }
         });
     }
 
-    async _initCloudAndShowPanel(modal) {
+    async _initGDriveAndShowPanel(modal, clientId) {
         try {
-            await cloudBackup.init();
+            await cloudBackup.init(clientId);
             this._renderCloudPanel(modal);
         } catch (err) {
-            modal.innerHTML = this._cloudConfigHTML();
-            this._bindCloudConfigForm(modal);
-            this._showToast('Erreur Firebase: ' + err.message, 'error');
+            modal.innerHTML = this._gdriveConfigHTML();
+            this._bindGDriveConfigForm(modal);
+            this._showToast('Erreur Google Drive: ' + err.message, 'error');
         }
     }
 
     _renderCloudPanel(modal) {
         const user = cloudBackup.getUser();
+        const isSignedIn = cloudBackup.isSignedIn();
 
         modal.innerHTML = `
             <div class="cloud-modal-header">
-                <h2 id="cloudModalTitle">Sauvegarde Cloud</h2>
+                <h2 id="cloudModalTitle">Google Drive</h2>
                 <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
             </div>
             <div class="cloud-modal-body">
-                ${user ? this._cloudLoggedInHTML(user) : this._cloudLoginHTML()}
+                ${isSignedIn ? this._cloudLoggedInHTML(user) : this._cloudLoginHTML()}
                 <div id="cloudBackupList" class="cloud-backup-list"></div>
             </div>`;
 
@@ -2231,15 +2217,14 @@ tr:nth-child(even){background:#fafbfc}
             document.getElementById('cloudBackupModal')?.remove();
         });
 
-        if (user) {
+        if (isSignedIn) {
             this._bindCloudActions(modal);
             this._refreshBackupList(modal);
         } else {
             this._bindCloudLogin(modal);
         }
 
-        // Listen for auth changes
-        cloudBackup.on('auth', (u) => {
+        cloudBackup.on('auth', () => {
             this._renderCloudPanel(modal);
         });
     }
@@ -2247,30 +2232,35 @@ tr:nth-child(even){background:#fafbfc}
     _cloudLoginHTML() {
         return `
             <div class="cloud-auth-section">
-                <p>Connectez-vous pour accéder à vos sauvegardes cloud.</p>
-                <button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 8px;">
-                    Connexion avec Google
-                </button>
-                <div class="cloud-email-divider"><span>ou par email</span></div>
-                <div class="cloud-email-form">
-                    <input type="email" id="cloudEmail" placeholder="Email" class="cloud-input">
-                    <input type="password" id="cloudPassword" placeholder="Mot de passe" class="cloud-input">
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-primary" id="cloudEmailLogin" style="flex:1;">Connexion</button>
-                        <button class="btn btn-secondary" id="cloudEmailRegister" style="flex:1;">Inscription</button>
-                    </div>
+                <div class="cloud-gdrive-logo" style="text-align:center; margin-bottom: 16px;">
+                    <svg width="36" height="36" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l11.752 23.8z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                    </svg>
                 </div>
-                <button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; margin-top: 12px; font-size: 12px;">
-                    Modifier la configuration Firebase
+                <p>Connectez-vous avec votre compte Google pour sauvegarder vos projets dans Google Drive.</p>
+                <button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 12px;">
+                    Se connecter avec Google
+                </button>
+                <button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; font-size: 12px;">
+                    Modifier le Client ID
                 </button>
             </div>`;
     }
 
     _cloudLoggedInHTML(user) {
-        const name = user.displayName || user.email || 'Utilisateur';
+        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
         return `
             <div class="cloud-user-bar">
-                <span class="cloud-user-name">${name}</span>
+                <div class="cloud-user-info">
+                    <span class="cloud-user-name">${name}</span>
+                    ${email}
+                </div>
                 <button class="btn btn-secondary btn-sm" id="cloudSignOut">Déconnexion</button>
             </div>
             <div class="cloud-actions">
@@ -2288,38 +2278,14 @@ tr:nth-child(even){background:#fafbfc}
         if (googleBtn) {
             googleBtn.addEventListener('click', async () => {
                 try {
-                    await cloudBackup.signInWithGoogle();
+                    googleBtn.textContent = 'Connexion...';
+                    googleBtn.disabled = true;
+                    await cloudBackup.signIn();
+                    this._renderCloudPanel(modal);
                 } catch (err) {
                     this._showToast('Erreur connexion Google: ' + err.message, 'error');
-                }
-            });
-        }
-
-        const emailLogin = modal.querySelector('#cloudEmailLogin');
-        if (emailLogin) {
-            emailLogin.addEventListener('click', async () => {
-                const email = modal.querySelector('#cloudEmail').value;
-                const password = modal.querySelector('#cloudPassword').value;
-                if (!email || !password) return;
-                try {
-                    await cloudBackup.signInWithEmail(email, password);
-                } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
-                }
-            });
-        }
-
-        const emailRegister = modal.querySelector('#cloudEmailRegister');
-        if (emailRegister) {
-            emailRegister.addEventListener('click', async () => {
-                const email = modal.querySelector('#cloudEmail').value;
-                const password = modal.querySelector('#cloudPassword').value;
-                if (!email || !password) return;
-                try {
-                    await cloudBackup.registerWithEmail(email, password);
-                    this._showToast('Compte créé avec succès', 'success');
-                } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    googleBtn.textContent = 'Se connecter avec Google';
+                    googleBtn.disabled = false;
                 }
             });
         }
@@ -2327,9 +2293,10 @@ tr:nth-child(even){background:#fafbfc}
         const resetBtn = modal.querySelector('#cloudResetConfig');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
-                cloudBackup.clearConfig();
-                modal.innerHTML = this._cloudConfigHTML();
-                this._bindCloudConfigForm(modal);
+                localStorage.removeItem('gantt-planner-gdrive-clientid');
+                cloudBackup.signOut();
+                modal.innerHTML = this._gdriveConfigHTML();
+                this._bindGDriveConfigForm(modal);
             });
         }
     }
@@ -2337,8 +2304,8 @@ tr:nth-child(even){background:#fafbfc}
     _bindCloudActions(modal) {
         const signOutBtn = modal.querySelector('#cloudSignOut');
         if (signOutBtn) {
-            signOutBtn.addEventListener('click', async () => {
-                await cloudBackup.signOut();
+            signOutBtn.addEventListener('click', () => {
+                cloudBackup.signOut();
                 this._renderCloudPanel(modal);
             });
         }
@@ -2352,7 +2319,7 @@ tr:nth-child(even){background:#fafbfc}
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
                     await cloudBackup.saveBackup(`Backup complet - ${date}`, data);
-                    this._showToast('Sauvegarde cloud réussie', 'success');
+                    this._showToast('Sauvegarde Google Drive réussie', 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
                     this._showToast('Erreur: ' + err.message, 'error');
@@ -2374,7 +2341,7 @@ tr:nth-child(even){background:#fafbfc}
                     const resources = store.getResources();
                     const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
                     await cloudBackup.saveBackup(project.name, data);
-                    this._showToast(`"${project.name}" sauvegardé`, 'success');
+                    this._showToast(`"${project.name}" sauvegardé sur Google Drive`, 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
                     this._showToast('Erreur: ' + err.message, 'error');
@@ -2395,7 +2362,7 @@ tr:nth-child(even){background:#fafbfc}
         try {
             const backups = await cloudBackup.listBackups();
             if (backups.length === 0) {
-                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde cloud</div>';
+                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans Google Drive</div>';
                 return;
             }
 
@@ -2423,7 +2390,6 @@ tr:nth-child(even){background:#fafbfc}
                 container.appendChild(item);
             });
 
-            // Bind restore buttons
             container.querySelectorAll('.cloud-restore-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const id = btn.dataset.id;
@@ -2455,7 +2421,6 @@ tr:nth-child(even){background:#fafbfc}
                 });
             });
 
-            // Bind delete buttons
             container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if (!confirm('Supprimer cette sauvegarde ?')) return;

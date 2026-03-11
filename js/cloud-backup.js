@@ -1,19 +1,21 @@
 /* ========================================
-   CLOUD BACKUP - Firebase Integration
+   CLOUD BACKUP - Google Drive Integration
    Gantt Planner Pro
    ======================================== */
 
-const CONFIG_KEY = 'gantt-planner-firebase-config';
+const GDRIVE_CONFIG_KEY = 'gantt-planner-gdrive-token';
+const GDRIVE_FOLDER_NAME = 'Gantt Planner Backups';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 class CloudBackup {
     constructor() {
-        this._app = null;
-        this._auth = null;
-        this._db = null;
+        this._token = null;
         this._user = null;
-        this._config = null;
-        this._ready = false;
+        this._folderId = null;
         this._listeners = {};
+        this._tokenClient = null;
+        this._gapiLoaded = false;
+        this._gisLoaded = false;
     }
 
     /* ---- Events ---- */
@@ -27,170 +29,261 @@ class CloudBackup {
         (this._listeners[event] || []).forEach(fn => fn(data));
     }
 
-    /* ---- Config ---- */
+    /* ---- State ---- */
 
-    getConfig() {
-        if (this._config) return this._config;
-        try {
-            const raw = localStorage.getItem(CONFIG_KEY);
-            if (raw) {
-                this._config = JSON.parse(raw);
-                return this._config;
-            }
-        } catch (e) { /* ignore */ }
-        return null;
-    }
-
-    saveConfig(config) {
-        this._config = config;
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-    }
-
-    clearConfig() {
-        this._config = null;
-        localStorage.removeItem(CONFIG_KEY);
-        this._ready = false;
-        this._user = null;
-        this._app = null;
-        this._auth = null;
-        this._db = null;
-    }
-
-    isReady() { return this._ready; }
+    isSignedIn() { return !!this._token; }
     getUser() { return this._user; }
 
-    /* ---- Firebase SDK Loading ---- */
+    /* ---- Google API Loading ---- */
 
-    async _loadFirebaseSDK() {
-        if (window.firebase && window.firebase.apps) return;
+    async _loadGapiScript() {
+        if (this._gapiLoaded) return;
+        if (window.gapi) { this._gapiLoaded = true; return; }
 
-        const scripts = [
-            'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
-            'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
-            'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',
-        ];
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://apis.google.com/js/api.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Impossible de charger Google API'));
+            document.head.appendChild(s);
+        });
 
-        for (const src of scripts) {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = src;
-                s.onload = resolve;
-                s.onerror = () => reject(new Error('Impossible de charger Firebase SDK'));
-                document.head.appendChild(s);
-            });
-        }
+        await new Promise((resolve) => {
+            window.gapi.load('client', resolve);
+        });
+
+        this._gapiLoaded = true;
+    }
+
+    async _loadGisScript() {
+        if (this._gisLoaded) return;
+        if (window.google && window.google.accounts) { this._gisLoaded = true; return; }
+
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://accounts.google.com/gsi/client';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Impossible de charger Google Identity Services'));
+            document.head.appendChild(s);
+        });
+
+        this._gisLoaded = true;
     }
 
     /* ---- Init ---- */
 
-    async init(config) {
-        if (!config) config = this.getConfig();
-        if (!config || !config.apiKey || !config.projectId) {
-            throw new Error('Configuration Firebase manquante');
+    async init(clientId) {
+        if (!clientId) {
+            throw new Error('Client ID Google manquant');
         }
 
-        await this._loadFirebaseSDK();
+        await Promise.all([
+            this._loadGapiScript(),
+            this._loadGisScript(),
+        ]);
 
-        // Initialize or reuse app
-        if (window.firebase.apps.length === 0) {
-            this._app = window.firebase.initializeApp(config);
-        } else {
-            this._app = window.firebase.apps[0];
-        }
+        await window.gapi.client.init({});
+        await window.gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
 
-        this._auth = window.firebase.auth();
-        this._db = window.firebase.firestore();
-        this._ready = true;
-        this.saveConfig(config);
-
-        // Listen for auth state
-        this._auth.onAuthStateChanged((user) => {
-            this._user = user;
-            this._emit('auth', user);
+        this._tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: SCOPES,
+            callback: () => {}, // set at sign-in time
         });
+
+        // Check for existing token
+        const saved = localStorage.getItem(GDRIVE_CONFIG_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.token && data.expiry && Date.now() < data.expiry) {
+                    window.gapi.client.setToken({ access_token: data.token });
+                    this._token = data.token;
+                    this._user = data.user || null;
+                    this._emit('auth', this._user);
+                }
+            } catch (e) { /* ignore */ }
+        }
 
         return true;
     }
 
     /* ---- Auth ---- */
 
-    async signInWithGoogle() {
-        if (!this._auth) throw new Error('Firebase non initialisé');
-        const provider = new window.firebase.auth.GoogleAuthProvider();
-        const result = await this._auth.signInWithPopup(provider);
-        this._user = result.user;
-        return this._user;
+    signIn() {
+        return new Promise((resolve, reject) => {
+            if (!this._tokenClient) {
+                reject(new Error('Google Drive non initialisé'));
+                return;
+            }
+
+            this._tokenClient.callback = async (response) => {
+                if (response.error) {
+                    reject(new Error(response.error_description || response.error));
+                    return;
+                }
+
+                this._token = response.access_token;
+
+                // Get user info
+                try {
+                    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: { Authorization: `Bearer ${this._token}` }
+                    });
+                    const info = await res.json();
+                    this._user = {
+                        displayName: info.name,
+                        email: info.email,
+                        photoURL: info.picture,
+                    };
+                } catch (e) {
+                    this._user = { displayName: 'Utilisateur Google', email: '' };
+                }
+
+                // Persist token (1h validity)
+                const expiry = Date.now() + (response.expires_in * 1000);
+                localStorage.setItem(GDRIVE_CONFIG_KEY, JSON.stringify({
+                    token: this._token,
+                    expiry,
+                    user: this._user,
+                }));
+
+                this._emit('auth', this._user);
+                resolve(this._user);
+            };
+
+            this._tokenClient.requestAccessToken({ prompt: 'consent' });
+        });
     }
 
-    async signInWithEmail(email, password) {
-        if (!this._auth) throw new Error('Firebase non initialisé');
-        const result = await this._auth.signInWithEmailAndPassword(email, password);
-        this._user = result.user;
-        return this._user;
-    }
-
-    async registerWithEmail(email, password) {
-        if (!this._auth) throw new Error('Firebase non initialisé');
-        const result = await this._auth.createUserWithEmailAndPassword(email, password);
-        this._user = result.user;
-        return this._user;
-    }
-
-    async signOut() {
-        if (!this._auth) return;
-        await this._auth.signOut();
+    signOut() {
+        if (this._token) {
+            window.google.accounts.oauth2.revoke(this._token);
+        }
+        this._token = null;
         this._user = null;
+        this._folderId = null;
+        localStorage.removeItem(GDRIVE_CONFIG_KEY);
+        window.gapi.client.setToken(null);
+        this._emit('auth', null);
+    }
+
+    /* ---- Drive Folder ---- */
+
+    async _getOrCreateFolder() {
+        if (this._folderId) return this._folderId;
+
+        // Search for existing folder
+        const searchRes = await window.gapi.client.drive.files.list({
+            q: `name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name)',
+            spaces: 'drive',
+        });
+
+        if (searchRes.result.files && searchRes.result.files.length > 0) {
+            this._folderId = searchRes.result.files[0].id;
+            return this._folderId;
+        }
+
+        // Create folder
+        const createRes = await window.gapi.client.drive.files.create({
+            resource: {
+                name: GDRIVE_FOLDER_NAME,
+                mimeType: 'application/vnd.google-apps.folder',
+            },
+            fields: 'id',
+        });
+
+        this._folderId = createRes.result.id;
+        return this._folderId;
     }
 
     /* ---- Backups CRUD ---- */
 
-    _backupsRef() {
-        if (!this._db || !this._user) throw new Error('Non connecté');
-        return this._db.collection('users').doc(this._user.uid).collection('backups');
-    }
-
     async saveBackup(name, data) {
-        const ref = this._backupsRef();
-        const doc = await ref.add({
-            name: name,
-            projectCount: data.projects ? data.projects.length : 1,
-            taskCount: data.tasks ? data.tasks.length : 0,
-            size: JSON.stringify(data).length,
-            createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
-            data: JSON.stringify(data),
+        if (!this._token) throw new Error('Non connecté');
+
+        const folderId = await this._getOrCreateFolder();
+        const jsonStr = JSON.stringify(data);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+
+        const metadata = {
+            name: `${name}.json`,
+            mimeType: 'application/json',
+            parents: [folderId],
+            description: JSON.stringify({
+                projectCount: data.projects ? data.projects.length : 1,
+                taskCount: data.tasks ? data.tasks.length : 0,
+                createdAt: new Date().toISOString(),
+            }),
+        };
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', blob);
+
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,createdTime,description', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${this._token}` },
+            body: form,
         });
-        return doc.id;
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error?.message || 'Erreur lors de la sauvegarde');
+        }
+
+        return (await response.json()).id;
     }
 
     async listBackups() {
-        const ref = this._backupsRef();
-        const snapshot = await ref.orderBy('createdAt', 'desc').limit(50).get();
-        const backups = [];
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            backups.push({
-                id: doc.id,
-                name: d.name,
-                projectCount: d.projectCount || 0,
-                taskCount: d.taskCount || 0,
-                size: d.size || 0,
-                createdAt: d.createdAt ? d.createdAt.toDate() : new Date(),
-            });
+        if (!this._token) throw new Error('Non connecté');
+
+        const folderId = await this._getOrCreateFolder();
+
+        const res = await window.gapi.client.drive.files.list({
+            q: `'${folderId}' in parents and mimeType='application/json' and trashed=false`,
+            fields: 'files(id, name, size, createdTime, description)',
+            orderBy: 'createdTime desc',
+            pageSize: 50,
         });
-        return backups;
+
+        return (res.result.files || []).map(f => {
+            let meta = {};
+            try { meta = JSON.parse(f.description || '{}'); } catch (e) { /* ignore */ }
+            return {
+                id: f.id,
+                name: f.name.replace(/\.json$/, ''),
+                projectCount: meta.projectCount || 0,
+                taskCount: meta.taskCount || 0,
+                size: parseInt(f.size) || 0,
+                createdAt: new Date(f.createdTime),
+            };
+        });
     }
 
-    async loadBackup(backupId) {
-        const ref = this._backupsRef();
-        const doc = await ref.doc(backupId).get();
-        if (!doc.exists) throw new Error('Sauvegarde introuvable');
-        const d = doc.data();
-        return JSON.parse(d.data);
+    async loadBackup(fileId) {
+        if (!this._token) throw new Error('Non connecté');
+
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { Authorization: `Bearer ${this._token}` },
+        });
+
+        if (!response.ok) throw new Error('Impossible de charger la sauvegarde');
+        return await response.json();
     }
 
-    async deleteBackup(backupId) {
-        const ref = this._backupsRef();
-        await ref.doc(backupId).delete();
+    async deleteBackup(fileId) {
+        if (!this._token) throw new Error('Non connecté');
+
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${this._token}` },
+        });
+
+        if (!response.ok && response.status !== 204) {
+            throw new Error('Impossible de supprimer la sauvegarde');
+        }
     }
 }
 
