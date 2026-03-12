@@ -7,6 +7,83 @@ import { generateId, daysBetween, addDays, formatDateISO } from './utils.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
+/* ---- Building Permit Constants ---- */
+
+const PERMIT_TYPES = {
+    PC:  { label: 'Permis de construire',        instructionDays: 90 },
+    PCM: { label: 'PC Maison individuelle',       instructionDays: 60 },
+    DP:  { label: 'Déclaration préalable',        instructionDays: 30 },
+    PA:  { label: "Permis d'aménager",            instructionDays: 90 },
+    PD:  { label: 'Permis de démolir',            instructionDays: 60 },
+};
+
+const PERMIT_STATUSES = {
+    draft:              { label: 'En préparation',             color: '#64748B', order: 0 },
+    submitted:          { label: 'Déposé',                     color: '#3B82F6', order: 1 },
+    completeness:       { label: 'Complétude notifiée',        color: '#1E40AF', order: 2 },
+    additional_docs:    { label: 'Pièces complémentaires',     color: '#F59E0B', order: 3 },
+    under_review:       { label: 'En instruction',             color: '#EAB308', order: 4 },
+    granted:            { label: 'Accordé',                    color: '#10B981', order: 5 },
+    granted_conditions: { label: 'Accordé avec réserves',      color: '#6EE7B7', order: 6 },
+    refused:            { label: 'Refusé',                     color: '#EF4444', order: 7 },
+    third_party_appeal: { label: 'Recours tiers',              color: '#991B1B', order: 8 },
+    appeal_cleared:     { label: 'Purgé de recours',           color: '#065F46', order: 9 },
+};
+
+const ABF_EXTRA_DAYS = 30;
+const THIRD_PARTY_APPEAL_DAYS = 60;
+const PERMIT_VALIDITY_YEARS = 3;
+
+/**
+ * Calculate permit regulatory deadlines from permit data
+ */
+function calculatePermitDeadlines(permit) {
+    const deadlines = {};
+    const type = PERMIT_TYPES[permit.permitType];
+    if (!type) return deadlines;
+
+    let instructionDays = type.instructionDays;
+    if (permit.abfSector) instructionDays += ABF_EXTRA_DAYS;
+    deadlines.instructionDays = instructionDays;
+
+    if (permit.depositDate) {
+        const deposit = new Date(permit.depositDate);
+        // Completeness deadline (1 month from deposit)
+        deadlines.completenessDeadline = formatDateISO(addDays(deposit, 30));
+        // Decision deadline
+        const baseDate = permit.completenessDate ? new Date(permit.completenessDate) : deposit;
+        let effectiveInstruction = instructionDays;
+        if (permit.additionalDocsRequestDate) {
+            // Instruction clock restarts from additional docs submission
+            if (permit.additionalDocsResponseDate) {
+                effectiveInstruction = instructionDays; // full delay from response
+                deadlines.decisionDeadline = formatDateISO(addDays(new Date(permit.additionalDocsResponseDate), effectiveInstruction));
+            } else {
+                // Waiting for docs - deadline suspended
+                deadlines.decisionDeadline = null;
+                deadlines.suspended = true;
+            }
+        } else {
+            deadlines.decisionDeadline = formatDateISO(addDays(baseDate, instructionDays));
+        }
+        // Tacit approval = decision deadline
+        deadlines.tacitApprovalDate = deadlines.decisionDeadline;
+    }
+
+    if (permit.decisionDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
+        const decision = new Date(permit.decisionDate);
+        // Display start (posting on site)
+        if (permit.displayStartDate) {
+            const displayStart = new Date(permit.displayStartDate);
+            deadlines.appealEndDate = formatDateISO(addDays(displayStart, THIRD_PARTY_APPEAL_DAYS));
+        }
+        // Permit expiry (3 years from decision)
+        deadlines.expiryDate = formatDateISO(addDays(decision, PERMIT_VALIDITY_YEARS * 365));
+    }
+
+    return deadlines;
+}
+
 /* ---- Default Data ---- */
 
 function createDefaultResources() {
@@ -1397,6 +1474,91 @@ class Store {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
+    /* ---- Building Permits ---- */
+
+    getPermitDeadlines(taskId) {
+        const task = this.getTask(taskId);
+        if (!task || !task.isPermit) return null;
+        return calculatePermitDeadlines(task);
+    }
+
+    getPermitNotifications(alertDaysBefore = 7) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const notifications = [];
+        const tasks = this.getTasks();
+        const permits = tasks.filter(t => t.isPermit);
+
+        permits.forEach(permit => {
+            const deadlines = calculatePermitDeadlines(permit);
+            const name = permit.name;
+
+            // Alert: decision deadline approaching
+            if (deadlines.decisionDeadline) {
+                const dl = new Date(deadlines.decisionDeadline);
+                const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
+                if (daysLeft >= 0 && daysLeft <= alertDaysBefore) {
+                    notifications.push({
+                        type: 'permit_decision',
+                        level: daysLeft <= 3 ? 'urgent' : 'warning',
+                        message: `${name} : décision dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+                        taskId: permit.id,
+                        date: deadlines.decisionDeadline,
+                    });
+                }
+            }
+
+            // Alert: instruction suspended (waiting for docs)
+            if (deadlines.suspended) {
+                notifications.push({
+                    type: 'permit_suspended',
+                    level: 'warning',
+                    message: `${name} : instruction suspendue (pièces complémentaires attendues)`,
+                    taskId: permit.id,
+                });
+            }
+
+            // Alert: appeal end date approaching
+            if (deadlines.appealEndDate) {
+                const appeal = new Date(deadlines.appealEndDate);
+                const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
+                if (daysLeft >= 0 && daysLeft <= alertDaysBefore) {
+                    notifications.push({
+                        type: 'permit_appeal',
+                        level: 'info',
+                        message: `${name} : purge de recours dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+                        taskId: permit.id,
+                        date: deadlines.appealEndDate,
+                    });
+                } else if (daysLeft < 0) {
+                    notifications.push({
+                        type: 'permit_appeal_cleared',
+                        level: 'success',
+                        message: `${name} : recours purgé`,
+                        taskId: permit.id,
+                    });
+                }
+            }
+
+            // Alert: permit expiry
+            if (deadlines.expiryDate) {
+                const expiry = new Date(deadlines.expiryDate);
+                const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                if (daysLeft >= 0 && daysLeft <= 90) {
+                    notifications.push({
+                        type: 'permit_expiry',
+                        level: daysLeft <= 30 ? 'urgent' : 'warning',
+                        message: `${name} : péremption dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+                        taskId: permit.id,
+                        date: deadlines.expiryDate,
+                    });
+                }
+            }
+        });
+
+        return notifications;
+    }
+
     /* ---- Reset ---- */
 
     reset() {
@@ -1408,3 +1570,4 @@ class Store {
 
 // Singleton export
 export const store = new Store();
+export { PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };

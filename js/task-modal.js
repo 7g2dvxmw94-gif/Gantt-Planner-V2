@@ -3,8 +3,8 @@
    Gantt Planner Pro - Step 2
    ======================================== */
 
-import { store } from './store.js';
-import { $, $$, createElement, formatDateISO, addDays, TASK_COLORS } from './utils.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays, TASK_COLORS } from './utils.js';
 
 class TaskModal {
     constructor() {
@@ -59,7 +59,8 @@ class TaskModal {
         this._typeButtons = {};
         [['task', 'Tâche', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
          ['milestone', 'Jalon', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
-         ['phase', 'Phase', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>']
+         ['phase', 'Phase', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>'],
+         ['permit', 'Permis', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>']
         ].forEach(([val, lbl, icon]) => {
             const btn = createElement('button', {
                 className: 'type-switcher-btn' + (val === 'task' ? ' active' : ''),
@@ -222,6 +223,130 @@ class TaskModal {
         depRow.appendChild(succGroup);
         body.appendChild(depRow);
 
+        // === PERMIT FIELDS ===
+        this._permitFields = createElement('div', { className: 'permit-fields' });
+
+        // Permit section title
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Informations du permis de construire'));
+
+        // Row 1: Permit type + Dossier number
+        const permitRow1 = createElement('div', { className: 'form-row' });
+        const permitTypeGroup = createElement('div', { className: 'form-group' });
+        permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type de permis'));
+        this._permitTypeSelect = createElement('select', { className: 'select', id: 'permitType' });
+        Object.entries(PERMIT_TYPES).forEach(([key, val]) => {
+            this._permitTypeSelect.appendChild(createElement('option', { value: key }, val.label));
+        });
+        this._permitTypeSelect.addEventListener('change', () => this._updatePermitDeadlines());
+        permitTypeGroup.appendChild(this._permitTypeSelect);
+        permitRow1.appendChild(permitTypeGroup);
+
+        const dossierGroup = createElement('div', { className: 'form-group' });
+        dossierGroup.appendChild(createElement('label', { className: 'form-label' }, 'N° de dossier'));
+        this._permitDossier = createElement('input', { className: 'input', type: 'text', placeholder: 'PC 075 123 45 R0001' });
+        dossierGroup.appendChild(this._permitDossier);
+        permitRow1.appendChild(dossierGroup);
+        this._permitFields.appendChild(permitRow1);
+
+        // Row 2: Commune + Service instructeur
+        const permitRow2 = createElement('div', { className: 'form-row' });
+        const communeGroup = createElement('div', { className: 'form-group' });
+        communeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Commune'));
+        this._permitCommune = createElement('input', { className: 'input', type: 'text', placeholder: 'Nom de la commune' });
+        communeGroup.appendChild(this._permitCommune);
+        permitRow2.appendChild(communeGroup);
+
+        const serviceGroup = createElement('div', { className: 'form-group' });
+        serviceGroup.appendChild(createElement('label', { className: 'form-label' }, 'Service instructeur'));
+        this._permitService = createElement('input', { className: 'input', type: 'text', placeholder: 'DDT / Mairie...' });
+        serviceGroup.appendChild(this._permitService);
+        permitRow2.appendChild(serviceGroup);
+        this._permitFields.appendChild(permitRow2);
+
+        // Row 3: Permit status + ABF sector
+        const permitRow3 = createElement('div', { className: 'form-row' });
+        const permitStatusGroup = createElement('div', { className: 'form-group' });
+        permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, 'Statut réglementaire'));
+        this._permitStatusSelect = createElement('select', { className: 'select', id: 'permitStatus' });
+        Object.entries(PERMIT_STATUSES).forEach(([key, val]) => {
+            this._permitStatusSelect.appendChild(createElement('option', { value: key }, val.label));
+        });
+        this._permitStatusSelect.addEventListener('change', () => this._updatePermitDeadlines());
+        permitStatusGroup.appendChild(this._permitStatusSelect);
+        permitRow3.appendChild(permitStatusGroup);
+
+        const abfGroup = createElement('div', { className: 'form-group' });
+        abfGroup.appendChild(createElement('label', { className: 'form-label' }, 'Secteur protégé'));
+        this._abfCheck = createElement('input', { type: 'checkbox', id: 'permitABF' });
+        const abfLabel = createElement('label', { className: 'permit-toggle' });
+        abfLabel.appendChild(this._abfCheck);
+        abfLabel.appendChild(document.createTextNode('ABF (Architecte des Bâtiments de France)'));
+        this._abfCheck.addEventListener('change', () => this._updatePermitDeadlines());
+        abfGroup.appendChild(abfLabel);
+        permitRow3.appendChild(abfGroup);
+        this._permitFields.appendChild(permitRow3);
+
+        // Section: Dates réglementaires
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Dates réglementaires'));
+
+        // Row 4: deposit + completeness dates
+        const permitRow4 = createElement('div', { className: 'form-row' });
+        const depositGroup = createElement('div', { className: 'form-group' });
+        depositGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de dépôt'));
+        this._permitDeposit = createElement('input', { className: 'input', type: 'date' });
+        this._permitDeposit.addEventListener('change', () => this._updatePermitDeadlines());
+        depositGroup.appendChild(this._permitDeposit);
+        permitRow4.appendChild(depositGroup);
+
+        const completenessGroup = createElement('div', { className: 'form-group' });
+        completenessGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de complétude'));
+        this._permitCompleteness = createElement('input', { className: 'input', type: 'date' });
+        this._permitCompleteness.addEventListener('change', () => this._updatePermitDeadlines());
+        completenessGroup.appendChild(this._permitCompleteness);
+        permitRow4.appendChild(completenessGroup);
+        this._permitFields.appendChild(permitRow4);
+
+        // Row 5: Additional docs request + response
+        const permitRow5 = createElement('div', { className: 'form-row' });
+        const addDocsReqGroup = createElement('div', { className: 'form-group' });
+        addDocsReqGroup.appendChild(createElement('label', { className: 'form-label' }, 'Demande pièces complémentaires'));
+        this._permitAddDocsReq = createElement('input', { className: 'input', type: 'date' });
+        this._permitAddDocsReq.addEventListener('change', () => this._updatePermitDeadlines());
+        addDocsReqGroup.appendChild(this._permitAddDocsReq);
+        permitRow5.appendChild(addDocsReqGroup);
+
+        const addDocsRespGroup = createElement('div', { className: 'form-group' });
+        addDocsRespGroup.appendChild(createElement('label', { className: 'form-label' }, 'Réponse pièces complémentaires'));
+        this._permitAddDocsResp = createElement('input', { className: 'input', type: 'date' });
+        this._permitAddDocsResp.addEventListener('change', () => this._updatePermitDeadlines());
+        addDocsRespGroup.appendChild(this._permitAddDocsResp);
+        permitRow5.appendChild(addDocsRespGroup);
+        this._permitFields.appendChild(permitRow5);
+
+        // Row 6: Decision date + Display start
+        const permitRow6 = createElement('div', { className: 'form-row' });
+        const decisionGroup = createElement('div', { className: 'form-group' });
+        decisionGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de décision'));
+        this._permitDecision = createElement('input', { className: 'input', type: 'date' });
+        this._permitDecision.addEventListener('change', () => this._updatePermitDeadlines());
+        decisionGroup.appendChild(this._permitDecision);
+        permitRow6.appendChild(decisionGroup);
+
+        const displayGroup = createElement('div', { className: 'form-group' });
+        displayGroup.appendChild(createElement('label', { className: 'form-label' }, "Date début d'affichage"));
+        this._permitDisplay = createElement('input', { className: 'input', type: 'date' });
+        this._permitDisplay.addEventListener('change', () => this._updatePermitDeadlines());
+        displayGroup.appendChild(this._permitDisplay);
+        permitRow6.appendChild(displayGroup);
+        this._permitFields.appendChild(permitRow6);
+
+        // Computed deadlines display
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Délais calculés'));
+        this._permitDeadlinesPanel = createElement('div', { className: 'permit-deadlines' });
+        this._permitFields.appendChild(this._permitDeadlinesPanel);
+
+        body.appendChild(this._permitFields);
+
         modal.appendChild(body);
 
         // Footer
@@ -279,6 +404,11 @@ class TaskModal {
         this._milestoneCheck.input.checked = (type === 'milestone');
         this._phaseCheck.input.checked = (type === 'phase');
 
+        // Show/hide permit fields
+        if (this._permitFields) {
+            this._permitFields.classList.toggle('visible', type === 'permit');
+        }
+
         // Apply milestone-specific logic
         if (type === 'milestone') {
             this._taskEnd.disabled = true;
@@ -289,6 +419,11 @@ class TaskModal {
             this._taskEnd.disabled = false;
             this._durationInput.disabled = false;
             this._updateDurationFromDates();
+        }
+
+        // For permits, auto-update deadlines
+        if (type === 'permit') {
+            this._updatePermitDeadlines();
         }
     }
 
@@ -375,6 +510,9 @@ class TaskModal {
         // Reset color
         $$('.color-swatch', this._colorPicker).forEach((s, i) => s.classList.toggle('active', i === 0));
 
+        // Reset permit fields
+        this._resetPermitFields();
+
         // Populate assignees (multi)
         this._populateAssignees([]);
 
@@ -411,8 +549,15 @@ class TaskModal {
         this._progressInput.value = task.progress;
         this._progressLabel.textContent = task.progress + '%';
         // Type
-        const taskType = task.isMilestone ? 'milestone' : (task.isPhase ? 'phase' : 'task');
+        const taskType = task.isPermit ? 'permit' : (task.isMilestone ? 'milestone' : (task.isPhase ? 'phase' : 'task'));
         this._setTaskType(taskType);
+
+        // Fill permit-specific fields
+        if (task.isPermit) {
+            this._fillPermitFields(task);
+        } else {
+            this._resetPermitFields();
+        }
 
         // Duration
         const days = Math.round((new Date(task.endDate) - new Date(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;
@@ -601,6 +746,135 @@ class TaskModal {
         }
     }
 
+    /* ---- Permit Deadlines ---- */
+
+    _updatePermitDeadlines() {
+        if (!this._permitDeadlinesPanel) return;
+        this._permitDeadlinesPanel.innerHTML = '';
+
+        const permitData = {
+            permitType: this._permitTypeSelect.value,
+            abfSector: this._abfCheck.checked,
+            depositDate: this._permitDeposit.value || null,
+            completenessDate: this._permitCompleteness.value || null,
+            additionalDocsRequestDate: this._permitAddDocsReq.value || null,
+            additionalDocsResponseDate: this._permitAddDocsResp.value || null,
+            decisionDate: this._permitDecision.value || null,
+            displayStartDate: this._permitDisplay.value || null,
+            permitStatus: this._permitStatusSelect.value,
+        };
+
+        const deadlines = calculatePermitDeadlines(permitData);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const items = [];
+        const typeInfo = PERMIT_TYPES[permitData.permitType];
+        if (typeInfo) {
+            let instrLabel = `${deadlines.instructionDays || typeInfo.instructionDays} jours`;
+            if (permitData.abfSector) instrLabel += ' (ABF +30j)';
+            items.push({ label: "Délai d'instruction", value: instrLabel });
+        }
+
+        if (deadlines.completenessDeadline) {
+            items.push({ label: 'Limite complétude', value: formatDateDisplay(deadlines.completenessDeadline) });
+        }
+
+        if (deadlines.suspended) {
+            items.push({ label: 'Décision prévisionnelle', value: 'Suspendue', cls: 'warning' });
+        } else if (deadlines.decisionDeadline) {
+            const dl = new Date(deadlines.decisionDeadline);
+            const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
+            let cls = '';
+            if (daysLeft <= 7 && daysLeft >= 0) cls = 'urgent';
+            else if (daysLeft <= 15 && daysLeft >= 0) cls = 'warning';
+            const suffix = daysLeft >= 0 ? ` (J-${daysLeft})` : ` (dépassé de ${Math.abs(daysLeft)}j)`;
+            items.push({ label: 'Décision prévisionnelle', value: formatDateDisplay(deadlines.decisionDeadline) + suffix, cls });
+        }
+
+        if (deadlines.tacitApprovalDate && !deadlines.suspended) {
+            items.push({ label: 'Approbation tacite', value: formatDateDisplay(deadlines.tacitApprovalDate) });
+        }
+
+        if (deadlines.appealEndDate) {
+            const appeal = new Date(deadlines.appealEndDate);
+            const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
+            let cls = daysLeft < 0 ? '' : (daysLeft <= 7 ? 'urgent' : '');
+            const label = daysLeft < 0 ? 'Recours purgé' : `Fin recours tiers (J-${daysLeft})`;
+            items.push({ label, value: formatDateDisplay(deadlines.appealEndDate), cls });
+        }
+
+        if (deadlines.expiryDate) {
+            items.push({ label: 'Péremption permis', value: formatDateDisplay(deadlines.expiryDate) });
+        }
+
+        if (items.length === 0) {
+            this._permitDeadlinesPanel.appendChild(
+                createElement('div', { style: { gridColumn: '1 / -1', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' } },
+                    'Renseignez la date de dépôt pour calculer les délais')
+            );
+            return;
+        }
+
+        items.forEach(item => {
+            const el = createElement('div', { className: 'permit-deadline-item' });
+            el.appendChild(createElement('div', { className: 'permit-deadline-label' }, item.label));
+            el.appendChild(createElement('div', { className: 'permit-deadline-value' + (item.cls ? ` ${item.cls}` : '') }, item.value));
+            this._permitDeadlinesPanel.appendChild(el);
+        });
+    }
+
+    _fillPermitFields(task) {
+        if (!task.isPermit) return;
+        this._permitTypeSelect.value = task.permitType || 'PC';
+        this._permitDossier.value = task.permitDossier || '';
+        this._permitCommune.value = task.permitCommune || '';
+        this._permitService.value = task.permitService || '';
+        this._permitStatusSelect.value = task.permitStatus || 'draft';
+        this._abfCheck.checked = !!task.abfSector;
+        this._permitDeposit.value = task.depositDate || '';
+        this._permitCompleteness.value = task.completenessDate || '';
+        this._permitAddDocsReq.value = task.additionalDocsRequestDate || '';
+        this._permitAddDocsResp.value = task.additionalDocsResponseDate || '';
+        this._permitDecision.value = task.decisionDate || '';
+        this._permitDisplay.value = task.displayStartDate || '';
+        this._updatePermitDeadlines();
+    }
+
+    _resetPermitFields() {
+        this._permitTypeSelect.value = 'PC';
+        this._permitDossier.value = '';
+        this._permitCommune.value = '';
+        this._permitService.value = '';
+        this._permitStatusSelect.value = 'draft';
+        this._abfCheck.checked = false;
+        this._permitDeposit.value = '';
+        this._permitCompleteness.value = '';
+        this._permitAddDocsReq.value = '';
+        this._permitAddDocsResp.value = '';
+        this._permitDecision.value = '';
+        this._permitDisplay.value = '';
+        if (this._permitDeadlinesPanel) this._permitDeadlinesPanel.innerHTML = '';
+    }
+
+    _getPermitData() {
+        return {
+            isPermit: true,
+            permitType: this._permitTypeSelect.value,
+            permitDossier: this._permitDossier.value.trim(),
+            permitCommune: this._permitCommune.value.trim(),
+            permitService: this._permitService.value.trim(),
+            permitStatus: this._permitStatusSelect.value,
+            abfSector: this._abfCheck.checked,
+            depositDate: this._permitDeposit.value || null,
+            completenessDate: this._permitCompleteness.value || null,
+            additionalDocsRequestDate: this._permitAddDocsReq.value || null,
+            additionalDocsResponseDate: this._permitAddDocsResp.value || null,
+            decisionDate: this._permitDecision.value || null,
+            displayStartDate: this._permitDisplay.value || null,
+        };
+    }
+
     /* ---- Populate Parents ---- */
 
     _populateParents(selectedParentId) {
@@ -629,6 +903,7 @@ class TaskModal {
 
         const activeColor = $('.color-swatch.active', this._colorPicker);
         const selectedAssignees = this._getSelectedAssignees();
+        const isPermit = this._typeButtons.permit && this._typeButtons.permit.classList.contains('active');
         const data = {
             name,
             description: this._descInput.value.trim(),
@@ -643,7 +918,18 @@ class TaskModal {
             dependencies: this._getSelectedPredecessors(),
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,
+            isPermit: isPermit,
         };
+
+        // Add permit-specific data
+        if (isPermit) {
+            Object.assign(data, this._getPermitData());
+            // Set color based on permit status
+            const statusInfo = PERMIT_STATUSES[data.permitStatus];
+            if (statusInfo) data.color = statusInfo.color;
+        } else {
+            data.isPermit = false;
+        }
 
         // Parent from the dropdown
         const selectedParent = this._parentSelect.value || null;

@@ -61,7 +61,7 @@ class GanttInteractions {
 
     _handleClick(e) {
         // Find the closest bar, milestone, or row with a task-id
-        const bar = e.target.closest('.gantt-bar, .gantt-milestone');
+        const bar = e.target.closest('.gantt-bar, .gantt-milestone, .gantt-permit');
         if (bar && bar.dataset.taskId) {
             // Don't fire click if we just finished dragging
             if (this._justDragged) {
@@ -88,11 +88,12 @@ class GanttInteractions {
         const handle = e.target.closest('.gantt-bar-handle');
         const bar = e.target.closest('.gantt-bar:not(.phase-bar)');
         const milestone = e.target.closest('.gantt-milestone');
+        const permit = e.target.closest('.gantt-permit');
 
-        if (!handle && !bar && !milestone) return;
+        if (!handle && !bar && !milestone && !permit) return;
         if (bar && bar.classList.contains('phase-bar')) return;
 
-        const targetBar = milestone || (handle ? handle.closest('.gantt-bar') : bar);
+        const targetBar = permit || milestone || (handle ? handle.closest('.gantt-bar') : bar);
         if (!targetBar || !targetBar.dataset.taskId) return;
 
         e.preventDefault();
@@ -101,8 +102,9 @@ class GanttInteractions {
         if (!task) return;
 
         const isMilestone = !!milestone;
-        const isLeftHandle = !isMilestone && handle && handle.classList.contains('gantt-bar-handle-left');
-        const isRightHandle = !isMilestone && handle && handle.classList.contains('gantt-bar-handle-right');
+        const isPermit = !!permit;
+        const isLeftHandle = !isMilestone && !isPermit && handle && handle.classList.contains('gantt-bar-handle-left');
+        const isRightHandle = !isMilestone && !isPermit && handle && handle.classList.contains('gantt-bar-handle-right');
 
         // Get the source row for vertical drag
         const sourceRow = targetBar.closest('.gantt-row');

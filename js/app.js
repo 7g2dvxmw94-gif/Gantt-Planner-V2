@@ -1667,6 +1667,21 @@ tr:nth-child(even){background:#fafbfc}
                 });
             });
 
+            // Permit alerts
+            const permitNotifs = store.getPermitNotifications(7);
+            permitNotifs.forEach(pn => {
+                const iconMap = { permit_decision: '\uD83D\uDCC4', permit_suspended: '\u23F8', permit_appeal: '\u2696', permit_appeal_cleared: '\u2705', permit_expiry: '\u23F0' };
+                const typeMap = { urgent: 'danger', warning: 'warning', info: 'info', success: 'success' };
+                notifications.push({
+                    type: typeMap[pn.level] || 'info',
+                    icon: iconMap[pn.type] || '\uD83D\uDCC4',
+                    text: pn.message,
+                    sub: p.name,
+                    taskId: pn.taskId,
+                    projectId: p.id,
+                });
+            });
+
             // Budget alert
             if (p.budget > 0 && p.budgetUsed > 0) {
                 const pct = Math.round((p.budgetUsed / p.budget) * 100);

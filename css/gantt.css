@@ -1499,3 +1499,219 @@
 .pdf-export-actions .btn {
     min-width: 100px;
 }
+
+/* ========================================
+   BUILDING PERMIT STYLES
+   ======================================== */
+
+/* Permit bar in the Gantt */
+.gantt-permit {
+    position: absolute;
+    height: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    z-index: 2;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.gantt-permit:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    z-index: 5;
+}
+
+.gantt-permit-icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-left: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-sm);
+}
+
+.gantt-permit-label {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 8px 0 4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Permit sub-sections inside the bar */
+.gantt-permit-sections {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    pointer-events: none;
+}
+
+.gantt-permit-section {
+    height: 100%;
+    opacity: 0.35;
+    border-right: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.gantt-permit-section:last-child {
+    border-right: none;
+}
+
+.gantt-permit-section.instruction { background: #3B82F6; }
+.gantt-permit-section.decision { background: #F59E0B; }
+.gantt-permit-section.display { background: #8B5CF6; }
+.gantt-permit-section.appeal { background: #EF4444; }
+
+/* Progress overlay */
+.gantt-permit-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    pointer-events: none;
+}
+
+/* Status badge on permit row */
+.permit-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.permit-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Permit type icon in task cell */
+.task-permit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+/* Permit-specific fields in modal */
+.permit-fields {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+}
+
+.permit-fields.visible {
+    display: flex;
+}
+
+.permit-fields .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+.permit-fields .form-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.permit-section-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.permit-deadlines {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--bg-base);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border-default);
+}
+
+.permit-deadline-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.permit-deadline-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.permit-deadline-value {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.permit-deadline-value.urgent {
+    color: var(--color-danger);
+    font-weight: 700;
+}
+
+.permit-deadline-value.warning {
+    color: var(--color-warning);
+    font-weight: 600;
+}
+
+/* Gantt row for permits */
+.gantt-row.permit .gantt-task-cell {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.03), transparent);
+}
+
+[data-theme="dark"] .gantt-row.permit .gantt-task-cell {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent);
+}
+
+/* Checkbox toggle for ABF sector */
+.permit-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+}
+
+.permit-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+}

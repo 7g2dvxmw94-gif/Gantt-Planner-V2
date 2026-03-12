@@ -3,7 +3,7 @@
    Gantt Planner Pro
    ======================================== */
 
-import { store } from './store.js';
+import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
 import {
     createElement, $, $$,
     daysBetween, addDays, formatDateISO, formatDateShort,
@@ -297,12 +297,14 @@ class GanttRenderer {
     _renderRow(task, depth) {
         const isPhase = task.isPhase;
         const isMilestone = task.isMilestone;
+        const isPermit = task.isPermit;
         const hasChildren = task.children && task.children.length > 0;
         const resources = store.getResources();
         const assignees = (task.assignees || []).map(id => resources.find(r => r.id === id)).filter(Boolean);
 
         let rowClass = 'gantt-row';
         if (isPhase) rowClass += ' phase';
+        if (isPermit) rowClass += ' permit';
 
         const row = createElement('div', {
             className: rowClass,
@@ -341,8 +343,11 @@ class GanttRenderer {
 
         // Task info
         const taskInfo = createElement('div', { className: 'task-info' });
-        const name = isMilestone ? `\u25C6 ${task.name}` : task.name;
-        taskInfo.appendChild(createElement('div', { className: 'task-name', title: task.name }, name));
+        let displayName = task.name;
+        if (isMilestone) displayName = `\u25C6 ${task.name}`;
+        else if (isPermit) displayName = `\uD83D\uDCC4 ${task.name}`;
+
+        taskInfo.appendChild(createElement('div', { className: 'task-name', title: task.name }, displayName));
 
         // Meta line
         const metaParts = [];
@@ -351,7 +356,11 @@ class GanttRenderer {
         } else if (assignees.length > 1) {
             metaParts.push(`${assignees.length} personnes`);
         }
-        if (isMilestone) {
+        if (isPermit) {
+            const statusInfo = PERMIT_STATUSES[task.permitStatus];
+            if (statusInfo) metaParts.push(statusInfo.label);
+            if (task.permitDossier) metaParts.push(task.permitDossier);
+        } else if (isMilestone) {
             metaParts.push(`Jalon \u00b7 ${formatDateShort(task.startDate)}`);
         } else if (isPhase) {
             const childCount = task.children ? task.children.length : 0;
@@ -380,8 +389,10 @@ class GanttRenderer {
         // Today line
         this._renderTodayLine(timelineCell);
 
-        // Bar or milestone
-        if (isMilestone) {
+        // Bar or milestone or permit
+        if (isPermit) {
+            this._renderPermitBar(timelineCell, task);
+        } else if (isMilestone) {
             this._renderMilestone(timelineCell, task);
         } else if (isPhase) {
             this._renderPhaseBar(timelineCell, task);
@@ -508,6 +519,78 @@ class GanttRenderer {
         container.appendChild(milestone);
     }
 
+    /* ---- Permit Bar ---- */
+
+    _renderPermitBar(container, task) {
+        const left = this._dateToPosition(new Date(task.startDate));
+        const right = this._dateToPosition(addDays(new Date(task.endDate), 1));
+        if (left === null || right === null) return;
+
+        const width = Math.max(right - left, 40);
+        const statusInfo = PERMIT_STATUSES[task.permitStatus] || PERMIT_STATUSES.draft;
+        const color = statusInfo.color;
+
+        const bar = createElement('div', {
+            className: 'gantt-permit',
+            style: { left: left + 'px', width: width + 'px', background: `linear-gradient(135deg, ${color}, ${color}dd)` },
+            role: 'button',
+            tabindex: '0',
+            'aria-label': `Permis: ${task.name} - ${statusInfo.label}`,
+            title: `${task.name}\n${statusInfo.label}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
+            dataset: { taskId: task.id },
+        });
+
+        // Sub-sections: instruction | decision | display | appeal
+        const deadlines = calculatePermitDeadlines(task);
+        if (task.depositDate && deadlines.decisionDeadline) {
+            const sections = createElement('div', { className: 'gantt-permit-sections' });
+            const totalDays = daysBetween(task.startDate, task.endDate) || 1;
+
+            // Instruction phase: deposit -> decision
+            const instrDays = daysBetween(task.startDate, deadlines.decisionDeadline);
+            if (instrDays > 0) {
+                sections.appendChild(createElement('div', {
+                    className: 'gantt-permit-section instruction',
+                    style: { width: Math.min(100, (instrDays / totalDays) * 100) + '%' },
+                    title: 'Instruction',
+                }));
+            }
+
+            // Appeal phase if applicable
+            if (deadlines.appealEndDate && task.decisionDate) {
+                const appealStart = task.displayStartDate || task.decisionDate;
+                const appealDays = daysBetween(appealStart, deadlines.appealEndDate);
+                const appealOffset = daysBetween(task.startDate, appealStart);
+                if (appealDays > 0) {
+                    sections.appendChild(createElement('div', {
+                        className: 'gantt-permit-section appeal',
+                        style: { width: Math.min(100 - (appealOffset / totalDays) * 100, (appealDays / totalDays) * 100) + '%' },
+                        title: 'Recours tiers',
+                    }));
+                }
+            }
+
+            bar.appendChild(sections);
+        }
+
+        // Icon
+        bar.appendChild(createElement('div', { className: 'gantt-permit-icon' }, '\uD83D\uDCC4'));
+
+        // Label
+        bar.appendChild(createElement('span', { className: 'gantt-permit-label' }, task.name));
+
+        // Progress fill (based on permit status order)
+        const progress = (statusInfo.order / 9) * 100;
+        if (progress > 0) {
+            bar.appendChild(createElement('div', {
+                className: 'gantt-permit-progress',
+                style: { width: Math.min(progress, 100) + '%' },
+            }));
+        }
+
+        container.appendChild(bar);
+    }
+
     /* ---- Date <-> Position ---- */
 
     _dateToPosition(date) {
@@ -563,7 +646,7 @@ class GanttRenderer {
             if (row.style.display === 'none') return;
             const taskId = row.dataset.taskId;
             if (taskId) {
-                const bar = row.querySelector('.gantt-bar, .gantt-milestone');
+                const bar = row.querySelector('.gantt-bar, .gantt-milestone, .gantt-permit');
                 taskMap[taskId] = { row, bar };
             }
         });
