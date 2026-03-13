@@ -1034,6 +1034,72 @@
     white-space: nowrap;
 }
 
+/* Resource modal */
+.resource-modal {
+    max-width: 520px;
+}
+
+.res-modal-top {
+    display: flex;
+    gap: var(--space-5);
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.res-modal-avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: var(--font-weight-bold);
+    font-size: 22px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
+    transition: background var(--transition-fast);
+}
+
+.res-modal-top-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.res-modal-top-fields .form-group {
+    margin-top: 0;
+}
+
+.res-rate-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.res-rate-input-wrap .input {
+    padding-right: var(--space-8);
+}
+
+.res-rate-suffix {
+    position: absolute;
+    right: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-weight: var(--font-weight-medium);
+}
+
+/* Resource card hourly rate badge */
+.resource-card-rate {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
 /* Resource card add button */
 .resource-card-add {
     border: 2px dashed var(--border-default);

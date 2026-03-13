@@ -2705,6 +2705,72 @@ textarea.input {
     white-space: nowrap;
 }
 
+/* Resource modal */
+.resource-modal {
+    max-width: 520px;
+}
+
+.res-modal-top {
+    display: flex;
+    gap: var(--space-5);
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.res-modal-avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: var(--font-weight-bold);
+    font-size: 22px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
+    transition: background var(--transition-fast);
+}
+
+.res-modal-top-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.res-modal-top-fields .form-group {
+    margin-top: 0;
+}
+
+.res-rate-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.res-rate-input-wrap .input {
+    padding-right: var(--space-8);
+}
+
+.res-rate-suffix {
+    position: absolute;
+    right: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    pointer-events: none;
+    font-weight: var(--font-weight-medium);
+}
+
+/* Resource card hourly rate badge */
+.resource-card-rate {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
 /* Resource card add button */
 .resource-card-add {
     border: 2px dashed var(--border-default);
@@ -9461,66 +9527,232 @@ class App {
     _showResourceModal(resource) {
         var isEdit = !!resource;
         var self = this;
+        var RESOURCE_COLORS = [
+            { name: 'Indigo',  value: '#6366F1' },
+            { name: 'Violet',  value: '#8B5CF6' },
+            { name: 'Rose',    value: '#EC4899' },
+            { name: 'Bleu',    value: '#3B82F6' },
+            { name: 'Cyan',    value: '#06B6D4' },
+            { name: 'Vert',    value: '#10B981' },
+            { name: 'Ambre',   value: '#F59E0B' },
+            { name: 'Orange',  value: '#F97316' },
+            { name: 'Rouge',   value: '#EF4444' },
+            { name: 'Gris',    value: '#64748B' },
+        ];
+        var currentColor = isEdit ? resource.color : '#3B82F6';
+        var selectedColor = currentColor;
+
         var overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
-        overlay.innerHTML = '<div class="modal" style="max-width:480px" role="dialog" aria-modal="true" aria-label="' + (isEdit ? 'Modifier la ressource' : 'Nouvelle ressource') + '">' +
-            '<div class="modal-header">' +
-                '<h3 class="modal-title">' + (isEdit ? 'Modifier la ressource' : 'Nouvelle ressource') + '</h3>' +
-                '<button class="modal-close" id="resModalClose">&times;</button>' +
-            '</div>' +
-            '<div class="modal-body">' +
-                '<div class="form-group">' +
-                    '<label class="form-label">Nom</label>' +
-                    '<input type="text" class="form-input" id="resName" value="' + (isEdit ? resource.name : '') + '" placeholder="Nom complet">' +
-                '</div>' +
-                '<div class="form-group">' +
-                    '<label class="form-label">Rôle</label>' +
-                    '<input type="text" class="form-input" id="resRole" value="' + (isEdit ? (resource.role || '') : '') + '" placeholder="Ex: Designer, Développeur...">' +
-                '</div>' +
-                '<div class="form-group">' +
-                    '<label class="form-label">Initiales (avatar)</label>' +
-                    '<input type="text" class="form-input" id="resAvatar" maxlength="3" value="' + (isEdit ? (resource.avatar || '') : '') + '" placeholder="Ex: MD" style="width:80px">' +
-                '</div>' +
-                '<div class="form-group">' +
-                    '<label class="form-label">Couleur</label>' +
-                    '<input type="color" id="resColor" value="' + (isEdit ? resource.color : '#3B82F6') + '" style="width:50px;height:36px;border:none;cursor:pointer;background:none">' +
-                '</div>' +
-            '</div>' +
-            '<div class="modal-footer">' +
-                '<button class="btn btn-ghost" id="resModalCancel">Annuler</button>' +
-                '<button class="btn btn-primary" id="resModalSave">' + (isEdit ? 'Enregistrer' : 'Créer') + '</button>' +
-            '</div>' +
-        '</div>';
 
+        var modal = document.createElement('div');
+        modal.className = 'modal resource-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', isEdit ? 'Modifier la ressource' : 'Nouvelle ressource');
+
+        // Header
+        var header = document.createElement('div');
+        header.className = 'modal-header';
+        var title = document.createElement('h2');
+        title.className = 'modal-title';
+        title.textContent = isEdit ? 'Modifier la ressource' : 'Nouvelle ressource';
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'icon-btn';
+        closeBtn.setAttribute('aria-label', 'Fermer');
+        closeBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        modal.appendChild(header);
+
+        // Body
+        var body = document.createElement('div');
+        body.className = 'modal-body';
+
+        // Avatar preview + Name/Role row
+        var topSection = document.createElement('div');
+        topSection.className = 'res-modal-top';
+
+        var avatarPreview = document.createElement('div');
+        avatarPreview.className = 'res-modal-avatar-preview';
+        avatarPreview.style.background = 'linear-gradient(135deg, ' + currentColor + ', ' + currentColor + 'dd)';
+        avatarPreview.textContent = isEdit ? (resource.avatar || '?') : '?';
+
+        var topFields = document.createElement('div');
+        topFields.className = 'res-modal-top-fields';
+
+        var nameGroup = document.createElement('div');
+        nameGroup.className = 'form-group';
+        var nameLabel = document.createElement('label');
+        nameLabel.className = 'form-label';
+        nameLabel.textContent = 'Nom complet';
+        var nameInput = document.createElement('input');
+        nameInput.className = 'input';
+        nameInput.type = 'text';
+        nameInput.id = 'resName';
+        nameInput.placeholder = 'Ex: Marie Dupont';
+        nameInput.value = isEdit ? resource.name : '';
+        nameGroup.appendChild(nameLabel);
+        nameGroup.appendChild(nameInput);
+        topFields.appendChild(nameGroup);
+
+        var roleGroup = document.createElement('div');
+        roleGroup.className = 'form-group';
+        var roleLabel = document.createElement('label');
+        roleLabel.className = 'form-label';
+        roleLabel.textContent = 'Rôle / Fonction';
+        var roleInput = document.createElement('input');
+        roleInput.className = 'input';
+        roleInput.type = 'text';
+        roleInput.id = 'resRole';
+        roleInput.placeholder = 'Ex: UX Designer, Développeur...';
+        roleInput.value = isEdit ? (resource.role || '') : '';
+        roleGroup.appendChild(roleLabel);
+        roleGroup.appendChild(roleInput);
+        topFields.appendChild(roleGroup);
+
+        topSection.appendChild(avatarPreview);
+        topSection.appendChild(topFields);
+        body.appendChild(topSection);
+
+        // Avatar initials + Hourly rate row
+        var row2 = document.createElement('div');
+        row2.className = 'form-row';
+
+        var avatarGroup = document.createElement('div');
+        avatarGroup.className = 'form-group';
+        var avatarLabel = document.createElement('label');
+        avatarLabel.className = 'form-label';
+        avatarLabel.textContent = 'Initiales';
+        var avatarHint = document.createElement('span');
+        avatarHint.className = 'form-hint';
+        avatarHint.textContent = 'Auto-généré si vide';
+        var avatarInput = document.createElement('input');
+        avatarInput.className = 'input';
+        avatarInput.type = 'text';
+        avatarInput.id = 'resAvatar';
+        avatarInput.maxLength = 3;
+        avatarInput.placeholder = 'Ex: MD';
+        avatarInput.value = isEdit ? (resource.avatar || '') : '';
+        avatarGroup.appendChild(avatarLabel);
+        avatarGroup.appendChild(avatarInput);
+        avatarGroup.appendChild(avatarHint);
+        row2.appendChild(avatarGroup);
+
+        var rateGroup = document.createElement('div');
+        rateGroup.className = 'form-group';
+        var rateLabel = document.createElement('label');
+        rateLabel.className = 'form-label';
+        rateLabel.textContent = 'Taux horaire';
+        var rateWrap = document.createElement('div');
+        rateWrap.className = 'res-rate-input-wrap';
+        var rateInput = document.createElement('input');
+        rateInput.className = 'input';
+        rateInput.type = 'number';
+        rateInput.id = 'resRate';
+        rateInput.min = '0';
+        rateInput.step = '0.01';
+        rateInput.placeholder = '0.00';
+        rateInput.value = isEdit && resource.hourlyRate ? resource.hourlyRate : '';
+        var rateSuffix = document.createElement('span');
+        rateSuffix.className = 'res-rate-suffix';
+        rateSuffix.textContent = '\u20AC/h';
+        rateWrap.appendChild(rateInput);
+        rateWrap.appendChild(rateSuffix);
+        rateGroup.appendChild(rateLabel);
+        rateGroup.appendChild(rateWrap);
+        row2.appendChild(rateGroup);
+        body.appendChild(row2);
+
+        // Color picker
+        var colorGroup = document.createElement('div');
+        colorGroup.className = 'form-group';
+        var colorLabel = document.createElement('label');
+        colorLabel.className = 'form-label';
+        colorLabel.textContent = 'Couleur';
+        colorGroup.appendChild(colorLabel);
+        var colorPicker = document.createElement('div');
+        colorPicker.className = 'color-picker';
+        RESOURCE_COLORS.forEach(function(c) {
+            var swatch = document.createElement('button');
+            swatch.className = 'color-swatch' + (c.value === currentColor ? ' active' : '');
+            swatch.style.background = c.value;
+            swatch.title = c.name;
+            swatch.setAttribute('aria-label', c.name);
+            swatch.dataset.color = c.value;
+            swatch.addEventListener('click', function(e) {
+                e.preventDefault();
+                colorPicker.querySelectorAll('.color-swatch').forEach(function(s) { s.classList.remove('active'); });
+                swatch.classList.add('active');
+                selectedColor = c.value;
+                avatarPreview.style.background = 'linear-gradient(135deg, ' + c.value + ', ' + c.value + 'dd)';
+            });
+            colorPicker.appendChild(swatch);
+        });
+        colorGroup.appendChild(colorPicker);
+        body.appendChild(colorGroup);
+
+        modal.appendChild(body);
+
+        // Footer
+        var footer = document.createElement('div');
+        footer.className = 'modal-footer';
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-ghost';
+        cancelBtn.textContent = 'Annuler';
+        var saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-primary';
+        saveBtn.textContent = isEdit ? 'Enregistrer' : 'Créer la ressource';
+        footer.appendChild(cancelBtn);
+        footer.appendChild(saveBtn);
+        modal.appendChild(footer);
+
+        overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
+        // Events
         var close = function() { overlay.remove(); };
-        overlay.querySelector('#resModalClose').addEventListener('click', close);
-        overlay.querySelector('#resModalCancel').addEventListener('click', close);
+        closeBtn.addEventListener('click', close);
+        cancelBtn.addEventListener('click', close);
         overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
 
-        var nameInput = overlay.querySelector('#resName');
         nameInput.focus();
 
-        overlay.querySelector('#resModalSave').addEventListener('click', function() {
+        // Live avatar preview
+        var updateAvatarPreview = function() {
+            var av = avatarInput.value.trim().toUpperCase();
+            var nm = nameInput.value.trim();
+            if (av) {
+                avatarPreview.textContent = av;
+            } else if (nm) {
+                avatarPreview.textContent = nm.split(/\s+/).map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+            } else {
+                avatarPreview.textContent = '?';
+            }
+        };
+        nameInput.addEventListener('input', updateAvatarPreview);
+        avatarInput.addEventListener('input', updateAvatarPreview);
+
+        // Save
+        saveBtn.addEventListener('click', function() {
             var name = nameInput.value.trim();
             if (!name) {
                 self._showToast('Le nom est obligatoire', 'warning');
                 nameInput.focus();
                 return;
             }
-            var role = overlay.querySelector('#resRole').value.trim();
-            var avatar = overlay.querySelector('#resAvatar').value.trim().toUpperCase();
+            var role = roleInput.value.trim();
+            var avatar = avatarInput.value.trim().toUpperCase();
             if (!avatar) {
                 avatar = name.split(/\s+/).map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
             }
-            var color = overlay.querySelector('#resColor').value;
+            var hourlyRate = rateInput.value ? parseFloat(rateInput.value) : null;
 
             if (isEdit) {
-                store.updateResource(resource.id, { name: name, role: role, avatar: avatar, color: color });
+                store.updateResource(resource.id, { name: name, role: role, avatar: avatar, color: selectedColor, hourlyRate: hourlyRate });
                 self._showToast('Ressource modifiée', 'success');
             } else {
-                store.addResource({ name: name, role: role, avatar: avatar, color: color });
+                store.addResource({ name: name, role: role, avatar: avatar, color: selectedColor, hourlyRate: hourlyRate });
                 self._showToast('Ressource créée', 'success');
             }
             close();
@@ -9528,7 +9760,7 @@ class App {
         });
 
         overlay.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') overlay.querySelector('#resModalSave').click();
+            if (e.key === 'Enter' && !e.shiftKey) saveBtn.click();
             if (e.key === 'Escape') close();
         });
     }
@@ -9624,6 +9856,12 @@ class App {
             roleEl.className = 'resource-card-role';
             roleEl.textContent = resource.role;
             info.appendChild(roleEl);
+            if (resource.hourlyRate) {
+                var rateEl = document.createElement('div');
+                rateEl.className = 'resource-card-rate';
+                rateEl.textContent = resource.hourlyRate.toFixed(2) + ' \u20AC/h';
+                info.appendChild(rateEl);
+            }
             header.appendChild(info);
 
             var countBadge = document.createElement('div');
