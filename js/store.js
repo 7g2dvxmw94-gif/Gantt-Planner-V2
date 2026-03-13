@@ -108,8 +108,8 @@ function createDefaultProject(resources) {
         description: 'Refonte de la plateforme client',
         startDate: formatDateISO(projectStart),
         endDate: formatDateISO(addDays(projectStart, 90)),
-        budget: 45000,
-        budgetUsed: 24500,
+        budget: 0,
+        budgetUsed: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };
