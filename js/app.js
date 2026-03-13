@@ -3,7 +3,7 @@
    Gantt Planner Pro
    ======================================== */
 
-import { store } from './store.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
@@ -1898,6 +1898,9 @@ tr:nth-child(even){background:#fafbfc}
                         </li>`;
                     }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
             </div>
+
+            <!-- Récapitulatif Permis -->
+            ${this._renderDashboardPermitSection(projects)}
         </div>`;
 
         // Click handler to switch to project
@@ -1916,6 +1919,228 @@ tr:nth-child(even){background:#fafbfc}
                 });
             });
         });
+
+        // PDF export button for permits
+        const permitPdfBtn = container.querySelector('#dashboardPermitPdfBtn');
+        if (permitPdfBtn) {
+            permitPdfBtn.addEventListener('click', () => this._exportPermitsPDF());
+        }
+    }
+
+    _renderDashboardPermitSection(projects) {
+        const allPermits = [];
+        projects.forEach(p => {
+            const tasks = store.getTasks(p.id);
+            tasks.filter(t => t.isPermit).forEach(t => {
+                allPermits.push({ ...t, projectName: p.name });
+            });
+        });
+
+        if (allPermits.length === 0) {
+            return `<div class="dashboard-card" style="grid-column: 1 / -1;">
+                <h3>Récapitulatif Permis</h3>
+                <div class="notif-empty">Aucun permis de construire dans les projets</div>
+            </div>`;
+        }
+
+        // Sort by status order then by deposit date
+        allPermits.sort((a, b) => {
+            const oa = (PERMIT_STATUSES[a.permitStatus] || {}).order || 0;
+            const ob = (PERMIT_STATUSES[b.permitStatus] || {}).order || 0;
+            if (oa !== ob) return oa - ob;
+            return (a.depositDate || '').localeCompare(b.depositDate || '');
+        });
+
+        // KPIs
+        const total = allPermits.length;
+        const granted = allPermits.filter(p => p.permitStatus === 'granted' || p.permitStatus === 'granted_conditions').length;
+        const pending = allPermits.filter(p => ['submitted', 'completeness', 'additional_docs', 'under_review'].includes(p.permitStatus)).length;
+        const refused = allPermits.filter(p => p.permitStatus === 'refused').length;
+        const appealCleared = allPermits.filter(p => p.permitStatus === 'appeal_cleared').length;
+
+        const rows = allPermits.map(permit => {
+            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const deadlines = calculatePermitDeadlines(permit);
+            let nextDeadline = '';
+            if (deadlines.suspended) {
+                nextDeadline = '<span style="color:#F59E0B;">Suspendu</span>';
+            } else if (deadlines.decisionDeadline && (permit.permitStatus !== 'granted' && permit.permitStatus !== 'granted_conditions' && permit.permitStatus !== 'refused')) {
+                const dl = new Date(deadlines.decisionDeadline);
+                const daysLeft = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
+                const color = daysLeft <= 3 ? '#EF4444' : daysLeft <= 14 ? '#F59E0B' : 'var(--text-secondary)';
+                nextDeadline = `<span style="color:${color};">Décision: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` (J-${daysLeft})` : ' (dépassé)'}</span>`;
+            } else if (deadlines.appealEndDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
+                nextDeadline = `Purge recours: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
+            } else if (deadlines.expiryDate && permit.permitStatus === 'appeal_cleared') {
+                nextDeadline = `Péremption: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
+            }
+
+            return `<tr class="dashboard-permit-row">
+                <td style="font-weight:500;">${permit.name}</td>
+                <td style="color:var(--text-secondary);">${permit.projectName}</td>
+                <td>${typeInfo.label}</td>
+                <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusInfo.label}</span></td>
+                <td style="color:var(--text-secondary);">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td style="font-size:11px;">${nextDeadline || '-'}</td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="dashboard-card" style="grid-column: 1 / -1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3>Récapitulatif Permis (${total})</h3>
+                <button id="dashboardPermitPdfBtn" class="btn btn-secondary" style="font-size:12px;padding:4px 12px;display:flex;align-items:center;gap:6px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
+                    Export PDF
+                </button>
+            </div>
+            <div class="dashboard-permit-kpis">
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#3B82F6;">${total}</span><span class="kpi-label">Total</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#F59E0B;">${pending}</span><span class="kpi-label">En instruction</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#10B981;">${granted}</span><span class="kpi-label">Accordés</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#EF4444;">${refused}</span><span class="kpi-label">Refusés</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#065F46;">${appealCleared}</span><span class="kpi-label">Purgés</span></div>
+            </div>
+            <div style="overflow-x:auto;margin-top:12px;">
+                <table class="dashboard-permit-table">
+                    <thead><tr>
+                        <th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    _exportPermitsPDF() {
+        const projects = store.getProjects();
+        const allPermits = [];
+        projects.forEach(p => {
+            const tasks = store.getTasks(p.id);
+            tasks.filter(t => t.isPermit).forEach(t => {
+                allPermits.push({ ...t, projectName: p.name });
+            });
+        });
+
+        if (allPermits.length === 0) {
+            this._showToast('Aucun permis à exporter', 'warning');
+            return;
+        }
+
+        allPermits.sort((a, b) => {
+            const oa = (PERMIT_STATUSES[a.permitStatus] || {}).order || 0;
+            const ob = (PERMIT_STATUSES[b.permitStatus] || {}).order || 0;
+            if (oa !== ob) return oa - ob;
+            return (a.depositDate || '').localeCompare(b.depositDate || '');
+        });
+
+        const total = allPermits.length;
+        const granted = allPermits.filter(p => p.permitStatus === 'granted' || p.permitStatus === 'granted_conditions').length;
+        const pending = allPermits.filter(p => ['submitted', 'completeness', 'additional_docs', 'under_review'].includes(p.permitStatus)).length;
+        const refused = allPermits.filter(p => p.permitStatus === 'refused').length;
+        const draft = allPermits.filter(p => p.permitStatus === 'draft').length;
+        const appealCleared = allPermits.filter(p => p.permitStatus === 'appeal_cleared').length;
+
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Récapitulatif Permis</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}
+h1{font-size:20px;margin-bottom:4px;color:#6366F1}
+h2{font-size:15px;color:#1e293b;margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid #6366F1}
+.subtitle{color:#64748b;font-size:12px;margin-bottom:20px}
+.stats{display:flex;gap:16px;margin-bottom:24px;padding:14px;background:#f8fafc;border-radius:8px;flex-wrap:wrap}
+.stat{text-align:center;flex:1;min-width:80px}.stat-val{font-size:22px;font-weight:700}.stat-lbl{color:#64748b;font-size:10px;margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;color:#64748b}
+td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:11px}
+tr:nth-child(even){background:#fafbfc}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:9px;font-weight:600}
+.section-title{font-size:13px;font-weight:600;margin:16px 0 8px;color:#334155}
+.deadline-warn{color:#F59E0B}.deadline-urgent{color:#EF4444}.deadline-ok{color:#64748b}
+.detail-grid{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;font-size:11px;margin-bottom:12px;padding:10px;background:#f8fafc;border-radius:6px;border-left:3px solid #6366F1}
+.detail-label{color:#64748b;font-weight:500}.detail-value{color:#1e293b}
+.permit-block{margin-bottom:16px;page-break-inside:avoid}
+.footer{margin-top:24px;text-align:center;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:10px}
+@media print{body{padding:15px}@page{margin:10mm;size:A4 portrait}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}}
+.page-break{page-break-before:always}
+</style></head><body>
+<h1>Récapitulatif des Permis de Construire</h1>
+<div class="subtitle">Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')} — ${total} permis sur ${projects.length} projet${projects.length > 1 ? 's' : ''}</div>
+<div class="stats">
+<div class="stat"><div class="stat-val" style="color:#3B82F6;">${total}</div><div class="stat-lbl">Total permis</div></div>
+<div class="stat"><div class="stat-val" style="color:#64748B;">${draft}</div><div class="stat-lbl">En préparation</div></div>
+<div class="stat"><div class="stat-val" style="color:#F59E0B;">${pending}</div><div class="stat-lbl">En instruction</div></div>
+<div class="stat"><div class="stat-val" style="color:#10B981;">${granted}</div><div class="stat-lbl">Accordés</div></div>
+<div class="stat"><div class="stat-val" style="color:#EF4444;">${refused}</div><div class="stat-lbl">Refusés</div></div>
+<div class="stat"><div class="stat-val" style="color:#065F46;">${appealCleared}</div><div class="stat-lbl">Purgés de recours</div></div>
+</div>
+
+<h2>Tableau récapitulatif</h2>
+<table><thead><tr><th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance décision</th><th>Purge recours</th><th>Péremption</th></tr></thead><tbody>`;
+
+        allPermits.forEach(permit => {
+            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const deadlines = calculatePermitDeadlines(permit);
+
+            let decisionCol = '-';
+            if (deadlines.suspended) {
+                decisionCol = '<span style="color:#F59E0B;">Suspendu</span>';
+            } else if (deadlines.decisionDeadline) {
+                decisionCol = new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR');
+            }
+
+            html += `<tr>
+                <td style="font-weight:500;">${permit.name}</td>
+                <td>${permit.projectName}</td>
+                <td>${typeInfo.label}</td>
+                <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusInfo.label}</span></td>
+                <td>${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${decisionCol}</td>
+                <td>${deadlines.appealEndDate ? new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${deadlines.expiryDate ? new Date(deadlines.expiryDate).toLocaleDateString('fr-FR') : '-'}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>
+
+<div class="page-break"></div>
+<h2>Détail par permis</h2>`;
+
+        allPermits.forEach(permit => {
+            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const deadlines = calculatePermitDeadlines(permit);
+
+            html += `<div class="permit-block">
+                <div class="section-title" style="color:${statusInfo.color};">${permit.name} — ${typeInfo.label}</div>
+                <div class="detail-grid">
+                    <div class="detail-label">Projet</div><div class="detail-value">${permit.projectName}</div>
+                    <div class="detail-label">Type de permis</div><div class="detail-value">${typeInfo.label}</div>
+                    <div class="detail-label">Statut</div><div class="detail-value"><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusInfo.label}</span></div>
+                    <div class="detail-label">Secteur ABF</div><div class="detail-value">${permit.abfSector ? 'Oui (+30 jours)' : 'Non'}</div>
+                    <div class="detail-label">Date de dépôt</div><div class="detail-value">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</div>
+                    <div class="detail-label">Complétude</div><div class="detail-value">${permit.completenessDate ? new Date(permit.completenessDate).toLocaleDateString('fr-FR') : '-'}</div>
+                    ${permit.additionalDocsRequestDate ? `<div class="detail-label">Pièces demandées</div><div class="detail-value">${new Date(permit.additionalDocsRequestDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    ${permit.additionalDocsResponseDate ? `<div class="detail-label">Pièces fournies</div><div class="detail-value">${new Date(permit.additionalDocsResponseDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    <div class="detail-label">Délai d'instruction</div><div class="detail-value">${deadlines.instructionDays ? deadlines.instructionDays + ' jours' : '-'}</div>
+                    <div class="detail-label">Date décision prévue</div><div class="detail-value">${deadlines.suspended ? '<span style="color:#F59E0B;">Suspendu — pièces complémentaires attendues</span>' : deadlines.decisionDeadline ? new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR') : '-'}</div>
+                    ${permit.decisionDate ? `<div class="detail-label">Date décision effective</div><div class="detail-value">${new Date(permit.decisionDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    ${permit.displayStartDate ? `<div class="detail-label">Affichage panneau</div><div class="detail-value">${new Date(permit.displayStartDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    ${deadlines.appealEndDate ? `<div class="detail-label">Fin recours tiers</div><div class="detail-value">${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    ${deadlines.expiryDate ? `<div class="detail-label">Péremption</div><div class="detail-value">${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                </div>
+            </div>`;
+        });
+
+        html += `<div class="footer">Gantt Planner Pro — Récapitulatif Permis — Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+</body></html>`;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => { printWindow.print(); };
+        this._showToast('Export PDF des permis prêt', 'success');
     }
 
     /* ---- Project Name ---- */

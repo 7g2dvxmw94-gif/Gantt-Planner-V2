@@ -1096,6 +1096,65 @@ textarea.input {
 .dashboard-alert-dot.orange { background: #F59E0B; }
 .dashboard-alert-dot.blue   { background: #3B82F6; }
 
+/* ---- Dashboard Permit Section ---- */
+.dashboard-permit-kpis {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.dashboard-permit-kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 70px;
+    padding: 8px 4px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+.dashboard-permit-kpi .kpi-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+.dashboard-permit-kpi .kpi-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+.dashboard-permit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.dashboard-permit-table th {
+    background: var(--bg-secondary);
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.dashboard-permit-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.dashboard-permit-table tr:hover {
+    background: var(--bg-secondary);
+}
+.dashboard-permit-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* ---- Onboarding Guide ---- */
 .onboarding-overlay {
     position: fixed;
