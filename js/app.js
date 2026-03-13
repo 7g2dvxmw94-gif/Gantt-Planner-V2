@@ -1875,12 +1875,9 @@ tr:nth-child(even){background:#fafbfc}
         if (progress) progress.textContent = stats.progress + '%';
         if (budget) {
             if (stats.budget > 0) {
-                const pct = Math.round((stats.budgetUsed / stats.budget) * 100);
-                const budgetK = (stats.budgetUsed / 1000).toFixed(1);
-                budget.textContent = `${budgetK}k\u20AC (${pct}%)`;
-                if (pct > 90) budget.style.color = 'var(--color-danger, #EF4444)';
-                else if (pct > 75) budget.style.color = 'var(--color-warning, #F59E0B)';
-                else budget.style.color = '';
+                const formatK = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
+                budget.textContent = `${formatK(stats.budgetUsed)}\u20AC / ${formatK(stats.budget)}\u20AC`;
+                budget.style.color = '';
             } else {
                 budget.textContent = '-';
                 budget.style.color = '';
@@ -1962,15 +1959,16 @@ tr:nth-child(even){background:#fafbfc}
                 });
             });
 
-            // Budget alert
-            if (p.budget > 0 && p.budgetUsed > 0) {
-                const pct = Math.round((p.budgetUsed / p.budget) * 100);
+            // Budget alert (based on computed costs)
+            const projCosts = store.getTaskCosts(p.id);
+            if (p.budget > 0 && projCosts.totalCostDone > 0) {
+                const pct = Math.round((projCosts.totalCostDone / p.budget) * 100);
                 if (pct > 90) {
                     notifications.push({
                         type: pct >= 100 ? 'danger' : 'warning',
                         icon: '\u20AC',
                         text: `Budget <strong>${p.name}</strong> à ${pct}%`,
-                        sub: `${(p.budgetUsed/1000).toFixed(1)}k / ${(p.budget/1000).toFixed(1)}k\u20AC`,
+                        sub: `${(projCosts.totalCostDone/1000).toFixed(1)}k / ${(p.budget/1000).toFixed(1)}k\u20AC`,
                         projectId: p.id,
                     });
                 }
@@ -2103,15 +2101,16 @@ tr:nth-child(even){background:#fafbfc}
             const active = tasks.length - done;
             const avg = tasks.length ? Math.round(tasks.reduce((s, t) => s + (t.progress || 0), 0) / tasks.length) : 0;
             const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.progress < 100).length;
+            const costs = store.getTaskCosts(p.id);
 
             totalTasks += tasks.length;
             completedTasks += done;
             activeTasks += active;
             totalProgress += avg;
-            totalBudget += (p.budget || 0);
-            totalBudgetUsed += (p.budgetUsed || 0);
+            totalBudget += costs.totalCost;
+            totalBudgetUsed += costs.totalCostDone;
 
-            projectStats.push({ project: p, taskCount: tasks.length, done, active, progress: avg, overdue });
+            projectStats.push({ project: p, taskCount: tasks.length, done, active, progress: avg, overdue, costs });
         });
 
         const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
@@ -2145,7 +2144,11 @@ tr:nth-child(even){background:#fafbfc}
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value" style="${budgetPct > 90 ? 'color:#EF4444' : budgetPct > 75 ? 'color:#F59E0B' : ''}">${totalBudget > 0 ? budgetPct + '%' : '-'}</div>
-                        <div class="kpi-label">Budget utilisé</div>
+                        <div class="kpi-label">Budget consommé</div>
+                    </div>
+                    <div class="dashboard-kpi">
+                        <div class="kpi-value">${totalBudget > 0 ? (totalBudget >= 1000 ? (totalBudget / 1000).toFixed(1) + 'k' : Math.round(totalBudget)) + '\u20AC' : '-'}</div>
+                        <div class="kpi-label">Budget total estimé</div>
                     </div>
                 </div>
             </div>
@@ -2179,6 +2182,9 @@ tr:nth-child(even){background:#fafbfc}
                     }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
             </div>
 
+            <!-- Tableau des coûts par tâche -->
+            ${this._renderDashboardCostTable(projectStats)}
+
             <!-- Récapitulatif Permis -->
             ${this._renderDashboardPermitSection(projects)}
         </div>`;
@@ -2205,6 +2211,79 @@ tr:nth-child(even){background:#fafbfc}
         if (permitPdfBtn) {
             permitPdfBtn.addEventListener('click', () => this._exportPermitsPDF());
         }
+    }
+
+    _renderDashboardCostTable(projectStats) {
+        // Gather all task costs across projects
+        const allTaskCosts = [];
+        projectStats.forEach(ps => {
+            if (!ps.costs) return;
+            ps.costs.tasks.forEach(tc => {
+                allTaskCosts.push({ ...tc, projectName: ps.project.name });
+            });
+        });
+
+        if (allTaskCosts.length === 0) {
+            return `<div class="dashboard-card" style="grid-column: 1 / -1;">
+                <h3>Coûts par tâche</h3>
+                <div class="notif-empty">Aucune tâche avec des ressources assignées</div>
+            </div>`;
+        }
+
+        // Sort by cost descending
+        allTaskCosts.sort((a, b) => b.cost - a.cost);
+
+        const totalCost = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
+        const totalCostDone = allTaskCosts.reduce((s, tc) => s + tc.costDone, 0);
+        const formatCost = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
+
+        const rows = allTaskCosts.map(tc => {
+            const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
+            const rates = tc.assignedResources.map(r => r.hourlyRate + '€/h').join(', ') || '—';
+            const pct = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
+            const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? '#6366F1' : 'var(--border-default, #E2E8F0)';
+            return `<tr>
+                <td style="font-weight:500;">${tc.task.name}</td>
+                <td>${resNames}</td>
+                <td style="text-align:center;">${rates}</td>
+                <td style="text-align:center;">${tc.durationDays}j</td>
+                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}€</td>
+                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}€</td>
+                <td style="width:80px;">
+                    <div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="dashboard-card" style="grid-column: 1 / -1;">
+            <h3>Coûts par tâche</h3>
+            <div style="overflow-x:auto;">
+                <table class="cost-table">
+                    <thead>
+                        <tr>
+                            <th>Tâche</th>
+                            <th>Ressource(s)</th>
+                            <th style="text-align:center;">Taux</th>
+                            <th style="text-align:center;">Durée</th>
+                            <th style="text-align:right;">Coût estimé</th>
+                            <th style="text-align:right;">Consommé</th>
+                            <th style="text-align:center;">Avancement</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                    <tfoot>
+                        <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
+                            <td colspan="4">Total</td>
+                            <td style="text-align:right;">${formatCost(totalCost)}€</td>
+                            <td style="text-align:right;">${formatCost(totalCostDone)}€</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>`;
     }
 
     _renderDashboardPermitSection(projects) {

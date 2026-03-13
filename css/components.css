@@ -1096,6 +1096,35 @@ textarea.input {
 .dashboard-alert-dot.orange { background: #F59E0B; }
 .dashboard-alert-dot.blue   { background: #3B82F6; }
 
+/* ---- Cost Table ---- */
+.cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.cost-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--text-muted, #999);
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--border-default, #E2E8F0);
+}
+.cost-table td {
+    padding: 8px 8px;
+    border-bottom: 1px solid var(--border-default, #E2E8F0);
+    vertical-align: middle;
+}
+.cost-table tbody tr:hover {
+    background: var(--bg-muted, #f8f9fa);
+}
+.cost-table tfoot td {
+    padding-top: 10px;
+    border-bottom: none;
+}
+
 /* ---- Dashboard Permit Section ---- */
 .dashboard-permit-kpis {
     display: flex;

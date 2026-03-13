@@ -88,11 +88,11 @@ function calculatePermitDeadlines(permit) {
 
 function createDefaultResources() {
     return [
-        { id: generateId(), name: 'Marie Dupont',  role: 'UX Designer',      avatar: 'MD', color: '#8B5CF6' },
-        { id: generateId(), name: 'Julie Martin',  role: 'UI Designer',      avatar: 'JM', color: '#EC4899' },
-        { id: generateId(), name: 'Pierre Leroy',  role: 'Lead Designer',    avatar: 'PL', color: '#10B981' },
-        { id: generateId(), name: 'Thomas Bernard', role: 'Dev Frontend',     avatar: 'TB', color: '#3B82F6' },
-        { id: generateId(), name: 'Alex Moreau',   role: 'Dev Backend',      avatar: 'AM', color: '#6366F1' },
+        { id: generateId(), name: 'Marie Dupont',  role: 'UX Designer',      avatar: 'MD', color: '#8B5CF6', hourlyRate: 55 },
+        { id: generateId(), name: 'Julie Martin',  role: 'UI Designer',      avatar: 'JM', color: '#EC4899', hourlyRate: 50 },
+        { id: generateId(), name: 'Pierre Leroy',  role: 'Lead Designer',    avatar: 'PL', color: '#10B981', hourlyRate: 70 },
+        { id: generateId(), name: 'Thomas Bernard', role: 'Dev Frontend',     avatar: 'TB', color: '#3B82F6', hourlyRate: 60 },
+        { id: generateId(), name: 'Alex Moreau',   role: 'Dev Backend',      avatar: 'AM', color: '#6366F1', hourlyRate: 65 },
     ];
 }
 
@@ -901,15 +901,58 @@ class Store {
             ? Math.max(0, daysBetween(new Date(), project.endDate))
             : 0;
 
+        const costs = this.getTaskCosts();
+
         return {
             totalTasks: nonPhaseTasks.length,
             activeTasks: activeTasks.length,
             completedTasks: nonPhaseTasks.filter(t => t.status === 'done').length,
             progress: totalProgress,
             daysRemaining,
-            budget: project?.budget || 0,
-            budgetUsed: project?.budgetUsed || 0,
+            budget: costs.totalCost,
+            budgetUsed: costs.totalCostDone,
         };
+    }
+
+    /**
+     * Compute costs for each task based on assigned resources' hourly rates.
+     * Cost = duration_days × 8h × sum(hourlyRate of assigned resources)
+     * Returns { tasks: [{task, durationDays, assignedResources: [{resource, hourlyRate}], cost}], totalCost, totalCostDone }
+     */
+    getTaskCosts(projectId) {
+        const pid = projectId || this._data.activeProjectId;
+        const tasks = this.getTasks(pid).filter(t => !t.isPhase && !t.isMilestone);
+        const resources = this.getResources();
+        const HOURS_PER_DAY = 8;
+
+        const result = [];
+        let totalCost = 0;
+        let totalCostDone = 0;
+
+        for (const task of tasks) {
+            const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+            const assignedResources = assigneeIds
+                .map(id => resources.find(r => r.id === id))
+                .filter(Boolean);
+
+            const totalRate = assignedResources.reduce((sum, r) => sum + (r.hourlyRate || 0), 0);
+            const durationDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
+            const cost = durationDays * HOURS_PER_DAY * totalRate;
+            const costDone = cost * (task.progress || 0) / 100;
+
+            totalCost += cost;
+            totalCostDone += costDone;
+
+            result.push({
+                task,
+                durationDays,
+                assignedResources: assignedResources.map(r => ({ id: r.id, name: r.name, hourlyRate: r.hourlyRate || 0 })),
+                cost,
+                costDone,
+            });
+        }
+
+        return { tasks: result, totalCost, totalCostDone };
     }
 
     getTimelineRange() {

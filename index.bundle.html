@@ -1276,6 +1276,13 @@ textarea.input {
 .dashboard-alert-dot.orange { background: #F59E0B; }
 .dashboard-alert-dot.blue   { background: #3B82F6; }
 
+/* ---- Cost Table ---- */
+.cost-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cost-table th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--text-muted, #999); padding: 6px 8px; border-bottom: 2px solid var(--border-default, #E2E8F0); }
+.cost-table td { padding: 8px 8px; border-bottom: 1px solid var(--border-default, #E2E8F0); vertical-align: middle; }
+.cost-table tbody tr:hover { background: var(--bg-muted, #f8f9fa); }
+.cost-table tfoot td { padding-top: 10px; border-bottom: none; }
+
 /* ---- Dashboard Permit Section ---- */
 .dashboard-permit-kpis { display: flex; gap: 12px; flex-wrap: wrap; }
 .dashboard-permit-kpi { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 70px; padding: 8px 4px; background: var(--bg-secondary); border-radius: 8px; }
@@ -3954,7 +3961,7 @@ textarea.input {
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="statBudget">-</div>
-                    <div class="stat-label">Budget utilisé</div>
+                    <div class="stat-label">Budget (consommé / estimé)</div>
                 </div>
             </div>
         </footer>
@@ -4446,11 +4453,11 @@ function calculatePermitDeadlines(permit) {
 
 function createDefaultResources() {
     return [
-        { id: generateId(), name: 'Marie Dupont',  role: 'UX Designer',      avatar: 'MD', color: '#8B5CF6' },
-        { id: generateId(), name: 'Julie Martin',  role: 'UI Designer',      avatar: 'JM', color: '#EC4899' },
-        { id: generateId(), name: 'Pierre Leroy',  role: 'Lead Designer',    avatar: 'PL', color: '#10B981' },
-        { id: generateId(), name: 'Thomas Bernard', role: 'Dev Frontend',     avatar: 'TB', color: '#3B82F6' },
-        { id: generateId(), name: 'Alex Moreau',   role: 'Dev Backend',      avatar: 'AM', color: '#6366F1' },
+        { id: generateId(), name: 'Marie Dupont',  role: 'UX Designer',      avatar: 'MD', color: '#8B5CF6', hourlyRate: 55 },
+        { id: generateId(), name: 'Julie Martin',  role: 'UI Designer',      avatar: 'JM', color: '#EC4899', hourlyRate: 50 },
+        { id: generateId(), name: 'Pierre Leroy',  role: 'Lead Designer',    avatar: 'PL', color: '#10B981', hourlyRate: 70 },
+        { id: generateId(), name: 'Thomas Bernard', role: 'Dev Frontend',     avatar: 'TB', color: '#3B82F6', hourlyRate: 60 },
+        { id: generateId(), name: 'Alex Moreau',   role: 'Dev Backend',      avatar: 'AM', color: '#6366F1', hourlyRate: 65 },
     ];
 }
 
@@ -4466,8 +4473,8 @@ function createDefaultProject(resources) {
         description: 'Refonte de la plateforme client',
         startDate: formatDateISO(projectStart),
         endDate: formatDateISO(addDays(projectStart, 90)),
-        budget: 45000,
-        budgetUsed: 24500,
+        budget: 0,
+        budgetUsed: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };
@@ -5256,15 +5263,57 @@ class Store {
             ? Math.max(0, daysBetween(new Date(), project.endDate))
             : 0;
 
+        const costs = this.getTaskCosts();
+
         return {
             totalTasks: nonPhaseTasks.length,
             activeTasks: activeTasks.length,
             completedTasks: nonPhaseTasks.filter(t => t.status === 'done').length,
             progress: totalProgress,
             daysRemaining,
-            budget: project?.budget || 0,
-            budgetUsed: project?.budgetUsed || 0,
+            budget: costs.totalCost,
+            budgetUsed: costs.totalCostDone,
         };
+    }
+
+    /**
+     * Compute costs for each task based on assigned resources' hourly rates.
+     * Cost = duration_days × 8h × sum(hourlyRate of assigned resources)
+     */
+    getTaskCosts(projectId) {
+        const pid = projectId || this._data.activeProjectId;
+        const tasks = this.getTasks(pid).filter(t => !t.isPhase && !t.isMilestone);
+        const resources = this.getResources();
+        const HOURS_PER_DAY = 8;
+
+        const result = [];
+        let totalCost = 0;
+        let totalCostDone = 0;
+
+        for (const task of tasks) {
+            const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+            const assignedResources = assigneeIds
+                .map(id => resources.find(r => r.id === id))
+                .filter(Boolean);
+
+            const totalRate = assignedResources.reduce((sum, r) => sum + (r.hourlyRate || 0), 0);
+            const durationDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
+            const cost = durationDays * HOURS_PER_DAY * totalRate;
+            const costDone = cost * (task.progress || 0) / 100;
+
+            totalCost += cost;
+            totalCostDone += costDone;
+
+            result.push({
+                task,
+                durationDays,
+                assignedResources: assignedResources.map(r => ({ id: r.id, name: r.name, hourlyRate: r.hourlyRate || 0 })),
+                cost,
+                costDone,
+            });
+        }
+
+        return { tasks: result, totalCost, totalCostDone };
     }
 
     getTimelineRange() {
@@ -10918,12 +10967,9 @@ class App {
         if (progress) progress.textContent = stats.progress + '%';
         if (budget) {
             if (stats.budget > 0) {
-                const pct = Math.round((stats.budgetUsed / stats.budget) * 100);
-                const budgetK = (stats.budgetUsed / 1000).toFixed(1);
-                budget.textContent = budgetK + 'k\u20AC (' + pct + '%)';
-                if (pct > 90) budget.style.color = 'var(--color-danger, #EF4444)';
-                else if (pct > 75) budget.style.color = 'var(--color-warning, #F59E0B)';
-                else budget.style.color = '';
+                var formatK = function(v) { return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString(); };
+                budget.textContent = formatK(stats.budgetUsed) + '\u20AC / ' + formatK(stats.budget) + '\u20AC';
+                budget.style.color = '';
             } else {
                 budget.textContent = '-';
                 budget.style.color = '';
@@ -10997,13 +11043,14 @@ class App {
                 });
             });
 
-            if (p.budget > 0 && p.budgetUsed > 0) {
-                const pct = Math.round((p.budgetUsed / p.budget) * 100);
+            var projCosts = store.getTaskCosts(p.id);
+            if (p.budget > 0 && projCosts.totalCostDone > 0) {
+                const pct = Math.round((projCosts.totalCostDone / p.budget) * 100);
                 if (pct > 90) {
                     notifications.push({
                         type: pct >= 100 ? 'danger' : 'warning', icon: '\u20AC',
                         text: 'Budget <strong>' + p.name + '</strong> à ' + pct + '%',
-                        sub: (p.budgetUsed/1000).toFixed(1) + 'k / ' + (p.budget/1000).toFixed(1) + 'k\u20AC',
+                        sub: (projCosts.totalCostDone/1000).toFixed(1) + 'k / ' + (p.budget/1000).toFixed(1) + 'k\u20AC',
                         projectId: p.id,
                     });
                 }
@@ -11138,14 +11185,16 @@ class App {
             const avg = tasks.length ? Math.round(tasks.reduce(function(s, t) { return s + (t.progress || 0); }, 0) / tasks.length) : 0;
             const overdue = tasks.filter(function(t) { return t.endDate && t.endDate < today && t.progress < 100; }).length;
 
+            const costs = store.getTaskCosts(p.id);
+
             totalTasks += tasks.length;
             completedTasks += done;
             activeTasks += active;
             totalProgress += avg;
-            totalBudget += (p.budget || 0);
-            totalBudgetUsed += (p.budgetUsed || 0);
+            totalBudget += costs.totalCost;
+            totalBudgetUsed += costs.totalCostDone;
 
-            projectStats.push({ project: p, taskCount: tasks.length, done: done, active: active, progress: avg, overdue: overdue });
+            projectStats.push({ project: p, taskCount: tasks.length, done: done, active: active, progress: avg, overdue: overdue, costs: costs });
         });
 
         const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
@@ -11180,10 +11229,12 @@ class App {
             '<div class="dashboard-kpi"><div class="kpi-value">' + activeTasks + '</div><div class="kpi-label">Tâches actives</div></div>' +
             '<div class="dashboard-kpi"><div class="kpi-value">' + completedTasks + '</div><div class="kpi-label">Terminées</div></div>' +
             '<div class="dashboard-kpi"><div class="kpi-value">' + avgProgress + '%</div><div class="kpi-label">Progression moy.</div></div>' +
-            '<div class="dashboard-kpi"><div class="kpi-value" style="' + budgetStyle + '">' + (totalBudget > 0 ? budgetPct + '%' : '-') + '</div><div class="kpi-label">Budget utilisé</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value" style="' + budgetStyle + '">' + (totalBudget > 0 ? budgetPct + '%' : '-') + '</div><div class="kpi-label">Budget consommé</div></div>' +
+            '<div class="dashboard-kpi"><div class="kpi-value">' + (totalBudget > 0 ? (totalBudget >= 1000 ? (totalBudget / 1000).toFixed(1) + 'k' : Math.round(totalBudget)) + '\u20AC' : '-') + '</div><div class="kpi-label">Budget total estimé</div></div>' +
             '</div></div>' +
             '<div class="dashboard-card"><h3>Projets (' + projectCount + ')</h3>' + projectsHTML + '</div>' +
             '<div class="dashboard-card"><h3>Alertes (' + allNotifs.length + ')</h3>' + alertsHTML + '</div>' +
+            this._renderDashboardCostTable(projectStats) +
             this._renderDashboardPermitSection(projects) +
             '</div>';
 
@@ -11206,6 +11257,56 @@ class App {
         if (permitPdfBtn) {
             permitPdfBtn.addEventListener('click', function() { self._exportPermitsPDF(); });
         }
+    }
+
+    _renderDashboardCostTable(projectStats) {
+        var allTaskCosts = [];
+        projectStats.forEach(function(ps) {
+            if (!ps.costs) return;
+            ps.costs.tasks.forEach(function(tc) {
+                allTaskCosts.push(Object.assign({}, tc, { projectName: ps.project.name }));
+            });
+        });
+
+        if (allTaskCosts.length === 0) {
+            return '<div class="dashboard-card" style="grid-column: 1 / -1;">' +
+                '<h3>Coûts par tâche</h3>' +
+                '<div class="notif-empty">Aucune tâche avec des ressources assignées</div></div>';
+        }
+
+        allTaskCosts.sort(function(a, b) { return b.cost - a.cost; });
+
+        var totalCost = allTaskCosts.reduce(function(s, tc) { return s + tc.cost; }, 0);
+        var totalCostDone = allTaskCosts.reduce(function(s, tc) { return s + tc.costDone; }, 0);
+        var formatCost = function(v) { return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString(); };
+
+        var rows = allTaskCosts.map(function(tc) {
+            var resNames = tc.assignedResources.map(function(r) { return r.name; }).join(', ') || '<em>\u2014</em>';
+            var rates = tc.assignedResources.map(function(r) { return r.hourlyRate + '\u20AC/h'; }).join(', ') || '\u2014';
+            var pct = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
+            var barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? '#6366F1' : 'var(--border-default, #E2E8F0)';
+            return '<tr>' +
+                '<td style="font-weight:500;">' + tc.task.name + '</td>' +
+                '<td>' + resNames + '</td>' +
+                '<td style="text-align:center;">' + rates + '</td>' +
+                '<td style="text-align:center;">' + tc.durationDays + 'j</td>' +
+                '<td style="text-align:right;font-weight:600;">' + formatCost(tc.cost) + '\u20AC</td>' +
+                '<td style="text-align:right;color:var(--text-secondary);">' + formatCost(tc.costDone) + '\u20AC</td>' +
+                '<td style="width:80px;"><div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">' +
+                '<div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:4px;"></div></div></td></tr>';
+        }).join('');
+
+        return '<div class="dashboard-card" style="grid-column: 1 / -1;">' +
+            '<h3>Coûts par tâche</h3>' +
+            '<div style="overflow-x:auto;"><table class="cost-table">' +
+            '<thead><tr><th>Tâche</th><th>Ressource(s)</th><th style="text-align:center;">Taux</th>' +
+            '<th style="text-align:center;">Durée</th><th style="text-align:right;">Coût estimé</th>' +
+            '<th style="text-align:right;">Consommé</th><th style="text-align:center;">Avancement</th></tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+            '<tfoot><tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">' +
+            '<td colspan="4">Total</td><td style="text-align:right;">' + formatCost(totalCost) + '\u20AC</td>' +
+            '<td style="text-align:right;">' + formatCost(totalCostDone) + '\u20AC</td><td></td></tr></tfoot>' +
+            '</table></div></div>';
     }
 
     _renderDashboardPermitSection(projects) {
