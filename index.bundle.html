@@ -2705,6 +2705,57 @@ textarea.input {
     white-space: nowrap;
 }
 
+/* Resource card add button */
+.resource-card-add {
+    border: 2px dashed var(--border-default);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.resource-card-add:hover {
+    border-color: var(--color-primary);
+    background: var(--bg-subtle);
+}
+
+/* Resource card actions */
+.resource-card-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.resource-card:hover .resource-card-actions {
+    opacity: 1;
+}
+
+.resource-action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.resource-action-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+}
+
+.resource-action-delete:hover {
+    background: #FEE2E2;
+    color: #EF4444;
+}
+
 /* ========================================
    ADVANCED FILTER BAR
    ======================================== */
@@ -9407,6 +9458,88 @@ class App {
 
     /* ---- Resource View (Vue Ressources) ---- */
 
+    _showResourceModal(resource) {
+        var isEdit = !!resource;
+        var self = this;
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = '<div class="modal" style="max-width:480px" role="dialog" aria-modal="true" aria-label="' + (isEdit ? 'Modifier la ressource' : 'Nouvelle ressource') + '">' +
+            '<div class="modal-header">' +
+                '<h3 class="modal-title">' + (isEdit ? 'Modifier la ressource' : 'Nouvelle ressource') + '</h3>' +
+                '<button class="modal-close" id="resModalClose">&times;</button>' +
+            '</div>' +
+            '<div class="modal-body">' +
+                '<div class="form-group">' +
+                    '<label class="form-label">Nom</label>' +
+                    '<input type="text" class="form-input" id="resName" value="' + (isEdit ? resource.name : '') + '" placeholder="Nom complet">' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label class="form-label">Rôle</label>' +
+                    '<input type="text" class="form-input" id="resRole" value="' + (isEdit ? (resource.role || '') : '') + '" placeholder="Ex: Designer, Développeur...">' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label class="form-label">Initiales (avatar)</label>' +
+                    '<input type="text" class="form-input" id="resAvatar" maxlength="3" value="' + (isEdit ? (resource.avatar || '') : '') + '" placeholder="Ex: MD" style="width:80px">' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label class="form-label">Couleur</label>' +
+                    '<input type="color" id="resColor" value="' + (isEdit ? resource.color : '#3B82F6') + '" style="width:50px;height:36px;border:none;cursor:pointer;background:none">' +
+                '</div>' +
+            '</div>' +
+            '<div class="modal-footer">' +
+                '<button class="btn btn-ghost" id="resModalCancel">Annuler</button>' +
+                '<button class="btn btn-primary" id="resModalSave">' + (isEdit ? 'Enregistrer' : 'Créer') + '</button>' +
+            '</div>' +
+        '</div>';
+
+        document.body.appendChild(overlay);
+
+        var close = function() { overlay.remove(); };
+        overlay.querySelector('#resModalClose').addEventListener('click', close);
+        overlay.querySelector('#resModalCancel').addEventListener('click', close);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+
+        var nameInput = overlay.querySelector('#resName');
+        nameInput.focus();
+
+        overlay.querySelector('#resModalSave').addEventListener('click', function() {
+            var name = nameInput.value.trim();
+            if (!name) {
+                self._showToast('Le nom est obligatoire', 'warning');
+                nameInput.focus();
+                return;
+            }
+            var role = overlay.querySelector('#resRole').value.trim();
+            var avatar = overlay.querySelector('#resAvatar').value.trim().toUpperCase();
+            if (!avatar) {
+                avatar = name.split(/\s+/).map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+            }
+            var color = overlay.querySelector('#resColor').value;
+
+            if (isEdit) {
+                store.updateResource(resource.id, { name: name, role: role, avatar: avatar, color: color });
+                self._showToast('Ressource modifiée', 'success');
+            } else {
+                store.addResource({ name: name, role: role, avatar: avatar, color: color });
+                self._showToast('Ressource créée', 'success');
+            }
+            close();
+            self._renderResourceView();
+        });
+
+        overlay.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') overlay.querySelector('#resModalSave').click();
+            if (e.key === 'Escape') close();
+        });
+    }
+
+    _deleteResource(resource) {
+        if (!confirm('Supprimer la ressource "' + resource.name + '" ?\nElle sera désassignée de toutes les tâches.')) return;
+        store.deleteResource(resource.id);
+        this._showToast('Ressource supprimée', 'success');
+        this._renderResourceView();
+    }
+
     _calculateResourceWorkload(resource, assignedTasks) {
         if (assignedTasks.length === 0) return { percent: 0, concurrent: 0 };
 
@@ -9450,12 +9583,17 @@ class App {
         container.innerHTML = '';
         container.className = 'resource-view';
 
+        // Add resource button card
+        var addCard = document.createElement('div');
+        addCard.className = 'resource-card resource-card-add';
+        addCard.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:120px;cursor:pointer;color:var(--text-muted);gap:8px"><span style="font-size:32px;line-height:1">+</span><span style="font-size:var(--font-size-sm)">Ajouter une ressource</span></div>';
+        var self = this;
+        addCard.addEventListener('click', function() { self._showResourceModal(); });
+        container.appendChild(addCard);
+
         if (resources.length === 0) {
-            container.innerHTML = '<div class="table-empty">Aucune ressource disponible.</div>';
             return;
         }
-
-        var self = this;
 
         resources.forEach(function(resource) {
             var assignedTasks = allTasks.filter(function(t) {
@@ -9492,6 +9630,24 @@ class App {
             countBadge.className = 'resource-card-count';
             countBadge.textContent = assignedTasks.length + ' tâche' + (assignedTasks.length !== 1 ? 's' : '');
             header.appendChild(countBadge);
+
+            // Edit / Delete actions
+            var actions = document.createElement('div');
+            actions.className = 'resource-card-actions';
+            var editBtn = document.createElement('button');
+            editBtn.className = 'resource-action-btn';
+            editBtn.title = 'Modifier';
+            editBtn.innerHTML = '&#9998;';
+            editBtn.addEventListener('click', (function(r) { return function(e) { e.stopPropagation(); self._showResourceModal(r); }; })(resource));
+            actions.appendChild(editBtn);
+            var delBtn = document.createElement('button');
+            delBtn.className = 'resource-action-btn resource-action-delete';
+            delBtn.title = 'Supprimer';
+            delBtn.innerHTML = '&times;';
+            delBtn.addEventListener('click', (function(r) { return function(e) { e.stopPropagation(); self._deleteResource(r); }; })(resource));
+            actions.appendChild(delBtn);
+            header.appendChild(actions);
+
             card.appendChild(header);
 
             // Workload bar

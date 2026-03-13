@@ -463,6 +463,89 @@ class App {
 
     /* ---- Resource View (Vue Ressources) ---- */
 
+    _showResourceModal(resource = null) {
+        const isEdit = !!resource;
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:480px" role="dialog" aria-modal="true" aria-label="${isEdit ? 'Modifier la ressource' : 'Nouvelle ressource'}">
+                <div class="modal-header">
+                    <h3 class="modal-title">${isEdit ? 'Modifier la ressource' : 'Nouvelle ressource'}</h3>
+                    <button class="modal-close" id="resModalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Nom</label>
+                        <input type="text" class="form-input" id="resName" value="${isEdit ? resource.name : ''}" placeholder="Nom complet">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rôle</label>
+                        <input type="text" class="form-input" id="resRole" value="${isEdit ? (resource.role || '') : ''}" placeholder="Ex: Designer, Développeur...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Initiales (avatar)</label>
+                        <input type="text" class="form-input" id="resAvatar" maxlength="3" value="${isEdit ? (resource.avatar || '') : ''}" placeholder="Ex: MD" style="width:80px">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Couleur</label>
+                        <input type="color" id="resColor" value="${isEdit ? resource.color : '#3B82F6'}" style="width:50px;height:36px;border:none;cursor:pointer;background:none">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="resModalCancel">Annuler</button>
+                    <button class="btn btn-primary" id="resModalSave">${isEdit ? 'Enregistrer' : 'Créer'}</button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(overlay);
+
+        const close = () => { overlay.remove(); };
+        overlay.querySelector('#resModalClose').addEventListener('click', close);
+        overlay.querySelector('#resModalCancel').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        const nameInput = overlay.querySelector('#resName');
+        nameInput.focus();
+
+        overlay.querySelector('#resModalSave').addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                this._showToast('Le nom est obligatoire', 'warning');
+                nameInput.focus();
+                return;
+            }
+            const role = overlay.querySelector('#resRole').value.trim();
+            let avatar = overlay.querySelector('#resAvatar').value.trim().toUpperCase();
+            if (!avatar) {
+                avatar = name.split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            }
+            const color = overlay.querySelector('#resColor').value;
+
+            if (isEdit) {
+                store.updateResource(resource.id, { name, role, avatar, color });
+                this._showToast('Ressource modifiée', 'success');
+            } else {
+                store.addResource({ name, role, avatar, color });
+                this._showToast('Ressource créée', 'success');
+            }
+            close();
+            this._renderResourceView();
+        });
+
+        // Enter key submits
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') overlay.querySelector('#resModalSave').click();
+            if (e.key === 'Escape') close();
+        });
+    }
+
+    _deleteResource(resource) {
+        if (!confirm(`Supprimer la ressource "${resource.name}" ?\nElle sera désassignée de toutes les tâches.`)) return;
+        store.deleteResource(resource.id);
+        this._showToast('Ressource supprimée', 'success');
+        this._renderResourceView();
+    }
+
     _calculateResourceWorkload(resource, assignedTasks) {
         if (assignedTasks.length === 0) return { percent: 0, concurrent: 0 };
 
@@ -506,8 +589,14 @@ class App {
         container.innerHTML = '';
         container.className = 'resource-view';
 
+        // Add resource button (always visible as a special card)
+        const addCard = document.createElement('div');
+        addCard.className = 'resource-card resource-card-add';
+        addCard.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:120px;cursor:pointer;color:var(--text-muted);gap:8px"><span style="font-size:32px;line-height:1">+</span><span style="font-size:var(--font-size-sm)">Ajouter une ressource</span></div>';
+        addCard.addEventListener('click', () => this._showResourceModal());
+        container.appendChild(addCard);
+
         if (resources.length === 0) {
-            container.innerHTML = '<div class="table-empty">Aucune ressource disponible.</div>';
             return;
         }
 
@@ -546,6 +635,24 @@ class App {
             countBadge.className = 'resource-card-count';
             countBadge.textContent = `${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}`;
             header.appendChild(countBadge);
+
+            // Edit / Delete actions
+            const actions = document.createElement('div');
+            actions.className = 'resource-card-actions';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'resource-action-btn';
+            editBtn.title = 'Modifier';
+            editBtn.innerHTML = '&#9998;';
+            editBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showResourceModal(resource); });
+            actions.appendChild(editBtn);
+            const delBtn = document.createElement('button');
+            delBtn.className = 'resource-action-btn resource-action-delete';
+            delBtn.title = 'Supprimer';
+            delBtn.innerHTML = '&times;';
+            delBtn.addEventListener('click', (e) => { e.stopPropagation(); this._deleteResource(resource); });
+            actions.appendChild(delBtn);
+            header.appendChild(actions);
+
             card.appendChild(header);
 
             // Workload bar

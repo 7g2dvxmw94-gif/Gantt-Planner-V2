@@ -1034,6 +1034,57 @@
     white-space: nowrap;
 }
 
+/* Resource card add button */
+.resource-card-add {
+    border: 2px dashed var(--border-default);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.resource-card-add:hover {
+    border-color: var(--color-primary);
+    background: var(--bg-subtle);
+}
+
+/* Resource card actions */
+.resource-card-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.resource-card:hover .resource-card-actions {
+    opacity: 1;
+}
+
+.resource-action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.resource-action-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+}
+
+.resource-action-delete:hover {
+    background: #FEE2E2;
+    color: #EF4444;
+}
+
 /* ========================================
    ADVANCED FILTER BAR
    ======================================== */
