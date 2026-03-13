@@ -153,6 +153,14 @@
                     </svg>
                     <span>Dashboard</span>
                 </button>
+                <!-- Costs Tab -->
+                <button class="tab" role="tab" aria-selected="false" data-view="costs" tabindex="-1" id="tabCosts" aria-controls="mainContent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <span>Co&ucirc;ts</span>
+                </button>
             </div>
 
             <div class="toolbar-actions">
@@ -254,6 +262,9 @@
 
             <!-- Dashboard View (hidden by default) -->
             <div id="dashboardView" style="display: none;" aria-label="Dashboard multi-projets"></div>
+
+            <!-- Costs View (hidden by default) -->
+            <div id="costsView" style="display: none;" aria-label="Vue des coûts du projet"></div>
         </main>
 
         <!-- ==================== STATS BAR ==================== -->
@@ -348,6 +359,13 @@
                     <rect x="3" y="16" width="7" height="5"/>
                 </svg>
                 <span>Dashboard</span>
+            </button>
+            <button class="mobile-nav-item" data-view="costs" aria-label="Vue Coûts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <span>Co&ucirc;ts</span>
             </button>
         </div>
     </nav>

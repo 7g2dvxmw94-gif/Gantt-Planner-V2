@@ -137,12 +137,14 @@ class App {
         const boardView = $('#boardView');
         const resourceView = $('#resourceView');
         const dashboardView = $('#dashboardView');
+        const costsView = $('#costsView');
 
         // Hide all views
         if (ganttWrapper) ganttWrapper.style.display = 'none';
         if (boardView) boardView.style.display = 'none';
         if (resourceView) resourceView.style.display = 'none';
         if (dashboardView) dashboardView.style.display = 'none';
+        if (costsView) costsView.style.display = 'none';
 
         // Show active view
         switch (view) {
@@ -169,6 +171,12 @@ class App {
                     this._renderDashboard();
                 }
                 break;
+            case 'costs':
+                if (costsView) {
+                    costsView.style.display = '';
+                    this._renderCostsView();
+                }
+                break;
         }
 
         // Update mobile nav
@@ -190,6 +198,9 @@ class App {
                 break;
             case 'dashboard':
                 this._renderDashboard();
+                break;
+            case 'costs':
+                this._renderCostsView();
                 break;
         }
     }
@@ -2078,6 +2089,168 @@ tr:nth-child(even){background:#fafbfc}
         }
 
         document.body.appendChild(panel);
+    }
+
+    /* ---- Costs View (5e onglet) ---- */
+
+    _renderCostsView() {
+        const container = $('#costsView');
+        if (!container) return;
+
+        const costs = store.getTaskCosts();
+        const tasks = store.getTasks();
+        const resources = store.getResources();
+        const HOURS_PER_DAY = 8;
+
+        // Build phase map for grouping
+        const phaseMap = new Map(); // parentId -> phase task
+        const phaseTasks = tasks.filter(t => t.isPhase);
+        phaseTasks.forEach(p => phaseMap.set(p.id, p));
+
+        // Budget = sum of estimated costs; actual cost = sum of actualCost fields or costDone
+        const totalEstimated = costs.totalCost;
+        const totalActual = costs.tasks.reduce((s, tc) => {
+            return s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone);
+        }, 0);
+        const variance = totalEstimated - totalActual;
+        const pctConsumed = totalEstimated > 0 ? Math.round((totalActual / totalEstimated) * 100) : 0;
+
+        // Variance color
+        const varianceColor = variance < 0 ? '#EF4444' : variance < totalEstimated * 0.1 ? '#F59E0B' : '#10B981';
+        const varianceIcon = variance < 0 ? '&#9650;' : variance > 0 ? '&#9660;' : '&#9644;';
+
+        const fmt = (v) => {
+            if (v === 0) return '0 €';
+            return (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString()) + ' €';
+        };
+
+        // Group tasks by phase
+        const grouped = new Map(); // phaseId|'__none__' -> { phase, items }
+        costs.tasks.forEach(tc => {
+            const parentId = tc.task.parentId;
+            const key = parentId && phaseMap.has(parentId) ? parentId : '__none__';
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    phase: key !== '__none__' ? phaseMap.get(key) : null,
+                    items: [],
+                });
+            }
+            grouped.get(key).items.push(tc);
+        });
+
+        // Build table rows with phase grouping
+        let tableRows = '';
+        for (const [key, group] of grouped) {
+            const groupEstimated = group.items.reduce((s, tc) => s + tc.cost, 0);
+            const groupActual = group.items.reduce((s, tc) => s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone), 0);
+            const groupVariance = groupEstimated - groupActual;
+            const gvColor = groupVariance < 0 ? '#EF4444' : groupVariance < groupEstimated * 0.1 ? '#F59E0B' : '#10B981';
+
+            if (group.phase) {
+                tableRows += `<tr class="costs-phase-row">
+                    <td colspan="5" class="costs-phase-name">${group.phase.name}</td>
+                    <td style="text-align:right;font-weight:600;">${fmt(groupEstimated)}</td>
+                    <td style="text-align:right;font-weight:600;">${fmt(groupActual)}</td>
+                    <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
+                </tr>`;
+            }
+
+            group.items.forEach(tc => {
+                const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em class="costs-no-resource">—</em>';
+                const rates = tc.assignedResources.map(r => r.hourlyRate + ' €/h').join(', ') || '—';
+                const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
+                const ecart = tc.cost - actual;
+                const ecartColor = ecart < 0 ? '#EF4444' : ecart < tc.cost * 0.1 ? '#F59E0B' : '#10B981';
+
+                tableRows += `<tr class="costs-task-row${group.phase ? ' costs-task-indented' : ''}" data-task-id="${tc.task.id}">
+                    <td class="costs-task-name">${tc.task.name}</td>
+                    <td>${resNames}</td>
+                    <td style="text-align:center;">${tc.durationDays} j</td>
+                    <td style="text-align:center;">${rates}</td>
+                    <td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
+                    <td style="text-align:right;">
+                        <input type="number" class="costs-actual-input" data-task-id="${tc.task.id}"
+                            value="${typeof tc.task.actualCost === 'number' ? tc.task.actualCost : Math.round(tc.costDone)}"
+                            min="0" step="1" title="Coût réel (éditable)" />
+                    </td>
+                    <td style="text-align:right;color:${ecartColor};font-weight:500;">
+                        ${ecart >= 0 ? '+' : ''}${fmt(ecart)}
+                    </td>
+                </tr>`;
+            });
+        }
+
+        container.className = 'costs-view';
+        container.innerHTML = `
+        <div class="costs-header">
+            <h2 class="costs-title">Suivi des coûts</h2>
+            <div class="costs-kpi-grid">
+                <div class="costs-kpi">
+                    <div class="costs-kpi-label">Budget total (estimé)</div>
+                    <div class="costs-kpi-value">${fmt(totalEstimated)}</div>
+                </div>
+                <div class="costs-kpi">
+                    <div class="costs-kpi-label">Coût réel (dépensé)</div>
+                    <div class="costs-kpi-value">${fmt(totalActual)}</div>
+                </div>
+                <div class="costs-kpi">
+                    <div class="costs-kpi-label">Écart (variance)</div>
+                    <div class="costs-kpi-value" style="color:${varianceColor}">
+                        <span>${varianceIcon}</span> ${variance >= 0 ? '+' : ''}${fmt(variance)}
+                    </div>
+                </div>
+                <div class="costs-kpi costs-kpi-progress">
+                    <div class="costs-kpi-label">% consommé</div>
+                    <div class="costs-kpi-value">${pctConsumed}%</div>
+                    <div class="costs-progress-bar">
+                        <div class="costs-progress-fill" style="width:${Math.min(pctConsumed, 100)}%;background:${pctConsumed > 100 ? '#EF4444' : pctConsumed > 75 ? '#F59E0B' : '#10B981'};"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="costs-table-wrap">
+            <table class="cost-table costs-full-table">
+                <thead>
+                    <tr>
+                        <th>Tâche</th>
+                        <th>Ressource(s)</th>
+                        <th style="text-align:center;">Durée (j)</th>
+                        <th style="text-align:center;">Taux horaire</th>
+                        <th style="text-align:right;">Coût estimé</th>
+                        <th style="text-align:right;">Coût réel</th>
+                        <th style="text-align:right;">Écart</th>
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" style="font-weight:700;">Total</td>
+                        <td style="text-align:right;font-weight:700;">${fmt(totalEstimated)}</td>
+                        <td style="text-align:right;font-weight:700;">${fmt(totalActual)}</td>
+                        <td style="text-align:right;font-weight:700;color:${varianceColor}">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>`;
+
+        // Bind actual cost edits
+        container.querySelectorAll('.costs-actual-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const taskId = e.target.dataset.taskId;
+                const val = parseFloat(e.target.value) || 0;
+                store.updateTask(taskId, { actualCost: val });
+                this._renderCostsView();
+            });
+        });
+
+        // Click on task row to open edit modal
+        container.querySelectorAll('.costs-task-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.costs-actual-input')) return;
+                const taskId = row.dataset.taskId;
+                if (taskId) taskModal.openEdit(taskId);
+            });
+        });
     }
 
     /* ---- Dashboard ---- */

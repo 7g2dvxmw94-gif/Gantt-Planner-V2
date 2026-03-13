@@ -1125,6 +1125,117 @@ textarea.input {
     border-bottom: none;
 }
 
+/* ---- Costs View (5e onglet) ---- */
+.costs-view {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.costs-header {
+    margin-bottom: 24px;
+}
+.costs-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    color: var(--text-primary, #1E293B);
+}
+.costs-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+.costs-kpi {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border-default, #E2E8F0);
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+.costs-kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-muted, #94A3B8);
+    margin-bottom: 4px;
+}
+.costs-kpi-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary, #1E293B);
+}
+.costs-kpi-progress .costs-kpi-value {
+    margin-bottom: 8px;
+}
+.costs-progress-bar {
+    height: 8px;
+    background: var(--bg-muted, #F1F5F9);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.costs-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+.costs-table-wrap {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border-default, #E2E8F0);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+}
+.costs-full-table {
+    min-width: 700px;
+}
+.costs-phase-row {
+    background: var(--bg-muted, #F1F5F9);
+}
+.costs-phase-row td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+.costs-phase-name {
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary, #475569);
+}
+.costs-task-indented .costs-task-name {
+    padding-left: 24px;
+}
+.costs-task-row {
+    cursor: pointer;
+}
+.costs-task-row:hover {
+    background: var(--bg-hover, #F8FAFC);
+}
+.costs-task-name {
+    font-weight: 500;
+}
+.costs-no-resource {
+    color: var(--text-muted, #94A3B8);
+}
+.costs-actual-input {
+    width: 90px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-default, #E2E8F0);
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: right;
+    background: var(--bg-input, #fff);
+    color: var(--text-primary, #1E293B);
+    transition: border-color 0.15s;
+}
+.costs-actual-input:focus {
+    outline: none;
+    border-color: var(--accent, #6366F1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+.costs-actual-input:hover {
+    border-color: var(--border-hover, #CBD5E1);
+}
+
 /* ---- Dashboard Permit Section ---- */
 .dashboard-permit-kpis {
     display: flex;
