@@ -1694,11 +1694,19 @@
 
 /* Gantt row for permits */
 .gantt-row.permit .gantt-task-cell {
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.03), transparent);
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.03), transparent), var(--bg-base);
+}
+
+.gantt-row.permit:hover .gantt-task-cell {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.03), transparent), var(--bg-subtle);
 }
 
 [data-theme="dark"] .gantt-row.permit .gantt-task-cell {
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent);
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent), var(--bg-base);
+}
+
+[data-theme="dark"] .gantt-row.permit:hover .gantt-task-cell {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent), var(--bg-subtle);
 }
 
 /* Checkbox toggle for ABF sector */
