@@ -7,8 +7,6 @@
     <meta name="theme-color" content="#6366F1" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#818CF8" media="(prefers-color-scheme: dark)">
     <title>Gantt Planner Pro</title>
-
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -5453,7 +5451,7 @@ const themeManager = new ThemeManager();
    Reactive store with localStorage persistence
    ======================================== */
 
-const STORAGE_KEY = 'gantt-planner-pro';
+const STORE_STORAGE_KEY = 'gantt-planner-pro';
 
 /* ---- Building Permit Constants ---- */
 
@@ -5832,7 +5830,7 @@ class Store {
 
     _load() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
+            const raw = localStorage.getItem(STORE_STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed.projects && parsed.tasks && parsed.resources) {
@@ -5878,7 +5876,7 @@ class Store {
 
     _save() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this._data));
+            localStorage.setItem(STORE_STORAGE_KEY, JSON.stringify(this._data));
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
         }
@@ -9812,8 +9810,6 @@ class CloudBackup {
 
 const cloudBackup = new CloudBackup();
 
-var branding;
-{
 /* ========================================
    BRANDING CONFIGURATION
    White-label customization for Gantt Planner
@@ -9857,17 +9853,13 @@ const branding = {
     themeColorDark: '#818CF8',           // <meta name="theme-color"> for dark mode
     locale: 'fr',                        // Default locale (fr, en, etc.)
 };
-branding = branding;
-}
 
-var brandingManager;
-{
 /* ========================================
    BRANDING MODULE
    Applies white-label config to the DOM
    ======================================== */
 
-const STORAGE_KEY = 'gantt_branding';
+const BRANDING_STORAGE_KEY = 'gantt_branding';
 
 class BrandingManager {
     constructor() {
@@ -9906,7 +9898,7 @@ class BrandingManager {
 
     _loadFromStorage() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this._config = { ...defaultConfig, ...parsed };
@@ -10086,17 +10078,13 @@ class BrandingManager {
 }
 
 const brandingManager = new BrandingManager();
-brandingManager = brandingManager;
-}
 
-var brandingPanel;
-{
 /* ========================================
    BRANDING PANEL
    Visual customization UI with export/import
    ======================================== */
 
-const STORAGE_KEY = 'gantt_branding';
+const BRANDING_PANEL_STORAGE_KEY = 'gantt_branding';
 
 /* Font URL mapping for the font selector */
 const FONT_URLS = {
@@ -10303,7 +10291,7 @@ class BrandingPanel {
 
     _getCurrentConfig() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(BRANDING_PANEL_STORAGE_KEY);
             if (saved) return JSON.parse(saved);
         } catch { /* ignore */ }
         return { ...defaultConfig };
@@ -10311,7 +10299,7 @@ class BrandingPanel {
 
     _save(config) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            localStorage.setItem(BRANDING_PANEL_STORAGE_KEY, JSON.stringify(config));
         } catch { /* ignore */ }
     }
 
@@ -10319,7 +10307,7 @@ class BrandingPanel {
 
     _reset() {
         if (!confirm('Réinitialiser toutes les personnalisations ?')) return;
-        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        try { localStorage.removeItem(BRANDING_PANEL_STORAGE_KEY); } catch { /* ignore */ }
         brandingManager.applyConfig(defaultConfig);
         this._populateForm();
         this._showToast('Personnalisation réinitialisée');
@@ -10398,16 +10386,12 @@ class BrandingPanel {
 }
 
 const brandingPanel = new BrandingPanel();
-brandingPanel = brandingPanel;
-}
 
-var onboarding;
-{
 /* ========================================
    ONBOARDING - Interactive guide for new users
    ======================================== */
 
-const STORAGE_KEY = 'gantt_onboarding_done';
+const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
     {
@@ -10463,7 +10447,7 @@ class Onboarding {
 
     /** Auto-start on first visit, or call manually */
     tryAutoStart() {
-        if (localStorage.getItem(STORAGE_KEY)) return;
+        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
         // Defer so the UI is fully rendered
         setTimeout(() => this.start(), 600);
     }
@@ -10598,7 +10582,7 @@ class Onboarding {
 
     _finish() {
         this._active = false;
-        localStorage.setItem(STORAGE_KEY, '1');
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
         if (this._overlay) {
             this._overlay.classList.add('fade-out');
             setTimeout(() => {
@@ -10614,8 +10598,6 @@ class Onboarding {
 }
 
 const onboarding = new Onboarding();
-onboarding = onboarding;
-}
 
 /* ========================================
    APP - Main Entry Point
