@@ -1398,6 +1398,8 @@ table{width:100%;border-collapse:collapse;margin-bottom:20px}
 th{background:#f1f5f9;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;color:#64748b}
 td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px}
 tr:nth-child(even){background:#fafbfc}
+tr{page-break-inside:avoid;break-inside:avoid}
+thead{display:table-header-group}
 .phase-row{background:#f1f5f9;font-weight:600}
 .badge{padding:1px 6px;border-radius:10px;font-size:9px;font-weight:500}
 .badge-high{background:#fef2f2;color:#ef4444}.badge-medium{background:#fffbeb;color:#f59e0b}.badge-low{background:#f0fdf4;color:#10b981}
@@ -1409,7 +1411,7 @@ tr:nth-child(even){background:#fafbfc}
 .gantt-tl-header{display:flex;border-bottom:2px solid #e2e8f0;font-size:9px;color:#64748b;text-transform:uppercase;font-weight:600}
 .gantt-tl-track-header{flex:1;display:flex;min-width:0}
 .gantt-tl-track-header div{padding:4px 0;text-align:center;border-left:1px solid #e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gantt-tl-row{display:flex;align-items:center;height:32px;border-bottom:1px solid #f8fafc}
+.gantt-tl-row{display:flex;align-items:center;height:32px;border-bottom:1px solid #f8fafc;page-break-inside:avoid;break-inside:avoid}
 .gantt-tl-row:nth-child(even){background:#fafbfc}
 .gantt-tl-label{width:180px;min-width:180px;max-width:180px;flex-shrink:0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;color:#1e293b}
 .gantt-tl-label.phase{font-weight:600;color:#6366F1}
@@ -1419,7 +1421,7 @@ tr:nth-child(even){background:#fafbfc}
 .gantt-tl-phase::before,.gantt-tl-phase::after{content:'';position:absolute;bottom:0;width:6px;height:10px;background:inherit;clip-path:polygon(0 0,100% 0,50% 100%)}
 .gantt-tl-phase::before{left:0}.gantt-tl-phase::after{right:0}
 .resource-section{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px}
-.res-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;width:calc(50% - 8px);box-sizing:border-box}
+.res-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;width:calc(50% - 8px);box-sizing:border-box;page-break-inside:avoid;break-inside:avoid}
 .res-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .res-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;flex-shrink:0}
 .res-name{font-weight:600;font-size:12px}.res-role{font-size:10px;color:#64748b}
@@ -1503,7 +1505,6 @@ tr:nth-child(even){background:#fafbfc}
 
         let html = `<h2>Timeline (Gantt)</h2>`;
         html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">Période : ${fmtDate(start)} → ${fmtDate(end)} — Échelle : ${scaleLabels[scale]}</p>`;
-        html += `<div class="gantt-section">`;
 
         // Build header columns based on scale
         const headerCols = [];
@@ -1558,27 +1559,41 @@ tr:nth-child(even){background:#fafbfc}
             }
         }
 
-        // Render header row
-        html += `<div class="gantt-tl-header">`;
-        html += `<div class="gantt-tl-label" style="padding-left:4px">Tâche</div>`;
-        html += `<div class="gantt-tl-track-header">`;
-        headerCols.forEach(h => {
-            html += `<div style="width:${h.pct}%">${h.label}</div>`;
-        });
-        html += `</div></div>`;
-
-        // Task rows grouped by phase
+        // Build flat list of rows with indent info
         const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
+        const flatRows = [];
+        rootTasks.forEach(task => {
+            flatRows.push({ task, indent: 0 });
+            if (task.isPhase) {
+                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
+                children.forEach(child => flatRows.push({ task: child, indent: 1 }));
+            }
+        });
+
         const estTrackPx = 860; // Approx track width in A4 landscape print
-        const renderRow = (task, indent = 0) => {
+        const ROWS_PER_PAGE = 20; // Max rows per page to avoid overflow
+
+        // Render header HTML for reuse
+        const headerHtml = (() => {
+            let h = `<div class="gantt-tl-header">`;
+            h += `<div class="gantt-tl-label" style="padding-left:4px">Tâche</div>`;
+            h += `<div class="gantt-tl-track-header">`;
+            headerCols.forEach(col => {
+                h += `<div style="width:${col.pct}%">${col.label}</div>`;
+            });
+            h += `</div></div>`;
+            return h;
+        })();
+
+        const renderRow = (task, indent) => {
             const ts = new Date(task.startDate);
             const te = new Date(task.endDate);
             const visStart = new Date(Math.max(ts.getTime(), start.getTime()));
             const visEnd = new Date(Math.min(te.getTime() + DAY, endExcl.getTime()));
 
-            html += `<div class="gantt-tl-row">`;
-            html += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
-            html += `<div class="gantt-tl-track">`;
+            let rowHtml = `<div class="gantt-tl-row">`;
+            rowHtml += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
+            rowHtml += `<div class="gantt-tl-track">`;
 
             if (visStart < endExcl && visEnd > start) {
                 const leftPct = ((visStart - start) / DAY / totalDays) * 100;
@@ -1586,28 +1601,36 @@ tr:nth-child(even){background:#fafbfc}
                 const color = task.color || '#6366F1';
 
                 if (task.isPhase) {
-                    html += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${color}"></div>`;
+                    rowHtml += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${color}"></div>`;
                 } else {
                     const approxPx = (widthPct / 100) * estTrackPx;
                     const barLabel = approxPx > 60
                         ? `${task.name.substring(0, Math.floor(approxPx / 8))} ${task.progress}%`
                         : (approxPx > 25 ? `${task.progress}%` : '');
-                    html += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${color}">${barLabel}</div>`;
+                    rowHtml += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${color}">${barLabel}</div>`;
                 }
             }
 
-            html += `</div></div>`;
+            rowHtml += `</div></div>`;
+            return rowHtml;
         };
 
-        rootTasks.forEach(task => {
-            renderRow(task, 0);
-            if (task.isPhase) {
-                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
-                children.forEach(child => renderRow(child, 1));
-            }
-        });
-
-        html += `</div>`;
+        // Paginate rows into chunks with repeated header
+        for (let i = 0; i < flatRows.length; i += ROWS_PER_PAGE) {
+            if (i > 0) html += `<div class="page-break"></div>`;
+            html += `<div class="gantt-section">`;
+            html += headerHtml;
+            const chunk = flatRows.slice(i, i + ROWS_PER_PAGE);
+            chunk.forEach(({ task, indent }) => {
+                html += renderRow(task, indent);
+            });
+            html += `</div>`;
+        }
+        if (flatRows.length === 0) {
+            html += `<div class="gantt-section">`;
+            html += headerHtml;
+            html += `</div>`;
+        }
         return html;
     }
 
