@@ -39,6 +39,7 @@ class App {
         taskModal.init(() => {
             ganttRenderer.render();
             this._renderStats();
+            this._refreshCurrentView();
             this._showToast('Tâche mise à jour', 'success');
         });
 
