@@ -8214,7 +8214,13 @@ class GanttRenderer {
         // Calculate total timeline width for horizontal scrolling
         if (this._zoomLevel === 'month' || this._zoomLevel === 'quarter') {
             const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
-            this._effectiveColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            const minColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            // Fill available viewport width: expand columns to avoid empty space
+            const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+            const wrapper = this._container.closest('.gantt-wrapper');
+            const availableWidth = wrapper ? wrapper.clientWidth - taskColWidth : 0;
+            const dynamicColWidth = months.length > 0 ? Math.floor(availableWidth / months.length) : minColWidth;
+            this._effectiveColWidth = Math.max(minColWidth, dynamicColWidth);
             this._timelineWidth = months.length * this._effectiveColWidth;
         } else {
             this._effectiveColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
