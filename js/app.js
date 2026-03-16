@@ -1776,6 +1776,7 @@ thead{display:table-header-group}
     /* ---- Keyboard Shortcuts ---- */
 
     _bindKeyboardShortcuts() {
+        // Use capture phase to intercept browser shortcuts (e.g. Ctrl+N in Edge) before the browser handles them
         document.addEventListener('keydown', (e) => {
             // Ctrl+Z: Undo
             if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
@@ -1858,7 +1859,7 @@ thead{display:table-header-group}
                     if (e.key === '?') this._showKeyboardHelp();
                 }
             }
-        });
+        }, { capture: true });
     }
 
     _showKeyboardHelp() {

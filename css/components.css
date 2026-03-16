@@ -122,6 +122,21 @@
     height: 20px;
 }
 
+.icon-btn.help-btn {
+    background: var(--bg-muted, #F1F5F9);
+    border: 1.5px solid var(--border-default, #E2E8F0);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    color: var(--text-secondary);
+}
+
+.icon-btn.help-btn:hover {
+    background: var(--color-primary-light, #EEF2FF);
+    border-color: var(--color-primary, #6366F1);
+    color: var(--color-primary, #6366F1);
+}
+
 /* ---- Avatar ---- */
 .avatar {
     width: 32px;

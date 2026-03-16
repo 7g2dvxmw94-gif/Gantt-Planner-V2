@@ -167,17 +167,26 @@ class Onboarding {
             left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
             tt.style.left = left + 'px';
 
+            let topValue;
             if (step.position === 'bottom') {
-                tt.style.top = (rect.bottom + pad + 12) + 'px';
+                topValue = rect.bottom + pad + 12;
             } else {
                 // If not enough space above, fall back to bottom positioning
                 const topPos = rect.top - pad - ttRect.height - 12;
                 if (topPos < 12) {
-                    tt.style.top = (rect.bottom + pad + 12) + 'px';
+                    topValue = rect.bottom + pad + 12;
                 } else {
-                    tt.style.top = topPos + 'px';
+                    topValue = topPos;
                 }
             }
+
+            // Ensure the tooltip doesn't overflow below the viewport
+            const maxTop = window.innerHeight - ttRect.height - 12;
+            if (topValue > maxTop) {
+                topValue = Math.max(12, maxTop);
+            }
+
+            tt.style.top = topValue + 'px';
         });
 
         nextBtn.focus();
