@@ -52,7 +52,7 @@ class App {
                 ganttRenderer.render();
                 this._renderStats();
             },
-            getColWidth: () => ganttRenderer.zoomConfig[ganttRenderer.zoomLevel]?.colWidth || 50,
+            getColWidth: () => ganttRenderer.effectiveColWidth || 50,
             getTimelineStart: () => store.getTimelineRange().start,
             onPinchZoom: (direction) => this._handlePinchZoom(direction),
         });

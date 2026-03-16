@@ -30,6 +30,7 @@ class GanttRenderer {
         this._zoomLevel = 'week';
         this._timelineRange = null;
         this._dayColumns = [];
+        this._effectiveColWidth = ZOOM_CONFIG.week.colWidth;
         this._criticalPath = null;
         this._flatNodes = [];
         this._virtualActive = false;
@@ -56,6 +57,14 @@ class GanttRenderer {
                 });
             });
         }
+
+        // Re-render on window resize for dynamic column sizing (month/quarter)
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            if (this._zoomLevel !== 'month' && this._zoomLevel !== 'quarter') return;
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => this.render(), 150);
+        });
 
         // Initial render
         const settings = store.getSettings();
@@ -84,8 +93,20 @@ class GanttRenderer {
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
 
         // Calculate total timeline width for horizontal scrolling
-        const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
-        this._timelineWidth = this._dayColumns.length * colWidth;
+        if (this._zoomLevel === 'month' || this._zoomLevel === 'quarter') {
+            const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
+            const minColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            // Expand columns to fill available viewport width
+            const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+            const wrapperWidth = this._scrollWrapper ? this._scrollWrapper.clientWidth : window.innerWidth;
+            const availableWidth = wrapperWidth - taskColWidth - 40; // 40px for margin/padding
+            const dynamicColWidth = Math.max(minColWidth, Math.floor(availableWidth / months.length));
+            this._effectiveColWidth = dynamicColWidth;
+            this._timelineWidth = months.length * dynamicColWidth;
+        } else {
+            this._effectiveColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            this._timelineWidth = this._dayColumns.length * this._effectiveColWidth;
+        }
 
         this._container.innerHTML = '';
 
@@ -214,7 +235,7 @@ class GanttRenderer {
                 const visibleEnd = new Date(Math.min(monthEnd.getTime(), this._timelineRange.end.getTime()));
                 const daysInVisibleMonth = daysBetween(visibleStart, visibleEnd) + 1;
 
-                const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+                const colWidth = this._effectiveColWidth;
                 const monthWidth = daysInVisibleMonth * colWidth;
 
                 const monthEl = createElement('div', {
@@ -263,7 +284,7 @@ class GanttRenderer {
         } else {
             // Month or Quarter view
             const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
-            const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            const colWidth = this._effectiveColWidth;
 
             months.forEach(monthDate => {
                 const monthEl = createElement('div', {
@@ -409,7 +430,7 @@ class GanttRenderer {
     _renderGridBackground(container) {
         if (this._zoomLevel !== 'day' && this._zoomLevel !== 'week') return;
 
-        const colWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+        const colWidth = this._effectiveColWidth;
         const grid = createElement('div', { className: 'gantt-timeline-grid' });
 
         this._dayColumns.forEach(day => {
@@ -601,24 +622,12 @@ class GanttRenderer {
 
         const diffDays = daysBetween(rangeStart, d);
 
+        const effectiveColWidth = this._effectiveColWidth;
+
         if (this._zoomLevel === 'day' || this._zoomLevel === 'week') {
-            return diffDays * ZOOM_CONFIG[this._zoomLevel].colWidth;
-        } else if (this._zoomLevel === 'month') {
-            // Approximate: position within months
-            const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
-            let offset = 0;
-            for (const m of months) {
-                const monthEnd = new Date(m.getFullYear(), m.getMonth() + 1, 0);
-                const daysInMonth = monthEnd.getDate();
-                if (d >= m && d <= monthEnd) {
-                    const dayInMonth = d.getDate() - 1;
-                    return offset + (dayInMonth / daysInMonth) * ZOOM_CONFIG.month.colWidth;
-                }
-                offset += ZOOM_CONFIG.month.colWidth;
-            }
-            return offset;
+            return diffDays * effectiveColWidth;
         } else {
-            // Quarter: 3 months = 1 column
+            // Month or Quarter: position within month columns
             const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
             let offset = 0;
             for (const m of months) {
@@ -626,9 +635,9 @@ class GanttRenderer {
                 const daysInMonth = monthEnd.getDate();
                 if (d >= m && d <= monthEnd) {
                     const dayInMonth = d.getDate() - 1;
-                    return offset + (dayInMonth / daysInMonth) * ZOOM_CONFIG.quarter.colWidth;
+                    return offset + (dayInMonth / daysInMonth) * effectiveColWidth;
                 }
-                offset += ZOOM_CONFIG.quarter.colWidth;
+                offset += effectiveColWidth;
             }
             return offset;
         }
@@ -803,6 +812,10 @@ class GanttRenderer {
 
     get zoomConfig() {
         return ZOOM_CONFIG;
+    }
+
+    get effectiveColWidth() {
+        return this._effectiveColWidth || ZOOM_CONFIG[this._zoomLevel].colWidth;
     }
 }
 
