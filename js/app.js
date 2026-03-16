@@ -1776,11 +1776,15 @@ thead{display:table-header-group}
     /* ---- Keyboard Shortcuts ---- */
 
     _bindKeyboardShortcuts() {
-        // Use capture phase to intercept browser shortcuts (e.g. Ctrl+N in Edge) before the browser handles them
-        document.addEventListener('keydown', (e) => {
+        // Helper to fully block browser-default shortcuts (e.g. Ctrl+N in Edge)
+        const _prevent = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
+
+        // Use capture phase on window (earliest possible interception) to beat
+        // Edge / Chromium browser-level shortcuts like Ctrl+N
+        window.addEventListener('keydown', (e) => {
             // Ctrl+Z: Undo
             if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
-                e.preventDefault();
+                _prevent(e);
                 if (store.undo()) {
                     ganttRenderer.render();
                     this._renderStats();
@@ -1792,7 +1796,7 @@ thead{display:table-header-group}
 
             // Ctrl+Y or Ctrl+Shift+Z: Redo
             if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
-                e.preventDefault();
+                _prevent(e);
                 if (store.redo()) {
                     ganttRenderer.render();
                     this._renderStats();
@@ -1806,20 +1810,21 @@ thead{display:table-header-group}
             if (e.ctrlKey && e.key === 'f') {
                 const searchInput = $('#searchInput');
                 if (searchInput) {
-                    e.preventDefault();
+                    _prevent(e);
                     searchInput.focus();
                 }
             }
 
             // Ctrl+N: New task
             if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
+                _prevent(e);
                 this._showAddTaskDialog();
+                return;
             }
 
             // Ctrl+A: Select all tasks (in table view)
             if (e.ctrlKey && e.key === 'a' && this._activeView === 'board') {
-                e.preventDefault();
+                _prevent(e);
                 this._selectAllTasks();
             }
 
@@ -1828,7 +1833,7 @@ thead{display:table-header-group}
                 const activeEl = document.activeElement;
                 const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
                 if (!isInput) {
-                    e.preventDefault();
+                    _prevent(e);
                     this._batchDelete();
                 }
             }

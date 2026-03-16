@@ -136,60 +136,77 @@ class Onboarding {
             return;
         }
 
-        const rect = target.getBoundingClientRect();
-        const pad = 6;
+        // Scroll target into view so that the tooltip has room to display
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Position spotlight hole
-        const hole = this._overlay.querySelector('#onboardingHole');
-        hole.setAttribute('x', rect.left - pad);
-        hole.setAttribute('y', rect.top - pad);
-        hole.setAttribute('width', rect.width + pad * 2);
-        hole.setAttribute('height', rect.height + pad * 2);
+        // Wait for scroll to settle then position everything
+        const _position = () => {
+            const rect = target.getBoundingClientRect();
+            const pad = 6;
 
-        // Update tooltip content
-        this._tooltip.querySelector('.onboarding-title').textContent = step.title;
-        this._tooltip.querySelector('.onboarding-text').textContent = step.text;
-        this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
+            // Position spotlight hole
+            const hole = this._overlay.querySelector('#onboardingHole');
+            hole.setAttribute('x', rect.left - pad);
+            hole.setAttribute('y', rect.top - pad);
+            hole.setAttribute('width', rect.width + pad * 2);
+            hole.setAttribute('height', rect.height + pad * 2);
 
-        const nextBtn = this._tooltip.querySelector('.onboarding-next');
-        nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
+            // Update tooltip content
+            this._tooltip.querySelector('.onboarding-title').textContent = step.title;
+            this._tooltip.querySelector('.onboarding-text').textContent = step.text;
+            this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
 
-        // Position tooltip
-        const tt = this._tooltip;
-        tt.style.left = '';
-        tt.style.right = '';
-        tt.style.top = '';
-        tt.style.bottom = '';
+            const nextBtn = this._tooltip.querySelector('.onboarding-next');
+            nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
 
-        requestAnimationFrame(() => {
-            const ttRect = tt.getBoundingClientRect();
-            let left = rect.left + rect.width / 2 - ttRect.width / 2;
-            left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
-            tt.style.left = left + 'px';
+            // Position tooltip
+            const tt = this._tooltip;
+            tt.style.left = '';
+            tt.style.right = '';
+            tt.style.top = '';
+            tt.style.bottom = '';
+            tt.style.maxHeight = '';
+            tt.style.overflowY = '';
 
-            let topValue;
-            if (step.position === 'bottom') {
-                topValue = rect.bottom + pad + 12;
-            } else {
-                // If not enough space above, fall back to bottom positioning
-                const topPos = rect.top - pad - ttRect.height - 12;
-                if (topPos < 12) {
+            requestAnimationFrame(() => {
+                const ttRect = tt.getBoundingClientRect();
+                let left = rect.left + rect.width / 2 - ttRect.width / 2;
+                left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
+                tt.style.left = left + 'px';
+
+                let topValue;
+                if (step.position === 'bottom') {
                     topValue = rect.bottom + pad + 12;
                 } else {
-                    topValue = topPos;
+                    // If not enough space above, fall back to bottom positioning
+                    const topPos = rect.top - pad - ttRect.height - 12;
+                    if (topPos < 12) {
+                        topValue = rect.bottom + pad + 12;
+                    } else {
+                        topValue = topPos;
+                    }
                 }
-            }
 
-            // Ensure the tooltip doesn't overflow below the viewport
-            const maxTop = window.innerHeight - ttRect.height - 12;
-            if (topValue > maxTop) {
-                topValue = Math.max(12, maxTop);
-            }
+                // Ensure the tooltip doesn't overflow below the viewport
+                const maxTop = window.innerHeight - ttRect.height - 12;
+                if (topValue > maxTop) {
+                    topValue = Math.max(12, maxTop);
+                    // If still overflowing, constrain tooltip height so buttons stay accessible
+                    const available = window.innerHeight - topValue - 12;
+                    if (ttRect.height > available) {
+                        tt.style.maxHeight = available + 'px';
+                        tt.style.overflowY = 'auto';
+                    }
+                }
 
-            tt.style.top = topValue + 'px';
-        });
+                tt.style.top = topValue + 'px';
 
-        nextBtn.focus();
+                nextBtn.focus();
+            });
+        };
+
+        // Small delay to let scrollIntoView settle
+        setTimeout(_position, 350);
     }
 
     _next() {

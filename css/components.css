@@ -123,18 +123,21 @@
 }
 
 .icon-btn.help-btn {
-    background: var(--bg-muted, #F1F5F9);
-    border: 1.5px solid var(--border-default, #E2E8F0);
+    background: var(--color-primary-light, #EEF2FF);
+    border: 2px solid var(--color-primary, #6366F1);
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    color: var(--text-secondary);
+    width: 38px;
+    height: 38px;
+    color: var(--color-primary, #6366F1);
+    font-weight: 700;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .icon-btn.help-btn:hover {
-    background: var(--color-primary-light, #EEF2FF);
+    background: var(--color-primary, #6366F1);
     border-color: var(--color-primary, #6366F1);
-    color: var(--color-primary, #6366F1);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, .35);
 }
 
 /* ---- Avatar ---- */
