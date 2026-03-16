@@ -22,6 +22,7 @@ class App {
         this._tableSortKey = 'name';
         this._tableSortDir = 'asc';
         this._selectedTaskIds = new Set();
+        this._dashboardFilterProjectId = 'all';
     }
 
     init() {
@@ -2265,11 +2266,17 @@ tr:nth-child(even){background:#fafbfc}
         const container = $('#dashboardView');
         if (!container) return;
 
-        const projects = store.getProjects();
-        const allNotifs = this._getNotifications();
+        const allProjects = store.getProjects();
+        let filterId = this._dashboardFilterProjectId;
+        if (filterId !== 'all' && !allProjects.find(p => p.id === filterId)) {
+            filterId = 'all';
+            this._dashboardFilterProjectId = 'all';
+        }
+        const projects = filterId === 'all' ? allProjects : allProjects.filter(p => p.id === filterId);
+        const allNotifs = this._getNotifications().filter(n => filterId === 'all' || n.projectId === filterId);
         const today = formatDateISO(new Date());
 
-        // Global KPIs across all projects
+        // Global KPIs across filtered projects
         let totalTasks = 0, completedTasks = 0, activeTasks = 0, totalProgress = 0, projectCount = projects.length;
         let totalBudget = 0, totalBudgetUsed = 0;
         const projectStats = [];
@@ -2308,6 +2315,14 @@ tr:nth-child(even){background:#fafbfc}
 
         container.innerHTML = `
         <div class="dashboard-grid">
+            <!-- Project filter -->
+            <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <select id="dashboardProjectFilter" class="filter-select" style="min-width:200px;">
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
+                </select>
+            </div>
             <!-- KPI Cards -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
                 <h3>Vue d'ensemble</h3>
@@ -2439,6 +2454,15 @@ tr:nth-child(even){background:#fafbfc}
                 });
             });
         });
+
+        // Project filter dropdown
+        const filterSelect = container.querySelector('#dashboardProjectFilter');
+        if (filterSelect) {
+            filterSelect.addEventListener('change', () => {
+                this._dashboardFilterProjectId = filterSelect.value;
+                this._renderDashboard();
+            });
+        }
 
         // PDF export button for permits
         const permitPdfBtn = container.querySelector('#dashboardPermitPdfBtn');
