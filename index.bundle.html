@@ -4665,6 +4665,15 @@ textarea.input {
                 </svg>
             </button>
 
+            <!-- Help -->
+            <button class="icon-btn" id="helpBtn" aria-label="Aide et raccourcis clavier" title="Aide (?)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+
             <div class="avatar" tabindex="0" role="button" aria-label="Profil utilisateur - Jean Dupont">JD</div>
         </div>
     </header>
@@ -10493,7 +10502,7 @@ const STEPS = [
     {
         target: '.tabs',
         title: 'Vues du projet',
-        text: 'Timeline, Tableau Kanban, Ressources et Dashboard : naviguez entre les différentes vues.',
+        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
         position: 'bottom',
     },
     {
@@ -10595,6 +10604,8 @@ class Onboarding {
             if (e.key === 'Escape') this._finish();
             if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
             if (e.key === 'ArrowLeft') this._prev();
+            // Let app keyboard shortcuts (Ctrl+N, etc.) work by closing the overlay
+            if (e.ctrlKey && e.key.length === 1) this._finish();
         });
 
         document.body.appendChild(this._overlay);
@@ -10647,7 +10658,13 @@ class Onboarding {
             if (step.position === 'bottom') {
                 tt.style.top = (rect.bottom + pad + 12) + 'px';
             } else {
-                tt.style.top = (rect.top - pad - ttRect.height - 12) + 'px';
+                // If not enough space above, fall back to bottom positioning
+                const topPos = rect.top - pad - ttRect.height - 12;
+                if (topPos < 12) {
+                    tt.style.top = (rect.bottom + pad + 12) + 'px';
+                } else {
+                    tt.style.top = topPos + 'px';
+                }
             }
         });
 
@@ -11680,6 +11697,11 @@ class App {
                     this._showToast('Action rétablie', 'info');
                 }
             });
+        }
+
+        const helpBtn = $('#helpBtn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => this._showKeyboardHelp());
         }
     }
 
