@@ -17,7 +17,7 @@ const ZOOM_CONFIG = {
     day:     { colWidth: 36,  label: 'Jour' },
     week:    { colWidth: 50,  label: 'Semaine' },
     month:   { colWidth: 120, label: 'Mois' },
-    quarter: { colWidth: 200, label: 'Trimestre' },
+    quarter: { colWidth: 80,  label: 'Trimestre' },
 };
 
 const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
@@ -95,14 +95,8 @@ class GanttRenderer {
         // Calculate total timeline width for horizontal scrolling
         if (this._zoomLevel === 'month' || this._zoomLevel === 'quarter') {
             const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
-            const minColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
-            // Expand columns to fill available viewport width
-            const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
-            const wrapperWidth = this._scrollWrapper ? this._scrollWrapper.clientWidth : window.innerWidth;
-            const availableWidth = wrapperWidth - taskColWidth - 40; // 40px for margin/padding
-            const dynamicColWidth = Math.max(minColWidth, Math.floor(availableWidth / months.length));
-            this._effectiveColWidth = dynamicColWidth;
-            this._timelineWidth = months.length * dynamicColWidth;
+            this._effectiveColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
+            this._timelineWidth = months.length * this._effectiveColWidth;
         } else {
             this._effectiveColWidth = ZOOM_CONFIG[this._zoomLevel].colWidth;
             this._timelineWidth = this._dayColumns.length * this._effectiveColWidth;
