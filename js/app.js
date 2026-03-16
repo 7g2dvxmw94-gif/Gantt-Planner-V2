@@ -3780,6 +3780,7 @@ tr:nth-child(even){background:#fafbfc}
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
+                this._refreshCurrentView();
                 dropdown.remove();
             });
             item.appendChild(nameSpan);
@@ -3826,6 +3827,7 @@ tr:nth-child(even){background:#fafbfc}
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
+                this._refreshCurrentView();
                 this._showToast(`Projet dupliqué : "${dup.name}"`, 'success');
             }
         });
@@ -3905,6 +3907,7 @@ tr:nth-child(even){background:#fafbfc}
         ganttRenderer.render();
         this._renderStats();
         this._renderProjectName();
+        this._refreshCurrentView();
         this._showToast(`Projet "${project.name}" créé`, 'success');
     }
 
