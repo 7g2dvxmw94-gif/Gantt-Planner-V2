@@ -613,6 +613,18 @@
     border-radius: var(--radius-full);
     outline: none;
     cursor: pointer;
+    padding: 0;
+    overflow: visible;
+}
+
+.progress-input-wrap input[type="range"]::-webkit-slider-container {
+    overflow: visible;
+}
+
+.progress-input-wrap input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: var(--radius-full);
+    overflow: visible;
 }
 
 .progress-input-wrap input[type="range"]::-webkit-slider-thumb {
@@ -624,6 +636,7 @@
     cursor: pointer;
     border: 2px solid var(--bg-base);
     box-shadow: var(--shadow-sm);
+    margin: 0;
 }
 
 .progress-input-wrap input[type="range"]::-moz-range-thumb {
@@ -634,6 +647,7 @@
     cursor: pointer;
     border: 2px solid var(--bg-base);
     box-shadow: var(--shadow-sm);
+    margin: 0;
 }
 
 .progress-input-label {
