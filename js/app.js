@@ -1001,6 +1001,11 @@ class App {
                 }
             });
         }
+
+        const helpBtn = $('#helpBtn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => this._showKeyboardHelp());
+        }
     }
 
     _showAddTaskDialog() {

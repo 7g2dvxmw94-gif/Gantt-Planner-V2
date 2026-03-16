@@ -14,7 +14,7 @@ const STEPS = [
     {
         target: '.tabs',
         title: 'Vues du projet',
-        text: 'Timeline, Tableau Kanban, Ressources et Dashboard : naviguez entre les différentes vues.',
+        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
         position: 'bottom',
     },
     {
@@ -116,6 +116,8 @@ class Onboarding {
             if (e.key === 'Escape') this._finish();
             if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
             if (e.key === 'ArrowLeft') this._prev();
+            // Let app keyboard shortcuts (Ctrl+N, etc.) work by closing the overlay
+            if (e.ctrlKey && e.key.length === 1) this._finish();
         });
 
         document.body.appendChild(this._overlay);
@@ -168,7 +170,13 @@ class Onboarding {
             if (step.position === 'bottom') {
                 tt.style.top = (rect.bottom + pad + 12) + 'px';
             } else {
-                tt.style.top = (rect.top - pad - ttRect.height - 12) + 'px';
+                // If not enough space above, fall back to bottom positioning
+                const topPos = rect.top - pad - ttRect.height - 12;
+                if (topPos < 12) {
+                    tt.style.top = (rect.bottom + pad + 12) + 'px';
+                } else {
+                    tt.style.top = topPos + 'px';
+                }
             }
         });
 
