@@ -5350,7 +5350,6 @@ function clamp(value, min, max) {
    Gantt Planner Pro
    ======================================== */
 
-
 class ThemeManager {
     constructor() {
         this._html = document.documentElement;
@@ -5453,7 +5452,6 @@ const themeManager = new ThemeManager();
    DATA STORE - Gantt Planner Pro
    Reactive store with localStorage persistence
    ======================================== */
-
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
@@ -7104,13 +7102,11 @@ class Store {
 
 // Singleton export
 const store = new Store();
-{ PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };
 
 /* ========================================
    TASK MODAL - Create / Edit / Delete Tasks
    Gantt Planner Pro - Step 2
    ======================================== */
-
 
 class TaskModal {
     constructor() {
@@ -8132,13 +8128,6 @@ const taskModal = new TaskModal();
    Gantt Planner Pro
    ======================================== */
 
-    createElement, $, $$,
-    daysBetween, addDays, formatDateISO, formatDateShort,
-    getMonthsBetween, getWeeksBetween, getDaysBetween,
-    getMonthName, getWeekNumber, isToday, isWeekend,
-    getTaskColor, TASK_COLORS,
-} from './utils.js';
-
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
     day:     { colWidth: 36,  label: 'Jour' },
@@ -8939,7 +8928,6 @@ const ganttRenderer = new GanttRenderer();
    GANTT INTERACTIONS - Drag, Resize, Click
    Gantt Planner Pro - Step 2
    ======================================== */
-
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -9824,6 +9812,8 @@ class CloudBackup {
 
 const cloudBackup = new CloudBackup();
 
+var branding;
+{
 /* ========================================
    BRANDING CONFIGURATION
    White-label customization for Gantt Planner
@@ -9867,12 +9857,15 @@ const branding = {
     themeColorDark: '#818CF8',           // <meta name="theme-color"> for dark mode
     locale: 'fr',                        // Default locale (fr, en, etc.)
 };
+branding = branding;
+}
 
+var brandingManager;
+{
 /* ========================================
    BRANDING MODULE
    Applies white-label config to the DOM
    ======================================== */
-
 
 const STORAGE_KEY = 'gantt_branding';
 
@@ -10093,12 +10086,15 @@ class BrandingManager {
 }
 
 const brandingManager = new BrandingManager();
+brandingManager = brandingManager;
+}
 
+var brandingPanel;
+{
 /* ========================================
    BRANDING PANEL
    Visual customization UI with export/import
    ======================================== */
-
 
 const STORAGE_KEY = 'gantt_branding';
 
@@ -10402,7 +10398,11 @@ class BrandingPanel {
 }
 
 const brandingPanel = new BrandingPanel();
+brandingPanel = brandingPanel;
+}
 
+var onboarding;
+{
 /* ========================================
    ONBOARDING - Interactive guide for new users
    ======================================== */
@@ -10614,12 +10614,13 @@ class Onboarding {
 }
 
 const onboarding = new Onboarding();
+onboarding = onboarding;
+}
 
 /* ========================================
    APP - Main Entry Point
    Gantt Planner Pro
    ======================================== */
-
 
 class App {
     constructor() {
