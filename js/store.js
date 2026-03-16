@@ -996,7 +996,7 @@ class Store {
         return { tasks: result, totalCost, totalCostDone };
     }
 
-    getTimelineRange() {
+    getTimelineRange(zoomLevel) {
         const tasks = this.getTasks();
         if (tasks.length === 0) {
             const today = new Date();
@@ -1011,11 +1011,24 @@ class Store {
         const minDate = new Date(Math.min(...starts));
         const maxDate = new Date(Math.max(...ends));
 
-        // Add some padding
-        return {
-            start: addDays(minDate, -7),
-            end: addDays(maxDate, 14),
-        };
+        if (zoomLevel === 'quarter') {
+            // Snap to quarter boundaries with a small margin
+            const qStart = new Date(minDate.getFullYear(), Math.floor(minDate.getMonth() / 3) * 3, 1);
+            const endQ = Math.floor(maxDate.getMonth() / 3) * 3 + 2;
+            const qEnd = new Date(maxDate.getFullYear(), endQ + 1, 0); // last day of end quarter
+            return { start: qStart, end: qEnd };
+        } else if (zoomLevel === 'month') {
+            // Snap to month boundaries with a small margin
+            const mStart = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+            const mEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); // last day of end month
+            return { start: addDays(mStart, -3), end: addDays(mEnd, 3) };
+        } else {
+            // Day/Week: add some padding in days
+            return {
+                start: addDays(minDate, -7),
+                end: addDays(maxDate, 14),
+            };
+        }
     }
 
     /* ---- Critical Path ---- */

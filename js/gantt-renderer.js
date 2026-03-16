@@ -87,7 +87,7 @@ class GanttRenderer {
 
         const tasks = store.getTasks();
         const tree = store.getTaskTree();
-        this._timelineRange = store.getTimelineRange();
+        this._timelineRange = store.getTimelineRange(this._zoomLevel);
 
         // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
@@ -281,8 +281,37 @@ class GanttRenderer {
                 monthEl.appendChild(subRow);
                 timelineHeader.appendChild(monthEl);
             });
+        } else if (this._zoomLevel === 'quarter') {
+            // Quarter view: group months into quarters with T1-T4 labels
+            const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
+            const colWidth = this._effectiveColWidth;
+
+            // Group months by quarter
+            const quarters = [];
+            months.forEach(monthDate => {
+                const q = Math.floor(monthDate.getMonth() / 3);
+                const year = monthDate.getFullYear();
+                const key = `${year}-Q${q}`;
+                let existing = quarters.find(qr => qr.key === key);
+                if (!existing) {
+                    existing = { key, quarter: q + 1, year, monthCount: 0 };
+                    quarters.push(existing);
+                }
+                existing.monthCount++;
+            });
+
+            quarters.forEach(q => {
+                const width = q.monthCount * colWidth;
+                const quarterEl = createElement('div', {
+                    className: 'timeline-month',
+                    style: { width: width + 'px', minWidth: width + 'px' },
+                });
+                const label = `T${q.quarter} ${q.year}`;
+                quarterEl.appendChild(createElement('div', { className: 'timeline-month-name' }, label));
+                timelineHeader.appendChild(quarterEl);
+            });
         } else {
-            // Month or Quarter view
+            // Month view
             const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
             const colWidth = this._effectiveColWidth;
 
