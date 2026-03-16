@@ -10615,6 +10615,7 @@ class App {
         this._tableSortDir = 'asc';
         this._selectedTaskIds = new Set();
         this._dashboardFilterProjectId = 'all';
+        this._costsFilterProjectId = 'all';
     }
 
     init() {
@@ -12691,19 +12692,26 @@ tr:nth-child(even){background:#fafbfc}
         const container = $('#costsView');
         if (!container) return;
 
-        const costs = store.getTaskCosts();
-        const tasks = store.getTasks();
-        const resources = store.getResources();
-        const HOURS_PER_DAY = 8;
+        const allProjects = store.getProjects();
+        let filterId = this._costsFilterProjectId;
+        if (filterId !== 'all' && !allProjects.find(p => p.id === filterId)) {
+            filterId = 'all';
+            this._costsFilterProjectId = 'all';
+        }
+        const projects = filterId === 'all' ? allProjects : allProjects.filter(p => p.id === filterId);
 
-        // Build phase map for grouping
-        const phaseMap = new Map(); // parentId -> phase task
-        const phaseTasks = tasks.filter(t => t.isPhase);
-        phaseTasks.forEach(p => phaseMap.set(p.id, p));
+        // Aggregate costs across filtered projects
+        let allCostTasks = [];
+        const phaseMap = new Map();
+        projects.forEach(p => {
+            const costs = store.getTaskCosts(p.id);
+            const tasks = store.getTasks(p.id);
+            tasks.filter(t => t.isPhase).forEach(ph => phaseMap.set(ph.id, ph));
+            allCostTasks = allCostTasks.concat(costs.tasks);
+        });
 
-        // Budget = sum of estimated costs; actual cost = sum of actualCost fields or costDone
-        const totalEstimated = costs.totalCost;
-        const totalActual = costs.tasks.reduce((s, tc) => {
+        const totalEstimated = allCostTasks.reduce((s, tc) => s + tc.cost, 0);
+        const totalActual = allCostTasks.reduce((s, tc) => {
             return s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone);
         }, 0);
         const variance = totalEstimated - totalActual;
@@ -12720,7 +12728,7 @@ tr:nth-child(even){background:#fafbfc}
 
         // Group tasks by phase
         const grouped = new Map(); // phaseId|'__none__' -> { phase, items }
-        costs.tasks.forEach(tc => {
+        allCostTasks.forEach(tc => {
             const parentId = tc.task.parentId;
             const key = parentId && phaseMap.has(parentId) ? parentId : '__none__';
             if (!grouped.has(key)) {
@@ -12781,6 +12789,13 @@ tr:nth-child(even){background:#fafbfc}
         container.innerHTML = `
         <div class="costs-header">
             <h2 class="costs-title">Suivi des coûts</h2>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <select id="costsProjectFilter" class="filter-select" style="min-width:200px;">
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
+                </select>
+            </div>
             <div class="costs-kpi-grid">
                 <div class="costs-kpi">
                     <div class="costs-kpi-label">Budget total (estimé)</div>
@@ -12823,7 +12838,7 @@ tr:nth-child(even){background:#fafbfc}
                 <tfoot>
                     <tr>
                         <td colspan="4" style="font-weight:700;">Total</td>
-                        <td style="text-align:right;font-weight:700;">${fmt(costs.tasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
+                        <td style="text-align:right;font-weight:700;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalActual)}</td>
                         <td style="text-align:right;font-weight:700;color:${varianceColor}">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
@@ -12831,6 +12846,15 @@ tr:nth-child(even){background:#fafbfc}
                 </tfoot>
             </table>
         </div>`;
+
+        // Bind project filter
+        const costsFilterSelect = container.querySelector('#costsProjectFilter');
+        if (costsFilterSelect) {
+            costsFilterSelect.addEventListener('change', () => {
+                this._costsFilterProjectId = costsFilterSelect.value;
+                this._renderCostsView();
+            });
+        }
 
         // Bind actual cost edits
         container.querySelectorAll('.costs-actual-input').forEach(input => {
