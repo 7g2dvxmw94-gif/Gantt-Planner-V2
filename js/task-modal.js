@@ -82,7 +82,9 @@ class TaskModal {
         this._phaseCheck = { input: createElement('input', { type: 'checkbox', id: 'taskPhase', style: { display: 'none' } }) };
 
         // Task name
-        body.appendChild(this._createField('Nom de la tâche', 'text', 'taskName', 'Ex: Design de la page d\'accueil'));
+        this._taskNameGroup = this._createField('Nom de la tâche', 'text', 'taskName', 'Ex: Design de la page d\'accueil');
+        this._taskNameLabel = this._taskNameGroup.querySelector('.form-label');
+        body.appendChild(this._taskNameGroup);
 
         // Name + Parent row
         const nameParentRow = createElement('div', { className: 'form-row' });
@@ -107,7 +109,8 @@ class TaskModal {
         body.appendChild(nameParentRow);
 
         // Dates + Duration row (3 columns)
-        const datesRow = createElement('div', { className: 'form-row form-row-3' });
+        this._datesRow = createElement('div', { className: 'form-row form-row-3' });
+        const datesRow = this._datesRow;
         datesRow.appendChild(this._createField('Date de début', 'date', 'taskStart'));
         datesRow.appendChild(this._createField('Date de fin', 'date', 'taskEnd'));
         const durationGroup = createElement('div', { className: 'form-group' });
@@ -125,7 +128,8 @@ class TaskModal {
         body.appendChild(datesRow);
 
         // Priority + Status + Progress row (3 columns)
-        const metaRow = createElement('div', { className: 'form-row form-row-3' });
+        this._metaRow = createElement('div', { className: 'form-row form-row-3' });
+        const metaRow = this._metaRow;
 
         // Priority
         const priorityGroup = createElement('div', { className: 'form-group' });
@@ -227,7 +231,8 @@ class TaskModal {
         body.appendChild(costRow);
 
         // Dependencies row (predecessors + successors side by side)
-        const depRow = createElement('div', { className: 'form-row' });
+        this._depRow = createElement('div', { className: 'form-row' });
+        const depRow = this._depRow;
 
         // Predecessors (with link type)
         const predGroup = createElement('div', { className: 'form-group' });
@@ -428,6 +433,17 @@ class TaskModal {
         // Show/hide permit fields
         if (this._permitFields) {
             this._permitFields.classList.toggle('visible', type === 'permit');
+        }
+
+        // Show/hide fields not relevant to phases
+        const isPhase = type === 'phase';
+        this._datesRow.style.display = isPhase ? 'none' : '';
+        this._metaRow.style.display = isPhase ? 'none' : '';
+        this._depRow.style.display = isPhase ? 'none' : '';
+
+        // Update task name label based on type
+        if (this._taskNameLabel) {
+            this._taskNameLabel.textContent = isPhase ? 'Nom de la phase' : 'Nom de la tâche';
         }
 
         // Apply milestone-specific logic
