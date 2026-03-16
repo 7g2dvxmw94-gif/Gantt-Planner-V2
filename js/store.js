@@ -155,6 +155,7 @@ function createDefaultProject(resources) {
             color: '#8B5CF6',
             assignee: resources[0].id,
             assignees: [resources[0].id],
+            fixedCost: 500,
             isMilestone: false,
             isPhase: false,
             order: 1,
@@ -258,6 +259,7 @@ function createDefaultProject(resources) {
             color: '#3B82F6',
             assignee: resources[3].id,
             assignees: [resources[3].id],
+            fixedCost: 2000,
             isMilestone: false,
             isPhase: false,
             order: 6,
@@ -323,6 +325,40 @@ function createDefaultProject(resources) {
             isMilestone: true,
             isPhase: false,
             order: 9,
+            dependencies: [],
+            collapsed: false,
+        },
+        // Permit - Permis de construire
+        {
+            id: generateId(),
+            projectId,
+            parentId: null,
+            name: 'Permis de construire - Extension bureaux',
+            description: 'Dépôt et suivi du permis de construire pour l\'extension des locaux',
+            startDate: formatDateISO(addDays(projectStart, -7)),
+            endDate: formatDateISO(addDays(projectStart, 60)),
+            progress: 40,
+            priority: 'high',
+            status: 'in_progress',
+            color: '#F59E0B',
+            assignee: null,
+            assignees: [],
+            isMilestone: false,
+            isPhase: false,
+            isPermit: true,
+            permitType: 'PC',
+            permitStatus: 'under_review',
+            dossierNumber: 'PC 075 123 26 R0001',
+            commune: 'Paris 8e',
+            serviceInstructeur: 'Direction de l\'Urbanisme',
+            abfSector: false,
+            depositDate: formatDateISO(addDays(projectStart, -7)),
+            completenessDate: formatDateISO(addDays(projectStart, 0)),
+            additionalDocsRequestDate: '',
+            additionalDocsResponseDate: '',
+            decisionDate: '',
+            displayStartDate: '',
+            order: 10,
             dependencies: [],
             collapsed: false,
         },
@@ -915,9 +951,10 @@ class Store {
     }
 
     /**
-     * Compute costs for each task based on assigned resources' hourly rates.
-     * Cost = duration_days × 8h × sum(hourlyRate of assigned resources)
-     * Returns { tasks: [{task, durationDays, assignedResources: [{resource, hourlyRate}], cost}], totalCost, totalCostDone }
+     * Compute costs for each task based on assigned resources' hourly rates + fixed costs.
+     * Resource cost = duration_days × 8h × sum(hourlyRate of assigned resources)
+     * Total cost = resource cost + fixedCost
+     * Returns { tasks: [{task, durationDays, assignedResources, resourceCost, fixedCost, cost, costDone}], totalCost, totalCostDone }
      */
     getTaskCosts(projectId) {
         const pid = projectId || this._data.activeProjectId;
@@ -937,7 +974,9 @@ class Store {
 
             const totalRate = assignedResources.reduce((sum, r) => sum + (r.hourlyRate || 0), 0);
             const durationDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
-            const cost = durationDays * HOURS_PER_DAY * totalRate;
+            const resourceCost = durationDays * HOURS_PER_DAY * totalRate;
+            const fixedCost = task.fixedCost || 0;
+            const cost = resourceCost + fixedCost;
             const costDone = cost * (task.progress || 0) / 100;
 
             totalCost += cost;
@@ -947,6 +986,8 @@ class Store {
                 task,
                 durationDays,
                 assignedResources: assignedResources.map(r => ({ id: r.id, name: r.name, hourlyRate: r.hourlyRate || 0 })),
+                resourceCost,
+                fixedCost,
                 cost,
                 costDone,
             });

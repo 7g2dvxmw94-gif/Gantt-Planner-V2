@@ -2147,8 +2147,10 @@ tr:nth-child(even){background:#fafbfc}
             const gvColor = groupVariance < 0 ? '#EF4444' : groupVariance < groupEstimated * 0.1 ? '#F59E0B' : '#10B981';
 
             if (group.phase) {
+                const groupFixed = group.items.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
                 tableRows += `<tr class="costs-phase-row">
-                    <td colspan="5" class="costs-phase-name">${group.phase.name}</td>
+                    <td colspan="4" class="costs-phase-name">${group.phase.name}</td>
+                    <td style="text-align:right;font-weight:600;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
                     <td style="text-align:right;font-weight:600;">${fmt(groupEstimated)}</td>
                     <td style="text-align:right;font-weight:600;">${fmt(groupActual)}</td>
                     <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
@@ -2167,6 +2169,7 @@ tr:nth-child(even){background:#fafbfc}
                     <td>${resNames}</td>
                     <td style="text-align:center;">${tc.durationDays} j</td>
                     <td style="text-align:center;">${rates}</td>
+                    <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted, #999)'};">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
                     <td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
                     <td style="text-align:right;">
                         <input type="number" class="costs-actual-input" data-task-id="${tc.task.id}"
@@ -2216,7 +2219,8 @@ tr:nth-child(even){background:#fafbfc}
                         <th>Ressource(s)</th>
                         <th style="text-align:center;">Durée (j)</th>
                         <th style="text-align:center;">Taux horaire</th>
-                        <th style="text-align:right;">Coût estimé</th>
+                        <th style="text-align:right;">Coût fixe</th>
+                        <th style="text-align:right;">Coût estimé total</th>
                         <th style="text-align:right;">Coût réel</th>
                         <th style="text-align:right;">Écart</th>
                     </tr>
@@ -2225,6 +2229,7 @@ tr:nth-child(even){background:#fafbfc}
                 <tfoot>
                     <tr>
                         <td colspan="4" style="font-weight:700;">Total</td>
+                        <td style="text-align:right;font-weight:700;">${fmt(costs.tasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalActual)}</td>
                         <td style="text-align:right;font-weight:700;color:${varianceColor}">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
@@ -2288,6 +2293,17 @@ tr:nth-child(even){background:#fafbfc}
 
         const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
         const budgetPct = totalBudget > 0 ? Math.round((totalBudgetUsed / totalBudget) * 100) : 0;
+
+        // Gather upcoming/overdue tasks across all projects for the dashboard
+        const allUpcoming = [];
+        projects.forEach(p => {
+            store.getTasks(p.id).filter(t => !t.isPhase && t.progress < 100).forEach(t => {
+                const daysLeft = Math.ceil((new Date(t.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+                allUpcoming.push({ ...t, projectName: p.name, daysLeft });
+            });
+        });
+        allUpcoming.sort((a, b) => a.daysLeft - b.daysLeft);
+        const upcomingItems = allUpcoming.slice(0, 10);
 
         container.innerHTML = `
         <div class="dashboard-grid">
@@ -2355,6 +2371,50 @@ tr:nth-child(even){background:#fafbfc}
                     }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
             </div>
 
+            <!-- Tâches à venir / en retard -->
+            <div class="dashboard-card" style="grid-column: 1 / -1;">
+                <h3>Tâches prioritaires (${upcomingItems.length})</h3>
+                ${upcomingItems.length === 0
+                    ? '<div class="notif-empty">Aucune tâche en cours</div>'
+                    : `<div style="overflow-x:auto;">
+                        <table class="cost-table">
+                            <thead><tr>
+                                <th>Tâche</th>
+                                <th>Projet</th>
+                                <th style="text-align:center;">Priorité</th>
+                                <th style="text-align:center;">Échéance</th>
+                                <th style="text-align:center;">Progression</th>
+                                <th style="text-align:center;">Statut</th>
+                            </tr></thead>
+                            <tbody>${upcomingItems.map(t => {
+                                const isOverdue = t.daysLeft < 0;
+                                const isUrgent = t.daysLeft >= 0 && t.daysLeft <= 3;
+                                const deadlineColor = isOverdue ? '#EF4444' : isUrgent ? '#F59E0B' : 'var(--text-secondary)';
+                                const deadlineText = isOverdue ? `<strong>En retard (${Math.abs(t.daysLeft)}j)</strong>` : t.daysLeft === 0 ? '<strong>Aujourd\'hui</strong>' : `J-${t.daysLeft}`;
+                                const priorityColors = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
+                                const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+                                const pColor = priorityColors[t.priority] || '#64748B';
+                                const barColor = t.progress > 0 ? '#6366F1' : 'var(--border-default,#E2E8F0)';
+                                return `<tr>
+                                    <td style="font-weight:500;">${t.name}</td>
+                                    <td style="color:var(--text-secondary);font-size:12px;">${t.projectName}</td>
+                                    <td style="text-align:center;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:${pColor}15;color:${pColor};border:1px solid ${pColor}30;">${priorityLabels[t.priority] || t.priority}</span></td>
+                                    <td style="text-align:center;color:${deadlineColor};font-size:12px;">${deadlineText}</td>
+                                    <td style="text-align:center;">
+                                        <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
+                                            <div style="width:60px;height:6px;background:var(--bg-muted,#f1f5f9);border-radius:3px;overflow:hidden;">
+                                                <div style="width:${t.progress}%;height:100%;background:${barColor};border-radius:3px;"></div>
+                                            </div>
+                                            <span style="font-size:11px;color:var(--text-secondary);">${t.progress}%</span>
+                                        </div>
+                                    </td>
+                                    <td style="text-align:center;font-size:12px;">${t.status === 'in_progress' ? 'En cours' : t.status === 'done' ? 'Terminé' : 'À faire'}</td>
+                                </tr>`;
+                            }).join('')}</tbody>
+                        </table>
+                    </div>`}
+            </div>
+
             <!-- Tableau des coûts par tâche -->
             ${this._renderDashboardCostTable(projectStats)}
 
@@ -2387,19 +2447,19 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _renderDashboardCostTable(projectStats) {
-        // Gather all task costs across projects
+        // Gather all task costs across projects (only tasks with actual costs)
         const allTaskCosts = [];
         projectStats.forEach(ps => {
             if (!ps.costs) return;
             ps.costs.tasks.forEach(tc => {
-                allTaskCosts.push({ ...tc, projectName: ps.project.name });
+                if (tc.cost > 0) allTaskCosts.push({ ...tc, projectName: ps.project.name });
             });
         });
 
         if (allTaskCosts.length === 0) {
             return `<div class="dashboard-card" style="grid-column: 1 / -1;">
                 <h3>Coûts par tâche</h3>
-                <div class="notif-empty">Aucune tâche avec des ressources assignées</div>
+                <div class="notif-empty">Aucune tâche avec des coûts (ressources ou coûts fixes)</div>
             </div>`;
         }
 
@@ -2409,6 +2469,8 @@ tr:nth-child(even){background:#fafbfc}
         const totalCost = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
         const totalCostDone = allTaskCosts.reduce((s, tc) => s + tc.costDone, 0);
         const formatCost = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
+
+        const totalFixed = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         const rows = allTaskCosts.map(tc => {
             const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
@@ -2420,6 +2482,7 @@ tr:nth-child(even){background:#fafbfc}
                 <td>${resNames}</td>
                 <td style="text-align:center;">${rates}</td>
                 <td style="text-align:center;">${tc.durationDays}j</td>
+                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) + '€' : '—'}</td>
                 <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}€</td>
                 <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}€</td>
                 <td style="width:80px;">
@@ -2440,7 +2503,8 @@ tr:nth-child(even){background:#fafbfc}
                             <th>Ressource(s)</th>
                             <th style="text-align:center;">Taux</th>
                             <th style="text-align:center;">Durée</th>
-                            <th style="text-align:right;">Coût estimé</th>
+                            <th style="text-align:right;">Coût fixe</th>
+                            <th style="text-align:right;">Coût total</th>
                             <th style="text-align:right;">Consommé</th>
                             <th style="text-align:center;">Avancement</th>
                         </tr>
@@ -2449,6 +2513,7 @@ tr:nth-child(even){background:#fafbfc}
                     <tfoot>
                         <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
                             <td colspan="4">Total</td>
+                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) + '€' : '—'}</td>
                             <td style="text-align:right;">${formatCost(totalCost)}€</td>
                             <td style="text-align:right;">${formatCost(totalCostDone)}€</td>
                             <td></td>

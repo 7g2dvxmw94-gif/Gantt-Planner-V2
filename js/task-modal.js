@@ -205,6 +205,27 @@ class TaskModal {
         colorAssignRow.appendChild(assigneeGroup);
         body.appendChild(colorAssignRow);
 
+        // Fixed cost row
+        const costRow = createElement('div', { className: 'form-row' });
+        const fixedCostGroup = createElement('div', { className: 'form-group' });
+        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (€)'));
+        this._fixedCostInput = createElement('input', {
+            className: 'input',
+            type: 'number',
+            id: 'taskFixedCost',
+            min: '0',
+            step: '1',
+            value: '0',
+            placeholder: 'Ex: 5000 (matériel, sous-traitance...)',
+        });
+        fixedCostGroup.appendChild(this._fixedCostInput);
+        const fixedCostHint = createElement('div', {
+            style: { fontSize: '11px', color: 'var(--text-muted, #999)', marginTop: '4px' },
+        }, 'Coût forfaitaire hors ressources (matériel, sous-traitance, frais...)');
+        fixedCostGroup.appendChild(fixedCostHint);
+        costRow.appendChild(fixedCostGroup);
+        body.appendChild(costRow);
+
         // Dependencies row (predecessors + successors side by side)
         const depRow = createElement('div', { className: 'form-row' });
 
@@ -510,6 +531,9 @@ class TaskModal {
         // Reset color
         $$('.color-swatch', this._colorPicker).forEach((s, i) => s.classList.toggle('active', i === 0));
 
+        // Reset fixed cost
+        this._fixedCostInput.value = 0;
+
         // Reset permit fields
         this._resetPermitFields();
 
@@ -568,6 +592,9 @@ class TaskModal {
         $$('.color-swatch', this._colorPicker).forEach(s => {
             s.classList.toggle('active', s.dataset.color === task.color);
         });
+
+        // Fixed cost
+        this._fixedCostInput.value = task.fixedCost || 0;
 
         // Assignees (multi)
         this._populateAssignees(task.assignees || (task.assignee ? [task.assignee] : []));
@@ -915,6 +942,7 @@ class TaskModal {
             color: activeColor ? activeColor.dataset.color : '#6366F1',
             assignee: selectedAssignees[0] || null,
             assignees: selectedAssignees,
+            fixedCost: parseFloat(this._fixedCostInput.value) || 0,
             dependencies: this._getSelectedPredecessors(),
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,

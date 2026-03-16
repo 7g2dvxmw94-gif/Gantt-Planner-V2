@@ -984,9 +984,14 @@ textarea.input {
 /* ---- Dashboard View ---- */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-4, 16px);
     padding: var(--space-4, 16px);
+}
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .dashboard-card {
@@ -1185,7 +1190,7 @@ textarea.input {
     overflow-x: auto;
 }
 .costs-full-table {
-    min-width: 700px;
+    min-width: 800px;
 }
 .costs-phase-row {
     background: var(--bg-muted, #F1F5F9);
