@@ -636,7 +636,7 @@
     cursor: pointer;
     border: 2px solid var(--bg-base);
     box-shadow: var(--shadow-sm);
-    margin: 0;
+    margin-top: -6px;
 }
 
 .progress-input-wrap input[type="range"]::-moz-range-thumb {
