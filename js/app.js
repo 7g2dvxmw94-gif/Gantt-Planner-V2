@@ -18,7 +18,7 @@ class App {
     constructor() {
         this._activeView = 'timeline';
         this._showCriticalPath = false;
-        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._filters = { status: 'all', assignee: 'all', phase: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
         this._tableSortKey = 'name';
         this._tableSortDir = 'asc';
         this._selectedTaskIds = new Set();
@@ -212,7 +212,7 @@ class App {
 
     _getFilteredTasks(includePhases = false) {
         let tasks = store.getTasks();
-        const { status, assignee, priority, dateStart, dateEnd, search } = this._filters;
+        const { status, assignee, phase, priority, dateStart, dateEnd, search } = this._filters;
 
         return tasks.filter(task => {
             if (!includePhases && task.isPhase) return false;
@@ -226,6 +226,12 @@ class App {
             } else if (assignee !== 'all') {
                 const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
                 if (!assigneeIds.includes(assignee)) return false;
+            }
+
+            if (phase === 'none') {
+                if (task.parentId) return false;
+            } else if (phase !== 'all') {
+                if (task.parentId !== phase) return false;
             }
 
             if (priority !== 'all' && task.priority !== priority) return false;
@@ -264,6 +270,11 @@ class App {
 
             switch (key) {
                 case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+                case 'phase': {
+                    const pa = a.parentId ? (store.getTask(a.parentId)?.name || '') : '';
+                    const pb = b.parentId ? (store.getTask(b.parentId)?.name || '') : '';
+                    va = pa.toLowerCase(); vb = pb.toLowerCase(); break;
+                }
                 case 'startDate': va = a.startDate; vb = b.startDate; break;
                 case 'endDate': va = a.endDate; vb = b.endDate; break;
                 case 'status': va = a.status; vb = b.status; break;
@@ -313,6 +324,7 @@ class App {
 
         const columns = [
             { key: 'name', label: 'Tâche' },
+            { key: 'phase', label: 'Phase' },
             { key: 'startDate', label: 'Début' },
             { key: 'endDate', label: 'Fin' },
             { key: 'assignees', label: 'Assigné(s)' },
@@ -388,17 +400,27 @@ class App {
             nameText.textContent = task.name;
             nameWrap.appendChild(nameText);
             tdName.appendChild(nameWrap);
-            // Show phase name
+            row.appendChild(tdName);
+
+            // Phase
+            const tdPhase = document.createElement('td');
             if (task.parentId) {
                 const phase = store.getTask(task.parentId);
                 if (phase) {
-                    const phaseLabel = document.createElement('div');
-                    phaseLabel.className = 'table-task-phase';
-                    phaseLabel.textContent = phase.name;
-                    tdName.appendChild(phaseLabel);
+                    const phaseChip = document.createElement('span');
+                    phaseChip.className = 'table-phase-chip';
+                    phaseChip.style.borderLeft = `3px solid ${phase.color || 'var(--border)'}`;
+                    phaseChip.textContent = phase.name;
+                    tdPhase.appendChild(phaseChip);
+                } else {
+                    tdPhase.textContent = '—';
+                    tdPhase.style.color = 'var(--text-muted)';
                 }
+            } else {
+                tdPhase.textContent = '—';
+                tdPhase.style.color = 'var(--text-muted)';
             }
-            row.appendChild(tdName);
+            row.appendChild(tdPhase);
 
             // Start Date
             const tdStart = document.createElement('td');
@@ -3523,6 +3545,24 @@ tr:nth-child(even){background:#fafbfc}
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
+        // Phase filter
+        const phaseGroup = document.createElement('div');
+        phaseGroup.className = 'filter-group';
+        const phaseLabel = document.createElement('label');
+        phaseLabel.className = 'filter-label';
+        phaseLabel.textContent = 'Phase';
+        phaseGroup.appendChild(phaseLabel);
+        const phaseSel = document.createElement('select');
+        phaseSel.className = 'select filter-select';
+        phaseSel.id = 'filterPhase';
+        this._populatePhaseFilter(phaseSel);
+        phaseSel.addEventListener('change', () => this._applyFilters());
+        phaseGroup.appendChild(phaseSel);
+        filterBar.appendChild(phaseGroup);
+
+        // Separator
+        filterBar.appendChild(this._createFilterSep());
+
         // Priority filter
         const priorityGroup = this._createFilterGroup('Priorité', 'filterPriority', [
             { value: 'all', label: 'Toutes' },
@@ -3613,6 +3653,18 @@ tr:nth-child(even){background:#fafbfc}
         return sep;
     }
 
+    _populatePhaseFilter(select) {
+        const tasks = store.getTasks();
+        const phases = tasks.filter(t => t.isPhase);
+        select.innerHTML = '<option value="all">Toutes les phases</option><option value="none">Sans phase</option>';
+        phases.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            select.appendChild(opt);
+        });
+    }
+
     _populateAssigneeFilter(select) {
         const resources = store.getResources();
         select.innerHTML = '<option value="all">Toutes les ressources</option><option value="none">Non assigné</option>';
@@ -3627,6 +3679,7 @@ tr:nth-child(even){background:#fafbfc}
     _applyFilters() {
         this._filters.status = $('#filterStatus')?.value || 'all';
         this._filters.assignee = $('#filterAssignee')?.value || 'all';
+        this._filters.phase = $('#filterPhase')?.value || 'all';
         this._filters.priority = $('#filterPriority')?.value || 'all';
         this._filters.dateStart = $('#filterDateStart')?.value || '';
         this._filters.dateEnd = $('#filterDateEnd')?.value || '';
@@ -3635,10 +3688,11 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _resetFilters() {
-        this._filters = { status: 'all', assignee: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._filters = { status: 'all', assignee: 'all', phase: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
 
         const filterStatus = $('#filterStatus');
         const filterAssignee = $('#filterAssignee');
+        const filterPhase = $('#filterPhase');
         const filterPriority = $('#filterPriority');
         const filterDateStart = $('#filterDateStart');
         const filterDateEnd = $('#filterDateEnd');
@@ -3646,6 +3700,7 @@ tr:nth-child(even){background:#fafbfc}
 
         if (filterStatus) filterStatus.value = 'all';
         if (filterAssignee) filterAssignee.value = 'all';
+        if (filterPhase) filterPhase.value = 'all';
         if (filterPriority) filterPriority.value = 'all';
         if (filterDateStart) filterDateStart.value = '';
         if (filterDateEnd) filterDateEnd.value = '';
