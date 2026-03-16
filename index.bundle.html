@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
 /* ========================================
    DESIGN TOKENS - GANTT PLANNER PRO
@@ -5055,8 +5054,6 @@ textarea.input {
 
     <!-- ==================== SCRIPTS ==================== -->
 
-    <!-- ==================== SCRIPTS ==================== -->
-
     <script>
 (function(){
 /* ========================================
@@ -9863,7 +9860,7 @@ const BRANDING_STORAGE_KEY = 'gantt_branding';
 
 class BrandingManager {
     constructor() {
-        this._config = defaultConfig;
+        this._config = branding;
     }
 
     getConfig() {
@@ -9901,7 +9898,7 @@ class BrandingManager {
             const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                this._config = { ...defaultConfig, ...parsed };
+                this._config = { ...branding, ...parsed };
             }
         } catch { /* ignore */ }
     }
@@ -10294,7 +10291,7 @@ class BrandingPanel {
             const saved = localStorage.getItem(BRANDING_PANEL_STORAGE_KEY);
             if (saved) return JSON.parse(saved);
         } catch { /* ignore */ }
-        return { ...defaultConfig };
+        return { ...branding };
     }
 
     _save(config) {
@@ -10308,7 +10305,7 @@ class BrandingPanel {
     _reset() {
         if (!confirm('Réinitialiser toutes les personnalisations ?')) return;
         try { localStorage.removeItem(BRANDING_PANEL_STORAGE_KEY); } catch { /* ignore */ }
-        brandingManager.applyConfig(defaultConfig);
+        brandingManager.applyConfig(branding);
         this._populateForm();
         this._showToast('Personnalisation réinitialisée');
     }
@@ -10319,8 +10316,8 @@ class BrandingPanel {
         const config = this._getCurrentConfig();
         // Clean internal keys
         const exportData = {};
-        for (const key of Object.keys(defaultConfig)) {
-            exportData[key] = config[key] !== undefined ? config[key] : defaultConfig[key];
+        for (const key of Object.keys(branding)) {
+            exportData[key] = config[key] !== undefined ? config[key] : branding[key];
         }
 
         const json = JSON.stringify(exportData, null, 2);
@@ -10356,7 +10353,7 @@ class BrandingPanel {
                 }
 
                 // Merge with defaults for any missing keys
-                const merged = { ...defaultConfig, ...imported };
+                const merged = { ...branding, ...imported };
                 this._save(merged);
                 brandingManager.applyConfig(merged);
                 this._populateForm();
