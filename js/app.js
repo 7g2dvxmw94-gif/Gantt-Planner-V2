@@ -1006,6 +1006,11 @@ class App {
         if (helpBtn) {
             helpBtn.addEventListener('click', () => this._showKeyboardHelp());
         }
+
+        const settingsBtn = $('#settingsBtn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => brandingPanel.openToSettings());
+        }
     }
 
     _showAddTaskDialog() {

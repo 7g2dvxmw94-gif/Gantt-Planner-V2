@@ -59,7 +59,7 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-            <button class="icon-btn" aria-label="Paramètres" title="Paramètres">
+            <button class="icon-btn" id="settingsBtn" aria-label="Paramètres" title="Paramètres">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -383,7 +383,7 @@
                 <!-- ===== ROOT VIEW: Section List ===== -->
                 <div class="bp-view bp-view--active" data-view="root">
                     <div class="branding-panel-header">
-                        <h2>Personnaliser</h2>
+                        <h2>Personnaliser &amp; R&eacute;glages</h2>
                         <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </button>
@@ -437,6 +437,17 @@
                                 <div class="bp-menu-item-content">
                                     <span class="bp-menu-item-label">Pied de page</span>
                                     <span class="bp-menu-item-desc">Texte et copyright</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-separator" role="separator"></li>
+                            <li class="bp-menu-item" data-target="appsettings" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Param&egrave;tres</span>
+                                    <span class="bp-menu-item-desc">Th&egrave;me, zoom, affichage</span>
                                 </div>
                                 <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
                             </li>
@@ -611,6 +622,63 @@
                             <label class="bp-field">
                                 <span class="bp-label">Copyright</span>
                                 <input type="text" class="bp-input" data-key="copyrightText" placeholder="&copy; 2026 MonEntreprise">
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ===== SUB-VIEW: App Settings ===== -->
+                <div class="bp-view" data-view="appsettings">
+                    <div class="branding-panel-header">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Param&egrave;tres</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Th&egrave;me</h3>
+                            <div class="bp-toggle-group" id="settingsThemeGroup">
+                                <button class="bp-toggle-btn" data-setting-value="light">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                                    Clair
+                                </button>
+                                <button class="bp-toggle-btn" data-setting-value="dark">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                    Sombre
+                                </button>
+                                <button class="bp-toggle-btn" data-setting-value="auto">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                    Auto
+                                </button>
+                            </div>
+                        </section>
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Zoom par d&eacute;faut</h3>
+                            <div class="bp-toggle-group" id="settingsZoomGroup">
+                                <button class="bp-toggle-btn" data-setting-value="day">Jour</button>
+                                <button class="bp-toggle-btn" data-setting-value="week">Semaine</button>
+                                <button class="bp-toggle-btn" data-setting-value="month">Mois</button>
+                                <button class="bp-toggle-btn" data-setting-value="quarter">Trimestre</button>
+                            </div>
+                        </section>
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Affichage</h3>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Afficher les week-ends</span>
+                                <input type="checkbox" class="bp-switch" id="settingsShowWeekends">
+                                <span class="bp-switch-slider"></span>
+                            </label>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Afficher les num&eacute;ros de ligne</span>
+                                <input type="checkbox" class="bp-switch" id="settingsShowRowNumbers">
+                                <span class="bp-switch-slider"></span>
+                            </label>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Animations</span>
+                                <input type="checkbox" class="bp-switch" id="settingsAnimations" checked>
+                                <span class="bp-switch-slider"></span>
                             </label>
                         </section>
                     </div>

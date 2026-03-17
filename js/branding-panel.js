@@ -5,6 +5,9 @@
 
 import { branding as defaultConfig } from '../config/branding.js';
 import { brandingManager } from './branding.js';
+import { store } from './store.js';
+import { themeManager } from './theme.js';
+import { ganttRenderer } from './gantt-renderer.js';
 
 const STORAGE_KEY = 'gantt_branding';
 
@@ -145,6 +148,56 @@ class BrandingPanel {
         this._exportBtn?.addEventListener('click', () => this._export());
         this._importBtn?.addEventListener('click', () => this._fileInput?.click());
         this._fileInput?.addEventListener('change', (e) => this._import(e));
+
+        // Settings: toggle groups
+        this._bindToggleGroup('settingsThemeGroup', (value) => {
+            if (value === 'auto') {
+                themeManager.useSystemPreference();
+            } else {
+                themeManager.setTheme(value);
+            }
+        });
+
+        this._bindToggleGroup('settingsZoomGroup', (value) => {
+            store.updateSettings({ zoomLevel: value });
+            ganttRenderer.setZoom(value);
+        });
+
+        // Settings: switches
+        this._bindSwitch('settingsShowWeekends', (checked) => {
+            store.updateSettings({ showWeekends: checked });
+            ganttRenderer.render();
+        });
+
+        this._bindSwitch('settingsShowRowNumbers', (checked) => {
+            store.updateSettings({ showRowNumbers: checked });
+            ganttRenderer.render();
+        });
+
+        this._bindSwitch('settingsAnimations', (checked) => {
+            store.updateSettings({ animations: checked });
+            document.documentElement.classList.toggle('no-animations', !checked);
+        });
+    }
+
+    /* ---- Settings helpers ---- */
+
+    _bindToggleGroup(groupId, onChange) {
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        group.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('.bp-toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                onChange(btn.dataset.settingValue);
+            });
+        });
+    }
+
+    _bindSwitch(switchId, onChange) {
+        const sw = document.getElementById(switchId);
+        if (!sw) return;
+        sw.addEventListener('change', () => onChange(sw.checked));
     }
 
     /* ---- Navigation ---- */
@@ -215,12 +268,21 @@ class BrandingPanel {
         this._isOpen ? this.close() : this.open();
     }
 
-    open() {
+    open(targetView) {
         if (!this._overlay) return;
         this._resetNavigation();
         this._populateForm();
+        this._populateSettings();
         this._overlay.hidden = false;
         this._isOpen = true;
+        if (targetView) {
+            // Navigate directly to the target sub-view
+            requestAnimationFrame(() => this._navigateTo(targetView));
+        }
+    }
+
+    openToSettings() {
+        this.open('appsettings');
     }
 
     close() {
@@ -228,6 +290,40 @@ class BrandingPanel {
         this._overlay.hidden = true;
         this._isOpen = false;
         this._toggleBtn?.focus();
+    }
+
+    /* ---- Populate settings from store ---- */
+
+    _populateSettings() {
+        const settings = store.getSettings();
+
+        // Theme toggle group
+        const themeGroup = document.getElementById('settingsThemeGroup');
+        if (themeGroup) {
+            const themeValue = settings.theme || 'auto';
+            themeGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.settingValue === themeValue);
+            });
+        }
+
+        // Zoom toggle group
+        const zoomGroup = document.getElementById('settingsZoomGroup');
+        if (zoomGroup) {
+            const zoomValue = settings.zoomLevel || 'week';
+            zoomGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.settingValue === zoomValue);
+            });
+        }
+
+        // Switches
+        const showWeekends = document.getElementById('settingsShowWeekends');
+        if (showWeekends) showWeekends.checked = settings.showWeekends !== false;
+
+        const showRowNumbers = document.getElementById('settingsShowRowNumbers');
+        if (showRowNumbers) showRowNumbers.checked = settings.showRowNumbers === true;
+
+        const animations = document.getElementById('settingsAnimations');
+        if (animations) animations.checked = settings.animations !== false;
     }
 
     /* ---- Populate form from current config ---- */

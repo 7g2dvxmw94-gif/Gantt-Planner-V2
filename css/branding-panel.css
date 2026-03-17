@@ -85,7 +85,10 @@
 .bp-view--active .bp-input,
 .bp-view--active .bp-color,
 .bp-view--active .bp-color-hex,
-.bp-view--active .bp-select {
+.bp-view--active .bp-select,
+.bp-view--active .bp-toggle-btn,
+.bp-view--active .bp-switch,
+.bp-view--active .bp-switch-field {
     pointer-events: auto;
 }
 
@@ -434,6 +437,120 @@
 .btn-ghost:hover {
     background: var(--bg-muted, #f1f5f9);
     color: var(--text-primary, #1e293b);
+}
+
+/* ---- Menu Separator ---- */
+.bp-menu-separator {
+    height: 1px;
+    margin: 8px 12px;
+    background: var(--border-default, #e2e8f0);
+    list-style: none;
+}
+
+/* ---- Toggle Button Group ---- */
+.bp-toggle-group {
+    display: flex;
+    gap: 0;
+    background: var(--bg-subtle, #f8fafc);
+    border: 1px solid var(--border-default, #e2e8f0);
+    border-radius: 10px;
+    padding: 3px;
+    overflow: hidden;
+}
+
+.bp-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: var(--font-sans, inherit);
+    color: var(--text-secondary, #64748b);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms, color 150ms, box-shadow 150ms;
+    white-space: nowrap;
+}
+
+.bp-toggle-btn:hover {
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-muted, #f1f5f9);
+}
+
+.bp-toggle-btn.active {
+    background: var(--color-primary, #6366f1);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ---- Switch / Toggle ---- */
+.bp-switch-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-default, #e2e8f0);
+    user-select: none;
+}
+
+.bp-switch-field:last-child {
+    border-bottom: none;
+}
+
+.bp-switch-field .bp-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary, #1e293b);
+}
+
+.bp-switch {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.bp-switch-slider {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background: var(--border-strong, #cbd5e1);
+    border-radius: 12px;
+    transition: background 200ms;
+    flex-shrink: 0;
+}
+
+.bp-switch-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 200ms;
+}
+
+.bp-switch:checked + .bp-switch-slider {
+    background: var(--color-primary, #6366f1);
+}
+
+.bp-switch:checked + .bp-switch-slider::after {
+    transform: translateX(20px);
+}
+
+.bp-switch:focus-visible + .bp-switch-slider {
+    outline: 2px solid var(--color-primary, #6366f1);
+    outline-offset: 2px;
 }
 
 /* ---- Responsive ---- */
