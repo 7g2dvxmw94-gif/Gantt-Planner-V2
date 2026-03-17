@@ -7,10 +7,15 @@
     <meta name="theme-color" content="#6366F1" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#818CF8" media="(prefers-color-scheme: dark)">
     <title>Gantt Planner Pro</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
+
+/* ====== css/variables.css ====== */
 /* ========================================
    DESIGN TOKENS - GANTT PLANNER PRO
    Design System v2.0
@@ -167,6 +172,7 @@
     --shadow-focus: 0 0 0 3px rgba(129, 140, 248, 0.3);
 }
 
+/* ====== css/base.css ====== */
 /* ========================================
    BASE & RESET STYLES
    ======================================== */
@@ -305,6 +311,7 @@ table {
     scrollbar-color: var(--border-strong) var(--bg-subtle);
 }
 
+/* ====== css/components.css ====== */
 /* ========================================
    REUSABLE COMPONENTS
    ======================================== */
@@ -2018,6 +2025,7 @@ textarea.input {
     font-size: 13px;
 }
 
+/* ====== css/layout.css ====== */
 /* ========================================
    LAYOUT - HEADER, TOOLBAR, MAIN, FOOTER
    ======================================== */
@@ -2301,16 +2309,8 @@ textarea.input {
     height: 24px;
 }
 
-/* ---- Branding Footer ---- */
-.branding-footer {
-    text-align: center;
-    padding: 6px 16px;
-    font-size: 11px;
-    color: var(--text-muted, #94a3b8);
-    background: var(--bg-subtle, #f8fafc);
-    border-top: 1px solid var(--border-subtle, #f1f5f9);
-}
 
+/* ====== css/gantt.css ====== */
 /* ========================================
    GANTT CHART STYLES
    ======================================== */
@@ -4163,6 +4163,7 @@ textarea.input {
     accent-color: var(--color-primary);
 }
 
+/* ====== css/responsive.css ====== */
 /* ========================================
    RESPONSIVE STYLES
    ======================================== */
@@ -4323,639 +4324,10 @@ textarea.input {
     }
 }
 
-/* ========================================
-   BRANDING PANEL STYLES
-   iOS-style settings navigation
-   ======================================== */
-
-/* ---- Overlay ---- */
-.branding-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: var(--z-modal, 100);
-    display: flex;
-    justify-content: flex-end;
-}
-
-.branding-overlay::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--bg-overlay, rgba(15, 23, 42, 0.5));
-    animation: bp-fade-in 200ms ease-out;
-    pointer-events: none;
-}
-
-.branding-overlay[hidden] {
-    display: none;
-}
-
-@keyframes bp-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes bp-slide-in {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
-
-/* ---- Panel ---- */
-.branding-panel {
-    position: relative;
-    z-index: 1;
-    width: 400px;
-    max-width: 90vw;
-    height: 100%;
-    background: var(--bg-base, #fff);
-    border-left: 1px solid var(--border-default, #e2e8f0);
-    box-shadow: var(--shadow-xl);
-    display: flex;
-    flex-direction: column;
-    animation: bp-slide-in 250ms ease-out;
-    overflow: hidden;
-}
-
-/* ---- Navigation Stack ---- */
-.bp-nav-stack {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    isolation: isolate;
-}
-
-/* ---- Views ---- */
-.bp-view {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-base, #fff);
-    transform: translateX(100%);
-    pointer-events: none;
-    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 0;
-}
-
-.bp-view--active {
-    transform: translateX(0);
-    pointer-events: auto;
-    z-index: 2;
-}
-
-.bp-view--active .branding-panel-header,
-.bp-view--active .branding-panel-body,
-.bp-view--active .bp-back-btn,
-.bp-view--active .bp-input,
-.bp-view--active .bp-color,
-.bp-view--active .bp-color-hex,
-.bp-view--active .bp-select,
-.bp-view--active .bp-toggle-btn,
-.bp-view--active .bp-switch,
-.bp-view--active .bp-switch-field {
-    pointer-events: auto;
-}
-
-.bp-view--active .bp-back-btn {
-    position: relative;
-    z-index: 5;
-}
-
-.bp-view--exit-left {
-    transform: translateX(-30%);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.bp-view--exit-right {
-    transform: translateX(100%);
-    pointer-events: none;
-    z-index: 3;
-}
-
-/* ---- Panel Header ---- */
-.branding-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-default, #e2e8f0);
-    flex-shrink: 0;
-    min-height: 56px;
-    gap: 12px;
-}
-
-.branding-panel-header h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary, #1e293b);
-    flex: 1;
-    text-align: center;
-}
-
-.branding-panel-close {
-    flex-shrink: 0;
-}
-
-.bp-header-spacer {
-    width: 20px;
-    flex-shrink: 0;
-}
-
-/* ---- Back Button ---- */
-.bp-back-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: none;
-    color: var(--color-primary, #6366f1);
-    cursor: pointer;
-    border-radius: 8px;
-    flex-shrink: 0;
-    transition: background 150ms;
-}
-
-.bp-back-btn:hover {
-    background: var(--bg-muted, #f1f5f9);
-}
-
-.bp-back-btn:active {
-    background: var(--bg-subtle, #f8fafc);
-}
-
-/* ---- Panel Body ---- */
-.branding-panel-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0;
-    scrollbar-width: thin;
-}
-
-.branding-panel-body::-webkit-scrollbar {
-    width: 4px;
-}
-
-.branding-panel-body::-webkit-scrollbar-thumb {
-    background: var(--border-strong, #cbd5e1);
-    border-radius: 4px;
-}
-
-/* ---- iOS-style Menu List ---- */
-.bp-menu-list {
-    list-style: none;
-    margin: 0;
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.bp-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 150ms;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.bp-menu-item:hover {
-    background: var(--bg-muted, #f1f5f9);
-}
-
-.bp-menu-item:active {
-    background: var(--bg-subtle, #e2e8f0);
-}
-
-.bp-menu-item-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: var(--color-primary-light, rgba(99, 102, 241, 0.1));
-    color: var(--color-primary, #6366f1);
-    flex-shrink: 0;
-}
-
-.bp-menu-item-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.bp-menu-item-label {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text-primary, #1e293b);
-    line-height: 1.3;
-}
-
-.bp-menu-item-desc {
-    font-size: 0.8rem;
-    color: var(--text-muted, #94a3b8);
-    line-height: 1.3;
-}
-
-.bp-menu-chevron {
-    color: var(--text-muted, #94a3b8);
-    flex-shrink: 0;
-    opacity: 0.6;
-}
-
-/* ---- Sub-view body padding ---- */
-.bp-view:not([data-view="root"]) .branding-panel-body {
-    padding: 16px 20px;
-}
-
-/* ---- Sections ---- */
-.bp-section {
-    margin-bottom: 24px;
-}
-
-.bp-section:last-child {
-    margin-bottom: 0;
-}
-
-.bp-section-title {
-    margin: 0 0 12px 0;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted, #94a3b8);
-}
-
-/* ---- Fields ---- */
-.bp-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
-}
-
-.bp-field:last-child {
-    margin-bottom: 0;
-}
-
-.bp-label {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-secondary, #64748b);
-}
-
-.bp-input {
-    padding: 10px 12px;
-    font-size: 0.875rem;
-    font-family: var(--font-sans, inherit);
-    color: var(--text-primary, #1e293b);
-    background: var(--bg-subtle, #f8fafc);
-    border: 1px solid var(--border-default, #e2e8f0);
-    border-radius: 10px;
-    outline: none;
-    transition: border-color 150ms, box-shadow 150ms;
-}
-
-.bp-input:focus {
-    border-color: var(--color-primary, #6366f1);
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.15);
-}
-
-.bp-select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 30px;
-}
-
-/* ---- Color fields ---- */
-.bp-color-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.bp-color-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.bp-color-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.bp-color {
-    width: 40px;
-    height: 40px;
-    border: 2px solid var(--border-default, #e2e8f0);
-    border-radius: 10px;
-    cursor: pointer;
-    padding: 2px;
-    background: none;
-    flex-shrink: 0;
-}
-
-.bp-color::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.bp-color::-webkit-color-swatch {
-    border: none;
-    border-radius: 7px;
-}
-
-.bp-color::-moz-color-swatch {
-    border: none;
-    border-radius: 7px;
-}
-
-.bp-color-hex {
-    flex: 1;
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    font-family: var(--font-mono, monospace);
-    color: var(--text-primary, #1e293b);
-    background: var(--bg-subtle, #f8fafc);
-    border: 1px solid var(--border-default, #e2e8f0);
-    border-radius: 10px;
-    outline: none;
-    min-width: 0;
-    transition: border-color 150ms, box-shadow 150ms;
-}
-
-.bp-color-hex:focus {
-    border-color: var(--color-primary, #6366f1);
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 99, 102, 241), 0.15);
-}
-
-/* ---- Panel Footer ---- */
-.branding-panel-footer {
-    padding: 12px 20px;
-    border-top: 1px solid var(--border-default, #e2e8f0);
-    flex-shrink: 0;
-    background: var(--bg-subtle, #f8fafc);
-}
-
-.bp-actions-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.bp-actions-right {
-    display: flex;
-    gap: 4px;
-}
-
-/* ---- OK button ---- */
-.bp-ok-btn {
-    display: block;
-    width: 100%;
-    margin-top: 10px;
-    padding: 8px 12px;
-    font-weight: 600;
-}
-
-.btn-primary {
-    background: var(--color-primary, #6366f1);
-    color: #fff;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 150ms, box-shadow 150ms;
-}
-
-.btn-primary:hover {
-    background: var(--color-primary-hover, #4f46e5);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-.btn-primary:focus-visible {
-    outline: 2px solid var(--color-primary, #6366f1);
-    outline-offset: 2px;
-}
-
-/* ---- Small button variant ---- */
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-}
-
-.btn-ghost {
-    background: transparent;
-    color: var(--text-secondary, #64748b);
-    border: 1px solid var(--border-default, #e2e8f0);
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.btn-ghost:hover {
-    background: var(--bg-muted, #f1f5f9);
-    color: var(--text-primary, #1e293b);
-}
-
-/* ---- Menu Separator ---- */
-.bp-menu-separator {
-    height: 1px;
-    margin: 8px 12px;
-    background: var(--border-default, #e2e8f0);
-    list-style: none;
-}
-
-/* ---- Toggle Button Group ---- */
-.bp-toggle-group {
-    display: flex;
-    gap: 0;
-    background: var(--bg-subtle, #f8fafc);
-    border: 1px solid var(--border-default, #e2e8f0);
-    border-radius: 10px;
-    padding: 3px;
-    overflow: hidden;
-}
-
-.bp-toggle-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    font-family: var(--font-sans, inherit);
-    color: var(--text-secondary, #64748b);
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 150ms, color 150ms, box-shadow 150ms;
-    white-space: nowrap;
-}
-
-.bp-toggle-btn:hover {
-    color: var(--text-primary, #1e293b);
-    background: var(--bg-muted, #f1f5f9);
-}
-
-.bp-toggle-btn.active {
-    background: var(--color-primary, #6366f1);
-    color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-/* ---- Switch / Toggle ---- */
-.bp-switch-field {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 0;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-default, #e2e8f0);
-    user-select: none;
-}
-
-.bp-switch-field:last-child {
-    border-bottom: none;
-}
-
-.bp-switch-field .bp-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary, #1e293b);
-}
-
-.bp-switch {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.bp-switch-slider {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    background: var(--border-strong, #cbd5e1);
-    border-radius: 12px;
-    transition: background 200ms;
-    flex-shrink: 0;
-}
-
-.bp-switch-slider::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    transition: transform 200ms;
-}
-
-.bp-switch:checked + .bp-switch-slider {
-    background: var(--color-primary, #6366f1);
-}
-
-.bp-switch:checked + .bp-switch-slider::after {
-    transform: translateX(20px);
-}
-
-.bp-switch:focus-visible + .bp-switch-slider {
-    outline: 2px solid var(--color-primary, #6366f1);
-    outline-offset: 2px;
-}
-
-/* ---- Upload Zone (Logo / Favicon) ---- */
-.bp-upload-zone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 120px;
-    border: 2px dashed var(--border-default, #e2e8f0);
-    border-radius: 12px;
-    background: var(--bg-subtle, #f8fafc);
-    cursor: pointer;
-    transition: border-color 200ms, background 200ms;
-    position: relative;
-    overflow: hidden;
-}
-
-.bp-upload-zone:hover,
-.bp-upload-zone.bp-upload-dragover {
-    border-color: var(--color-primary, #6366f1);
-    background: var(--color-primary-light, rgba(99, 102, 241, 0.05));
-}
-
-.bp-upload-zone--small {
-    min-height: 80px;
-    max-width: 120px;
-}
-
-.bp-upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted, #94a3b8);
-    font-size: 0.8rem;
-    text-align: center;
-    padding: 12px;
-}
-
-.bp-upload-preview {
-    max-width: 100%;
-    max-height: 100px;
-    object-fit: contain;
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.bp-upload-preview--small {
-    max-height: 56px;
-    max-width: 56px;
-}
-
-.bp-upload-remove {
-    margin-top: 4px;
-    color: var(--color-danger, #ef4444) !important;
-    font-size: 0.75rem !important;
-}
-
-.bp-upload-remove:hover {
-    background: rgba(239, 68, 68, 0.08) !important;
-    color: var(--color-danger, #ef4444) !important;
-}
-
-/* ---- Responsive ---- */
-@media (max-width: 480px) {
-    .branding-panel {
-        width: 100%;
-        max-width: 100%;
-    }
-}
-
-
-</style></head><body>
-<!-- Skip Navigation (Accessibility) -->
+    </style>
+</head>
+<body>
+    <!-- Skip Navigation (Accessibility) -->
     <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
 
     <!-- Screen Reader Announcer -->
@@ -4991,24 +4363,6 @@ textarea.input {
 
         <!-- Header Actions -->
         <div class="header-actions">
-            <button class="icon-btn" id="settingsBtn" aria-label="Paramètres" title="Paramètres">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-            </button>
-
-            <!-- Branding Customization -->
-            <button class="icon-btn" id="brandingToggle" aria-label="Personnaliser l'apparence" title="Personnaliser l'apparence">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.23-.29-.38-.63-.38-1.01 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-9.95-10-9.95z"/>
-                    <circle cx="7.5" cy="11.5" r="1.5"/>
-                    <circle cx="10.5" cy="7.5" r="1.5"/>
-                    <circle cx="16.5" cy="11.5" r="1.5"/>
-                    <circle cx="14.5" cy="7.5" r="1.5"/>
-                </svg>
-            </button>
-
             <!-- Theme Toggle -->
             <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl+D)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon" aria-hidden="true">
@@ -5305,336 +4659,14 @@ textarea.input {
         </div>
     </nav>
 
-    <!-- ==================== BRANDING PANEL ==================== -->
-    <div id="brandingOverlay" class="branding-overlay" hidden>
-        <aside id="brandingPanel" class="branding-panel" role="dialog" aria-label="Personnalisation de l'apparence" aria-modal="true">
-
-            <!-- ===== Navigation Stack Container ===== -->
-            <div class="bp-nav-stack">
-
-                <!-- ===== ROOT VIEW: Section List ===== -->
-                <div class="bp-view bp-view--active" data-view="root">
-                    <div class="branding-panel-header">
-                        <h2>Personnaliser &amp; R&eacute;glages</h2>
-                        <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                    <div class="branding-panel-body">
-                        <ul class="bp-menu-list" role="list">
-                            <li class="bp-menu-item" data-target="identity" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0 1 10 0v1"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Identit&eacute;</span>
-                                    <span class="bp-menu-item-desc">Nom, logo, favicon</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                            <li class="bp-menu-item" data-target="colors" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.23-.29-.38-.63-.38-1.01 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-9.95-10-9.95z"/><circle cx="7.5" cy="11.5" r="1.5"/><circle cx="10.5" cy="7.5" r="1.5"/><circle cx="16.5" cy="11.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Couleurs</span>
-                                    <span class="bp-menu-item-desc">Palette principale et accent</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                            <li class="bp-menu-item" data-target="typography" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Typographie</span>
-                                    <span class="bp-menu-item-desc">Police de caract&egrave;res</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                            <li class="bp-menu-item" data-target="user" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Utilisateur</span>
-                                    <span class="bp-menu-item-desc">Nom et initiales</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                            <li class="bp-menu-item" data-target="footer" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Pied de page</span>
-                                    <span class="bp-menu-item-desc">Texte et copyright</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                            <li class="bp-menu-separator" role="separator"></li>
-                            <li class="bp-menu-item" data-target="appsettings" role="listitem">
-                                <div class="bp-menu-item-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                </div>
-                                <div class="bp-menu-item-content">
-                                    <span class="bp-menu-item-label">Param&egrave;tres</span>
-                                    <span class="bp-menu-item-desc">Th&egrave;me, zoom, affichage</span>
-                                </div>
-                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                            </li>
-                        </ul>
-                    </div>
-                    <!-- Root Footer Actions -->
-                    <div class="branding-panel-footer">
-                        <div class="bp-actions-row">
-                            <button class="btn btn-sm btn-ghost" id="brandingReset" title="R&eacute;initialiser tout">R&eacute;initialiser</button>
-                            <div class="bp-actions-right">
-                                <button class="btn btn-sm btn-ghost" id="brandingImport" title="Importer JSON">Importer</button>
-                                <button class="btn btn-sm btn-ghost" id="brandingExport" title="Exporter JSON">Exporter</button>
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-primary bp-ok-btn" id="brandingOk">OK</button>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: Identity ===== -->
-                <div class="bp-view" data-view="identity">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Identit&eacute;</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <label class="bp-field">
-                                <span class="bp-label">Nom</span>
-                                <input type="text" class="bp-input" data-key="appName">
-                            </label>
-                            <div class="bp-field">
-                                <span class="bp-label">Logo</span>
-                                <div class="bp-upload-zone" id="logoUploadZone">
-                                    <img id="logoPreview" class="bp-upload-preview" alt="Logo" hidden>
-                                    <span id="logoPlaceholder" class="bp-upload-placeholder">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                                        <span>Cliquer ou glisser une image</span>
-                                    </span>
-                                    <input type="file" id="logoFileInput" accept="image/*" hidden>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-ghost bp-upload-remove" id="logoRemoveBtn" hidden>Supprimer le logo</button>
-                            </div>
-                            <div class="bp-field">
-                                <span class="bp-label">Favicon</span>
-                                <div class="bp-upload-zone bp-upload-zone--small" id="faviconUploadZone">
-                                    <img id="faviconPreview" class="bp-upload-preview bp-upload-preview--small" alt="Favicon" hidden>
-                                    <span id="faviconPlaceholder" class="bp-upload-placeholder">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
-                                        <span>Cliquer ou glisser une image</span>
-                                    </span>
-                                    <input type="file" id="faviconFileInput" accept="image/*,.ico" hidden>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-ghost bp-upload-remove" id="faviconRemoveBtn" hidden>Supprimer le favicon</button>
-                            </div>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: Colors ===== -->
-                <div class="bp-view" data-view="colors">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Couleurs</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <div class="bp-color-grid">
-                                <label class="bp-color-field">
-                                    <span class="bp-label">Principale</span>
-                                    <div class="bp-color-row">
-                                        <input type="color" class="bp-color" data-key="primaryColor">
-                                        <input type="text" class="bp-color-hex" data-key="primaryColor" maxlength="7" spellcheck="false">
-                                    </div>
-                                </label>
-                                <label class="bp-color-field">
-                                    <span class="bp-label">Survol</span>
-                                    <div class="bp-color-row">
-                                        <input type="color" class="bp-color" data-key="primaryHoverColor">
-                                        <input type="text" class="bp-color-hex" data-key="primaryHoverColor" maxlength="7" spellcheck="false">
-                                    </div>
-                                </label>
-                                <label class="bp-color-field">
-                                    <span class="bp-label">Claire</span>
-                                    <div class="bp-color-row">
-                                        <input type="color" class="bp-color" data-key="primaryLightColor">
-                                        <input type="text" class="bp-color-hex" data-key="primaryLightColor" maxlength="7" spellcheck="false">
-                                    </div>
-                                </label>
-                                <label class="bp-color-field">
-                                    <span class="bp-label">Fonc&eacute;e</span>
-                                    <div class="bp-color-row">
-                                        <input type="color" class="bp-color" data-key="primaryDarkColor">
-                                        <input type="text" class="bp-color-hex" data-key="primaryDarkColor" maxlength="7" spellcheck="false">
-                                    </div>
-                                </label>
-                                <label class="bp-color-field">
-                                    <span class="bp-label">Accent</span>
-                                    <div class="bp-color-row">
-                                        <input type="color" class="bp-color" data-key="accentColor">
-                                        <input type="text" class="bp-color-hex" data-key="accentColor" maxlength="7" spellcheck="false">
-                                    </div>
-                                </label>
-                            </div>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: Typography ===== -->
-                <div class="bp-view" data-view="typography">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Typographie</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <label class="bp-field">
-                                <span class="bp-label">Police</span>
-                                <select class="bp-input bp-select" data-key="fontFamily">
-                                    <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Inter (par d&eacute;faut)</option>
-                                    <option value="'Poppins', sans-serif">Poppins</option>
-                                    <option value="'Roboto', sans-serif">Roboto</option>
-                                    <option value="'Open Sans', sans-serif">Open Sans</option>
-                                    <option value="'Lato', sans-serif">Lato</option>
-                                    <option value="'Nunito', sans-serif">Nunito</option>
-                                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                                    <option value="system-ui, sans-serif">Syst&egrave;me</option>
-                                </select>
-                            </label>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: User ===== -->
-                <div class="bp-view" data-view="user">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Utilisateur</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <label class="bp-field">
-                                <span class="bp-label">Nom</span>
-                                <input type="text" class="bp-input" data-key="defaultUserName">
-                            </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Initiales</span>
-                                <input type="text" class="bp-input" data-key="defaultUserInitials" maxlength="3">
-                            </label>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: Footer ===== -->
-                <div class="bp-view" data-view="footer">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Pied de page</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <label class="bp-field">
-                                <span class="bp-label">Texte personnalis&eacute;</span>
-                                <input type="text" class="bp-input" data-key="footerText" placeholder="Ex: Propuls&eacute; par MonEntreprise">
-                            </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Copyright</span>
-                                <input type="text" class="bp-input" data-key="copyrightText" placeholder="&copy; 2026 MonEntreprise">
-                            </label>
-                        </section>
-                    </div>
-                </div>
-
-                <!-- ===== SUB-VIEW: App Settings ===== -->
-                <div class="bp-view" data-view="appsettings">
-                    <div class="branding-panel-header">
-                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <h2>Param&egrave;tres</h2>
-                        <span class="bp-header-spacer"></span>
-                    </div>
-                    <div class="branding-panel-body">
-                        <section class="bp-section">
-                            <h3 class="bp-section-title">Th&egrave;me</h3>
-                            <div class="bp-toggle-group" id="settingsThemeGroup">
-                                <button class="bp-toggle-btn" data-setting-value="light">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                                    Clair
-                                </button>
-                                <button class="bp-toggle-btn" data-setting-value="dark">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                                    Sombre
-                                </button>
-                                <button class="bp-toggle-btn" data-setting-value="auto">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                                    Auto
-                                </button>
-                            </div>
-                        </section>
-                        <section class="bp-section">
-                            <h3 class="bp-section-title">Zoom par d&eacute;faut</h3>
-                            <div class="bp-toggle-group" id="settingsZoomGroup">
-                                <button class="bp-toggle-btn" data-setting-value="day">Jour</button>
-                                <button class="bp-toggle-btn" data-setting-value="week">Semaine</button>
-                                <button class="bp-toggle-btn" data-setting-value="month">Mois</button>
-                                <button class="bp-toggle-btn" data-setting-value="quarter">Trimestre</button>
-                            </div>
-                        </section>
-                        <section class="bp-section">
-                            <h3 class="bp-section-title">Affichage</h3>
-                            <label class="bp-switch-field">
-                                <span class="bp-label">Afficher les week-ends</span>
-                                <input type="checkbox" class="bp-switch" id="settingsShowWeekends">
-                                <span class="bp-switch-slider"></span>
-                            </label>
-                            <label class="bp-switch-field">
-                                <span class="bp-label">Afficher les num&eacute;ros de ligne</span>
-                                <input type="checkbox" class="bp-switch" id="settingsShowRowNumbers">
-                                <span class="bp-switch-slider"></span>
-                            </label>
-                            <label class="bp-switch-field">
-                                <span class="bp-label">Animations</span>
-                                <input type="checkbox" class="bp-switch" id="settingsAnimations" checked>
-                                <span class="bp-switch-slider"></span>
-                            </label>
-                        </section>
-                    </div>
-                </div>
-
-            </div><!-- /.bp-nav-stack -->
-
-            <!-- Hidden file input for import -->
-            <input type="file" id="brandingFileInput" accept=".json,application/json" hidden>
-        </aside>
-    </div>
-
     <!-- ==================== SCRIPTS ==================== -->
 
+    <!-- ==================== SCRIPTS (Bundled) ==================== -->
     <script>
 (function(){
+'use strict';
+
+// ====== js/utils.js ======
 /* ========================================
    UTILITIES - Gantt Planner Pro
    ======================================== */
@@ -5919,116 +4951,11 @@ function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
 
-/* ========================================
-   THEME MANAGER - Day/Night Mode
-   Gantt Planner Pro
-   ======================================== */
-
-
-
-class ThemeManager {
-    constructor() {
-        this._html = document.documentElement;
-        this._mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this._toggleBtn = null;
-        this._sunIcon = null;
-        this._moonIcon = null;
-    }
-
-    init() {
-        this._toggleBtn = document.getElementById('themeToggle');
-        this._sunIcon = this._toggleBtn?.querySelector('.sun-icon');
-        this._moonIcon = this._toggleBtn?.querySelector('.moon-icon');
-
-        // Apply saved theme or system preference
-        const settings = store.getSettings();
-        if (settings.theme) {
-            this._apply(settings.theme);
-        } else {
-            this._applySystemPreference();
-        }
-
-        // Listen for system preference changes
-        this._mediaQuery.addEventListener('change', (e) => {
-            const settings = store.getSettings();
-            if (!settings.theme) {
-                this._apply(e.matches ? 'dark' : 'light');
-            }
-        });
-
-        // Toggle button
-        if (this._toggleBtn) {
-            this._toggleBtn.addEventListener('click', () => this.toggle());
-        }
-
-        // Keyboard shortcut: Ctrl+D
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'd') {
-                e.preventDefault();
-                this.toggle();
-            }
-        });
-    }
-
-    _apply(theme) {
-        this._html.setAttribute('data-theme', theme);
-        this._updateIcons(theme);
-
-        // Update aria-label
-        if (this._toggleBtn) {
-            const label = theme === 'dark'
-                ? 'Passer en mode clair'
-                : 'Passer en mode sombre';
-            this._toggleBtn.setAttribute('aria-label', label);
-            this._toggleBtn.setAttribute('title', label);
-        }
-    }
-
-    _updateIcons(theme) {
-        if (!this._sunIcon || !this._moonIcon) return;
-        if (theme === 'dark') {
-            this._sunIcon.style.display = 'none';
-            this._moonIcon.style.display = 'block';
-        } else {
-            this._sunIcon.style.display = 'block';
-            this._moonIcon.style.display = 'none';
-        }
-    }
-
-    _applySystemPreference() {
-        const isDark = this._mediaQuery.matches;
-        this._apply(isDark ? 'dark' : 'light');
-    }
-
-    get current() {
-        return this._html.getAttribute('data-theme') || 'light';
-    }
-
-    toggle() {
-        const newTheme = this.current === 'light' ? 'dark' : 'light';
-        this._apply(newTheme);
-        store.updateSettings({ theme: newTheme });
-    }
-
-    setTheme(theme) {
-        if (theme !== 'light' && theme !== 'dark') return;
-        this._apply(theme);
-        store.updateSettings({ theme });
-    }
-
-    useSystemPreference() {
-        store.updateSettings({ theme: null });
-        this._applySystemPreference();
-    }
-}
-
-const themeManager = new ThemeManager();
-
+// ====== js/store.js ======
 /* ========================================
    DATA STORE - Gantt Planner Pro
    Reactive store with localStorage persistence
    ======================================== */
-
 
 
 const STORAGE_KEY = 'gantt-planner-pro';
@@ -7694,12 +6621,117 @@ class Store {
 // Singleton export
 const store = new Store();
 
+
+// ====== js/theme.js ======
+/* ========================================
+   THEME MANAGER - Day/Night Mode
+   Gantt Planner Pro
+   ======================================== */
+
+
+class ThemeManager {
+    constructor() {
+        this._html = document.documentElement;
+        this._mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this._toggleBtn = null;
+        this._sunIcon = null;
+        this._moonIcon = null;
+    }
+
+    init() {
+        this._toggleBtn = document.getElementById('themeToggle');
+        this._sunIcon = this._toggleBtn?.querySelector('.sun-icon');
+        this._moonIcon = this._toggleBtn?.querySelector('.moon-icon');
+
+        // Apply saved theme or system preference
+        const settings = store.getSettings();
+        if (settings.theme) {
+            this._apply(settings.theme);
+        } else {
+            this._applySystemPreference();
+        }
+
+        // Listen for system preference changes
+        this._mediaQuery.addEventListener('change', (e) => {
+            const settings = store.getSettings();
+            if (!settings.theme) {
+                this._apply(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // Toggle button
+        if (this._toggleBtn) {
+            this._toggleBtn.addEventListener('click', () => this.toggle());
+        }
+
+        // Keyboard shortcut: Ctrl+D
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                this.toggle();
+            }
+        });
+    }
+
+    _apply(theme) {
+        this._html.setAttribute('data-theme', theme);
+        this._updateIcons(theme);
+
+        // Update aria-label
+        if (this._toggleBtn) {
+            const label = theme === 'dark'
+                ? 'Passer en mode clair'
+                : 'Passer en mode sombre';
+            this._toggleBtn.setAttribute('aria-label', label);
+            this._toggleBtn.setAttribute('title', label);
+        }
+    }
+
+    _updateIcons(theme) {
+        if (!this._sunIcon || !this._moonIcon) return;
+        if (theme === 'dark') {
+            this._sunIcon.style.display = 'none';
+            this._moonIcon.style.display = 'block';
+        } else {
+            this._sunIcon.style.display = 'block';
+            this._moonIcon.style.display = 'none';
+        }
+    }
+
+    _applySystemPreference() {
+        const isDark = this._mediaQuery.matches;
+        this._apply(isDark ? 'dark' : 'light');
+    }
+
+    get current() {
+        return this._html.getAttribute('data-theme') || 'light';
+    }
+
+    toggle() {
+        const newTheme = this.current === 'light' ? 'dark' : 'light';
+        this._apply(newTheme);
+        store.updateSettings({ theme: newTheme });
+    }
+
+    setTheme(theme) {
+        if (theme !== 'light' && theme !== 'dark') return;
+        this._apply(theme);
+        store.updateSettings({ theme });
+    }
+
+    useSystemPreference() {
+        store.updateSettings({ theme: null });
+        this._applySystemPreference();
+    }
+}
+
+const themeManager = new ThemeManager();
+
+// ====== js/task-modal.js ======
 /* ========================================
    TASK MODAL - Create / Edit / Delete Tasks
    Gantt Planner Pro - Step 2
    ======================================== */
-
-
 
 
 class TaskModal {
@@ -8733,13 +7765,18 @@ class TaskModal {
 
 const taskModal = new TaskModal();
 
+// ====== js/gantt-renderer.js ======
 /* ========================================
    GANTT CHART RENDERER
    Gantt Planner Pro
    ======================================== */
 
-
-
+    createElement, $, $$,
+    daysBetween, addDays, formatDateISO, formatDateShort,
+    getMonthsBetween, getWeeksBetween, getDaysBetween,
+    getMonthName, getWeekNumber, isToday, isWeekend,
+    getTaskColor, TASK_COLORS,
+} from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -9579,12 +8616,11 @@ class GanttRenderer {
 
 const ganttRenderer = new GanttRenderer();
 
+// ====== js/gantt-interactions.js ======
 /* ========================================
    GANTT INTERACTIONS - Drag, Resize, Click
    Gantt Planner Pro - Step 2
    ======================================== */
-
-
 
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
@@ -10179,6 +9215,254 @@ function _formatDateFR(date) {
 
 const ganttInteractions = new GanttInteractions();
 
+// ====== js/onboarding.js ======
+/* ========================================
+   ONBOARDING - Interactive guide for new users
+   ======================================== */
+
+const STORAGE_KEY = 'gantt_onboarding_done';
+
+const STEPS = [
+    {
+        target: '.project-selector',
+        title: 'Vos projets',
+        text: 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.',
+        position: 'bottom',
+    },
+    {
+        target: '.tabs',
+        title: 'Vues du projet',
+        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
+        position: 'bottom',
+    },
+    {
+        target: '#addTaskBtn',
+        title: 'Ajouter une tâche',
+        text: 'Créez une tâche, un jalon ou une phase. Raccourci : Ctrl+N.',
+        position: 'bottom',
+    },
+    {
+        target: '.gantt-wrapper',
+        title: 'Diagramme de Gantt',
+        text: 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.',
+        position: 'top',
+    },
+    {
+        target: '.zoom-controls',
+        title: 'Niveau de zoom',
+        text: 'Passez de la vue Jour à Trimestre pour ajuster la granularité.',
+        position: 'bottom',
+    },
+    {
+        target: '#exportBtn',
+        title: 'Import / Export',
+        text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
+        position: 'bottom',
+    },
+    {
+        target: '.stats-bar',
+        title: 'Statistiques',
+        text: 'Suivez l\'avancement, le budget et les tâches actives en un coup d\'œil.',
+        position: 'top',
+    },
+];
+
+class Onboarding {
+    constructor() {
+        this._overlay = null;
+        this._step = 0;
+        this._active = false;
+    }
+
+    /** Auto-start on first visit, or call manually */
+    tryAutoStart() {
+        if (localStorage.getItem(STORAGE_KEY)) return;
+        // Defer so the UI is fully rendered
+        setTimeout(() => this.start(), 600);
+    }
+
+    start() {
+        this._step = 0;
+        this._active = true;
+        this._buildOverlay();
+        this._showStep();
+    }
+
+    _buildOverlay() {
+        if (this._overlay) this._overlay.remove();
+
+        this._overlay = document.createElement('div');
+        this._overlay.className = 'onboarding-overlay';
+        this._overlay.setAttribute('role', 'dialog');
+        this._overlay.setAttribute('aria-modal', 'true');
+        this._overlay.setAttribute('aria-label', 'Guide de démarrage');
+
+        // Spotlight hole (SVG mask)
+        this._overlay.innerHTML = `
+            <svg class="onboarding-mask" width="100%" height="100%">
+                <defs>
+                    <mask id="onboardingMask">
+                        <rect width="100%" height="100%" fill="white"/>
+                        <rect id="onboardingHole" rx="8" ry="8" fill="black"/>
+                    </mask>
+                </defs>
+                <rect width="100%" height="100%" fill="rgba(0,0,0,.55)" mask="url(#onboardingMask)"/>
+            </svg>
+        `;
+
+        // Tooltip
+        this._tooltip = document.createElement('div');
+        this._tooltip.className = 'onboarding-tooltip';
+        this._tooltip.innerHTML = `
+            <div class="onboarding-title"></div>
+            <div class="onboarding-text"></div>
+            <div class="onboarding-footer">
+                <span class="onboarding-counter"></span>
+                <div class="onboarding-btns">
+                    <button class="onboarding-skip">Passer</button>
+                    <button class="onboarding-next">Suivant</button>
+                </div>
+            </div>
+        `;
+        this._overlay.appendChild(this._tooltip);
+
+        this._tooltip.querySelector('.onboarding-skip').addEventListener('click', () => this._finish());
+        this._tooltip.querySelector('.onboarding-next').addEventListener('click', () => this._next());
+
+        document.addEventListener('keydown', this._onKey = (e) => {
+            if (!this._active) return;
+            if (e.key === 'Escape') this._finish();
+            if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
+            if (e.key === 'ArrowLeft') this._prev();
+            // Let app keyboard shortcuts (Ctrl+N, etc.) work by closing the overlay
+            if (e.ctrlKey && e.key.length === 1) this._finish();
+        });
+
+        document.body.appendChild(this._overlay);
+    }
+
+    _showStep() {
+        const step = STEPS[this._step];
+        if (!step) { this._finish(); return; }
+
+        const target = document.querySelector(step.target);
+        // If target not visible (e.g. hidden on mobile), skip
+        if (!target || target.offsetParent === null) {
+            this._step++;
+            if (this._step < STEPS.length) this._showStep();
+            else this._finish();
+            return;
+        }
+
+        // Scroll target into view so that the tooltip has room to display
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Wait for scroll to settle then position everything
+        const _position = () => {
+            const rect = target.getBoundingClientRect();
+            const pad = 6;
+
+            // Position spotlight hole
+            const hole = this._overlay.querySelector('#onboardingHole');
+            hole.setAttribute('x', rect.left - pad);
+            hole.setAttribute('y', rect.top - pad);
+            hole.setAttribute('width', rect.width + pad * 2);
+            hole.setAttribute('height', rect.height + pad * 2);
+
+            // Update tooltip content
+            this._tooltip.querySelector('.onboarding-title').textContent = step.title;
+            this._tooltip.querySelector('.onboarding-text').textContent = step.text;
+            this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
+
+            const nextBtn = this._tooltip.querySelector('.onboarding-next');
+            nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
+
+            // Position tooltip
+            const tt = this._tooltip;
+            tt.style.left = '';
+            tt.style.right = '';
+            tt.style.top = '';
+            tt.style.bottom = '';
+            tt.style.maxHeight = '';
+            tt.style.overflowY = '';
+
+            requestAnimationFrame(() => {
+                const ttRect = tt.getBoundingClientRect();
+                let left = rect.left + rect.width / 2 - ttRect.width / 2;
+                left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
+                tt.style.left = left + 'px';
+
+                let topValue;
+                if (step.position === 'bottom') {
+                    topValue = rect.bottom + pad + 12;
+                } else {
+                    // If not enough space above, fall back to bottom positioning
+                    const topPos = rect.top - pad - ttRect.height - 12;
+                    if (topPos < 12) {
+                        topValue = rect.bottom + pad + 12;
+                    } else {
+                        topValue = topPos;
+                    }
+                }
+
+                // Ensure the tooltip doesn't overflow below the viewport
+                const maxTop = window.innerHeight - ttRect.height - 12;
+                if (topValue > maxTop) {
+                    topValue = Math.max(12, maxTop);
+                    // If still overflowing, constrain tooltip height so buttons stay accessible
+                    const available = window.innerHeight - topValue - 12;
+                    if (ttRect.height > available) {
+                        tt.style.maxHeight = available + 'px';
+                        tt.style.overflowY = 'auto';
+                    }
+                }
+
+                tt.style.top = topValue + 'px';
+
+                nextBtn.focus();
+            });
+        };
+
+        // Small delay to let scrollIntoView settle
+        setTimeout(_position, 350);
+    }
+
+    _next() {
+        this._step++;
+        if (this._step >= STEPS.length) {
+            this._finish();
+        } else {
+            this._showStep();
+        }
+    }
+
+    _prev() {
+        if (this._step > 0) {
+            this._step--;
+            this._showStep();
+        }
+    }
+
+    _finish() {
+        this._active = false;
+        localStorage.setItem(STORAGE_KEY, '1');
+        if (this._overlay) {
+            this._overlay.classList.add('fade-out');
+            setTimeout(() => {
+                if (this._overlay) this._overlay.remove();
+                this._overlay = null;
+            }, 300);
+        }
+        if (this._onKey) {
+            document.removeEventListener('keydown', this._onKey);
+            this._onKey = null;
+        }
+    }
+}
+
+const onboarding = new Onboarding();
+
+// ====== js/cloud-backup.js ======
 /* ========================================
    CLOUD BACKUP - Google Drive Integration
    Gantt Planner Pro
@@ -10470,1130 +9754,11 @@ class CloudBackup {
 
 const cloudBackup = new CloudBackup();
 
-/* ========================================
-   BRANDING CONFIGURATION
-   White-label customization for Gantt Planner
-   ========================================
-
-   Edit this file to customize the application
-   appearance for your brand.
-   ======================================== */
-
-const defaultConfig = {
-
-    /* ---- Identity ---- */
-    appName: 'Gantt Planner Pro',
-    appShortName: 'Gantt Planner',
-    logoIcon: 'GP',                     // Text inside the logo icon (2-3 chars)
-    logoImage: null,                     // URL or path to logo image (replaces logoIcon if set)
-    favicon: null,                       // URL or path to favicon (null = keep default)
-    description: 'Outil de planification de projets avec diagramme de Gantt interactif',
-
-    /* ---- Colors ---- */
-    primaryColor: '#6366F1',             // Main brand color
-    primaryHoverColor: '#4F46E5',        // Hover state
-    primaryLightColor: '#EEF2FF',        // Light variant (backgrounds)
-    primaryDarkColor: '#4338CA',         // Dark variant
-    accentColor: '#EC4899',              // Accent / gradient color (logo, highlights)
-
-    /* ---- Typography ---- */
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    fontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-
-    /* ---- User defaults ---- */
-    defaultUserName: 'Jean Dupont',
-    defaultUserInitials: 'JD',
-
-    /* ---- Footer / Copyright ---- */
-    footerText: null,                    // Custom footer text (null = no extra footer)
-    copyrightText: null,                 // e.g. "© 2026 MaSociété. Tous droits réservés."
-
-    /* ---- Meta ---- */
-    themeColorLight: '#6366F1',          // <meta name="theme-color"> for light mode
-    themeColorDark: '#818CF8',           // <meta name="theme-color"> for dark mode
-    locale: 'fr',                        // Default locale (fr, en, etc.)
-};
-
-/* ========================================
-   BRANDING MODULE
-   Applies white-label config to the DOM
-   ======================================== */
-
-
-
-const BRANDING_STORAGE_KEY = 'gantt_branding';
-
-class BrandingManager {
-    constructor() {
-        this._config = defaultConfig;
-    }
-
-    getConfig() {
-        return this._config;
-    }
-
-    /**
-     * Apply branding on startup.
-     * Loads from localStorage if available, otherwise uses default config.
-     */
-    apply() {
-        this._loadFromStorage();
-        this._applyAll();
-    }
-
-    /**
-     * Apply a specific config object (used by the panel for live preview).
-     */
-    applyConfig(config) {
-        this._config = config;
-        this._applyAll();
-    }
-
-    _applyAll() {
-        this._applyMeta();
-        this._applyColors();
-        this._applyFont();
-        this._applyLogo();
-        this._applyUser();
-        this._applyFooter();
-    }
-
-    _loadFromStorage() {
-        try {
-            const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                this._config = { ...defaultConfig, ...parsed };
-            }
-        } catch { /* ignore */ }
-    }
-
-    /* ---- Meta tags ---- */
-
-    _applyMeta() {
-        const c = this._config;
-
-        document.title = c.appName;
-
-        const descMeta = document.querySelector('meta[name="description"]');
-        if (descMeta) {
-            descMeta.content = c.appName + ' - ' + c.description;
-        }
-
-        const themeLight = document.querySelector('meta[name="theme-color"][media*="light"]');
-        const themeDark = document.querySelector('meta[name="theme-color"][media*="dark"]');
-        if (themeLight) themeLight.content = c.themeColorLight || c.primaryColor;
-        if (themeDark) themeDark.content = c.themeColorDark || c.primaryColor;
-
-        if (c.locale) {
-            document.documentElement.lang = c.locale;
-        }
-
-        if (c.favicon) {
-            let link = document.querySelector('link[rel="icon"]');
-            if (!link) {
-                link = document.createElement('link');
-                link.rel = 'icon';
-                document.head.appendChild(link);
-            }
-            link.href = c.favicon;
-        }
-    }
-
-    /* ---- CSS Custom Properties ---- */
-
-    _applyColors() {
-        const c = this._config;
-        const root = document.documentElement;
-
-        if (c.primaryColor) {
-            root.style.setProperty('--color-primary', c.primaryColor);
-            const rgb = this._hexToRgb(c.primaryColor);
-            if (rgb) {
-                root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-            }
-        }
-        if (c.primaryHoverColor) {
-            root.style.setProperty('--color-primary-hover', c.primaryHoverColor);
-        }
-        if (c.primaryLightColor) {
-            root.style.setProperty('--color-primary-light', c.primaryLightColor);
-        }
-        if (c.primaryDarkColor) {
-            root.style.setProperty('--color-primary-dark', c.primaryDarkColor);
-        }
-        if (c.accentColor) {
-            root.style.setProperty('--color-accent', c.accentColor);
-        }
-    }
-
-    _hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16),
-        } : null;
-    }
-
-    /* ---- Font ---- */
-
-    _applyFont() {
-        const c = this._config;
-        if (!c.fontFamily) return;
-
-        document.documentElement.style.setProperty('--font-sans', c.fontFamily);
-
-        if (c.fontUrl) {
-            const existing = document.querySelector(`link[href="${c.fontUrl}"]`);
-            if (!existing) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = c.fontUrl;
-                document.head.appendChild(link);
-            }
-        }
-    }
-
-    /* ---- Logo ---- */
-
-    _applyLogo() {
-        const c = this._config;
-
-        const logoContainer = document.querySelector('.logo');
-        if (!logoContainer) return;
-
-        logoContainer.setAttribute('aria-label', c.appName);
-
-        const logoIcon = logoContainer.querySelector('.logo-icon');
-        const logoText = logoContainer.querySelector('span');
-
-        if (c.logoImage) {
-            if (logoIcon) {
-                logoIcon.innerHTML = '';
-                logoIcon.style.background = 'none';
-                const img = document.createElement('img');
-                img.src = c.logoImage;
-                img.alt = c.appShortName || c.appName;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'contain';
-                img.style.borderRadius = 'inherit';
-                logoIcon.appendChild(img);
-            }
-        } else if (logoIcon) {
-            // Restore text icon (clear any previous image)
-            const existingImg = logoIcon.querySelector('img');
-            if (existingImg) existingImg.remove();
-            logoIcon.textContent = c.logoIcon || 'GP';
-            logoIcon.style.background = `linear-gradient(135deg, ${c.primaryColor || '#6366F1'}, ${c.accentColor || '#EC4899'})`;
-        }
-
-        if (logoText) {
-            logoText.textContent = c.appShortName || c.appName;
-        }
-    }
-
-    /* ---- Default user ---- */
-
-    _applyUser() {
-        const c = this._config;
-
-        const avatar = document.querySelector('.avatar');
-        if (avatar) {
-            avatar.textContent = c.defaultUserInitials || 'U';
-            avatar.setAttribute('aria-label', 'Profil utilisateur - ' + (c.defaultUserName || 'Utilisateur'));
-        }
-    }
-
-    /* ---- Footer ---- */
-
-    _applyFooter() {
-        const c = this._config;
-
-        let footer = document.getElementById('brandingFooter');
-
-        if (!c.copyrightText && !c.footerText) {
-            // Remove footer if it exists but nothing to show
-            if (footer) footer.remove();
-            return;
-        }
-
-        if (!footer) {
-            footer = document.createElement('div');
-            footer.id = 'brandingFooter';
-            footer.className = 'branding-footer';
-
-            const statsBar = document.querySelector('.stats-bar');
-            if (statsBar && statsBar.parentNode) {
-                statsBar.parentNode.insertBefore(footer, statsBar.nextSibling);
-            } else {
-                document.body.appendChild(footer);
-            }
-        }
-
-        const parts = [];
-        if (c.footerText) parts.push(c.footerText);
-        if (c.copyrightText) parts.push(c.copyrightText);
-        footer.textContent = parts.join(' · ');
-    }
-}
-
-const brandingManager = new BrandingManager();
-
-/* ========================================
-   BRANDING PANEL
-   iOS-style settings navigation with stack views
-   ======================================== */
-
-
-
-
-
-
-
-const BRANDING_PANEL_STORAGE_KEY = 'gantt_branding';
-
-/* Font URL mapping for the font selector */
-const FONT_URLS = {
-    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif":
-        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-    "'Poppins', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap',
-    "'Roboto', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
-    "'Open Sans', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap',
-    "'Lato', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap',
-    "'Nunito', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap',
-    "'Montserrat', sans-serif":
-        'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap',
-    "system-ui, sans-serif": null,
-};
-
-class BrandingPanel {
-    constructor() {
-        this._overlay = null;
-        this._isOpen = false;
-        this._viewStack = ['root'];
-    }
-
-    init() {
-        this._overlay = document.getElementById('brandingOverlay');
-        if (!this._overlay) return;
-
-        this._panel = document.getElementById('brandingPanel');
-        this._toggleBtn = document.getElementById('brandingToggle');
-        this._closeBtn = document.getElementById('brandingClose');
-        this._resetBtn = document.getElementById('brandingReset');
-        this._exportBtn = document.getElementById('brandingExport');
-        this._importBtn = document.getElementById('brandingImport');
-        this._okBtn = document.getElementById('brandingOk');
-        this._fileInput = document.getElementById('brandingFileInput');
-        this._navStack = this._panel.querySelector('.bp-nav-stack');
-
-        this._bindEvents();
-        this._populateForm();
-    }
-
-    /* ---- Events ---- */
-
-    _bindEvents() {
-        // Open / Close
-        this._toggleBtn?.addEventListener('click', () => this.toggle());
-        this._closeBtn?.addEventListener('click', () => this.close());
-        this._overlay?.addEventListener('click', (e) => {
-            if (e.target === this._overlay) {
-                this.close();
-            }
-        });
-
-        // Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isOpen) {
-                if (this._viewStack.length > 1) {
-                    this._navigateBack();
-                } else {
-                    this.close();
-                }
-            }
-        });
-
-        // Prevent document-level click handlers from interfering with panel
-        this._panel?.addEventListener('click', (e) => e.stopPropagation());
-
-        // Menu item navigation
-        this._panel?.querySelectorAll('.bp-menu-item[data-target]').forEach(item => {
-            item.addEventListener('click', () => {
-                const target = item.dataset.target;
-                if (target) this._navigateTo(target);
-            });
-            item.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    const target = item.dataset.target;
-                    if (target) this._navigateTo(target);
-                }
-            });
-            item.setAttribute('tabindex', '0');
-            item.setAttribute('role', 'button');
-        });
-
-        // Back buttons (event delegation for robustness)
-        this._panel?.addEventListener('click', (e) => {
-            const backBtn = e.target.closest('[data-back]');
-            if (backBtn) {
-                e.stopPropagation();
-                this._navigateBack();
-            }
-        });
-
-        // Live editing: text inputs
-        this._panel?.querySelectorAll('.bp-input').forEach(input => {
-            input.addEventListener('input', () => this._onFieldChange(input));
-        });
-
-        // Live editing: select
-        this._panel?.querySelectorAll('.bp-select').forEach(select => {
-            select.addEventListener('change', () => this._onFieldChange(select));
-        });
-
-        // Live editing: color pickers
-        this._panel?.querySelectorAll('.bp-color').forEach(picker => {
-            picker.addEventListener('input', () => {
-                const key = picker.dataset.key;
-                const hexInput = this._panel.querySelector(`.bp-color-hex[data-key="${key}"]`);
-                if (hexInput) hexInput.value = picker.value;
-                this._onColorChange(key, picker.value);
-            });
-        });
-
-        // Live editing: hex text inputs
-        this._panel?.querySelectorAll('.bp-color-hex').forEach(hexInput => {
-            hexInput.addEventListener('input', () => {
-                const key = hexInput.dataset.key;
-                const val = hexInput.value;
-                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                    const picker = this._panel.querySelector(`.bp-color[data-key="${key}"]`);
-                    if (picker) picker.value = val;
-                    this._onColorChange(key, val);
-                }
-            });
-        });
-
-        // OK button
-        this._okBtn?.addEventListener('click', () => this.close());
-
-        // Actions
-        this._resetBtn?.addEventListener('click', () => this._reset());
-        this._exportBtn?.addEventListener('click', () => this._export());
-        this._importBtn?.addEventListener('click', () => this._fileInput?.click());
-        this._fileInput?.addEventListener('change', (e) => this._import(e));
-
-        // Identity: Logo upload
-        this._bindUpload('logoUploadZone', 'logoFileInput', 'logoPreview', 'logoPlaceholder', 'logoRemoveBtn', 'logoImage');
-
-        // Identity: Favicon upload
-        this._bindUpload('faviconUploadZone', 'faviconFileInput', 'faviconPreview', 'faviconPlaceholder', 'faviconRemoveBtn', 'favicon');
-
-        // Settings: toggle groups
-        this._bindToggleGroup('settingsThemeGroup', (value) => {
-            if (value === 'auto') {
-                themeManager.useSystemPreference();
-            } else {
-                themeManager.setTheme(value);
-            }
-        });
-
-        this._bindToggleGroup('settingsZoomGroup', (value) => {
-            store.updateSettings({ zoomLevel: value });
-            ganttRenderer.setZoom(value);
-        });
-
-        // Settings: switches
-        this._bindSwitch('settingsShowWeekends', (checked) => {
-            store.updateSettings({ showWeekends: checked });
-            ganttRenderer.render();
-        });
-
-        this._bindSwitch('settingsShowRowNumbers', (checked) => {
-            store.updateSettings({ showRowNumbers: checked });
-            ganttRenderer.render();
-        });
-
-        this._bindSwitch('settingsAnimations', (checked) => {
-            store.updateSettings({ animations: checked });
-            document.documentElement.classList.toggle('no-animations', !checked);
-        });
-    }
-
-    /* ---- Settings helpers ---- */
-
-    _bindToggleGroup(groupId, onChange) {
-        const group = document.getElementById(groupId);
-        if (!group) return;
-        group.querySelectorAll('.bp-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                group.querySelectorAll('.bp-toggle-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                onChange(btn.dataset.settingValue);
-            });
-        });
-    }
-
-    _bindSwitch(switchId, onChange) {
-        const sw = document.getElementById(switchId);
-        if (!sw) return;
-        sw.addEventListener('change', () => onChange(sw.checked));
-    }
-
-    /* ---- Upload helpers ---- */
-
-    _bindUpload(zoneId, inputId, previewId, placeholderId, removeBtnId, configKey) {
-        const zone = document.getElementById(zoneId);
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        const placeholder = document.getElementById(placeholderId);
-        const removeBtn = document.getElementById(removeBtnId);
-        if (!zone || !input) return;
-
-        // Click to open file picker
-        zone.addEventListener('click', () => input.click());
-
-        // Drag & Drop
-        zone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            zone.classList.add('bp-upload-dragover');
-        });
-        zone.addEventListener('dragleave', () => {
-            zone.classList.remove('bp-upload-dragover');
-        });
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            zone.classList.remove('bp-upload-dragover');
-            const file = e.dataTransfer.files?.[0];
-            if (file) this._handleUploadFile(file, preview, placeholder, removeBtn, configKey);
-        });
-
-        // File input change
-        input.addEventListener('change', () => {
-            const file = input.files?.[0];
-            if (file) this._handleUploadFile(file, preview, placeholder, removeBtn, configKey);
-            input.value = '';
-        });
-
-        // Remove button
-        removeBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (preview) { preview.hidden = true; preview.src = ''; }
-            if (placeholder) placeholder.hidden = false;
-            if (removeBtn) removeBtn.hidden = true;
-            const config = this._getCurrentConfig();
-            config[configKey] = null;
-            this._save(config);
-            brandingManager.applyConfig(config);
-        });
-    }
-
-    _handleUploadFile(file, preview, placeholder, removeBtn, configKey) {
-        if (!file.type.startsWith('image/') && !file.name.endsWith('.ico')) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            if (preview) { preview.src = dataUrl; preview.hidden = false; }
-            if (placeholder) placeholder.hidden = true;
-            if (removeBtn) removeBtn.hidden = false;
-
-            const config = this._getCurrentConfig();
-            config[configKey] = dataUrl;
-            this._save(config);
-            brandingManager.applyConfig(config);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    _populateUpload(configKey, previewId, placeholderId, removeBtnId) {
-        const config = this._getCurrentConfig();
-        const value = config[configKey];
-        const preview = document.getElementById(previewId);
-        const placeholder = document.getElementById(placeholderId);
-        const removeBtn = document.getElementById(removeBtnId);
-
-        if (value) {
-            if (preview) { preview.src = value; preview.hidden = false; }
-            if (placeholder) placeholder.hidden = true;
-            if (removeBtn) removeBtn.hidden = false;
-        } else {
-            if (preview) { preview.hidden = true; preview.src = ''; }
-            if (placeholder) placeholder.hidden = false;
-            if (removeBtn) removeBtn.hidden = true;
-        }
-    }
-
-    /* ---- Navigation ---- */
-
-    _navigateTo(viewName) {
-        const currentView = this._getView(this._viewStack[this._viewStack.length - 1]);
-        const nextView = this._getView(viewName);
-        if (!currentView || !nextView) return;
-
-        // Push to stack
-        this._viewStack.push(viewName);
-
-        // Animate current view out to the left
-        currentView.classList.remove('bp-view--active');
-        currentView.classList.add('bp-view--exit-left');
-
-        // Animate next view in from the right
-        nextView.classList.add('bp-view--active');
-
-        // Focus first input in new view
-        requestAnimationFrame(() => {
-            const firstInput = nextView.querySelector('.bp-input, .bp-color');
-            if (firstInput) firstInput.focus();
-        });
-    }
-
-    _navigateBack() {
-        if (this._viewStack.length <= 1) return;
-
-        const currentViewName = this._viewStack.pop();
-        const previousViewName = this._viewStack[this._viewStack.length - 1];
-
-        const currentView = this._getView(currentViewName);
-        const previousView = this._getView(previousViewName);
-        if (!currentView || !previousView) return;
-
-        // Animate current view out to the right (z-index 3 so it slides ABOVE the incoming view)
-        currentView.classList.remove('bp-view--active');
-        currentView.classList.add('bp-view--exit-right');
-
-        // Animate previous view back from the left (below the outgoing view)
-        previousView.classList.remove('bp-view--exit-left');
-        previousView.classList.add('bp-view--active');
-
-        // Clean up exit-right after transition completes
-        setTimeout(() => currentView.classList.remove('bp-view--exit-right'), 300);
-
-        // Focus the menu item that was clicked
-        if (previousViewName === 'root') {
-            const menuItem = previousView.querySelector(`[data-target="${currentViewName}"]`);
-            if (menuItem) menuItem.focus();
-        }
-    }
-
-    _getView(name) {
-        return this._navStack?.querySelector(`[data-view="${name}"]`);
-    }
-
-    _resetNavigation() {
-        // Reset to root view without animation
-        this._viewStack = ['root'];
-        this._navStack?.querySelectorAll('.bp-view').forEach(view => {
-            view.classList.remove('bp-view--active', 'bp-view--exit-left', 'bp-view--exit-right');
-        });
-        const rootView = this._getView('root');
-        if (rootView) rootView.classList.add('bp-view--active');
-    }
-
-    /* ---- Open / Close ---- */
-
-    toggle() {
-        this._isOpen ? this.close() : this.open();
-    }
-
-    open(targetView) {
-        if (!this._overlay) return;
-        this._resetNavigation();
-        this._populateForm();
-        this._populateSettings();
-        this._overlay.hidden = false;
-        this._isOpen = true;
-        if (targetView) {
-            // Navigate directly to the target sub-view
-            requestAnimationFrame(() => this._navigateTo(targetView));
-        }
-    }
-
-    openToSettings() {
-        this.open('appsettings');
-    }
-
-    close() {
-        if (!this._overlay) return;
-        this._overlay.hidden = true;
-        this._isOpen = false;
-        this._toggleBtn?.focus();
-    }
-
-    /* ---- Populate settings from store ---- */
-
-    _populateSettings() {
-        const settings = store.getSettings();
-
-        // Theme toggle group
-        const themeGroup = document.getElementById('settingsThemeGroup');
-        if (themeGroup) {
-            const themeValue = settings.theme || 'auto';
-            themeGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.settingValue === themeValue);
-            });
-        }
-
-        // Zoom toggle group
-        const zoomGroup = document.getElementById('settingsZoomGroup');
-        if (zoomGroup) {
-            const zoomValue = settings.zoomLevel || 'week';
-            zoomGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.settingValue === zoomValue);
-            });
-        }
-
-        // Switches
-        const showWeekends = document.getElementById('settingsShowWeekends');
-        if (showWeekends) showWeekends.checked = settings.showWeekends !== false;
-
-        const showRowNumbers = document.getElementById('settingsShowRowNumbers');
-        if (showRowNumbers) showRowNumbers.checked = settings.showRowNumbers === true;
-
-        const animations = document.getElementById('settingsAnimations');
-        if (animations) animations.checked = settings.animations !== false;
-    }
-
-    /* ---- Populate form from current config ---- */
-
-    _populateForm() {
-        const config = this._getCurrentConfig();
-
-        // Text inputs
-        this._panel?.querySelectorAll('.bp-input:not(.bp-select)').forEach(input => {
-            const key = input.dataset.key;
-            if (key && config[key] !== undefined) {
-                input.value = config[key] || '';
-            }
-        });
-
-        // Selects
-        this._panel?.querySelectorAll('.bp-select').forEach(select => {
-            const key = select.dataset.key;
-            if (key && config[key]) {
-                select.value = config[key];
-            }
-        });
-
-        // Upload previews (Logo & Favicon)
-        this._populateUpload('logoImage', 'logoPreview', 'logoPlaceholder', 'logoRemoveBtn');
-        this._populateUpload('favicon', 'faviconPreview', 'faviconPlaceholder', 'faviconRemoveBtn');
-
-        // Color pickers + hex inputs
-        this._panel?.querySelectorAll('.bp-color').forEach(picker => {
-            const key = picker.dataset.key;
-            if (key && config[key]) {
-                picker.value = config[key];
-            }
-        });
-        this._panel?.querySelectorAll('.bp-color-hex').forEach(hexInput => {
-            const key = hexInput.dataset.key;
-            if (key && config[key]) {
-                hexInput.value = config[key];
-            }
-        });
-    }
-
-    /* ---- Live update handlers ---- */
-
-    _onFieldChange(element) {
-        const key = element.dataset.key;
-        if (!key) return;
-
-        const config = this._getCurrentConfig();
-        let value = element.value;
-
-        // Treat empty strings as null for optional fields
-        if (value === '' && ['logoImage', 'favicon', 'footerText', 'copyrightText'].includes(key)) {
-            value = null;
-        }
-
-        config[key] = value;
-
-        // Update fontUrl when font changes
-        if (key === 'fontFamily') {
-            config.fontUrl = FONT_URLS[value] || null;
-        }
-
-        this._save(config);
-        brandingManager.applyConfig(config);
-    }
-
-    _onColorChange(key, value) {
-        const config = this._getCurrentConfig();
-        config[key] = value;
-        if (key === 'primaryColor') {
-            config.themeColorLight = value;
-        }
-        this._save(config);
-        brandingManager.applyConfig(config);
-    }
-
-    /* ---- localStorage ---- */
-
-    _getCurrentConfig() {
-        try {
-            const saved = localStorage.getItem(BRANDING_PANEL_STORAGE_KEY);
-            if (saved) return JSON.parse(saved);
-        } catch { /* ignore */ }
-        return { ...defaultConfig };
-    }
-
-    _save(config) {
-        try {
-            localStorage.setItem(BRANDING_PANEL_STORAGE_KEY, JSON.stringify(config));
-        } catch { /* ignore */ }
-    }
-
-    /* ---- Reset ---- */
-
-    _reset() {
-        if (!confirm('Réinitialiser toutes les personnalisations ?')) return;
-        try { localStorage.removeItem(BRANDING_PANEL_STORAGE_KEY); } catch { /* ignore */ }
-        brandingManager.applyConfig(defaultConfig);
-        this._populateForm();
-        this._showToast('Personnalisation réinitialisée');
-    }
-
-    /* ---- Export JSON ---- */
-
-    _export() {
-        const config = this._getCurrentConfig();
-        const exportData = {};
-        for (const key of Object.keys(defaultConfig)) {
-            exportData[key] = config[key] !== undefined ? config[key] : defaultConfig[key];
-        }
-
-        const json = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'branding.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        this._showToast('Configuration exportée');
-    }
-
-    /* ---- Import JSON ---- */
-
-    _import(e) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            try {
-                const imported = JSON.parse(ev.target.result);
-
-                if (typeof imported !== 'object' || !imported.appName) {
-                    this._showToast('Fichier invalide : appName manquant', true);
-                    return;
-                }
-
-                const merged = { ...defaultConfig, ...imported };
-                this._save(merged);
-                brandingManager.applyConfig(merged);
-                this._populateForm();
-                this._showToast('Configuration importée avec succès');
-            } catch {
-                this._showToast('Erreur : fichier JSON invalide', true);
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-    }
-
-    /* ---- Toast helper ---- */
-
-    _showToast(message, isError = false) {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isError ? ' toast-error' : ' toast-success');
-        toast.textContent = message;
-        toast.setAttribute('role', 'status');
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-}
-
-const brandingPanel = new BrandingPanel();
-
-/* ========================================
-   ONBOARDING - Interactive guide for new users
-   ======================================== */
-
-const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
-
-const STEPS = [
-    {
-        target: '.project-selector',
-        title: 'Vos projets',
-        text: 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.',
-        position: 'bottom',
-    },
-    {
-        target: '.tabs',
-        title: 'Vues du projet',
-        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
-        position: 'bottom',
-    },
-    {
-        target: '#addTaskBtn',
-        title: 'Ajouter une tâche',
-        text: 'Créez une tâche, un jalon ou une phase. Raccourci : Ctrl+N.',
-        position: 'bottom',
-    },
-    {
-        target: '.gantt-wrapper',
-        title: 'Diagramme de Gantt',
-        text: 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.',
-        position: 'top',
-    },
-    {
-        target: '.zoom-controls',
-        title: 'Niveau de zoom',
-        text: 'Passez de la vue Jour à Trimestre pour ajuster la granularité.',
-        position: 'bottom',
-    },
-    {
-        target: '#exportBtn',
-        title: 'Import / Export',
-        text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
-        position: 'bottom',
-    },
-    {
-        target: '.stats-bar',
-        title: 'Statistiques',
-        text: 'Suivez l\'avancement, le budget et les tâches actives en un coup d\'œil.',
-        position: 'top',
-    },
-];
-
-class Onboarding {
-    constructor() {
-        this._overlay = null;
-        this._step = 0;
-        this._active = false;
-    }
-
-    /** Auto-start on first visit, or call manually */
-    tryAutoStart() {
-        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
-        // Defer so the UI is fully rendered
-        setTimeout(() => this.start(), 600);
-    }
-
-    start() {
-        this._step = 0;
-        this._active = true;
-        this._buildOverlay();
-        this._showStep();
-    }
-
-    _buildOverlay() {
-        if (this._overlay) this._overlay.remove();
-
-        this._overlay = document.createElement('div');
-        this._overlay.className = 'onboarding-overlay';
-        this._overlay.setAttribute('role', 'dialog');
-        this._overlay.setAttribute('aria-modal', 'true');
-        this._overlay.setAttribute('aria-label', 'Guide de démarrage');
-
-        // Spotlight hole (SVG mask)
-        this._overlay.innerHTML = `
-            <svg class="onboarding-mask" width="100%" height="100%">
-                <defs>
-                    <mask id="onboardingMask">
-                        <rect width="100%" height="100%" fill="white"/>
-                        <rect id="onboardingHole" rx="8" ry="8" fill="black"/>
-                    </mask>
-                </defs>
-                <rect width="100%" height="100%" fill="rgba(0,0,0,.55)" mask="url(#onboardingMask)"/>
-            </svg>
-        `;
-
-        // Tooltip
-        this._tooltip = document.createElement('div');
-        this._tooltip.className = 'onboarding-tooltip';
-        this._tooltip.innerHTML = `
-            <div class="onboarding-title"></div>
-            <div class="onboarding-text"></div>
-            <div class="onboarding-footer">
-                <span class="onboarding-counter"></span>
-                <div class="onboarding-btns">
-                    <button class="onboarding-skip">Passer</button>
-                    <button class="onboarding-next">Suivant</button>
-                </div>
-            </div>
-        `;
-        this._overlay.appendChild(this._tooltip);
-
-        this._tooltip.querySelector('.onboarding-skip').addEventListener('click', () => this._finish());
-        this._tooltip.querySelector('.onboarding-next').addEventListener('click', () => this._next());
-
-        document.addEventListener('keydown', this._onKey = (e) => {
-            if (!this._active) return;
-            if (e.key === 'Escape') this._finish();
-            if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
-            if (e.key === 'ArrowLeft') this._prev();
-            // Let app keyboard shortcuts (Ctrl+N, etc.) work by closing the overlay
-            if (e.ctrlKey && e.key.length === 1) this._finish();
-        });
-
-        document.body.appendChild(this._overlay);
-    }
-
-    _showStep() {
-        const step = STEPS[this._step];
-        if (!step) { this._finish(); return; }
-
-        const target = document.querySelector(step.target);
-        // If target not visible (e.g. hidden on mobile), skip
-        if (!target || target.offsetParent === null) {
-            this._step++;
-            if (this._step < STEPS.length) this._showStep();
-            else this._finish();
-            return;
-        }
-
-        // Scroll target into view so that the tooltip has room to display
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        // Wait for scroll to settle then position everything
-        const _position = () => {
-            const rect = target.getBoundingClientRect();
-            const pad = 6;
-
-            // Position spotlight hole
-            const hole = this._overlay.querySelector('#onboardingHole');
-            hole.setAttribute('x', rect.left - pad);
-            hole.setAttribute('y', rect.top - pad);
-            hole.setAttribute('width', rect.width + pad * 2);
-            hole.setAttribute('height', rect.height + pad * 2);
-
-            // Update tooltip content
-            this._tooltip.querySelector('.onboarding-title').textContent = step.title;
-            this._tooltip.querySelector('.onboarding-text').textContent = step.text;
-            this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
-
-            const nextBtn = this._tooltip.querySelector('.onboarding-next');
-            nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
-
-            // Position tooltip
-            const tt = this._tooltip;
-            tt.style.left = '';
-            tt.style.right = '';
-            tt.style.top = '';
-            tt.style.bottom = '';
-            tt.style.maxHeight = '';
-            tt.style.overflowY = '';
-
-            requestAnimationFrame(() => {
-                const ttRect = tt.getBoundingClientRect();
-                let left = rect.left + rect.width / 2 - ttRect.width / 2;
-                left = Math.max(12, Math.min(left, window.innerWidth - ttRect.width - 12));
-                tt.style.left = left + 'px';
-
-                let topValue;
-                if (step.position === 'bottom') {
-                    topValue = rect.bottom + pad + 12;
-                } else {
-                    // If not enough space above, fall back to bottom positioning
-                    const topPos = rect.top - pad - ttRect.height - 12;
-                    if (topPos < 12) {
-                        topValue = rect.bottom + pad + 12;
-                    } else {
-                        topValue = topPos;
-                    }
-                }
-
-                // Ensure the tooltip doesn't overflow below the viewport
-                const maxTop = window.innerHeight - ttRect.height - 12;
-                if (topValue > maxTop) {
-                    topValue = Math.max(12, maxTop);
-                    // If still overflowing, constrain tooltip height so buttons stay accessible
-                    const available = window.innerHeight - topValue - 12;
-                    if (ttRect.height > available) {
-                        tt.style.maxHeight = available + 'px';
-                        tt.style.overflowY = 'auto';
-                    }
-                }
-
-                tt.style.top = topValue + 'px';
-
-                nextBtn.focus();
-            });
-        };
-
-        // Small delay to let scrollIntoView settle
-        setTimeout(_position, 350);
-    }
-
-    _next() {
-        this._step++;
-        if (this._step >= STEPS.length) {
-            this._finish();
-        } else {
-            this._showStep();
-        }
-    }
-
-    _prev() {
-        if (this._step > 0) {
-            this._step--;
-            this._showStep();
-        }
-    }
-
-    _finish() {
-        this._active = false;
-        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
-        if (this._overlay) {
-            this._overlay.classList.add('fade-out');
-            setTimeout(() => {
-                if (this._overlay) this._overlay.remove();
-                this._overlay = null;
-            }, 300);
-        }
-        if (this._onKey) {
-            document.removeEventListener('keydown', this._onKey);
-            this._onKey = null;
-        }
-    }
-}
-
-const onboarding = new Onboarding();
-
+// ====== js/app.js ======
 /* ========================================
    APP - Main Entry Point
    Gantt Planner Pro
    ======================================== */
-
-
-
-
-
-
-
-
-
-
 
 
 class App {
@@ -11609,10 +9774,6 @@ class App {
     }
 
     init() {
-        // Apply branding
-        brandingManager.apply();
-        brandingPanel.init();
-
         // Initialize theme
         themeManager.init();
 
@@ -12589,10 +10750,6 @@ class App {
             helpBtn.addEventListener('click', () => this._showKeyboardHelp());
         }
 
-        const settingsBtn = $('#settingsBtn');
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => brandingPanel.open());
-        }
     }
 
     _showAddTaskDialog() {
@@ -15670,7 +13827,11 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
 
-
+// ====== Bootstrap ======
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new App();
+    app.init();
+});
 })();
     </script>
 </body>
