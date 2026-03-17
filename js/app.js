@@ -11,8 +11,6 @@ import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
-import { brandingManager } from './branding.js';
-import { brandingPanel } from './branding-panel.js';
 
 class App {
     constructor() {
@@ -27,10 +25,6 @@ class App {
     }
 
     init() {
-        // Apply branding
-        brandingManager.apply();
-        brandingPanel.init();
-
         // Initialize theme
         themeManager.init();
 
@@ -1007,10 +1001,6 @@ class App {
             helpBtn.addEventListener('click', () => this._showKeyboardHelp());
         }
 
-        const settingsBtn = $('#settingsBtn');
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => brandingPanel.open());
-        }
     }
 
     _showAddTaskDialog() {

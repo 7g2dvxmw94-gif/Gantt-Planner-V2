@@ -281,12 +281,3 @@
     height: 24px;
 }
 
-/* ---- Branding Footer ---- */
-.branding-footer {
-    text-align: center;
-    padding: 6px 16px;
-    font-size: 11px;
-    color: var(--text-muted, #94a3b8);
-    background: var(--bg-subtle, #f8fafc);
-    border-top: 1px solid var(--border-subtle, #f1f5f9);
-}
