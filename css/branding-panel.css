@@ -103,6 +103,12 @@
     z-index: 1;
 }
 
+.bp-view--exit-right {
+    transform: translateX(100%);
+    pointer-events: none;
+    z-index: 3;
+}
+
 /* ---- Panel Header ---- */
 .branding-panel-header {
     display: flex;

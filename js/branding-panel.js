@@ -324,12 +324,16 @@ class BrandingPanel {
         const previousView = this._getView(previousViewName);
         if (!currentView || !previousView) return;
 
-        // Animate current view out to the right
+        // Animate current view out to the right (z-index 3 so it slides ABOVE the incoming view)
         currentView.classList.remove('bp-view--active');
+        currentView.classList.add('bp-view--exit-right');
 
-        // Animate previous view back from the left
+        // Animate previous view back from the left (below the outgoing view)
         previousView.classList.remove('bp-view--exit-left');
         previousView.classList.add('bp-view--active');
+
+        // Clean up exit-right after transition completes
+        setTimeout(() => currentView.classList.remove('bp-view--exit-right'), 300);
 
         // Focus the menu item that was clicked
         if (previousViewName === 'root') {
@@ -346,7 +350,7 @@ class BrandingPanel {
         // Reset to root view without animation
         this._viewStack = ['root'];
         this._navStack?.querySelectorAll('.bp-view').forEach(view => {
-            view.classList.remove('bp-view--active', 'bp-view--exit-left');
+            view.classList.remove('bp-view--active', 'bp-view--exit-left', 'bp-view--exit-right');
         });
         const rootView = this._getView('root');
         if (rootView) rootView.classList.add('bp-view--active');
