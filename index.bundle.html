@@ -4343,6 +4343,7 @@ textarea.input {
     inset: 0;
     background: var(--bg-overlay, rgba(15, 23, 42, 0.5));
     animation: bp-fade-in 200ms ease-out;
+    pointer-events: none;
 }
 
 .branding-overlay[hidden] {
@@ -4362,6 +4363,7 @@ textarea.input {
 /* ---- Panel ---- */
 .branding-panel {
     position: relative;
+    z-index: 1;
     width: 400px;
     max-width: 90vw;
     height: 100%;
@@ -4380,6 +4382,7 @@ textarea.input {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    isolation: isolate;
 }
 
 /* ---- Views ---- */
@@ -5189,7 +5192,7 @@ textarea.input {
                 <!-- ===== SUB-VIEW: Identity ===== -->
                 <div class="bp-view" data-view="identity">
                     <div class="branding-panel-header">
-                        <button class="bp-back-btn" data-back aria-label="Retour">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         <h2>Identit&eacute;</h2>
@@ -5224,7 +5227,7 @@ textarea.input {
                 <!-- ===== SUB-VIEW: Colors ===== -->
                 <div class="bp-view" data-view="colors">
                     <div class="branding-panel-header">
-                        <button class="bp-back-btn" data-back aria-label="Retour">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         <h2>Couleurs</h2>
@@ -5276,7 +5279,7 @@ textarea.input {
                 <!-- ===== SUB-VIEW: Typography ===== -->
                 <div class="bp-view" data-view="typography">
                     <div class="branding-panel-header">
-                        <button class="bp-back-btn" data-back aria-label="Retour">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         <h2>Typographie</h2>
@@ -5304,7 +5307,7 @@ textarea.input {
                 <!-- ===== SUB-VIEW: User ===== -->
                 <div class="bp-view" data-view="user">
                     <div class="branding-panel-header">
-                        <button class="bp-back-btn" data-back aria-label="Retour">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         <h2>Utilisateur</h2>
@@ -5327,7 +5330,7 @@ textarea.input {
                 <!-- ===== SUB-VIEW: Footer ===== -->
                 <div class="bp-view" data-view="footer">
                     <div class="branding-panel-header">
-                        <button class="bp-back-btn" data-back aria-label="Retour">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
                         <h2>Pied de page</h2>
@@ -10507,8 +10510,8 @@ class BrandingPanel {
         this._toggleBtn?.addEventListener('click', () => this.toggle());
         this._closeBtn?.addEventListener('click', () => this.close());
         this._overlay?.addEventListener('click', (e) => {
-            if (e.target === this._overlay || e.target === this._overlay.querySelector('::before')) {
-                if (!this._panel.contains(e.target)) this.close();
+            if (e.target === this._overlay) {
+                this.close();
             }
         });
 
@@ -10522,6 +10525,9 @@ class BrandingPanel {
                 }
             }
         });
+
+        // Prevent document-level click handlers from interfering with panel
+        this._panel?.addEventListener('click', (e) => e.stopPropagation());
 
         // Menu item navigation
         this._panel?.querySelectorAll('.bp-menu-item[data-target]').forEach(item => {
@@ -10542,7 +10548,10 @@ class BrandingPanel {
 
         // Back buttons
         this._panel?.querySelectorAll('[data-back]').forEach(btn => {
-            btn.addEventListener('click', () => this._navigateBack());
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._navigateBack();
+            });
         });
 
         // Live editing: text inputs
