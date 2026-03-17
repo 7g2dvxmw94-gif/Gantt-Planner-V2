@@ -478,25 +478,33 @@
                     <div class="branding-panel-body">
                         <section class="bp-section">
                             <label class="bp-field">
-                                <span class="bp-label">Nom de l'application</span>
+                                <span class="bp-label">Nom</span>
                                 <input type="text" class="bp-input" data-key="appName">
                             </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Nom court</span>
-                                <input type="text" class="bp-input" data-key="appShortName">
-                            </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Ic&ocirc;ne logo (2-3 lettres)</span>
-                                <input type="text" class="bp-input" data-key="logoIcon" maxlength="3">
-                            </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Image logo (URL)</span>
-                                <input type="text" class="bp-input" data-key="logoImage" placeholder="https://...">
-                            </label>
-                            <label class="bp-field">
-                                <span class="bp-label">Favicon (URL)</span>
-                                <input type="text" class="bp-input" data-key="favicon" placeholder="https://...">
-                            </label>
+                            <div class="bp-field">
+                                <span class="bp-label">Logo</span>
+                                <div class="bp-upload-zone" id="logoUploadZone">
+                                    <img id="logoPreview" class="bp-upload-preview" alt="Logo" hidden>
+                                    <span id="logoPlaceholder" class="bp-upload-placeholder">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                                        <span>Cliquer ou glisser une image</span>
+                                    </span>
+                                    <input type="file" id="logoFileInput" accept="image/*" hidden>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-ghost bp-upload-remove" id="logoRemoveBtn" hidden>Supprimer le logo</button>
+                            </div>
+                            <div class="bp-field">
+                                <span class="bp-label">Favicon</span>
+                                <div class="bp-upload-zone bp-upload-zone--small" id="faviconUploadZone">
+                                    <img id="faviconPreview" class="bp-upload-preview bp-upload-preview--small" alt="Favicon" hidden>
+                                    <span id="faviconPlaceholder" class="bp-upload-placeholder">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+                                        <span>Cliquer ou glisser une image</span>
+                                    </span>
+                                    <input type="file" id="faviconFileInput" accept="image/*,.ico" hidden>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-ghost bp-upload-remove" id="faviconRemoveBtn" hidden>Supprimer le favicon</button>
+                            </div>
                         </section>
                     </div>
                 </div>

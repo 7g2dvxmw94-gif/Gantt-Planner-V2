@@ -149,6 +149,12 @@ class BrandingPanel {
         this._importBtn?.addEventListener('click', () => this._fileInput?.click());
         this._fileInput?.addEventListener('change', (e) => this._import(e));
 
+        // Identity: Logo upload
+        this._bindUpload('logoUploadZone', 'logoFileInput', 'logoPreview', 'logoPlaceholder', 'logoRemoveBtn', 'logoImage');
+
+        // Identity: Favicon upload
+        this._bindUpload('faviconUploadZone', 'faviconFileInput', 'faviconPreview', 'faviconPlaceholder', 'faviconRemoveBtn', 'favicon');
+
         // Settings: toggle groups
         this._bindToggleGroup('settingsThemeGroup', (value) => {
             if (value === 'auto') {
@@ -198,6 +204,90 @@ class BrandingPanel {
         const sw = document.getElementById(switchId);
         if (!sw) return;
         sw.addEventListener('change', () => onChange(sw.checked));
+    }
+
+    /* ---- Upload helpers ---- */
+
+    _bindUpload(zoneId, inputId, previewId, placeholderId, removeBtnId, configKey) {
+        const zone = document.getElementById(zoneId);
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const placeholder = document.getElementById(placeholderId);
+        const removeBtn = document.getElementById(removeBtnId);
+        if (!zone || !input) return;
+
+        // Click to open file picker
+        zone.addEventListener('click', () => input.click());
+
+        // Drag & Drop
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('bp-upload-dragover');
+        });
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('bp-upload-dragover');
+        });
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('bp-upload-dragover');
+            const file = e.dataTransfer.files?.[0];
+            if (file) this._handleUploadFile(file, preview, placeholder, removeBtn, configKey);
+        });
+
+        // File input change
+        input.addEventListener('change', () => {
+            const file = input.files?.[0];
+            if (file) this._handleUploadFile(file, preview, placeholder, removeBtn, configKey);
+            input.value = '';
+        });
+
+        // Remove button
+        removeBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (preview) { preview.hidden = true; preview.src = ''; }
+            if (placeholder) placeholder.hidden = false;
+            if (removeBtn) removeBtn.hidden = true;
+            const config = this._getCurrentConfig();
+            config[configKey] = null;
+            this._save(config);
+            brandingManager.applyConfig(config);
+        });
+    }
+
+    _handleUploadFile(file, preview, placeholder, removeBtn, configKey) {
+        if (!file.type.startsWith('image/') && !file.name.endsWith('.ico')) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            if (preview) { preview.src = dataUrl; preview.hidden = false; }
+            if (placeholder) placeholder.hidden = true;
+            if (removeBtn) removeBtn.hidden = false;
+
+            const config = this._getCurrentConfig();
+            config[configKey] = dataUrl;
+            this._save(config);
+            brandingManager.applyConfig(config);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    _populateUpload(configKey, previewId, placeholderId, removeBtnId) {
+        const config = this._getCurrentConfig();
+        const value = config[configKey];
+        const preview = document.getElementById(previewId);
+        const placeholder = document.getElementById(placeholderId);
+        const removeBtn = document.getElementById(removeBtnId);
+
+        if (value) {
+            if (preview) { preview.src = value; preview.hidden = false; }
+            if (placeholder) placeholder.hidden = true;
+            if (removeBtn) removeBtn.hidden = false;
+        } else {
+            if (preview) { preview.hidden = true; preview.src = ''; }
+            if (placeholder) placeholder.hidden = false;
+            if (removeBtn) removeBtn.hidden = true;
+        }
     }
 
     /* ---- Navigation ---- */
@@ -346,6 +436,10 @@ class BrandingPanel {
                 select.value = config[key];
             }
         });
+
+        // Upload previews (Logo & Favicon)
+        this._populateUpload('logoImage', 'logoPreview', 'logoPlaceholder', 'logoRemoveBtn');
+        this._populateUpload('favicon', 'faviconPreview', 'faviconPlaceholder', 'faviconRemoveBtn');
 
         // Color pickers + hex inputs
         this._panel?.querySelectorAll('.bp-color').forEach(picker => {
