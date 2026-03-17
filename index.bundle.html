@@ -13258,6 +13258,7 @@ tr:nth-child(even){background:#fafbfc}
     /* ---- Filter Bar ---- */
 
     _buildFilterBar() {
+        if ($('#filterBar')) return;
         const mainContainer = $('.main-container');
         const content = $('#mainContent');
         if (!mainContainer || !content) return;
@@ -13801,12 +13802,6 @@ tr:nth-child(even){background:#fafbfc}
 }
 
 /* ---- Bootstrap ---- */
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new App();
-    app.init();
-});
-
-// ====== Bootstrap ======
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();

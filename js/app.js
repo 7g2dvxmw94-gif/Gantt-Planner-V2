@@ -3530,6 +3530,7 @@ tr:nth-child(even){background:#fafbfc}
     /* ---- Filter Bar ---- */
 
     _buildFilterBar() {
+        if ($('#filterBar')) return;
         const mainContainer = $('.main-container');
         const content = $('#mainContent');
         if (!mainContainer || !content) return;
