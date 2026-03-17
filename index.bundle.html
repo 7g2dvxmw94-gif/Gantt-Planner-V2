@@ -10396,7 +10396,7 @@ const cloudBackup = new CloudBackup();
    ======================================== */
 
 
-const STORAGE_KEY = 'gantt_branding';
+const BRANDING_STORAGE_KEY = 'gantt_branding';
 
 class BrandingManager {
     constructor() {
@@ -10435,7 +10435,7 @@ class BrandingManager {
 
     _loadFromStorage() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this._config = { ...defaultConfig, ...parsed };
@@ -10622,7 +10622,7 @@ const brandingManager = new BrandingManager();
    ======================================== */
 
 
-const STORAGE_KEY = 'gantt_branding';
+const BRANDING_PANEL_STORAGE_KEY = 'gantt_branding';
 
 /* Font URL mapping for the font selector */
 const FONT_URLS = {
@@ -11014,7 +11014,7 @@ class BrandingPanel {
 
     _getCurrentConfig() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(BRANDING_PANEL_STORAGE_KEY);
             if (saved) return JSON.parse(saved);
         } catch { /* ignore */ }
         return { ...defaultConfig };
@@ -11022,7 +11022,7 @@ class BrandingPanel {
 
     _save(config) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            localStorage.setItem(BRANDING_PANEL_STORAGE_KEY, JSON.stringify(config));
         } catch { /* ignore */ }
     }
 
@@ -11030,7 +11030,7 @@ class BrandingPanel {
 
     _reset() {
         if (!confirm('Réinitialiser toutes les personnalisations ?')) return;
-        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        try { localStorage.removeItem(BRANDING_PANEL_STORAGE_KEY); } catch { /* ignore */ }
         brandingManager.applyConfig(defaultConfig);
         this._populateForm();
         this._showToast('Personnalisation réinitialisée');
@@ -11110,7 +11110,7 @@ const brandingPanel = new BrandingPanel();
    ONBOARDING - Interactive guide for new users
    ======================================== */
 
-const STORAGE_KEY = 'gantt_onboarding_done';
+const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
     {
@@ -11166,7 +11166,7 @@ class Onboarding {
 
     /** Auto-start on first visit, or call manually */
     tryAutoStart() {
-        if (localStorage.getItem(STORAGE_KEY)) return;
+        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
         // Defer so the UI is fully rendered
         setTimeout(() => this.start(), 600);
     }
@@ -11335,7 +11335,7 @@ class Onboarding {
 
     _finish() {
         this._active = false;
-        localStorage.setItem(STORAGE_KEY, '1');
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
         if (this._overlay) {
             this._overlay.classList.add('fade-out');
             setTimeout(() => {
