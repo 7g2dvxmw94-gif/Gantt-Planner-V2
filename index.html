@@ -376,137 +376,247 @@
     <!-- ==================== BRANDING PANEL ==================== -->
     <div id="brandingOverlay" class="branding-overlay" hidden>
         <aside id="brandingPanel" class="branding-panel" role="dialog" aria-label="Personnalisation de l'apparence" aria-modal="true">
-            <div class="branding-panel-header">
-                <h2>Personnaliser</h2>
-                <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-            </div>
 
-            <div class="branding-panel-body">
-                <!-- Identity Section -->
-                <section class="bp-section">
-                    <h3 class="bp-section-title">Identit&eacute;</h3>
-                    <label class="bp-field">
-                        <span class="bp-label">Nom de l'application</span>
-                        <input type="text" class="bp-input" data-key="appName">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Nom court</span>
-                        <input type="text" class="bp-input" data-key="appShortName">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Ic&ocirc;ne logo (2-3 lettres)</span>
-                        <input type="text" class="bp-input" data-key="logoIcon" maxlength="3">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Image logo (URL)</span>
-                        <input type="text" class="bp-input" data-key="logoImage" placeholder="https://...">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Favicon (URL)</span>
-                        <input type="text" class="bp-input" data-key="favicon" placeholder="https://...">
-                    </label>
-                </section>
+            <!-- ===== Navigation Stack Container ===== -->
+            <div class="bp-nav-stack">
 
-                <!-- Colors Section -->
-                <section class="bp-section">
-                    <h3 class="bp-section-title">Couleurs</h3>
-                    <div class="bp-color-grid">
-                        <label class="bp-color-field">
-                            <span class="bp-label">Principale</span>
-                            <div class="bp-color-row">
-                                <input type="color" class="bp-color" data-key="primaryColor">
-                                <input type="text" class="bp-color-hex" data-key="primaryColor" maxlength="7" spellcheck="false">
-                            </div>
-                        </label>
-                        <label class="bp-color-field">
-                            <span class="bp-label">Survol</span>
-                            <div class="bp-color-row">
-                                <input type="color" class="bp-color" data-key="primaryHoverColor">
-                                <input type="text" class="bp-color-hex" data-key="primaryHoverColor" maxlength="7" spellcheck="false">
-                            </div>
-                        </label>
-                        <label class="bp-color-field">
-                            <span class="bp-label">Claire</span>
-                            <div class="bp-color-row">
-                                <input type="color" class="bp-color" data-key="primaryLightColor">
-                                <input type="text" class="bp-color-hex" data-key="primaryLightColor" maxlength="7" spellcheck="false">
-                            </div>
-                        </label>
-                        <label class="bp-color-field">
-                            <span class="bp-label">Fonc&eacute;e</span>
-                            <div class="bp-color-row">
-                                <input type="color" class="bp-color" data-key="primaryDarkColor">
-                                <input type="text" class="bp-color-hex" data-key="primaryDarkColor" maxlength="7" spellcheck="false">
-                            </div>
-                        </label>
-                        <label class="bp-color-field">
-                            <span class="bp-label">Accent</span>
-                            <div class="bp-color-row">
-                                <input type="color" class="bp-color" data-key="accentColor">
-                                <input type="text" class="bp-color-hex" data-key="accentColor" maxlength="7" spellcheck="false">
-                            </div>
-                        </label>
+                <!-- ===== ROOT VIEW: Section List ===== -->
+                <div class="bp-view bp-view--active" data-view="root">
+                    <div class="branding-panel-header">
+                        <h2>Personnaliser</h2>
+                        <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
                     </div>
-                </section>
-
-                <!-- Typography Section -->
-                <section class="bp-section">
-                    <h3 class="bp-section-title">Typographie</h3>
-                    <label class="bp-field">
-                        <span class="bp-label">Police</span>
-                        <select class="bp-input bp-select" data-key="fontFamily">
-                            <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Inter (par d&eacute;faut)</option>
-                            <option value="'Poppins', sans-serif">Poppins</option>
-                            <option value="'Roboto', sans-serif">Roboto</option>
-                            <option value="'Open Sans', sans-serif">Open Sans</option>
-                            <option value="'Lato', sans-serif">Lato</option>
-                            <option value="'Nunito', sans-serif">Nunito</option>
-                            <option value="'Montserrat', sans-serif">Montserrat</option>
-                            <option value="system-ui, sans-serif">Syst&egrave;me</option>
-                        </select>
-                    </label>
-                </section>
-
-                <!-- User Section -->
-                <section class="bp-section">
-                    <h3 class="bp-section-title">Utilisateur</h3>
-                    <label class="bp-field">
-                        <span class="bp-label">Nom</span>
-                        <input type="text" class="bp-input" data-key="defaultUserName">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Initiales</span>
-                        <input type="text" class="bp-input" data-key="defaultUserInitials" maxlength="3">
-                    </label>
-                </section>
-
-                <!-- Footer Section -->
-                <section class="bp-section">
-                    <h3 class="bp-section-title">Pied de page</h3>
-                    <label class="bp-field">
-                        <span class="bp-label">Texte personnalis&eacute;</span>
-                        <input type="text" class="bp-input" data-key="footerText" placeholder="Ex: Propuls&eacute; par MonEntreprise">
-                    </label>
-                    <label class="bp-field">
-                        <span class="bp-label">Copyright</span>
-                        <input type="text" class="bp-input" data-key="copyrightText" placeholder="&copy; 2026 MonEntreprise">
-                    </label>
-                </section>
-            </div>
-
-            <!-- Panel Footer Actions -->
-            <div class="branding-panel-footer">
-                <div class="bp-actions-row">
-                    <button class="btn btn-sm btn-ghost" id="brandingReset" title="R&eacute;initialiser tout">Réinitialiser</button>
-                    <div class="bp-actions-right">
-                        <button class="btn btn-sm btn-ghost" id="brandingImport" title="Importer JSON">Importer</button>
-                        <button class="btn btn-sm btn-ghost" id="brandingExport" title="Exporter JSON">Exporter</button>
+                    <div class="branding-panel-body">
+                        <ul class="bp-menu-list" role="list">
+                            <li class="bp-menu-item" data-target="identity" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-1a5 5 0 0 1 10 0v1"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Identit&eacute;</span>
+                                    <span class="bp-menu-item-desc">Nom, logo, favicon</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-item" data-target="colors" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.23-.29-.38-.63-.38-1.01 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-9.95-10-9.95z"/><circle cx="7.5" cy="11.5" r="1.5"/><circle cx="10.5" cy="7.5" r="1.5"/><circle cx="16.5" cy="11.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Couleurs</span>
+                                    <span class="bp-menu-item-desc">Palette principale et accent</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-item" data-target="typography" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Typographie</span>
+                                    <span class="bp-menu-item-desc">Police de caract&egrave;res</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-item" data-target="user" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Utilisateur</span>
+                                    <span class="bp-menu-item-desc">Nom et initiales</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-item" data-target="footer" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Pied de page</span>
+                                    <span class="bp-menu-item-desc">Texte et copyright</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Root Footer Actions -->
+                    <div class="branding-panel-footer">
+                        <div class="bp-actions-row">
+                            <button class="btn btn-sm btn-ghost" id="brandingReset" title="R&eacute;initialiser tout">R&eacute;initialiser</button>
+                            <div class="bp-actions-right">
+                                <button class="btn btn-sm btn-ghost" id="brandingImport" title="Importer JSON">Importer</button>
+                                <button class="btn btn-sm btn-ghost" id="brandingExport" title="Exporter JSON">Exporter</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-primary bp-ok-btn" id="brandingOk">OK</button>
                     </div>
                 </div>
-                <button class="btn btn-sm btn-primary bp-ok-btn" id="brandingOk">OK</button>
-            </div>
+
+                <!-- ===== SUB-VIEW: Identity ===== -->
+                <div class="bp-view" data-view="identity">
+                    <div class="branding-panel-header">
+                        <button class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Identit&eacute;</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <label class="bp-field">
+                                <span class="bp-label">Nom de l'application</span>
+                                <input type="text" class="bp-input" data-key="appName">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Nom court</span>
+                                <input type="text" class="bp-input" data-key="appShortName">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Ic&ocirc;ne logo (2-3 lettres)</span>
+                                <input type="text" class="bp-input" data-key="logoIcon" maxlength="3">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Image logo (URL)</span>
+                                <input type="text" class="bp-input" data-key="logoImage" placeholder="https://...">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Favicon (URL)</span>
+                                <input type="text" class="bp-input" data-key="favicon" placeholder="https://...">
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ===== SUB-VIEW: Colors ===== -->
+                <div class="bp-view" data-view="colors">
+                    <div class="branding-panel-header">
+                        <button class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Couleurs</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <div class="bp-color-grid">
+                                <label class="bp-color-field">
+                                    <span class="bp-label">Principale</span>
+                                    <div class="bp-color-row">
+                                        <input type="color" class="bp-color" data-key="primaryColor">
+                                        <input type="text" class="bp-color-hex" data-key="primaryColor" maxlength="7" spellcheck="false">
+                                    </div>
+                                </label>
+                                <label class="bp-color-field">
+                                    <span class="bp-label">Survol</span>
+                                    <div class="bp-color-row">
+                                        <input type="color" class="bp-color" data-key="primaryHoverColor">
+                                        <input type="text" class="bp-color-hex" data-key="primaryHoverColor" maxlength="7" spellcheck="false">
+                                    </div>
+                                </label>
+                                <label class="bp-color-field">
+                                    <span class="bp-label">Claire</span>
+                                    <div class="bp-color-row">
+                                        <input type="color" class="bp-color" data-key="primaryLightColor">
+                                        <input type="text" class="bp-color-hex" data-key="primaryLightColor" maxlength="7" spellcheck="false">
+                                    </div>
+                                </label>
+                                <label class="bp-color-field">
+                                    <span class="bp-label">Fonc&eacute;e</span>
+                                    <div class="bp-color-row">
+                                        <input type="color" class="bp-color" data-key="primaryDarkColor">
+                                        <input type="text" class="bp-color-hex" data-key="primaryDarkColor" maxlength="7" spellcheck="false">
+                                    </div>
+                                </label>
+                                <label class="bp-color-field">
+                                    <span class="bp-label">Accent</span>
+                                    <div class="bp-color-row">
+                                        <input type="color" class="bp-color" data-key="accentColor">
+                                        <input type="text" class="bp-color-hex" data-key="accentColor" maxlength="7" spellcheck="false">
+                                    </div>
+                                </label>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ===== SUB-VIEW: Typography ===== -->
+                <div class="bp-view" data-view="typography">
+                    <div class="branding-panel-header">
+                        <button class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Typographie</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <label class="bp-field">
+                                <span class="bp-label">Police</span>
+                                <select class="bp-input bp-select" data-key="fontFamily">
+                                    <option value="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Inter (par d&eacute;faut)</option>
+                                    <option value="'Poppins', sans-serif">Poppins</option>
+                                    <option value="'Roboto', sans-serif">Roboto</option>
+                                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                                    <option value="'Lato', sans-serif">Lato</option>
+                                    <option value="'Nunito', sans-serif">Nunito</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                                    <option value="system-ui, sans-serif">Syst&egrave;me</option>
+                                </select>
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ===== SUB-VIEW: User ===== -->
+                <div class="bp-view" data-view="user">
+                    <div class="branding-panel-header">
+                        <button class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Utilisateur</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <label class="bp-field">
+                                <span class="bp-label">Nom</span>
+                                <input type="text" class="bp-input" data-key="defaultUserName">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Initiales</span>
+                                <input type="text" class="bp-input" data-key="defaultUserInitials" maxlength="3">
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ===== SUB-VIEW: Footer ===== -->
+                <div class="bp-view" data-view="footer">
+                    <div class="branding-panel-header">
+                        <button class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Pied de page</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <label class="bp-field">
+                                <span class="bp-label">Texte personnalis&eacute;</span>
+                                <input type="text" class="bp-input" data-key="footerText" placeholder="Ex: Propuls&eacute; par MonEntreprise">
+                            </label>
+                            <label class="bp-field">
+                                <span class="bp-label">Copyright</span>
+                                <input type="text" class="bp-input" data-key="copyrightText" placeholder="&copy; 2026 MonEntreprise">
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
+            </div><!-- /.bp-nav-stack -->
 
             <!-- Hidden file input for import -->
             <input type="file" id="brandingFileInput" accept=".json,application/json" hidden>

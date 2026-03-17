@@ -1,6 +1,6 @@
 /* ========================================
    BRANDING PANEL
-   Visual customization UI with export/import
+   iOS-style settings navigation with stack views
    ======================================== */
 
 import { branding as defaultConfig } from '../config/branding.js';
@@ -31,6 +31,7 @@ class BrandingPanel {
     constructor() {
         this._overlay = null;
         this._isOpen = false;
+        this._viewStack = ['root'];
     }
 
     init() {
@@ -45,6 +46,7 @@ class BrandingPanel {
         this._importBtn = document.getElementById('brandingImport');
         this._okBtn = document.getElementById('brandingOk');
         this._fileInput = document.getElementById('brandingFileInput');
+        this._navStack = this._panel.querySelector('.bp-nav-stack');
 
         this._bindEvents();
         this._populateForm();
@@ -58,14 +60,41 @@ class BrandingPanel {
         this._closeBtn?.addEventListener('click', () => this.close());
         this._overlay?.addEventListener('click', (e) => {
             if (e.target === this._overlay || e.target === this._overlay.querySelector('::before')) {
-                // Clicked on backdrop
                 if (!this._panel.contains(e.target)) this.close();
             }
         });
 
         // Escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isOpen) this.close();
+            if (e.key === 'Escape' && this._isOpen) {
+                if (this._viewStack.length > 1) {
+                    this._navigateBack();
+                } else {
+                    this.close();
+                }
+            }
+        });
+
+        // Menu item navigation
+        this._panel?.querySelectorAll('.bp-menu-item[data-target]').forEach(item => {
+            item.addEventListener('click', () => {
+                const target = item.dataset.target;
+                if (target) this._navigateTo(target);
+            });
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const target = item.dataset.target;
+                    if (target) this._navigateTo(target);
+                }
+            });
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('role', 'button');
+        });
+
+        // Back buttons
+        this._panel?.querySelectorAll('[data-back]').forEach(btn => {
+            btn.addEventListener('click', () => this._navigateBack());
         });
 
         // Live editing: text inputs
@@ -82,7 +111,6 @@ class BrandingPanel {
         this._panel?.querySelectorAll('.bp-color').forEach(picker => {
             picker.addEventListener('input', () => {
                 const key = picker.dataset.key;
-                // Sync hex text
                 const hexInput = this._panel.querySelector(`.bp-color-hex[data-key="${key}"]`);
                 if (hexInput) hexInput.value = picker.value;
                 this._onColorChange(key, picker.value);
@@ -112,6 +140,68 @@ class BrandingPanel {
         this._fileInput?.addEventListener('change', (e) => this._import(e));
     }
 
+    /* ---- Navigation ---- */
+
+    _navigateTo(viewName) {
+        const currentView = this._getView(this._viewStack[this._viewStack.length - 1]);
+        const nextView = this._getView(viewName);
+        if (!currentView || !nextView) return;
+
+        // Push to stack
+        this._viewStack.push(viewName);
+
+        // Animate current view out to the left
+        currentView.classList.remove('bp-view--active');
+        currentView.classList.add('bp-view--exit-left');
+
+        // Animate next view in from the right
+        nextView.classList.add('bp-view--active');
+
+        // Focus first input in new view
+        requestAnimationFrame(() => {
+            const firstInput = nextView.querySelector('.bp-input, .bp-color');
+            if (firstInput) firstInput.focus();
+        });
+    }
+
+    _navigateBack() {
+        if (this._viewStack.length <= 1) return;
+
+        const currentViewName = this._viewStack.pop();
+        const previousViewName = this._viewStack[this._viewStack.length - 1];
+
+        const currentView = this._getView(currentViewName);
+        const previousView = this._getView(previousViewName);
+        if (!currentView || !previousView) return;
+
+        // Animate current view out to the right
+        currentView.classList.remove('bp-view--active');
+
+        // Animate previous view back from the left
+        previousView.classList.remove('bp-view--exit-left');
+        previousView.classList.add('bp-view--active');
+
+        // Focus the menu item that was clicked
+        if (previousViewName === 'root') {
+            const menuItem = previousView.querySelector(`[data-target="${currentViewName}"]`);
+            if (menuItem) menuItem.focus();
+        }
+    }
+
+    _getView(name) {
+        return this._navStack?.querySelector(`[data-view="${name}"]`);
+    }
+
+    _resetNavigation() {
+        // Reset to root view without animation
+        this._viewStack = ['root'];
+        this._navStack?.querySelectorAll('.bp-view').forEach(view => {
+            view.classList.remove('bp-view--active', 'bp-view--exit-left');
+        });
+        const rootView = this._getView('root');
+        if (rootView) rootView.classList.add('bp-view--active');
+    }
+
     /* ---- Open / Close ---- */
 
     toggle() {
@@ -120,14 +210,10 @@ class BrandingPanel {
 
     open() {
         if (!this._overlay) return;
+        this._resetNavigation();
         this._populateForm();
         this._overlay.hidden = false;
         this._isOpen = true;
-        // Focus first input
-        requestAnimationFrame(() => {
-            const first = this._panel.querySelector('.bp-input');
-            if (first) first.focus();
-        });
     }
 
     close() {
@@ -201,7 +287,6 @@ class BrandingPanel {
     _onColorChange(key, value) {
         const config = this._getCurrentConfig();
         config[key] = value;
-        // Sync theme-color meta with primary color
         if (key === 'primaryColor') {
             config.themeColorLight = value;
         }
@@ -239,7 +324,6 @@ class BrandingPanel {
 
     _export() {
         const config = this._getCurrentConfig();
-        // Clean internal keys
         const exportData = {};
         for (const key of Object.keys(defaultConfig)) {
             exportData[key] = config[key] !== undefined ? config[key] : defaultConfig[key];
@@ -257,7 +341,7 @@ class BrandingPanel {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        this._showToast('Configuration export\u00e9e');
+        this._showToast('Configuration exportée');
     }
 
     /* ---- Import JSON ---- */
@@ -271,24 +355,21 @@ class BrandingPanel {
             try {
                 const imported = JSON.parse(ev.target.result);
 
-                // Validate: must be a plain object with at least appName
                 if (typeof imported !== 'object' || !imported.appName) {
                     this._showToast('Fichier invalide : appName manquant', true);
                     return;
                 }
 
-                // Merge with defaults for any missing keys
                 const merged = { ...defaultConfig, ...imported };
                 this._save(merged);
                 brandingManager.applyConfig(merged);
                 this._populateForm();
-                this._showToast('Configuration import\u00e9e avec succ\u00e8s');
+                this._showToast('Configuration importée avec succès');
             } catch {
                 this._showToast('Erreur : fichier JSON invalide', true);
             }
         };
         reader.readAsText(file);
-        // Reset file input so same file can be re-imported
         e.target.value = '';
     }
 
