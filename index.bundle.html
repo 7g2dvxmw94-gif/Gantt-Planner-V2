@@ -4410,7 +4410,10 @@ textarea.input {
 .bp-view--active .bp-input,
 .bp-view--active .bp-color,
 .bp-view--active .bp-color-hex,
-.bp-view--active .bp-select {
+.bp-view--active .bp-select,
+.bp-view--active .bp-toggle-btn,
+.bp-view--active .bp-switch,
+.bp-view--active .bp-switch-field {
     pointer-events: auto;
 }
 
@@ -4761,6 +4764,120 @@ textarea.input {
     color: var(--text-primary, #1e293b);
 }
 
+/* ---- Menu Separator ---- */
+.bp-menu-separator {
+    height: 1px;
+    margin: 8px 12px;
+    background: var(--border-default, #e2e8f0);
+    list-style: none;
+}
+
+/* ---- Toggle Button Group ---- */
+.bp-toggle-group {
+    display: flex;
+    gap: 0;
+    background: var(--bg-subtle, #f8fafc);
+    border: 1px solid var(--border-default, #e2e8f0);
+    border-radius: 10px;
+    padding: 3px;
+    overflow: hidden;
+}
+
+.bp-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: var(--font-sans, inherit);
+    color: var(--text-secondary, #64748b);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms, color 150ms, box-shadow 150ms;
+    white-space: nowrap;
+}
+
+.bp-toggle-btn:hover {
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-muted, #f1f5f9);
+}
+
+.bp-toggle-btn.active {
+    background: var(--color-primary, #6366f1);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ---- Switch / Toggle ---- */
+.bp-switch-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-default, #e2e8f0);
+    user-select: none;
+}
+
+.bp-switch-field:last-child {
+    border-bottom: none;
+}
+
+.bp-switch-field .bp-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary, #1e293b);
+}
+
+.bp-switch {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.bp-switch-slider {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background: var(--border-strong, #cbd5e1);
+    border-radius: 12px;
+    transition: background 200ms;
+    flex-shrink: 0;
+}
+
+.bp-switch-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 200ms;
+}
+
+.bp-switch:checked + .bp-switch-slider {
+    background: var(--color-primary, #6366f1);
+}
+
+.bp-switch:checked + .bp-switch-slider::after {
+    transform: translateX(20px);
+}
+
+.bp-switch:focus-visible + .bp-switch-slider {
+    outline: 2px solid var(--color-primary, #6366f1);
+    outline-offset: 2px;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 480px) {
     .branding-panel {
@@ -4808,7 +4925,7 @@ textarea.input {
 
         <!-- Header Actions -->
         <div class="header-actions">
-            <button class="icon-btn" aria-label="Paramètres" title="Paramètres">
+            <button class="icon-btn" id="settingsBtn" aria-label="Paramètres" title="Paramètres">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -5132,7 +5249,7 @@ textarea.input {
                 <!-- ===== ROOT VIEW: Section List ===== -->
                 <div class="bp-view bp-view--active" data-view="root">
                     <div class="branding-panel-header">
-                        <h2>Personnaliser</h2>
+                        <h2>Personnaliser &amp; R&eacute;glages</h2>
                         <button class="icon-btn branding-panel-close" id="brandingClose" aria-label="Fermer le panneau">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </button>
@@ -5186,6 +5303,17 @@ textarea.input {
                                 <div class="bp-menu-item-content">
                                     <span class="bp-menu-item-label">Pied de page</span>
                                     <span class="bp-menu-item-desc">Texte et copyright</span>
+                                </div>
+                                <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                            </li>
+                            <li class="bp-menu-separator" role="separator"></li>
+                            <li class="bp-menu-item" data-target="appsettings" role="listitem">
+                                <div class="bp-menu-item-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                </div>
+                                <div class="bp-menu-item-content">
+                                    <span class="bp-menu-item-label">Param&egrave;tres</span>
+                                    <span class="bp-menu-item-desc">Th&egrave;me, zoom, affichage</span>
                                 </div>
                                 <svg class="bp-menu-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
                             </li>
@@ -5365,12 +5493,70 @@ textarea.input {
                     </div>
                 </div>
 
+                <!-- ===== SUB-VIEW: App Settings ===== -->
+                <div class="bp-view" data-view="appsettings">
+                    <div class="branding-panel-header">
+                        <button type="button" class="bp-back-btn" data-back aria-label="Retour">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <h2>Param&egrave;tres</h2>
+                        <span class="bp-header-spacer"></span>
+                    </div>
+                    <div class="branding-panel-body">
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Th&egrave;me</h3>
+                            <div class="bp-toggle-group" id="settingsThemeGroup">
+                                <button class="bp-toggle-btn" data-setting-value="light">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                                    Clair
+                                </button>
+                                <button class="bp-toggle-btn" data-setting-value="dark">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                    Sombre
+                                </button>
+                                <button class="bp-toggle-btn" data-setting-value="auto">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                    Auto
+                                </button>
+                            </div>
+                        </section>
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Zoom par d&eacute;faut</h3>
+                            <div class="bp-toggle-group" id="settingsZoomGroup">
+                                <button class="bp-toggle-btn" data-setting-value="day">Jour</button>
+                                <button class="bp-toggle-btn" data-setting-value="week">Semaine</button>
+                                <button class="bp-toggle-btn" data-setting-value="month">Mois</button>
+                                <button class="bp-toggle-btn" data-setting-value="quarter">Trimestre</button>
+                            </div>
+                        </section>
+                        <section class="bp-section">
+                            <h3 class="bp-section-title">Affichage</h3>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Afficher les week-ends</span>
+                                <input type="checkbox" class="bp-switch" id="settingsShowWeekends">
+                                <span class="bp-switch-slider"></span>
+                            </label>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Afficher les num&eacute;ros de ligne</span>
+                                <input type="checkbox" class="bp-switch" id="settingsShowRowNumbers">
+                                <span class="bp-switch-slider"></span>
+                            </label>
+                            <label class="bp-switch-field">
+                                <span class="bp-label">Animations</span>
+                                <input type="checkbox" class="bp-switch" id="settingsAnimations" checked>
+                                <span class="bp-switch-slider"></span>
+                            </label>
+                        </section>
+                    </div>
+                </div>
+
             </div><!-- /.bp-nav-stack -->
 
             <!-- Hidden file input for import -->
             <input type="file" id="brandingFileInput" accept=".json,application/json" hidden>
         </aside>
     </div>
+
 
     <!-- ==================== SCRIPTS ==================== -->
 
@@ -5665,6 +5851,7 @@ function clamp(value, min, max) {
    Gantt Planner Pro
    ======================================== */
 
+
 class ThemeManager {
     constructor() {
         this._html = document.documentElement;
@@ -5768,7 +5955,8 @@ const themeManager = new ThemeManager();
    Reactive store with localStorage persistence
    ======================================== */
 
-const STORE_STORAGE_KEY = 'gantt-planner-pro';
+
+const STORAGE_KEY = 'gantt-planner-pro';
 
 /* ---- Building Permit Constants ---- */
 
@@ -6147,7 +6335,7 @@ class Store {
 
     _load() {
         try {
-            const raw = localStorage.getItem(STORE_STORAGE_KEY);
+            const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed.projects && parsed.tasks && parsed.resources) {
@@ -6193,7 +6381,7 @@ class Store {
 
     _save() {
         try {
-            localStorage.setItem(STORE_STORAGE_KEY, JSON.stringify(this._data));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this._data));
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
         }
@@ -7431,10 +7619,12 @@ class Store {
 // Singleton export
 const store = new Store();
 
+
 /* ========================================
    TASK MODAL - Create / Edit / Delete Tasks
    Gantt Planner Pro - Step 2
    ======================================== */
+
 
 class TaskModal {
     constructor() {
@@ -8472,6 +8662,13 @@ const taskModal = new TaskModal();
    Gantt Planner Pro
    ======================================== */
 
+    createElement, $, $$,
+    daysBetween, addDays, formatDateISO, formatDateShort,
+    getMonthsBetween, getWeeksBetween, getDaysBetween,
+    getMonthName, getWeekNumber, isToday, isWeekend,
+    getTaskColor, TASK_COLORS,
+} from './utils.js';
+
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
     day:     { colWidth: 36,  label: 'Jour' },
@@ -9314,6 +9511,7 @@ const ganttRenderer = new GanttRenderer();
    GANTT INTERACTIONS - Drag, Resize, Click
    Gantt Planner Pro - Step 2
    ======================================== */
+
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -10199,59 +10397,16 @@ class CloudBackup {
 const cloudBackup = new CloudBackup();
 
 /* ========================================
-   BRANDING CONFIGURATION
-   White-label customization for Gantt Planner
-   ========================================
-
-   Edit this file to customize the application
-   appearance for your brand.
-   ======================================== */
-
-const branding = {
-
-    /* ---- Identity ---- */
-    appName: 'Gantt Planner Pro',
-    appShortName: 'Gantt Planner',
-    logoIcon: 'GP',                     // Text inside the logo icon (2-3 chars)
-    logoImage: null,                     // URL or path to logo image (replaces logoIcon if set)
-    favicon: null,                       // URL or path to favicon (null = keep default)
-    description: 'Outil de planification de projets avec diagramme de Gantt interactif',
-
-    /* ---- Colors ---- */
-    primaryColor: '#6366F1',             // Main brand color
-    primaryHoverColor: '#4F46E5',        // Hover state
-    primaryLightColor: '#EEF2FF',        // Light variant (backgrounds)
-    primaryDarkColor: '#4338CA',         // Dark variant
-    accentColor: '#EC4899',              // Accent / gradient color (logo, highlights)
-
-    /* ---- Typography ---- */
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    fontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-
-    /* ---- User defaults ---- */
-    defaultUserName: 'Jean Dupont',
-    defaultUserInitials: 'JD',
-
-    /* ---- Footer / Copyright ---- */
-    footerText: null,                    // Custom footer text (null = no extra footer)
-    copyrightText: null,                 // e.g. "© 2026 MaSociété. Tous droits réservés."
-
-    /* ---- Meta ---- */
-    themeColorLight: '#6366F1',          // <meta name="theme-color"> for light mode
-    themeColorDark: '#818CF8',           // <meta name="theme-color"> for dark mode
-    locale: 'fr',                        // Default locale (fr, en, etc.)
-};
-
-/* ========================================
    BRANDING MODULE
    Applies white-label config to the DOM
    ======================================== */
 
-const BRANDING_STORAGE_KEY = 'gantt_branding';
+
+const STORAGE_KEY = 'gantt_branding';
 
 class BrandingManager {
     constructor() {
-        this._config = branding;
+        this._config = defaultConfig;
     }
 
     getConfig() {
@@ -10286,10 +10441,10 @@ class BrandingManager {
 
     _loadFromStorage() {
         try {
-            const saved = localStorage.getItem(BRANDING_STORAGE_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                this._config = { ...branding, ...parsed };
+                this._config = { ...defaultConfig, ...parsed };
             }
         } catch { /* ignore */ }
     }
@@ -10472,7 +10627,8 @@ const brandingManager = new BrandingManager();
    iOS-style settings navigation with stack views
    ======================================== */
 
-const BRANDING_PANEL_STORAGE_KEY = 'gantt_branding';
+
+const STORAGE_KEY = 'gantt_branding';
 
 /* Font URL mapping for the font selector */
 const FONT_URLS = {
@@ -10611,6 +10767,56 @@ class BrandingPanel {
         this._exportBtn?.addEventListener('click', () => this._export());
         this._importBtn?.addEventListener('click', () => this._fileInput?.click());
         this._fileInput?.addEventListener('change', (e) => this._import(e));
+
+        // Settings: toggle groups
+        this._bindToggleGroup('settingsThemeGroup', (value) => {
+            if (value === 'auto') {
+                themeManager.useSystemPreference();
+            } else {
+                themeManager.setTheme(value);
+            }
+        });
+
+        this._bindToggleGroup('settingsZoomGroup', (value) => {
+            store.updateSettings({ zoomLevel: value });
+            ganttRenderer.setZoom(value);
+        });
+
+        // Settings: switches
+        this._bindSwitch('settingsShowWeekends', (checked) => {
+            store.updateSettings({ showWeekends: checked });
+            ganttRenderer.render();
+        });
+
+        this._bindSwitch('settingsShowRowNumbers', (checked) => {
+            store.updateSettings({ showRowNumbers: checked });
+            ganttRenderer.render();
+        });
+
+        this._bindSwitch('settingsAnimations', (checked) => {
+            store.updateSettings({ animations: checked });
+            document.documentElement.classList.toggle('no-animations', !checked);
+        });
+    }
+
+    /* ---- Settings helpers ---- */
+
+    _bindToggleGroup(groupId, onChange) {
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        group.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('.bp-toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                onChange(btn.dataset.settingValue);
+            });
+        });
+    }
+
+    _bindSwitch(switchId, onChange) {
+        const sw = document.getElementById(switchId);
+        if (!sw) return;
+        sw.addEventListener('change', () => onChange(sw.checked));
     }
 
     /* ---- Navigation ---- */
@@ -10620,13 +10826,17 @@ class BrandingPanel {
         const nextView = this._getView(viewName);
         if (!currentView || !nextView) return;
 
+        // Push to stack
         this._viewStack.push(viewName);
 
+        // Animate current view out to the left
         currentView.classList.remove('bp-view--active');
         currentView.classList.add('bp-view--exit-left');
 
+        // Animate next view in from the right
         nextView.classList.add('bp-view--active');
 
+        // Focus first input in new view
         requestAnimationFrame(() => {
             const firstInput = nextView.querySelector('.bp-input, .bp-color');
             if (firstInput) firstInput.focus();
@@ -10643,11 +10853,14 @@ class BrandingPanel {
         const previousView = this._getView(previousViewName);
         if (!currentView || !previousView) return;
 
+        // Animate current view out to the right
         currentView.classList.remove('bp-view--active');
 
+        // Animate previous view back from the left
         previousView.classList.remove('bp-view--exit-left');
         previousView.classList.add('bp-view--active');
 
+        // Focus the menu item that was clicked
         if (previousViewName === 'root') {
             const menuItem = previousView.querySelector(`[data-target="${currentViewName}"]`);
             if (menuItem) menuItem.focus();
@@ -10659,6 +10872,7 @@ class BrandingPanel {
     }
 
     _resetNavigation() {
+        // Reset to root view without animation
         this._viewStack = ['root'];
         this._navStack?.querySelectorAll('.bp-view').forEach(view => {
             view.classList.remove('bp-view--active', 'bp-view--exit-left');
@@ -10673,12 +10887,21 @@ class BrandingPanel {
         this._isOpen ? this.close() : this.open();
     }
 
-    open() {
+    open(targetView) {
         if (!this._overlay) return;
         this._resetNavigation();
         this._populateForm();
+        this._populateSettings();
         this._overlay.hidden = false;
         this._isOpen = true;
+        if (targetView) {
+            // Navigate directly to the target sub-view
+            requestAnimationFrame(() => this._navigateTo(targetView));
+        }
+    }
+
+    openToSettings() {
+        this.open('appsettings');
     }
 
     close() {
@@ -10686,6 +10909,40 @@ class BrandingPanel {
         this._overlay.hidden = true;
         this._isOpen = false;
         this._toggleBtn?.focus();
+    }
+
+    /* ---- Populate settings from store ---- */
+
+    _populateSettings() {
+        const settings = store.getSettings();
+
+        // Theme toggle group
+        const themeGroup = document.getElementById('settingsThemeGroup');
+        if (themeGroup) {
+            const themeValue = settings.theme || 'auto';
+            themeGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.settingValue === themeValue);
+            });
+        }
+
+        // Zoom toggle group
+        const zoomGroup = document.getElementById('settingsZoomGroup');
+        if (zoomGroup) {
+            const zoomValue = settings.zoomLevel || 'week';
+            zoomGroup.querySelectorAll('.bp-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.settingValue === zoomValue);
+            });
+        }
+
+        // Switches
+        const showWeekends = document.getElementById('settingsShowWeekends');
+        if (showWeekends) showWeekends.checked = settings.showWeekends !== false;
+
+        const showRowNumbers = document.getElementById('settingsShowRowNumbers');
+        if (showRowNumbers) showRowNumbers.checked = settings.showRowNumbers === true;
+
+        const animations = document.getElementById('settingsAnimations');
+        if (animations) animations.checked = settings.animations !== false;
     }
 
     /* ---- Populate form from current config ---- */
@@ -10733,12 +10990,14 @@ class BrandingPanel {
         const config = this._getCurrentConfig();
         let value = element.value;
 
+        // Treat empty strings as null for optional fields
         if (value === '' && ['logoImage', 'favicon', 'footerText', 'copyrightText'].includes(key)) {
             value = null;
         }
 
         config[key] = value;
 
+        // Update fontUrl when font changes
         if (key === 'fontFamily') {
             config.fontUrl = FONT_URLS[value] || null;
         }
@@ -10761,15 +11020,15 @@ class BrandingPanel {
 
     _getCurrentConfig() {
         try {
-            const saved = localStorage.getItem(BRANDING_PANEL_STORAGE_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) return JSON.parse(saved);
         } catch { /* ignore */ }
-        return { ...branding };
+        return { ...defaultConfig };
     }
 
     _save(config) {
         try {
-            localStorage.setItem(BRANDING_PANEL_STORAGE_KEY, JSON.stringify(config));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
         } catch { /* ignore */ }
     }
 
@@ -10777,8 +11036,8 @@ class BrandingPanel {
 
     _reset() {
         if (!confirm('Réinitialiser toutes les personnalisations ?')) return;
-        try { localStorage.removeItem(BRANDING_PANEL_STORAGE_KEY); } catch { /* ignore */ }
-        brandingManager.applyConfig(branding);
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        brandingManager.applyConfig(defaultConfig);
         this._populateForm();
         this._showToast('Personnalisation réinitialisée');
     }
@@ -10788,8 +11047,8 @@ class BrandingPanel {
     _export() {
         const config = this._getCurrentConfig();
         const exportData = {};
-        for (const key of Object.keys(branding)) {
-            exportData[key] = config[key] !== undefined ? config[key] : branding[key];
+        for (const key of Object.keys(defaultConfig)) {
+            exportData[key] = config[key] !== undefined ? config[key] : defaultConfig[key];
         }
 
         const json = JSON.stringify(exportData, null, 2);
@@ -10804,7 +11063,7 @@ class BrandingPanel {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        this._showToast('Configuration export\u00e9e');
+        this._showToast('Configuration exportée');
     }
 
     /* ---- Import JSON ---- */
@@ -10823,11 +11082,11 @@ class BrandingPanel {
                     return;
                 }
 
-                const merged = { ...branding, ...imported };
+                const merged = { ...defaultConfig, ...imported };
                 this._save(merged);
                 brandingManager.applyConfig(merged);
                 this._populateForm();
-                this._showToast('Configuration import\u00e9e avec succ\u00e8s');
+                this._showToast('Configuration importée avec succès');
             } catch {
                 this._showToast('Erreur : fichier JSON invalide', true);
             }
@@ -10857,7 +11116,7 @@ const brandingPanel = new BrandingPanel();
    ONBOARDING - Interactive guide for new users
    ======================================== */
 
-const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
+const STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
     {
@@ -10913,7 +11172,7 @@ class Onboarding {
 
     /** Auto-start on first visit, or call manually */
     tryAutoStart() {
-        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
+        if (localStorage.getItem(STORAGE_KEY)) return;
         // Defer so the UI is fully rendered
         setTimeout(() => this.start(), 600);
     }
@@ -10991,8 +11250,10 @@ class Onboarding {
             return;
         }
 
+        // Scroll target into view so that the tooltip has room to display
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+        // Wait for scroll to settle then position everything
         const _position = () => {
             const rect = target.getBoundingClientRect();
             const pad = 6;
@@ -11039,18 +11300,26 @@ class Onboarding {
                         topValue = topPos;
                     }
                 }
-                tt.style.top = topValue + 'px';
 
-                const available = window.innerHeight - topValue - 12;
-                if (ttRect.height > available) {
-                    tt.style.maxHeight = available + 'px';
-                    tt.style.overflowY = 'auto';
+                // Ensure the tooltip doesn't overflow below the viewport
+                const maxTop = window.innerHeight - ttRect.height - 12;
+                if (topValue > maxTop) {
+                    topValue = Math.max(12, maxTop);
+                    // If still overflowing, constrain tooltip height so buttons stay accessible
+                    const available = window.innerHeight - topValue - 12;
+                    if (ttRect.height > available) {
+                        tt.style.maxHeight = available + 'px';
+                        tt.style.overflowY = 'auto';
+                    }
                 }
+
+                tt.style.top = topValue + 'px';
 
                 nextBtn.focus();
             });
         };
 
+        // Small delay to let scrollIntoView settle
         setTimeout(_position, 350);
     }
 
@@ -11072,7 +11341,7 @@ class Onboarding {
 
     _finish() {
         this._active = false;
-        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+        localStorage.setItem(STORAGE_KEY, '1');
         if (this._overlay) {
             this._overlay.classList.add('fade-out');
             setTimeout(() => {
@@ -11093,6 +11362,7 @@ const onboarding = new Onboarding();
    APP - Main Entry Point
    Gantt Planner Pro
    ======================================== */
+
 
 class App {
     constructor() {
@@ -12086,6 +12356,11 @@ class App {
         if (helpBtn) {
             helpBtn.addEventListener('click', () => this._showKeyboardHelp());
         }
+
+        const settingsBtn = $('#settingsBtn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => brandingPanel.openToSettings());
+        }
     }
 
     _showAddTaskDialog() {
@@ -12856,8 +13131,11 @@ thead{display:table-header-group}
     /* ---- Keyboard Shortcuts ---- */
 
     _bindKeyboardShortcuts() {
-        // Use capture phase to intercept browser shortcuts (e.g. Ctrl+N in Edge) before the browser handles them; _prevent helper stops both default and other listeners
+        // Helper to fully block browser-default shortcuts (e.g. Ctrl+N in Edge)
         const _prevent = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
+
+        // Use capture phase on window (earliest possible interception) to beat
+        // Edge / Chromium browser-level shortcuts like Ctrl+N
         window.addEventListener('keydown', (e) => {
             // Ctrl+Z: Undo
             if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
@@ -12941,7 +13219,7 @@ thead{display:table-header-group}
                     if (e.key === '?') this._showKeyboardHelp();
                 }
             }
-        });
+        }, { capture: true });
     }
 
     _showKeyboardHelp() {
@@ -13459,7 +13737,7 @@ thead{display:table-header-group}
         const avgProgress = projectCount ? Math.round(totalProgress / projectCount) : 0;
         const budgetPct = totalBudget > 0 ? Math.round((totalBudgetUsed / totalBudget) * 100) : 0;
 
-        // Gather upcoming/overdue tasks across filtered projects for the dashboard
+        // Gather upcoming/overdue tasks across all projects for the dashboard
         const allUpcoming = [];
         projects.forEach(p => {
             store.getTasks(p.id).filter(t => !t.isPhase && t.progress < 100).forEach(t => {
