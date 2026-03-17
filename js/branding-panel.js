@@ -59,8 +59,8 @@ class BrandingPanel {
         this._toggleBtn?.addEventListener('click', () => this.toggle());
         this._closeBtn?.addEventListener('click', () => this.close());
         this._overlay?.addEventListener('click', (e) => {
-            if (e.target === this._overlay || e.target === this._overlay.querySelector('::before')) {
-                if (!this._panel.contains(e.target)) this.close();
+            if (e.target === this._overlay) {
+                this.close();
             }
         });
 
@@ -74,6 +74,9 @@ class BrandingPanel {
                 }
             }
         });
+
+        // Prevent document-level click handlers from interfering with panel
+        this._panel?.addEventListener('click', (e) => e.stopPropagation());
 
         // Menu item navigation
         this._panel?.querySelectorAll('.bp-menu-item[data-target]').forEach(item => {
@@ -94,7 +97,10 @@ class BrandingPanel {
 
         // Back buttons
         this._panel?.querySelectorAll('[data-back]').forEach(btn => {
-            btn.addEventListener('click', () => this._navigateBack());
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._navigateBack();
+            });
         });
 
         // Live editing: text inputs
