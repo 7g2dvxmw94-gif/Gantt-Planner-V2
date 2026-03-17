@@ -1009,7 +1009,7 @@ class App {
 
         const settingsBtn = $('#settingsBtn');
         if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => brandingPanel.openToSettings());
+            settingsBtn.addEventListener('click', () => brandingPanel.open());
         }
     }
 
