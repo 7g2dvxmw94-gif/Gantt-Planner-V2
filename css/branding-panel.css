@@ -79,6 +79,21 @@
     z-index: 2;
 }
 
+.bp-view--active .branding-panel-header,
+.bp-view--active .branding-panel-body,
+.bp-view--active .bp-back-btn,
+.bp-view--active .bp-input,
+.bp-view--active .bp-color,
+.bp-view--active .bp-color-hex,
+.bp-view--active .bp-select {
+    pointer-events: auto;
+}
+
+.bp-view--active .bp-back-btn {
+    position: relative;
+    z-index: 5;
+}
+
 .bp-view--exit-left {
     transform: translateX(-30%);
     pointer-events: none;

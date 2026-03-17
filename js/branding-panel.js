@@ -95,12 +95,13 @@ class BrandingPanel {
             item.setAttribute('role', 'button');
         });
 
-        // Back buttons
-        this._panel?.querySelectorAll('[data-back]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Back buttons (event delegation for robustness)
+        this._panel?.addEventListener('click', (e) => {
+            const backBtn = e.target.closest('[data-back]');
+            if (backBtn) {
                 e.stopPropagation();
                 this._navigateBack();
-            });
+            }
         });
 
         // Live editing: text inputs
