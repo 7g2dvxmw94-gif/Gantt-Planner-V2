@@ -84,6 +84,11 @@
     padding: var(--space-1) 0;
 }
 
+.timeline-day.weekend {
+    background: var(--bg-muted);
+    color: var(--text-muted);
+}
+
 .timeline-day.today {
     color: var(--color-error);
     font-weight: var(--font-weight-semibold);
@@ -242,6 +247,14 @@
 .gantt-timeline-grid-col {
     flex-shrink: 0;
     border-right: 1px solid var(--border-subtle);
+}
+
+.gantt-timeline-grid-col.weekend {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .gantt-timeline-grid-col.weekend {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 /* ---- Gantt Bar ---- */

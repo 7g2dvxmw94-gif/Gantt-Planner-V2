@@ -153,6 +153,14 @@ export function isToday(date) {
 }
 
 /**
+ * Check if a date is a weekend
+ */
+export function isWeekend(date) {
+    const d = new Date(date);
+    return d.getDay() === 0 || d.getDay() === 6;
+}
+
+/**
  * Get the ISO week number
  */
 export function getWeekNumber(date) {

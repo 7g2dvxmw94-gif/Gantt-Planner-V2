@@ -49,6 +49,7 @@
       - 5.1.2. Barres de tâches, phases et jalons
       - 5.1.3. Lignes de dépendances
       - 5.1.4. Ligne du jour (marqueur "Aujourd'hui")
+      - 5.1.5. Indicateurs de week-end
    - 5.2. Vue Tableau (Kanban / liste)
       - 5.2.1. Tri des colonnes
       - 5.2.2. Sélection et actions par lot
