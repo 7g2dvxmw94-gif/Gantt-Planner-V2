@@ -2383,11 +2383,6 @@ textarea.input {
     padding: var(--space-1) 0;
 }
 
-.timeline-day.weekend {
-    background: var(--bg-muted);
-    color: var(--text-muted);
-}
-
 .timeline-day.today {
     color: var(--color-error);
     font-weight: var(--font-weight-semibold);
@@ -2546,14 +2541,6 @@ textarea.input {
 .gantt-timeline-grid-col {
     flex-shrink: 0;
     border-right: 1px solid var(--border-subtle);
-}
-
-.gantt-timeline-grid-col.weekend {
-    background: rgba(0, 0, 0, 0.02);
-}
-
-[data-theme="dark"] .gantt-timeline-grid-col.weekend {
-    background: rgba(255, 255, 255, 0.02);
 }
 
 /* ---- Gantt Bar ---- */
@@ -4805,14 +4792,6 @@ function isToday(date) {
     const d = new Date(date);
     const today = new Date();
     return d.toDateString() === today.toDateString();
-}
-
-/**
- * Check if a date is a weekend
- */
-function isWeekend(date) {
-    const d = new Date(date);
-    return d.getDay() === 0 || d.getDay() === 6;
 }
 
 /**
@@ -8013,7 +7992,6 @@ class GanttRenderer {
                     const days = getDaysBetween(visibleStart, visibleEnd);
                     days.forEach(dayDate => {
                         let cls = 'timeline-day';
-                        if (isWeekend(dayDate)) cls += ' weekend';
                         if (isToday(dayDate)) cls += ' today';
                         const dayEl = createElement('div', {
                             className: cls,
@@ -8209,7 +8187,6 @@ class GanttRenderer {
 
         this._dayColumns.forEach(day => {
             let cls = 'gantt-timeline-grid-col';
-            if (isWeekend(day)) cls += ' weekend';
             grid.appendChild(createElement('div', {
                 className: cls,
                 style: { width: colWidth + 'px', minWidth: colWidth + 'px' },

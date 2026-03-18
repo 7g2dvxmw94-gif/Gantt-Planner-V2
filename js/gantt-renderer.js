@@ -8,7 +8,7 @@ import {
     createElement, $, $$,
     daysBetween, addDays, formatDateISO, formatDateShort,
     getMonthsBetween, getWeeksBetween, getDaysBetween,
-    getMonthName, getWeekNumber, isToday, isWeekend,
+    getMonthName, getWeekNumber, isToday,
     getTaskColor, TASK_COLORS,
 } from './utils.js';
 
@@ -268,7 +268,6 @@ class GanttRenderer {
                     const days = getDaysBetween(visibleStart, visibleEnd);
                     days.forEach(dayDate => {
                         let cls = 'timeline-day';
-                        if (isWeekend(dayDate)) cls += ' weekend';
                         if (isToday(dayDate)) cls += ' today';
                         const dayEl = createElement('div', {
                             className: cls,
@@ -464,7 +463,6 @@ class GanttRenderer {
 
         this._dayColumns.forEach(day => {
             let cls = 'gantt-timeline-grid-col';
-            if (isWeekend(day)) cls += ' weekend';
             grid.appendChild(createElement('div', {
                 className: cls,
                 style: { width: colWidth + 'px', minWidth: colWidth + 'px' },
