@@ -31,6 +31,7 @@ class App {
 
         // Initialize settings panel
         settingsPanel.init();
+        settingsPanel.applyStoredCustomizations();
 
         // Initialize Gantt renderer
         ganttRenderer.init();

@@ -4,14 +4,11 @@
    ======================================== */
 
 import { store } from './store.js';
-import { themeManager } from './theme.js';
-import { ganttRenderer } from './gantt-renderer.js';
 
 class SettingsPanel {
     constructor() {
         this._panel = null;
         this._overlay = null;
-        this._activeSection = 'params';
         this._isOpen = false;
     }
 
@@ -44,10 +41,6 @@ class SettingsPanel {
     }
 
     _renderPanel() {
-        const settings = store.getSettings();
-        const currentTheme = settings.theme || 'auto';
-        const currentZoom = settings.zoomLevel || 'week';
-
         return `
             <div class="settings-panel-header">
                 <button class="settings-panel-back" id="settingsPanelClose" aria-label="Fermer les réglages">
@@ -55,76 +48,13 @@ class SettingsPanel {
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
                 </button>
-                <h2 class="settings-panel-title" id="settingsPanelTitle">Paramètres</h2>
+                <h2 class="settings-panel-title" id="settingsPanelTitle">Personnaliser</h2>
                 <div class="settings-panel-header-spacer"></div>
             </div>
 
-            <div class="settings-panel-tabs" role="tablist">
-                <button class="settings-tab active" data-section="params" role="tab" aria-selected="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                    <span>Paramètres</span>
-                </button>
-                <button class="settings-tab" data-section="customize" role="tab" aria-selected="false">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 20h9"/>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                    </svg>
-                    <span>Personnaliser</span>
-                </button>
-            </div>
-
             <div class="settings-panel-body">
-                <!-- Paramètres Section -->
-                <div class="settings-section" id="settingsParams" data-section="params">
-                    ${this._renderParamsSection(currentTheme, currentZoom)}
-                </div>
-
-                <!-- Personnaliser Section -->
-                <div class="settings-section" id="settingsCustomize" data-section="customize" style="display:none;">
+                <div class="settings-section">
                     ${this._renderCustomizeSection()}
-                </div>
-            </div>
-        `;
-    }
-
-    _renderParamsSection(currentTheme, currentZoom) {
-        const themeOptions = [
-            { value: 'light', label: 'Clair', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>` },
-            { value: 'dark', label: 'Sombre', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>` },
-            { value: 'auto', label: 'Auto', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>` },
-        ];
-
-        const zoomOptions = [
-            { value: 'day', label: 'Jour' },
-            { value: 'week', label: 'Semaine' },
-            { value: 'month', label: 'Mois' },
-            { value: 'quarter', label: 'Trimestre' },
-        ];
-
-        return `
-            <div class="settings-group">
-                <h3 class="settings-group-label">Thème</h3>
-                <div class="settings-segmented-control">
-                    ${themeOptions.map(opt => `
-                        <button class="settings-segment${currentTheme === opt.value ? ' active' : ''}" data-theme="${opt.value}">
-                            <span class="settings-segment-icon">${opt.icon}</span>
-                            <span>${opt.label}</span>
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <h3 class="settings-group-label">Zoom par défaut</h3>
-                <div class="settings-segmented-control">
-                    ${zoomOptions.map(opt => `
-                        <button class="settings-segment${currentZoom === opt.value ? ' active' : ''}" data-zoom="${opt.value}">
-                            <span>${opt.label}</span>
-                        </button>
-                    `).join('')}
                 </div>
             </div>
         `;
@@ -141,6 +71,10 @@ class SettingsPanel {
                     <h3>Identité</h3>
                 </div>
                 <div class="settings-identity-fields">
+                    <div class="settings-field">
+                        <label class="settings-field-label" for="settingsUserName">Utilisateur</label>
+                        <input type="text" class="settings-field-input" id="settingsUserName" placeholder="Jean Dupont" value="${this._getCustomization('userName') || ''}">
+                    </div>
                     <div class="settings-field">
                         <label class="settings-field-label" for="settingsName">Nom du projet / entreprise</label>
                         <input type="text" class="settings-field-input" id="settingsName" placeholder="Mon entreprise" value="${this._getCustomization('brandName') || ''}">
@@ -215,43 +149,22 @@ class SettingsPanel {
         this._panel.querySelector('#settingsPanelClose')
             .addEventListener('click', () => this.close());
 
-        // Tab switching
-        this._panel.querySelectorAll('.settings-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const section = tab.dataset.section;
-                this._switchSection(section);
-            });
-        });
-
-        // Theme buttons (segmented control)
-        this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const theme = btn.dataset.theme;
-                this._setTheme(theme);
-                // Update active state
-                this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-
-        // Zoom buttons (segmented control)
-        this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const zoom = btn.dataset.zoom;
-                this._setZoom(zoom);
-                this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-
         // Identity fields (debounced save)
+        const userNameInput = this._panel.querySelector('#settingsUserName');
         const nameInput = this._panel.querySelector('#settingsName');
         const logoInput = this._panel.querySelector('#settingsLogo');
         const faviconInput = this._panel.querySelector('#settingsFavicon');
 
+        if (userNameInput) {
+            userNameInput.addEventListener('input', this._debounce(() => {
+                this._saveCustomization('userName', userNameInput.value);
+                this._applyUserInitials(userNameInput.value);
+            }, 500));
+        }
         if (nameInput) {
             nameInput.addEventListener('input', this._debounce(() => {
                 this._saveCustomization('brandName', nameInput.value);
+                this._applyBrandName(nameInput.value);
             }, 500));
         }
         if (logoInput) {
@@ -277,27 +190,24 @@ class SettingsPanel {
 
     /* ---- Actions ---- */
 
-    _setTheme(theme) {
-        if (theme === 'auto') {
-            themeManager.useSystemPreference();
+    _applyUserInitials(userName) {
+        const avatar = document.querySelector('.header-actions .avatar');
+        if (!avatar) return;
+        if (userName && userName.trim()) {
+            const initials = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            avatar.textContent = initials;
+            avatar.setAttribute('aria-label', `Profil utilisateur - ${userName.trim()}`);
         } else {
-            themeManager.setTheme(theme);
+            avatar.textContent = '?';
+            avatar.setAttribute('aria-label', 'Profil utilisateur');
         }
     }
 
-    _setZoom(zoom) {
-        // Apply zoom to gantt renderer (this also updates store)
-        ganttRenderer.setZoom(zoom);
-        ganttRenderer.render();
-
-        // Update toolbar zoom buttons
-        document.querySelectorAll('.zoom-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.zoom === zoom);
-        });
-        // Update zoom label
-        const labels = { day: 'Jour', week: 'Semaine', month: 'Mois', quarter: 'Trimestre' };
-        const zoomLabel = document.querySelector('.zoom-label');
-        if (zoomLabel) zoomLabel.textContent = labels[zoom] || '';
+    _applyBrandName(name) {
+        const logoText = document.querySelector('.logo > span');
+        if (logoText) {
+            logoText.textContent = name && name.trim() ? name.trim() : 'Gantt Planner';
+        }
     }
 
     _applyFavicon(url) {
@@ -309,28 +219,6 @@ class SettingsPanel {
             document.head.appendChild(link);
         }
         link.href = url;
-    }
-
-    _switchSection(section) {
-        this._activeSection = section;
-
-        // Update tabs
-        this._panel.querySelectorAll('.settings-tab').forEach(tab => {
-            const isActive = tab.dataset.section === section;
-            tab.classList.toggle('active', isActive);
-            tab.setAttribute('aria-selected', isActive);
-        });
-
-        // Show/hide sections
-        this._panel.querySelectorAll('.settings-section').forEach(sec => {
-            sec.style.display = sec.dataset.section === section ? '' : 'none';
-        });
-
-        // Update title
-        const title = this._panel.querySelector('#settingsPanelTitle');
-        if (title) {
-            title.textContent = section === 'params' ? 'Paramètres' : 'Personnaliser';
-        }
     }
 
     /* ---- Open / Close ---- */
@@ -369,27 +257,23 @@ class SettingsPanel {
     }
 
     _refreshValues() {
-        const settings = store.getSettings();
-        const currentTheme = settings.theme || 'auto';
-        const currentZoom = settings.zoomLevel || 'week';
-
-        // Theme buttons (segmented control)
-        this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-        });
-
-        // Zoom buttons (segmented control)
-        this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.zoom === currentZoom);
-        });
-
         // Identity fields
+        const userNameInput = this._panel.querySelector('#settingsUserName');
         const nameInput = this._panel.querySelector('#settingsName');
         const logoInput = this._panel.querySelector('#settingsLogo');
         const faviconInput = this._panel.querySelector('#settingsFavicon');
+        if (userNameInput) userNameInput.value = this._getCustomization('userName') || '';
         if (nameInput) nameInput.value = this._getCustomization('brandName') || '';
         if (logoInput) logoInput.value = this._getCustomization('logoUrl') || '';
         if (faviconInput) faviconInput.value = this._getCustomization('faviconUrl') || '';
+    }
+
+    /* Apply stored customizations on init */
+    applyStoredCustomizations() {
+        const userName = this._getCustomization('userName');
+        const brandName = this._getCustomization('brandName');
+        if (userName) this._applyUserInitials(userName);
+        if (brandName) this._applyBrandName(brandName);
     }
 }
 
