@@ -46,10 +46,11 @@
 .settings-panel-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
+    position: relative;
 }
 
 .settings-panel-title {
@@ -57,9 +58,11 @@
     font-weight: var(--font-weight-bold);
     color: var(--text-primary);
     margin: 0;
+    text-align: center;
+    flex: 1;
 }
 
-.settings-panel-close {
+.settings-panel-back {
     width: 36px;
     height: 36px;
     display: flex;
@@ -71,11 +74,17 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
+    flex-shrink: 0;
 }
 
-.settings-panel-close:hover {
+.settings-panel-back:hover {
     background: var(--bg-muted);
     color: var(--text-primary);
+}
+
+.settings-panel-header-spacer {
+    width: 36px;
+    flex-shrink: 0;
 }
 
 /* ---- Tabs ---- */
@@ -128,10 +137,26 @@
 /* ---- Group ---- */
 .settings-group {
     margin-bottom: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-default);
+}
+
+.settings-group:first-child {
+    border-top: none;
+    padding-top: 0;
 }
 
 .settings-group:last-child {
     margin-bottom: 0;
+}
+
+.settings-group-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-3) 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .settings-group-header {
@@ -155,84 +180,55 @@
     letter-spacing: 0.5px;
 }
 
-/* ---- Theme Options ---- */
-.settings-theme-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-2);
-}
-
-.settings-theme-btn {
+/* ---- Segmented Control ---- */
+.settings-segmented-control {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-2);
     background: var(--bg-subtle);
-    border: 2px solid var(--border-default);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-family: var(--font-sans);
+    padding: 3px;
+    gap: 2px;
 }
 
-.settings-theme-btn:hover {
-    background: var(--bg-muted);
-    border-color: var(--border-strong);
-}
-
-.settings-theme-btn.active {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-}
-
-.settings-theme-icon {
-    font-size: var(--font-size-xl);
-    line-height: 1;
-}
-
-.settings-theme-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    color: var(--text-primary);
-}
-
-.settings-theme-btn.active .settings-theme-label {
-    color: var(--color-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-/* ---- Zoom Options ---- */
-.settings-zoom-options {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-2);
-}
-
-.settings-zoom-btn {
-    padding: var(--space-2) var(--space-3);
-    background: var(--bg-subtle);
-    border: 2px solid var(--border-default);
-    border-radius: var(--radius-md);
+.settings-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius-lg) - 2px);
     cursor: pointer;
     transition: all var(--transition-fast);
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.settings-segment:hover {
     color: var(--text-primary);
-    text-align: center;
-}
-
-.settings-zoom-btn:hover {
     background: var(--bg-muted);
-    border-color: var(--border-strong);
 }
 
-.settings-zoom-btn.active {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+.settings-segment.active {
+    background: var(--color-primary);
+    color: #fff;
     font-weight: var(--font-weight-semibold);
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+}
+
+.settings-segment.active svg {
+    stroke: #fff;
+}
+
+.settings-segment-icon {
+    display: flex;
+    align-items: center;
+    line-height: 1;
 }
 
 /* ---- Identity Fields ---- */

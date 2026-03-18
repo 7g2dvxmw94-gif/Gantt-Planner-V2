@@ -5,6 +5,7 @@
 
 import { store } from './store.js';
 import { themeManager } from './theme.js';
+import { ganttRenderer } from './gantt-renderer.js';
 
 class SettingsPanel {
     constructor() {
@@ -49,13 +50,13 @@ class SettingsPanel {
 
         return `
             <div class="settings-panel-header">
-                <h2 class="settings-panel-title">Réglages</h2>
-                <button class="settings-panel-close" id="settingsPanelClose" aria-label="Fermer les réglages">
+                <button class="settings-panel-back" id="settingsPanelClose" aria-label="Fermer les réglages">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
+                        <polyline points="15 18 9 12 15 6"/>
                     </svg>
                 </button>
+                <h2 class="settings-panel-title" id="settingsPanelTitle">Paramètres</h2>
+                <div class="settings-panel-header-spacer"></div>
             </div>
 
             <div class="settings-panel-tabs" role="tablist">
@@ -91,9 +92,9 @@ class SettingsPanel {
 
     _renderParamsSection(currentTheme, currentZoom) {
         const themeOptions = [
-            { value: 'light', label: 'Clair', icon: '☀️' },
-            { value: 'dark', label: 'Sombre', icon: '🌙' },
-            { value: 'auto', label: 'Auto (système)', icon: '💻' },
+            { value: 'light', label: 'Clair', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>` },
+            { value: 'dark', label: 'Sombre', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>` },
+            { value: 'auto', label: 'Auto', icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>` },
         ];
 
         const zoomOptions = [
@@ -105,59 +106,26 @@ class SettingsPanel {
 
         return `
             <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/>
-                        <line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/>
-                        <line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                    </svg>
-                    <h3>Thème</h3>
-                </div>
-                <div class="settings-theme-options">
+                <h3 class="settings-group-label">Thème</h3>
+                <div class="settings-segmented-control">
                     ${themeOptions.map(opt => `
-                        <button class="settings-theme-btn${currentTheme === opt.value ? ' active' : ''}" data-theme="${opt.value}">
-                            <span class="settings-theme-icon">${opt.icon}</span>
-                            <span class="settings-theme-label">${opt.label}</span>
+                        <button class="settings-segment${currentTheme === opt.value ? ' active' : ''}" data-theme="${opt.value}">
+                            <span class="settings-segment-icon">${opt.icon}</span>
+                            <span>${opt.label}</span>
                         </button>
                     `).join('')}
                 </div>
             </div>
 
             <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        <line x1="11" y1="8" x2="11" y2="14"/>
-                        <line x1="8" y1="11" x2="14" y2="11"/>
-                    </svg>
-                    <h3>Zoom par défaut</h3>
-                </div>
-                <div class="settings-zoom-options">
+                <h3 class="settings-group-label">Zoom par défaut</h3>
+                <div class="settings-segmented-control">
                     ${zoomOptions.map(opt => `
-                        <button class="settings-zoom-btn${currentZoom === opt.value ? ' active' : ''}" data-zoom="${opt.value}">
-                            ${opt.label}
+                        <button class="settings-segment${currentZoom === opt.value ? ' active' : ''}" data-zoom="${opt.value}">
+                            <span>${opt.label}</span>
                         </button>
                     `).join('')}
                 </div>
-            </div>
-
-            <div class="settings-group settings-group-placeholder">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <h3>Plus de paramètres</h3>
-                </div>
-                <p class="settings-coming-soon">D'autres paramètres seront disponibles prochainement.</p>
             </div>
         `;
     }
@@ -255,23 +223,23 @@ class SettingsPanel {
             });
         });
 
-        // Theme buttons
-        this._panel.querySelectorAll('.settings-theme-btn').forEach(btn => {
+        // Theme buttons (segmented control)
+        this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const theme = btn.dataset.theme;
                 this._setTheme(theme);
                 // Update active state
-                this._panel.querySelectorAll('.settings-theme-btn').forEach(b => b.classList.remove('active'));
+                this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
         });
 
-        // Zoom buttons
-        this._panel.querySelectorAll('.settings-zoom-btn').forEach(btn => {
+        // Zoom buttons (segmented control)
+        this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const zoom = btn.dataset.zoom;
                 this._setZoom(zoom);
-                this._panel.querySelectorAll('.settings-zoom-btn').forEach(b => b.classList.remove('active'));
+                this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
         });
@@ -318,7 +286,10 @@ class SettingsPanel {
     }
 
     _setZoom(zoom) {
-        store.updateSettings({ zoomLevel: zoom });
+        // Apply zoom to gantt renderer (this also updates store)
+        ganttRenderer.setZoom(zoom);
+        ganttRenderer.render();
+
         // Update toolbar zoom buttons
         document.querySelectorAll('.zoom-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.zoom === zoom);
@@ -327,8 +298,6 @@ class SettingsPanel {
         const labels = { day: 'Jour', week: 'Semaine', month: 'Mois', quarter: 'Trimestre' };
         const zoomLabel = document.querySelector('.zoom-label');
         if (zoomLabel) zoomLabel.textContent = labels[zoom] || '';
-        // Trigger re-render via store event
-        store._emit('zoom:change', zoom);
     }
 
     _applyFavicon(url) {
@@ -356,6 +325,12 @@ class SettingsPanel {
         this._panel.querySelectorAll('.settings-section').forEach(sec => {
             sec.style.display = sec.dataset.section === section ? '' : 'none';
         });
+
+        // Update title
+        const title = this._panel.querySelector('#settingsPanelTitle');
+        if (title) {
+            title.textContent = section === 'params' ? 'Paramètres' : 'Personnaliser';
+        }
     }
 
     /* ---- Open / Close ---- */
@@ -398,13 +373,13 @@ class SettingsPanel {
         const currentTheme = settings.theme || 'auto';
         const currentZoom = settings.zoomLevel || 'week';
 
-        // Theme buttons
-        this._panel.querySelectorAll('.settings-theme-btn').forEach(btn => {
+        // Theme buttons (segmented control)
+        this._panel.querySelectorAll('.settings-segment[data-theme]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.theme === currentTheme);
         });
 
-        // Zoom buttons
-        this._panel.querySelectorAll('.settings-zoom-btn').forEach(btn => {
+        // Zoom buttons (segmented control)
+        this._panel.querySelectorAll('.settings-segment[data-zoom]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.zoom === currentZoom);
         });
 
