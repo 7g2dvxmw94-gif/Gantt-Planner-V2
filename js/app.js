@@ -11,6 +11,7 @@ import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
+import { settingsPanel } from './settings-panel.js';
 
 class App {
     constructor() {
@@ -27,6 +28,9 @@ class App {
     init() {
         // Initialize theme
         themeManager.init();
+
+        // Initialize settings panel
+        settingsPanel.init();
 
         // Initialize Gantt renderer
         ganttRenderer.init();
