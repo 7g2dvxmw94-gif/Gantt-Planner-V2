@@ -2,6 +2,40 @@
    RESPONSIVE STYLES
    ======================================== */
 
+/* ---- Laptop Large (1440px) ---- */
+@media (max-width: 1440px) {
+    .toolbar-actions .btn-secondary span {
+        display: none;
+    }
+
+    .toolbar-actions .btn-secondary {
+        padding: var(--space-2);
+    }
+
+    .zoom-label {
+        display: none;
+    }
+}
+
+/* ---- Laptop Small (1200px) ---- */
+@media (max-width: 1200px) {
+    .toolbar-actions .btn span {
+        display: none;
+    }
+
+    .toolbar-actions .btn {
+        padding: var(--space-2);
+    }
+
+    .toolbar-actions {
+        gap: var(--space-2);
+    }
+
+    .tab span {
+        display: none;
+    }
+}
+
 /* ---- Tablet (1024px) ---- */
 @media (max-width: 1024px) {
     .search-box {
@@ -19,22 +53,6 @@
     .toolbar {
         padding: 0 var(--space-3);
         gap: var(--space-2);
-    }
-
-    .toolbar-actions {
-        gap: var(--space-2);
-    }
-
-    .toolbar-actions .btn span {
-        display: none;
-    }
-
-    .toolbar-actions .btn {
-        padding: var(--space-2);
-    }
-
-    .zoom-label {
-        display: none;
     }
 }
 
