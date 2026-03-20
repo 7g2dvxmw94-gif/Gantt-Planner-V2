@@ -101,6 +101,7 @@ class App {
             tab.addEventListener('click', () => {
                 const view = tab.dataset.view;
                 if (!view) return;
+                this._clearSelection();
                 this._switchView(view);
 
                 // Update tabs
