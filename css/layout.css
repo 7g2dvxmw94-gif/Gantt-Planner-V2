@@ -130,11 +130,23 @@
     justify-content: space-between;
     gap: var(--space-4);
     transition: background var(--transition-base), border-color var(--transition-base);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.toolbar::-webkit-scrollbar {
+    height: 0;
+    display: none;
+}
+
+.toolbar {
+    scrollbar-width: none;
 }
 
 .tabs {
     display: flex;
     gap: var(--space-1);
+    flex-shrink: 0;
 }
 
 .tab {
@@ -151,6 +163,8 @@
     border-bottom: 2px solid transparent;
     background: transparent;
     transition: all var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .tab:hover {
@@ -172,6 +186,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    flex-shrink: 0;
 }
 
 /* ---- Main Container ---- */
