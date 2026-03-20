@@ -327,6 +327,12 @@ class App {
         thCb.appendChild(selectAllCb);
         headerRow.appendChild(thCb);
 
+        // Type column header (non-sortable icon column)
+        const thType = document.createElement('th');
+        thType.className = 'table-type-col';
+        thType.textContent = 'Type';
+        headerRow.appendChild(thType);
+
         const columns = [
             { key: 'name', label: 'Tâche' },
             { key: 'phase', label: 'Phase' },
@@ -395,6 +401,30 @@ class App {
             });
             tdCb.appendChild(cb);
             row.appendChild(tdCb);
+
+            // Type icon
+            const tdType = document.createElement('td');
+            tdType.className = 'table-type-col';
+            let typeIcon, typeTitle;
+            if (task.isMilestone) {
+                typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                typeTitle = 'Jalon';
+            } else if (task.isPermit) {
+                typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>';
+                typeTitle = 'Permis';
+            } else {
+                typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>';
+                typeTitle = 'Tâche';
+            }
+            const typeSpan = document.createElement('span');
+            typeSpan.className = 'table-type-icon';
+            typeSpan.innerHTML = typeIcon;
+            typeSpan.title = typeTitle;
+            if (task.isMilestone) typeSpan.classList.add('type-milestone');
+            else if (task.isPermit) typeSpan.classList.add('type-permit');
+            else typeSpan.classList.add('type-task');
+            tdType.appendChild(typeSpan);
+            row.appendChild(tdType);
 
             // Name
             const tdName = document.createElement('td');

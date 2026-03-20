@@ -766,6 +766,36 @@ tr.critical-path:hover {
     border-bottom: none;
 }
 
+.table-type-col {
+    width: 40px;
+    text-align: center !important;
+}
+
+.table-type-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
+}
+
+.table-type-icon.type-task {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.table-type-icon.type-milestone {
+    color: #E9A211;
+    background: color-mix(in srgb, #E9A211 12%, transparent);
+}
+
+.table-type-icon.type-permit {
+    color: #8B5CF6;
+    background: color-mix(in srgb, #8B5CF6 12%, transparent);
+}
+
 .table-task-name {
     display: flex;
     align-items: center;
