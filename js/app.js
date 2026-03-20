@@ -356,12 +356,15 @@ class App {
         // Body
         const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
         const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const criticalIds = this._showCriticalPath ? store.getCriticalPath() : [];
         const tbody = document.createElement('tbody');
 
         sorted.forEach(task => {
             const row = document.createElement('tr');
             row.dataset.taskId = task.id;
             if (this._selectedTaskIds.has(task.id)) row.classList.add('selected');
+            const isCritical = criticalIds.includes(task.id);
+            if (isCritical) row.classList.add('critical-path');
             row.addEventListener('click', (e) => {
                 if (e.target.type === 'checkbox') return;
                 if (e.ctrlKey || e.metaKey) {
@@ -460,6 +463,12 @@ class App {
             statusBadge.className = `badge-status-${task.status}`;
             statusBadge.textContent = statusLabels[task.status] || task.status;
             tdStatus.appendChild(statusBadge);
+            if (isCritical) {
+                const critBadge = document.createElement('span');
+                critBadge.className = 'badge-critical';
+                critBadge.textContent = 'Critique';
+                tdStatus.appendChild(critBadge);
+            }
             row.appendChild(tdStatus);
 
             // Priority
@@ -3377,13 +3386,16 @@ tr:nth-child(even){background:#fafbfc}
         if (btn) btn.classList.toggle('active', this._showCriticalPath);
 
         if (this._showCriticalPath) {
-            ganttRenderer.setCriticalPath(store.getCriticalPath());
-            this._showToast('Chemin critique affiché', 'info');
+            const cp = store.getCriticalPath();
+            ganttRenderer.setCriticalPath(cp);
+            const total = store.getTasks().filter(t => !t.isPhase).length;
+            this._showToast(`Chemin critique : ${cp.length} tâches sur ${total}`, 'info');
         } else {
             ganttRenderer.setCriticalPath(null);
             this._showToast('Chemin critique masqué', 'info');
         }
         ganttRenderer.render();
+        this._renderBoardView();
     }
 
     /* ---- Context Menu ---- */

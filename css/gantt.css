@@ -547,6 +547,29 @@
     50% { box-shadow: 0 0 0 3px var(--color-error), 0 0 8px rgba(239, 68, 68, 0.4); }
 }
 
+/* Critical Path – Table/Board view */
+tr.critical-path {
+    border-left: 3px solid var(--color-error);
+    background: rgba(239, 68, 68, 0.06);
+}
+
+tr.critical-path:hover {
+    background: rgba(239, 68, 68, 0.10);
+}
+
+.badge-critical {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    font-size: 0.7rem;
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
+    background: var(--color-error);
+    border-radius: var(--radius-full, 9999px);
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
 /* ---- Empty State ---- */
 .gantt-empty {
     display: flex;
