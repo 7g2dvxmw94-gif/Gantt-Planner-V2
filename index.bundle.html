@@ -3721,11 +3721,18 @@ tr.critical-path:hover {
     padding: var(--space-3) var(--space-4);
     background: #1e293b;
     color: #f1f5f9;
+    border: 1px solid transparent;
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     z-index: 10000;
     font-size: var(--font-size-sm);
     animation: batchBarSlideUp 200ms ease-out;
+}
+
+[data-theme="dark"] .batch-action-bar {
+    background: #334155;
+    border-color: rgba(129, 140, 248, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(129, 140, 248, 0.15);
 }
 
 @keyframes batchBarSlideUp {
