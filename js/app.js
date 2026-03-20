@@ -8,7 +8,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { settingsPanel } from './settings-panel.js';
@@ -665,13 +665,13 @@ class App {
         }
         const rateSuffix = document.createElement('span');
         rateSuffix.className = 'res-rate-suffix';
-        rateSuffix.textContent = currentRateType === 'daily' ? '\u20AC/j' : '\u20AC/h';
+        rateSuffix.textContent = currentRateType === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
 
         const switchRateType = (type) => {
             currentRateType = type;
             btnHourly.classList.toggle('active', type === 'hourly');
             btnDaily.classList.toggle('active', type === 'daily');
-            rateSuffix.textContent = type === 'daily' ? '\u20AC/j' : '\u20AC/h';
+            rateSuffix.textContent = type === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
             rateInput.value = '';
             rateInput.focus();
         };
@@ -886,9 +886,9 @@ class App {
                 const rateEl = document.createElement('div');
                 rateEl.className = 'resource-card-rate';
                 if (resource.rateType === 'daily' && resource.dailyRate) {
-                    rateEl.textContent = resource.dailyRate.toFixed(2) + ' \u20AC/j (TJM)';
+                    rateEl.textContent = formatRate(resource.dailyRate, 'daily') + ' (TJM)';
                 } else if (resource.hourlyRate) {
-                    rateEl.textContent = resource.hourlyRate.toFixed(2) + ' \u20AC/h';
+                    rateEl.textContent = formatRate(resource.hourlyRate, 'hourly');
                 }
                 info.appendChild(rateEl);
             }
@@ -2057,9 +2057,9 @@ thead{display:table-header-group}
                 if (pct > 90) {
                     notifications.push({
                         type: pct >= 100 ? 'danger' : 'warning',
-                        icon: '\u20AC',
+                        icon: getCurrencySymbol(),
                         text: `Budget <strong>${p.name}</strong> à ${pct}%`,
-                        sub: `${(projCosts.totalCostDone/1000).toFixed(1)}k / ${(p.budget/1000).toFixed(1)}k\u20AC`,
+                        sub: `${formatCurrency(projCosts.totalCostDone)} / ${formatCurrency(p.budget)}`,
                         projectId: p.id,
                     });
                 }
@@ -2450,7 +2450,7 @@ thead{display:table-header-group}
                         <div class="kpi-label">Budget consommé</div>
                     </div>
                     <div class="dashboard-kpi">
-                        <div class="kpi-value">${totalBudget > 0 ? (totalBudget >= 1000 ? (totalBudget / 1000).toFixed(1) + 'k' : Math.round(totalBudget)) + '\u20AC' : '-'}</div>
+                        <div class="kpi-value">${totalBudget > 0 ? formatCurrency(totalBudget) : '-'}</div>
                         <div class="kpi-label">Budget total estimé</div>
                     </div>
                 </div>
