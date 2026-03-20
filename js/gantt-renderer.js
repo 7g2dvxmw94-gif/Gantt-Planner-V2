@@ -86,6 +86,10 @@ class GanttRenderer {
         wrapper.scrollLeft = Math.max(0, pos - visibleWidth / 3);
     }
 
+    scrollToToday() {
+        this._scrollToToday();
+    }
+
     setZoom(level) {
         if (!ZOOM_CONFIG[level]) return;
         this._zoomLevel = level;

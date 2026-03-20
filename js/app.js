@@ -1829,6 +1829,7 @@ thead{display:table-header-group}
                 const level = btn.dataset.zoom;
                 ganttRenderer.setZoom(level);
                 ganttRenderer.render();
+                ganttRenderer.scrollToToday();
 
                 // Update active state
                 zoomBtns.forEach(b => b.classList.remove('active'));
@@ -1853,6 +1854,7 @@ thead{display:table-header-group}
         const level = levels[next];
         ganttRenderer.setZoom(level);
         ganttRenderer.render();
+        ganttRenderer.scrollToToday();
         // Update zoom UI
         $$('.zoom-btn[data-zoom]').forEach(b => b.classList.toggle('active', b.dataset.zoom === level));
         const label = $('.zoom-label');
