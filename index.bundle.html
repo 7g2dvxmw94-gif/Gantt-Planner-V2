@@ -5258,6 +5258,59 @@ function getTaskColor(index) {
     return TASK_COLORS[index % TASK_COLORS.length];
 }
 
+/* ---- Currency Utilities ---- */
+
+const CURRENCIES = {
+    EUR: { symbol: '€', position: 'after', hourly: '€/h', daily: '€/j', space: true },
+    USD: { symbol: '$', position: 'before', hourly: '$/h', daily: '$/d', space: false },
+    GBP: { symbol: '£', position: 'before', hourly: '£/h', daily: '£/d', space: false },
+    CHF: { symbol: 'CHF', position: 'after', hourly: 'CHF/h', daily: 'CHF/d', space: true },
+};
+
+/**
+ * Get the current currency config from store settings
+ */
+function getCurrencyConfig() {
+    try {
+        const raw = localStorage.getItem('gantt-planner-pro');
+        if (raw) {
+            const data = JSON.parse(raw);
+            const code = data?.settings?.customization?.currency || 'EUR';
+            return CURRENCIES[code] || CURRENCIES.EUR;
+        }
+    } catch (_) { /* ignore */ }
+    return CURRENCIES.EUR;
+}
+
+/**
+ * Format a value with the current currency symbol
+ */
+function formatCurrency(value) {
+    const c = getCurrencyConfig();
+    const num = value === 0 ? '0'
+        : value >= 1000 ? (value / 1000).toFixed(1) + 'k'
+        : Math.round(value).toString();
+    return c.position === 'before'
+        ? c.symbol + (c.space ? ' ' : '') + num
+        : num + (c.space ? ' ' : '') + c.symbol;
+}
+
+/**
+ * Format a rate value (e.g. "50.00 €/h" or "$50.00/h")
+ */
+function formatRate(value, type = 'hourly') {
+    const c = getCurrencyConfig();
+    const suffix = type === 'daily' ? c.daily : c.hourly;
+    return value.toFixed(2) + ' ' + suffix;
+}
+
+/**
+ * Get the current currency symbol
+ */
+function getCurrencySymbol() {
+    return getCurrencyConfig().symbol;
+}
+
 /* ---- Misc Utilities ---- */
 
 /**
@@ -7279,7 +7332,7 @@ class TaskModal {
         // Fixed cost row
         const costRow = createElement('div', { className: 'form-row' });
         const fixedCostGroup = createElement('div', { className: 'form-group' });
-        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (€)'));
+        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (' + getCurrencySymbol() + ')'));
         this._fixedCostInput = createElement('input', {
             className: 'input',
             type: 'number',
@@ -10174,6 +10227,28 @@ class SettingsPanel {
             <div class="settings-group">
                 <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="6" x2="12" y2="18"/>
+                        <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/>
+                        <circle cx="12" cy="16" r=".5"/>
+                    </svg>
+                    <h3>Devise</h3>
+                </div>
+                <div class="settings-identity-fields">
+                    <div class="settings-field">
+                        <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
+                        <select class="settings-field-input" id="settingsCurrency">
+                            ${Object.entries(CURRENCIES).map(([code, c]) =>
+                                \`<option value="\${code}" \${(this._getCustomization('currency') || 'EUR') === code ? 'selected' : ''}>\${c.symbol} – \${code}</option>\`
+                            ).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
                     </svg>
                     <h3>Couleurs</h3>
@@ -10259,6 +10334,16 @@ class SettingsPanel {
                 this._applyFavicon(faviconInput.value);
             }, 500));
         }
+
+        // Currency selector
+        const currencySelect = this._panel.querySelector('#settingsCurrency');
+        if (currencySelect) {
+            currencySelect.addEventListener('change', () => {
+                this._saveCustomization('currency', currencySelect.value);
+                // Dispatch event so views re-render with new currency
+                document.dispatchEvent(new CustomEvent('currency-changed'));
+            });
+        }
     }
 
     _debounce(fn, delay) {
@@ -10340,6 +10425,9 @@ class SettingsPanel {
         if (nameInput) nameInput.value = this._getCustomization('brandName') || '';
         if (logoInput) logoInput.value = this._getCustomization('logoUrl') || '';
         if (faviconInput) faviconInput.value = this._getCustomization('faviconUrl') || '';
+
+        const currencySelect = this._panel.querySelector('#settingsCurrency');
+        if (currencySelect) currencySelect.value = this._getCustomization('currency') || 'EUR';
     }
 
     applyStoredCustomizations() {
@@ -10378,6 +10466,12 @@ class App {
         // Initialize settings panel
         settingsPanel.init();
         settingsPanel.applyStoredCustomizations();
+
+        // Re-render active view when currency changes
+        document.addEventListener('currency-changed', () => {
+            this._refreshCurrentView();
+            this._renderStats();
+        });
 
         // Initialize Gantt renderer
         ganttRenderer.init();
@@ -12546,10 +12640,7 @@ thead{display:table-header-group}
         const varianceColor = variance < 0 ? '#EF4444' : variance < totalEstimated * 0.1 ? '#F59E0B' : '#10B981';
         const varianceIcon = variance < 0 ? '&#9650;' : variance > 0 ? '&#9660;' : '&#9644;';
 
-        const fmt = (v) => {
-            if (v === 0) return '0 €';
-            return (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString()) + ' €';
-        };
+        const fmt = (v) => formatCurrency(v);
 
         // Group tasks by phase
         const grouped = new Map(); // phaseId|'__none__' -> { phase, items }
@@ -12586,7 +12677,7 @@ thead{display:table-header-group}
 
             group.items.forEach(tc => {
                 const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em class="costs-no-resource">—</em>';
-                const rates = tc.assignedResources.map(r => r.rateType === 'daily' ? r.dailyRate + ' €/j' : r.hourlyRate + ' €/h').join(', ') || '—';
+                const rates = tc.assignedResources.map(r => formatRate(r.rateType === 'daily' ? r.dailyRate : r.hourlyRate, r.rateType === 'daily' ? 'daily' : 'hourly')).join(', ') || '—';
                 const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
                 const ecart = tc.cost - actual;
                 const ecartColor = ecart < 0 ? '#EF4444' : ecart < tc.cost * 0.1 ? '#F59E0B' : '#10B981';
@@ -12934,13 +13025,13 @@ thead{display:table-header-group}
 
         const totalCost = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
         const totalCostDone = allTaskCosts.reduce((s, tc) => s + tc.costDone, 0);
-        const formatCost = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
+        const formatCost = (v) => formatCurrency(v);
 
         const totalFixed = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         const rows = allTaskCosts.map(tc => {
             const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
-            const rates = tc.assignedResources.map(r => r.hourlyRate + '€/h').join(', ') || '—';
+            const rates = tc.assignedResources.map(r => formatRate(r.hourlyRate, 'hourly')).join(', ') || '—';
             const pct = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
             const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? '#6366F1' : 'var(--border-default, #E2E8F0)';
             return `<tr>
@@ -12948,9 +13039,9 @@ thead{display:table-header-group}
                 <td>${resNames}</td>
                 <td style="text-align:center;">${rates}</td>
                 <td style="text-align:center;">${tc.durationDays}j</td>
-                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) + '€' : '—'}</td>
-                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}€</td>
-                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}€</td>
+                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}</td>
+                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}</td>
+                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
                 <td style="width:80px;">
                     <div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">
                         <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
@@ -12979,9 +13070,9 @@ thead{display:table-header-group}
                     <tfoot>
                         <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
                             <td colspan="4">Total</td>
-                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) + '€' : '—'}</td>
-                            <td style="text-align:right;">${formatCost(totalCost)}€</td>
-                            <td style="text-align:right;">${formatCost(totalCostDone)}€</td>
+                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) : '—'}</td>
+                            <td style="text-align:right;">${formatCost(totalCost)}</td>
+                            <td style="text-align:right;">${formatCost(totalCostDone)}</td>
                             <td></td>
                         </tr>
                     </tfoot>
