@@ -8,7 +8,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { settingsPanel } from './settings-panel.js';
@@ -32,6 +32,12 @@ class App {
         // Initialize settings panel
         settingsPanel.init();
         settingsPanel.applyStoredCustomizations();
+
+        // Re-render active view when currency changes
+        document.addEventListener('currency-changed', () => {
+            this._refreshCurrentView();
+            this._renderStats();
+        });
 
         // Initialize Gantt renderer
         ganttRenderer.init();
@@ -2200,10 +2206,7 @@ thead{display:table-header-group}
         const varianceColor = variance < 0 ? '#EF4444' : variance < totalEstimated * 0.1 ? '#F59E0B' : '#10B981';
         const varianceIcon = variance < 0 ? '&#9650;' : variance > 0 ? '&#9660;' : '&#9644;';
 
-        const fmt = (v) => {
-            if (v === 0) return '0 €';
-            return (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString()) + ' €';
-        };
+        const fmt = (v) => formatCurrency(v);
 
         // Group tasks by phase
         const grouped = new Map(); // phaseId|'__none__' -> { phase, items }
@@ -2240,7 +2243,7 @@ thead{display:table-header-group}
 
             group.items.forEach(tc => {
                 const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em class="costs-no-resource">—</em>';
-                const rates = tc.assignedResources.map(r => r.rateType === 'daily' ? r.dailyRate + ' €/j' : r.hourlyRate + ' €/h').join(', ') || '—';
+                const rates = tc.assignedResources.map(r => formatRate(r.rateType === 'daily' ? r.dailyRate : r.hourlyRate, r.rateType === 'daily' ? 'daily' : 'hourly')).join(', ') || '—';
                 const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
                 const ecart = tc.cost - actual;
                 const ecartColor = ecart < 0 ? '#EF4444' : ecart < tc.cost * 0.1 ? '#F59E0B' : '#10B981';
@@ -2588,13 +2591,13 @@ thead{display:table-header-group}
 
         const totalCost = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
         const totalCostDone = allTaskCosts.reduce((s, tc) => s + tc.costDone, 0);
-        const formatCost = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
+        const formatCost = (v) => formatCurrency(v);
 
         const totalFixed = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         const rows = allTaskCosts.map(tc => {
             const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
-            const rates = tc.assignedResources.map(r => r.hourlyRate + '€/h').join(', ') || '—';
+            const rates = tc.assignedResources.map(r => formatRate(r.hourlyRate, 'hourly')).join(', ') || '—';
             const pct = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
             const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? '#6366F1' : 'var(--border-default, #E2E8F0)';
             return `<tr>
@@ -2602,9 +2605,9 @@ thead{display:table-header-group}
                 <td>${resNames}</td>
                 <td style="text-align:center;">${rates}</td>
                 <td style="text-align:center;">${tc.durationDays}j</td>
-                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) + '€' : '—'}</td>
-                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}€</td>
-                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}€</td>
+                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}</td>
+                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}</td>
+                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
                 <td style="width:80px;">
                     <div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">
                         <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
@@ -2633,9 +2636,9 @@ thead{display:table-header-group}
                     <tfoot>
                         <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
                             <td colspan="4">Total</td>
-                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) + '€' : '—'}</td>
-                            <td style="text-align:right;">${formatCost(totalCost)}€</td>
-                            <td style="text-align:right;">${formatCost(totalCostDone)}€</td>
+                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) : '—'}</td>
+                            <td style="text-align:right;">${formatCost(totalCost)}</td>
+                            <td style="text-align:right;">${formatCost(totalCostDone)}</td>
                             <td></td>
                         </tr>
                     </tfoot>

@@ -262,6 +262,61 @@ export function getTaskColor(index) {
     return TASK_COLORS[index % TASK_COLORS.length];
 }
 
+/* ---- Currency Utilities ---- */
+
+const CURRENCIES = {
+    EUR: { symbol: '€', position: 'after', hourly: '€/h', daily: '€/j', space: true },
+    USD: { symbol: '$', position: 'before', hourly: '$/h', daily: '$/d', space: false },
+    GBP: { symbol: '£', position: 'before', hourly: '£/h', daily: '£/d', space: false },
+    CHF: { symbol: 'CHF', position: 'after', hourly: 'CHF/h', daily: 'CHF/d', space: true },
+};
+
+export { CURRENCIES };
+
+/**
+ * Get the current currency config from store settings
+ */
+export function getCurrencyConfig() {
+    try {
+        const raw = localStorage.getItem('gantt-planner-pro');
+        if (raw) {
+            const data = JSON.parse(raw);
+            const code = data?.settings?.customization?.currency || 'EUR';
+            return CURRENCIES[code] || CURRENCIES.EUR;
+        }
+    } catch (_) { /* ignore */ }
+    return CURRENCIES.EUR;
+}
+
+/**
+ * Format a value with the current currency symbol
+ */
+export function formatCurrency(value) {
+    const c = getCurrencyConfig();
+    const num = value === 0 ? '0'
+        : value >= 1000 ? (value / 1000).toFixed(1) + 'k'
+        : Math.round(value).toString();
+    return c.position === 'before'
+        ? c.symbol + (c.space ? ' ' : '') + num
+        : num + (c.space ? ' ' : '') + c.symbol;
+}
+
+/**
+ * Format a rate value (e.g. "50.00 €/h" or "$50.00/h")
+ */
+export function formatRate(value, type = 'hourly') {
+    const c = getCurrencyConfig();
+    const suffix = type === 'daily' ? c.daily : c.hourly;
+    return value.toFixed(2) + ' ' + suffix;
+}
+
+/**
+ * Get the current currency symbol
+ */
+export function getCurrencySymbol() {
+    return getCurrencyConfig().symbol;
+}
+
 /* ---- Misc Utilities ---- */
 
 /**

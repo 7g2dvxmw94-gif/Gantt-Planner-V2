@@ -4,7 +4,7 @@
    ======================================== */
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
-import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays, TASK_COLORS } from './utils.js';
+import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays, TASK_COLORS, getCurrencySymbol } from './utils.js';
 
 class TaskModal {
     constructor() {
@@ -212,7 +212,7 @@ class TaskModal {
         // Fixed cost row
         const costRow = createElement('div', { className: 'form-row' });
         const fixedCostGroup = createElement('div', { className: 'form-group' });
-        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (€)'));
+        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (' + getCurrencySymbol() + ')'));
         this._fixedCostInput = createElement('input', {
             className: 'input',
             type: 'number',

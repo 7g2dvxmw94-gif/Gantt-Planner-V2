@@ -4,6 +4,7 @@
    ======================================== */
 
 import { store } from './store.js';
+import { CURRENCIES } from './utils.js';
 
 class SettingsPanel {
     constructor() {
@@ -86,6 +87,28 @@ class SettingsPanel {
                     <div class="settings-field">
                         <label class="settings-field-label" for="settingsFavicon">Favicon (URL)</label>
                         <input type="url" class="settings-field-input" id="settingsFavicon" placeholder="https://example.com/favicon.ico" value="${this._getCustomization('faviconUrl') || ''}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="6" x2="12" y2="18"/>
+                        <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/>
+                        <circle cx="12" cy="16" r=".5"/>
+                    </svg>
+                    <h3>Devise</h3>
+                </div>
+                <div class="settings-identity-fields">
+                    <div class="settings-field">
+                        <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
+                        <select class="settings-field-input" id="settingsCurrency">
+                            ${Object.entries(CURRENCIES).map(([code, c]) =>
+                                `<option value="${code}" ${(this._getCustomization('currency') || 'EUR') === code ? 'selected' : ''}>${c.symbol} – ${code}</option>`
+                            ).join('')}
+                        </select>
                     </div>
                 </div>
             </div>
@@ -178,6 +201,16 @@ class SettingsPanel {
                 this._applyFavicon(faviconInput.value);
             }, 500));
         }
+
+        // Currency selector
+        const currencySelect = this._panel.querySelector('#settingsCurrency');
+        if (currencySelect) {
+            currencySelect.addEventListener('change', () => {
+                this._saveCustomization('currency', currencySelect.value);
+                // Dispatch event so views re-render with new currency
+                document.dispatchEvent(new CustomEvent('currency-changed'));
+            });
+        }
     }
 
     _debounce(fn, delay) {
@@ -266,6 +299,9 @@ class SettingsPanel {
         if (nameInput) nameInput.value = this._getCustomization('brandName') || '';
         if (logoInput) logoInput.value = this._getCustomization('logoUrl') || '';
         if (faviconInput) faviconInput.value = this._getCustomization('faviconUrl') || '';
+
+        const currencySelect = this._panel.querySelector('#settingsCurrency');
+        if (currencySelect) currencySelect.value = this._getCustomization('currency') || 'EUR';
     }
 
     /* Apply stored customizations on init */
