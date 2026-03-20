@@ -1920,40 +1920,6 @@ thead{display:table-header-group}
     /* ---- Stats ---- */
 
     _renderStats() {
-        const stats = store.getProjectStats();
-
-        const taskCount = $('#statTasks');
-        const daysRemaining = $('#statDays');
-        const progress = $('#statProgress');
-        const budget = $('#statBudget');
-
-        if (taskCount) {
-            taskCount.textContent = stats.activeTasks;
-            const parent = taskCount.closest('.stat-item');
-            if (parent) parent.title = `${stats.completedTasks}/${stats.totalTasks} terminées`;
-        }
-        if (daysRemaining) {
-            daysRemaining.textContent = stats.daysRemaining;
-            if (stats.daysRemaining <= 3 && stats.daysRemaining > 0) {
-                daysRemaining.style.color = 'var(--color-warning, #F59E0B)';
-            } else if (stats.daysRemaining <= 0 && stats.totalTasks > 0) {
-                daysRemaining.style.color = 'var(--color-danger, #EF4444)';
-            } else {
-                daysRemaining.style.color = '';
-            }
-        }
-        if (progress) progress.textContent = stats.progress + '%';
-        if (budget) {
-            if (stats.budget > 0) {
-                const formatK = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
-                budget.textContent = `${formatK(stats.budgetUsed)}\u20AC / ${formatK(stats.budget)}\u20AC`;
-                budget.style.color = '';
-            } else {
-                budget.textContent = '-';
-                budget.style.color = '';
-            }
-        }
-
         // Update notification badge
         this._updateNotifications();
     }

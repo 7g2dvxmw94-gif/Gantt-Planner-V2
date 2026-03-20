@@ -46,10 +46,6 @@
         --gantt-task-col-width: 220px;
     }
 
-    .stats-bar {
-        gap: var(--space-4);
-    }
-
     .toolbar {
         padding: 0 var(--space-3);
         gap: var(--space-2);
@@ -95,17 +91,6 @@
         gap: var(--space-1);
         flex-wrap: wrap;
         justify-content: flex-end;
-    }
-
-    .stats-bar {
-        flex-wrap: wrap;
-        gap: var(--space-4);
-        padding: var(--space-3) var(--space-4);
-    }
-
-    .stat-item {
-        flex: 1;
-        min-width: calc(50% - var(--space-2));
     }
 
     .gantt-wrapper {
@@ -203,7 +188,6 @@
 @media print {
     .header,
     .toolbar,
-    .stats-bar,
     .mobile-nav,
     .toast-container {
         display: none !important;

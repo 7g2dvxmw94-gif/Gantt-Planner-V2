@@ -114,7 +114,6 @@
     --header-height: 56px;
     --toolbar-height: 48px;
     --sidebar-width: 280px;
-    --stats-bar-height: 72px;
     --gantt-row-height: 48px;
     --gantt-task-col-width: 280px;
 
@@ -2215,55 +2214,6 @@ textarea.input {
     flex: 1;
     display: flex;
     overflow: hidden;
-}
-
-/* ---- Stats Bar ---- */
-.stats-bar {
-    background: var(--bg-base);
-    border-top: 1px solid var(--border-default);
-    padding: var(--space-4) var(--space-5);
-    display: flex;
-    gap: var(--space-6);
-    transition: background var(--transition-base), border-color var(--transition-base);
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-lg);
-    flex-shrink: 0;
-}
-
-.stat-icon.tasks    { background: var(--color-primary-light); color: var(--color-primary); }
-.stat-icon.duration { background: var(--color-info-light);    color: var(--color-info); }
-.stat-icon.progress { background: var(--color-success-light); color: var(--color-success); }
-.stat-icon.budget   { background: var(--color-warning-light); color: var(--color-warning); }
-
-.stat-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-value {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-}
-
-.stat-label {
-    font-size: var(--font-size-xs);
-    color: var(--text-muted);
 }
 
 /* ---- Mobile Bottom Nav ---- */
@@ -4524,10 +4474,6 @@ textarea.input {
         --gantt-task-col-width: 220px;
     }
 
-    .stats-bar {
-        gap: var(--space-4);
-    }
-
     .toolbar {
         padding: 0 var(--space-3);
         gap: var(--space-2);
@@ -4573,17 +4519,6 @@ textarea.input {
         gap: var(--space-1);
         flex-wrap: wrap;
         justify-content: flex-end;
-    }
-
-    .stats-bar {
-        flex-wrap: wrap;
-        gap: var(--space-4);
-        padding: var(--space-3) var(--space-4);
-    }
-
-    .stat-item {
-        flex: 1;
-        min-width: calc(50% - var(--space-2));
     }
 
     .gantt-wrapper {
@@ -4681,7 +4616,6 @@ textarea.input {
 @media print {
     .header,
     .toolbar,
-    .stats-bar,
     .mobile-nav,
     .toast-container {
         display: none !important;
@@ -4949,58 +4883,6 @@ textarea.input {
             <div id="costsView" style="display: none;" aria-label="Vue des coûts du projet"></div>
         </main>
 
-        <!-- ==================== STATS BAR ==================== -->
-        <footer class="stats-bar" role="contentinfo" aria-label="Statistiques du projet">
-            <div class="stat-item">
-                <div class="stat-icon tasks" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 11l3 3L22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="statTasks">-</div>
-                    <div class="stat-label">Tâches actives</div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon duration" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="statDays">-</div>
-                    <div class="stat-label">Jours restants</div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon progress" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"/>
-                        <line x1="12" y1="20" x2="12" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="14"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="statProgress">-</div>
-                    <div class="stat-label">Complété</div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon budget" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="statBudget">-</div>
-                    <div class="stat-label">Budget (consommé / estimé)</div>
-                </div>
-            </div>
-        </footer>
     </div>
 
     <!-- ==================== MOBILE BOTTOM NAV ==================== -->
@@ -9645,12 +9527,6 @@ const STEPS = [
         text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
         position: 'bottom',
     },
-    {
-        target: '.stats-bar',
-        title: 'Statistiques',
-        text: 'Suivez l\'avancement, le budget et les tâches actives en un coup d\'œil.',
-        position: 'top',
-    },
 ];
 
 class Onboarding {
@@ -12326,40 +12202,6 @@ thead{display:table-header-group}
     /* ---- Stats ---- */
 
     _renderStats() {
-        const stats = store.getProjectStats();
-
-        const taskCount = $('#statTasks');
-        const daysRemaining = $('#statDays');
-        const progress = $('#statProgress');
-        const budget = $('#statBudget');
-
-        if (taskCount) {
-            taskCount.textContent = stats.activeTasks;
-            const parent = taskCount.closest('.stat-item');
-            if (parent) parent.title = `${stats.completedTasks}/${stats.totalTasks} terminées`;
-        }
-        if (daysRemaining) {
-            daysRemaining.textContent = stats.daysRemaining;
-            if (stats.daysRemaining <= 3 && stats.daysRemaining > 0) {
-                daysRemaining.style.color = 'var(--color-warning, #F59E0B)';
-            } else if (stats.daysRemaining <= 0 && stats.totalTasks > 0) {
-                daysRemaining.style.color = 'var(--color-danger, #EF4444)';
-            } else {
-                daysRemaining.style.color = '';
-            }
-        }
-        if (progress) progress.textContent = stats.progress + '%';
-        if (budget) {
-            if (stats.budget > 0) {
-                const formatK = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v).toString();
-                budget.textContent = `${formatK(stats.budgetUsed)}\u20AC / ${formatK(stats.budget)}\u20AC`;
-                budget.style.color = '';
-            } else {
-                budget.textContent = '-';
-                budget.style.color = '';
-            }
-        }
-
         // Update notification badge
         this._updateNotifications();
     }

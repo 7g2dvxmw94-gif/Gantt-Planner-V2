@@ -203,54 +203,6 @@
     overflow: hidden;
 }
 
-/* ---- Stats Bar ---- */
-.stats-bar {
-    background: var(--bg-base);
-    border-top: 1px solid var(--border-default);
-    padding: var(--space-4) var(--space-5);
-    display: flex;
-    gap: var(--space-6);
-    transition: background var(--transition-base), border-color var(--transition-base);
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-lg);
-    flex-shrink: 0;
-}
-
-.stat-icon.tasks    { background: var(--color-primary-light); color: var(--color-primary); }
-.stat-icon.duration { background: var(--color-info-light);    color: var(--color-info); }
-.stat-icon.progress { background: var(--color-success-light); color: var(--color-success); }
-.stat-icon.budget   { background: var(--color-warning-light); color: var(--color-warning); }
-
-.stat-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-value {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-}
-
-.stat-label {
-    font-size: var(--font-size-xs);
-    color: var(--text-muted);
-}
 
 /* ---- Mobile Bottom Nav ---- */
 .mobile-nav {

@@ -41,12 +41,6 @@ const STEPS = [
         text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
         position: 'bottom',
     },
-    {
-        target: '.stats-bar',
-        title: 'Statistiques',
-        text: 'Suivez l\'avancement, le budget et les tâches actives en un coup d\'œil.',
-        position: 'top',
-    },
 ];
 
 class Onboarding {
