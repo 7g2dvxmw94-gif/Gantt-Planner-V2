@@ -8280,6 +8280,20 @@ class GanttRenderer {
         const settings = store.getSettings();
         this._zoomLevel = settings.zoomLevel || 'week';
         this.render();
+        this._scrollToToday();
+    }
+
+    _scrollToToday() {
+        const wrapper = this._scrollWrapper;
+        if (!wrapper) return;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const pos = this._dateToPosition(today);
+        if (pos === null) return;
+        // Center today's line in the visible area
+        const taskColWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gantt-task-col-width')) || 280;
+        const visibleWidth = wrapper.clientWidth - taskColWidth;
+        wrapper.scrollLeft = Math.max(0, pos - visibleWidth / 3);
     }
 
     setZoom(level) {
