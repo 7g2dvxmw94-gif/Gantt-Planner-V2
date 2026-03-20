@@ -1106,6 +1106,35 @@ tr.critical-path:hover {
     margin-top: 0;
 }
 
+.res-rate-toggle {
+    display: flex;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.res-rate-toggle-btn {
+    flex: 1;
+    padding: 4px 10px;
+    border: none;
+    background: var(--bg-base);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.res-rate-toggle-btn + .res-rate-toggle-btn {
+    border-left: 1px solid var(--border-default);
+}
+
+.res-rate-toggle-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+
 .res-rate-input-wrap {
     position: relative;
     display: flex;

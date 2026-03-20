@@ -626,7 +626,23 @@ class App {
         rateGroup.className = 'form-group';
         const rateLabel = document.createElement('label');
         rateLabel.className = 'form-label';
-        rateLabel.textContent = 'Taux horaire';
+        rateLabel.textContent = 'Tarification';
+
+        // Rate type toggle
+        let currentRateType = (isEdit && resource.rateType === 'daily') ? 'daily' : 'hourly';
+        const rateToggle = document.createElement('div');
+        rateToggle.className = 'res-rate-toggle';
+        const btnHourly = document.createElement('button');
+        btnHourly.type = 'button';
+        btnHourly.className = 'res-rate-toggle-btn' + (currentRateType === 'hourly' ? ' active' : '');
+        btnHourly.textContent = 'Taux horaire';
+        const btnDaily = document.createElement('button');
+        btnDaily.type = 'button';
+        btnDaily.className = 'res-rate-toggle-btn' + (currentRateType === 'daily' ? ' active' : '');
+        btnDaily.textContent = 'TJM';
+        rateToggle.appendChild(btnHourly);
+        rateToggle.appendChild(btnDaily);
+
         const rateWrap = document.createElement('div');
         rateWrap.className = 'res-rate-input-wrap';
         const rateInput = document.createElement('input');
@@ -636,13 +652,30 @@ class App {
         rateInput.min = '0';
         rateInput.step = '0.01';
         rateInput.placeholder = '0.00';
-        rateInput.value = isEdit && resource.hourlyRate ? resource.hourlyRate : '';
+        if (isEdit) {
+            rateInput.value = currentRateType === 'daily'
+                ? (resource.dailyRate || '')
+                : (resource.hourlyRate || '');
+        }
         const rateSuffix = document.createElement('span');
         rateSuffix.className = 'res-rate-suffix';
-        rateSuffix.textContent = '\u20AC/h';
+        rateSuffix.textContent = currentRateType === 'daily' ? '\u20AC/j' : '\u20AC/h';
+
+        const switchRateType = (type) => {
+            currentRateType = type;
+            btnHourly.classList.toggle('active', type === 'hourly');
+            btnDaily.classList.toggle('active', type === 'daily');
+            rateSuffix.textContent = type === 'daily' ? '\u20AC/j' : '\u20AC/h';
+            rateInput.value = '';
+            rateInput.focus();
+        };
+        btnHourly.addEventListener('click', () => switchRateType('hourly'));
+        btnDaily.addEventListener('click', () => switchRateType('daily'));
+
         rateWrap.appendChild(rateInput);
         rateWrap.appendChild(rateSuffix);
         rateGroup.appendChild(rateLabel);
+        rateGroup.appendChild(rateToggle);
         rateGroup.appendChild(rateWrap);
         row2.appendChild(rateGroup);
         body.appendChild(row2);
@@ -730,13 +763,16 @@ class App {
             if (!avatar) {
                 avatar = name.split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
             }
-            const hourlyRate = rateInput.value ? parseFloat(rateInput.value) : null;
+            const rateValue = rateInput.value ? parseFloat(rateInput.value) : null;
+            const rateType = currentRateType;
+            const hourlyRate = rateType === 'hourly' ? rateValue : null;
+            const dailyRate = rateType === 'daily' ? rateValue : null;
 
             if (isEdit) {
-                store.updateResource(resource.id, { name, role, avatar, color: selectedColor, hourlyRate });
+                store.updateResource(resource.id, { name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
                 this._showToast('Ressource modifiée', 'success');
             } else {
-                store.addResource({ name, role, avatar, color: selectedColor, hourlyRate });
+                store.addResource({ name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
                 this._showToast('Ressource créée', 'success');
             }
             close();
@@ -840,10 +876,14 @@ class App {
             roleEl.className = 'resource-card-role';
             roleEl.textContent = resource.role;
             info.appendChild(roleEl);
-            if (resource.hourlyRate) {
+            if (resource.dailyRate || resource.hourlyRate) {
                 const rateEl = document.createElement('div');
                 rateEl.className = 'resource-card-rate';
-                rateEl.textContent = resource.hourlyRate.toFixed(2) + ' \u20AC/h';
+                if (resource.rateType === 'daily' && resource.dailyRate) {
+                    rateEl.textContent = resource.dailyRate.toFixed(2) + ' \u20AC/j (TJM)';
+                } else if (resource.hourlyRate) {
+                    rateEl.textContent = resource.hourlyRate.toFixed(2) + ' \u20AC/h';
+                }
                 info.appendChild(rateEl);
             }
             header.appendChild(info);
@@ -2200,7 +2240,7 @@ thead{display:table-header-group}
 
             group.items.forEach(tc => {
                 const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em class="costs-no-resource">—</em>';
-                const rates = tc.assignedResources.map(r => r.hourlyRate + ' €/h').join(', ') || '—';
+                const rates = tc.assignedResources.map(r => r.rateType === 'daily' ? r.dailyRate + ' €/j' : r.hourlyRate + ' €/h').join(', ') || '—';
                 const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
                 const ecart = tc.cost - actual;
                 const ecartColor = ecart < 0 ? '#EF4444' : ecart < tc.cost * 0.1 ? '#F59E0B' : '#10B981';

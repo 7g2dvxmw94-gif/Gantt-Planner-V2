@@ -951,8 +951,9 @@ class Store {
     }
 
     /**
-     * Compute costs for each task based on assigned resources' hourly rates + fixed costs.
-     * Resource cost = duration_days × 8h × sum(hourlyRate of assigned resources)
+     * Compute costs for each task based on assigned resources' rates + fixed costs.
+     * For hourly resources: duration_days × 8h × hourlyRate
+     * For daily resources (TJM): duration_days × dailyRate
      * Total cost = resource cost + fixedCost
      * Returns { tasks: [{task, durationDays, assignedResources, resourceCost, fixedCost, cost, costDone}], totalCost, totalCostDone }
      */
@@ -972,9 +973,15 @@ class Store {
                 .map(id => resources.find(r => r.id === id))
                 .filter(Boolean);
 
-            const totalRate = assignedResources.reduce((sum, r) => sum + (r.hourlyRate || 0), 0);
             const durationDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
-            const resourceCost = durationDays * HOURS_PER_DAY * totalRate;
+            let resourceCost = 0;
+            for (const r of assignedResources) {
+                if (r.rateType === 'daily' && r.dailyRate) {
+                    resourceCost += durationDays * r.dailyRate;
+                } else {
+                    resourceCost += durationDays * HOURS_PER_DAY * (r.hourlyRate || 0);
+                }
+            }
             const fixedCost = task.fixedCost || 0;
             const cost = resourceCost + fixedCost;
             const costDone = cost * (task.progress || 0) / 100;
@@ -985,7 +992,12 @@ class Store {
             result.push({
                 task,
                 durationDays,
-                assignedResources: assignedResources.map(r => ({ id: r.id, name: r.name, hourlyRate: r.hourlyRate || 0 })),
+                assignedResources: assignedResources.map(r => ({
+                    id: r.id, name: r.name,
+                    rateType: r.rateType || 'hourly',
+                    hourlyRate: r.hourlyRate || 0,
+                    dailyRate: r.dailyRate || 0,
+                })),
                 resourceCost,
                 fixedCost,
                 cost,
