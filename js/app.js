@@ -448,7 +448,7 @@ class App {
                 if (phase) {
                     const phaseChip = document.createElement('span');
                     phaseChip.className = 'table-phase-chip';
-                    phaseChip.style.borderLeft = `3px solid ${phase.color || 'var(--border)'}`;
+                    phaseChip.style.borderLeft = `3px solid ${phase.color || 'var(--border-default)'}`;
                     phaseChip.textContent = phase.name;
                     tdPhase.appendChild(phaseChip);
                 } else {

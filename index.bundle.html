@@ -1508,7 +1508,7 @@ textarea.input {
     gap: 16px;
 }
 .costs-kpi {
-    background: var(--bg-card, #fff);
+    background: var(--bg-elevated, #fff);
     border: 1px solid var(--border-default, #E2E8F0);
     border-radius: 12px;
     padding: 16px 20px;
@@ -1540,7 +1540,7 @@ textarea.input {
     transition: width 0.3s ease;
 }
 .costs-table-wrap {
-    background: var(--bg-card, #fff);
+    background: var(--bg-elevated, #fff);
     border: 1px solid var(--border-default, #E2E8F0);
     border-radius: 12px;
     padding: 16px;
@@ -1570,7 +1570,7 @@ textarea.input {
     cursor: pointer;
 }
 .costs-task-row:hover {
-    background: var(--bg-hover, #F8FAFC);
+    background: var(--bg-subtle, #F8FAFC);
 }
 .costs-task-name {
     font-weight: 500;
@@ -1585,17 +1585,17 @@ textarea.input {
     border-radius: 6px;
     font-size: 13px;
     text-align: right;
-    background: var(--bg-input, #fff);
+    background: var(--bg-base, #fff);
     color: var(--text-primary, #1E293B);
     transition: border-color 0.15s;
 }
 .costs-actual-input:focus {
     outline: none;
-    border-color: var(--accent, #6366F1);
+    border-color: var(--color-primary, #6366F1);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 .costs-actual-input:hover {
-    border-color: var(--border-hover, #CBD5E1);
+    border-color: var(--border-strong, #CBD5E1);
 }
 
 /* ---- Dashboard Permit Section ---- */
@@ -1611,7 +1611,7 @@ textarea.input {
     flex: 1;
     min-width: 70px;
     padding: 8px 4px;
-    background: var(--bg-secondary);
+    background: var(--bg-subtle);
     border-radius: 8px;
 }
 .dashboard-permit-kpi .kpi-value {
@@ -1621,7 +1621,7 @@ textarea.input {
 }
 .dashboard-permit-kpi .kpi-label {
     font-size: 10px;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     margin-top: 4px;
 }
 .dashboard-permit-table {
@@ -1630,23 +1630,23 @@ textarea.input {
     font-size: 12px;
 }
 .dashboard-permit-table th {
-    background: var(--bg-secondary);
+    background: var(--bg-subtle);
     padding: 8px 10px;
     text-align: left;
     font-size: 10px;
     text-transform: uppercase;
-    color: var(--text-tertiary);
-    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-default);
     font-weight: 600;
     white-space: nowrap;
 }
 .dashboard-permit-table td {
     padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-default);
     vertical-align: middle;
 }
 .dashboard-permit-table tr:hover {
-    background: var(--bg-secondary);
+    background: var(--bg-subtle);
 }
 .dashboard-permit-badge {
     display: inline-block;
@@ -4183,7 +4183,7 @@ tr.critical-path:hover {
 }
 
 .permit-deadline-value.urgent {
-    color: var(--color-danger);
+    color: var(--color-error);
     font-weight: 700;
 }
 
@@ -10959,7 +10959,7 @@ class App {
                 if (phase) {
                     const phaseChip = document.createElement('span');
                     phaseChip.className = 'table-phase-chip';
-                    phaseChip.style.borderLeft = `3px solid ${phase.color || 'var(--border)'}`;
+                    phaseChip.style.borderLeft = `3px solid ${phase.color || 'var(--border-default)'}`;
                     phaseChip.textContent = phase.name;
                     tdPhase.appendChild(phaseChip);
                 } else {
@@ -13024,9 +13024,9 @@ thead{display:table-header-group}
                         const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
                         return `<li class="dashboard-alert-item">
                             <span class="dashboard-alert-dot ${dotColor}"></span>
-                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
+                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-muted);font-size:11px;">- ${n.sub}</span>` : ''}</span>
                         </li>`;
-                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
+                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-muted);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
             </div>
 
             <!-- Tâches à venir / en retard -->

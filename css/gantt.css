@@ -1898,7 +1898,7 @@ tr.critical-path:hover {
 }
 
 .permit-deadline-value.urgent {
-    color: var(--color-danger);
+    color: var(--color-error);
     font-weight: 700;
 }
 
