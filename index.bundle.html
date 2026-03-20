@@ -10239,7 +10239,7 @@ class SettingsPanel {
                         <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
                         <select class="settings-field-input" id="settingsCurrency">
                             ${Object.entries(CURRENCIES).map(([code, c]) =>
-                                \`<option value="\${code}" \${(this._getCustomization('currency') || 'EUR') === code ? 'selected' : ''}>\${c.symbol} – \${code}</option>\`
+                                '<option value="' + code + '" ' + ((this._getCustomization('currency') || 'EUR') === code ? 'selected' : '') + '>' + c.symbol + ' – ' + code + '</option>'
                             ).join('')}
                         </select>
                     </div>
