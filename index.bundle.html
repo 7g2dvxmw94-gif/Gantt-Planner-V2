@@ -374,6 +374,27 @@ table {
     border-color: var(--border-strong);
 }
 
+#criticalPathBtn.active {
+    background: var(--color-error);
+    color: #fff;
+    border-color: var(--color-error);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+#criticalPathBtn.active:hover {
+    background: var(--color-error-dark);
+    border-color: var(--color-error-dark);
+}
+
+#criticalPathBtn.active svg {
+    animation: criticalPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 .btn-ghost {
     background: transparent;
     color: var(--text-secondary);
