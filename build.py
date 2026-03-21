@@ -34,79 +34,28 @@ def read_file(path):
         return f.read()
 
 def strip_imports_exports(js_content):
-    """Remove ES module import/export statements."""
-    lines = js_content.split('\n')
-    result = []
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        stripped = line.strip()
+    """Remove ES module import/export statements using regex."""
+    # Remove single-line imports: import ... from '...';
+    js_content = re.sub(r"^\s*import\s+.*?from\s+['\"].*?['\"];?\s*$", '', js_content, flags=re.MULTILINE)
+    # Remove multiline imports: import {\n  ...\n} from '...';
+    js_content = re.sub(r"^\s*import\s*\{[^}]*\}\s*from\s*['\"].*?['\"];?\s*$", '', js_content, flags=re.MULTILINE | re.DOTALL)
+    # Remove side-effect imports: import './foo.js';
+    js_content = re.sub(r"^\s*import\s+['\"].*?['\"];?\s*$", '', js_content, flags=re.MULTILINE)
 
-        # Skip import lines (single and multiline)
-        if stripped.startswith('import '):
-            # Check if it's a multiline import
-            if '{' in stripped and '}' not in stripped:
-                # Multiline import - skip until closing brace + from
-                while i < len(lines) and "from " not in lines[i].strip()[-30:] if '}' not in lines[i] else False:
-                    i += 1
-                i += 1  # skip the closing line too
-                # Find the line with the closing } and from
-                while i < len(lines):
-                    if '}' in lines[i] and 'from' in lines[i]:
-                        i += 1
-                        break
-                    elif 'from' in lines[i].strip():
-                        i += 1
-                        break
-                    i += 1
-                continue
-            else:
-                i += 1
-                continue
+    # Replace "export default " with ""
+    js_content = re.sub(r"^\s*export\s+default\s+", '', js_content, flags=re.MULTILINE)
+    # Remove "export { ... }" blocks (single and multiline)
+    js_content = re.sub(r"^\s*export\s*\{[^}]*\};?\s*$", '', js_content, flags=re.MULTILINE | re.DOTALL)
+    # Replace "export function" with "function"
+    js_content = re.sub(r"^(\s*)export\s+function\s", r"\1function ", js_content, flags=re.MULTILINE)
+    # Replace "export class" with "class"
+    js_content = re.sub(r"^(\s*)export\s+class\s", r"\1class ", js_content, flags=re.MULTILINE)
+    # Replace "export const" with "const"
+    js_content = re.sub(r"^(\s*)export\s+const\s", r"\1const ", js_content, flags=re.MULTILINE)
+    # Replace "export let" with "let"
+    js_content = re.sub(r"^(\s*)export\s+let\s", r"\1let ", js_content, flags=re.MULTILINE)
 
-        # Skip export default
-        if stripped.startswith('export default '):
-            result.append(line.replace('export default ', ''))
-            i += 1
-            continue
-
-        # Skip export { ... }
-        if stripped.startswith('export {'):
-            # Could be multiline
-            if '}' not in stripped:
-                while i < len(lines) and '}' not in lines[i]:
-                    i += 1
-            i += 1
-            continue
-
-        # Replace "export function" with "function"
-        if stripped.startswith('export function '):
-            result.append(line.replace('export function ', 'function '))
-            i += 1
-            continue
-
-        # Replace "export class" with "class"
-        if stripped.startswith('export class '):
-            result.append(line.replace('export class ', 'class '))
-            i += 1
-            continue
-
-        # Replace "export const" with "const"
-        if stripped.startswith('export const '):
-            result.append(line.replace('export const ', 'const '))
-            i += 1
-            continue
-
-        # Replace "export let" with "let"
-        if stripped.startswith('export let '):
-            result.append(line.replace('export let ', 'let '))
-            i += 1
-            continue
-
-        result.append(line)
-        i += 1
-
-    return '\n'.join(result)
+    return js_content
 
 def build():
     # Read the HTML template
