@@ -1030,10 +1030,10 @@ class Store {
             const qEnd = new Date(maxDate.getFullYear(), endQ + 1, 0); // last day of end quarter
             return { start: qStart, end: qEnd };
         } else if (zoomLevel === 'month') {
-            // Snap to month boundaries with a small margin
+            // Snap to month boundaries (no extra day padding to avoid inflating month count)
             const mStart = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
             const mEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); // last day of end month
-            return { start: addDays(mStart, -3), end: addDays(mEnd, 3) };
+            return { start: mStart, end: mEnd };
         } else {
             // Day/Week: add some padding in days
             return {
