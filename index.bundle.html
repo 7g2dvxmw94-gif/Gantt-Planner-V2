@@ -8689,19 +8689,27 @@ class GanttRenderer {
     /* ---- Grid Background ---- */
 
     _renderGridBackground(container) {
-        if (this._zoomLevel !== 'day' && this._zoomLevel !== 'week') return;
-
         const colWidth = this._effectiveColWidth;
         const grid = createElement('div', { className: 'gantt-timeline-grid' });
 
-        this._dayColumns.forEach(day => {
-            let cls = 'gantt-timeline-grid-col';
-            if (isWeekend(day)) cls += ' weekend';
-            grid.appendChild(createElement('div', {
-                className: cls,
-                style: { width: colWidth + 'px', minWidth: colWidth + 'px' },
-            }));
-        });
+        if (this._zoomLevel === 'month' || this._zoomLevel === 'quarter') {
+            const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
+            months.forEach(() => {
+                grid.appendChild(createElement('div', {
+                    className: 'gantt-timeline-grid-col',
+                    style: { width: colWidth + 'px', minWidth: colWidth + 'px' },
+                }));
+            });
+        } else {
+            this._dayColumns.forEach(day => {
+                let cls = 'gantt-timeline-grid-col';
+                if (isWeekend(day)) cls += ' weekend';
+                grid.appendChild(createElement('div', {
+                    className: cls,
+                    style: { width: colWidth + 'px', minWidth: colWidth + 'px' },
+                }));
+            });
+        }
 
         container.appendChild(grid);
     }
