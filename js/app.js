@@ -1053,10 +1053,8 @@ class App {
             importBtn.addEventListener('click', () => this._importProject());
         }
 
-        const cloudBtn = $('#cloudBackupBtn');
-        if (cloudBtn) {
-            cloudBtn.addEventListener('click', () => this._showCloudBackupModal());
-        }
+        // Google Drive modal triggered from settings panel via custom event
+        document.addEventListener('open-cloud-backup', () => this._showCloudBackupModal());
 
         const criticalPathBtn = $('#criticalPathBtn');
         if (criticalPathBtn) {

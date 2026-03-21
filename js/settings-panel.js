@@ -115,6 +115,27 @@ class SettingsPanel {
 
             <div class="settings-group">
                 <div class="settings-group-header">
+                    <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l11.752 23.8z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                    </svg>
+                    <h3>Google Drive</h3>
+                </div>
+                <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Google Drive.</p>
+                <button class="btn btn-primary" id="settingsGDriveBtn" style="width: 100%; margin-top: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    Gérer les sauvegardes Google Drive
+                </button>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
                     </svg>
@@ -200,6 +221,15 @@ class SettingsPanel {
                 this._saveCustomization('faviconUrl', faviconInput.value);
                 this._applyFavicon(faviconInput.value);
             }, 500));
+        }
+
+        // Google Drive button
+        const gdriveBtn = this._panel.querySelector('#settingsGDriveBtn');
+        if (gdriveBtn) {
+            gdriveBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('open-cloud-backup'));
+            });
         }
 
         // Currency selector
