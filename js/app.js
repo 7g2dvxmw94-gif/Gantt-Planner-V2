@@ -2157,6 +2157,22 @@ thead{display:table-header-group}
                 const plural = screenshotFiles.length > 1;
                 body += `\n\n---\n[${screenshotFiles.length} capture${plural ? 's' : ''} d'écran téléchargée${plural ? 's' : ''} dans votre dossier Téléchargements. Veuillez l${plural ? 'es' : 'a'} joindre en pièce${plural ? 's' : ''} jointe${plural ? 's' : ''} à cet email.]`;
             }
+            // Informations techniques pour la reproduction du bug
+            const ua = navigator.userAgent;
+            let browserName = 'Inconnu', browserVersion = '';
+            if (ua.includes('Firefox/')) { browserName = 'Firefox'; browserVersion = ua.match(/Firefox\/([\d.]+)/)?.[1] || ''; }
+            else if (ua.includes('Edg/')) { browserName = 'Edge'; browserVersion = ua.match(/Edg\/([\d.]+)/)?.[1] || ''; }
+            else if (ua.includes('OPR/') || ua.includes('Opera')) { browserName = 'Opera'; browserVersion = (ua.match(/OPR\/([\d.]+)/) || ua.match(/Opera\/([\d.]+)/))?.[1] || ''; }
+            else if (ua.includes('Chrome/')) { browserName = 'Chrome'; browserVersion = ua.match(/Chrome\/([\d.]+)/)?.[1] || ''; }
+            else if (ua.includes('Safari/') && !ua.includes('Chrome')) { browserName = 'Safari'; browserVersion = ua.match(/Version\/([\d.]+)/)?.[1] || ''; }
+            let osName = 'Inconnu';
+            if (ua.includes('Windows NT 10')) osName = ua.includes('Windows NT 10.0; Win64') ? 'Windows 10/11' : 'Windows 10';
+            else if (ua.includes('Windows NT')) osName = 'Windows';
+            else if (ua.includes('Mac OS X')) { const v = ua.match(/Mac OS X ([\d_]+)/)?.[1]?.replace(/_/g, '.') || ''; osName = `macOS ${v}`.trim(); }
+            else if (ua.includes('Linux')) osName = 'Linux';
+            else if (ua.includes('Android')) osName = 'Android';
+            else if (/iPhone|iPad|iPod/.test(ua)) osName = 'iOS';
+            body += `\n\n---\nInformations techniques :\n- OS : ${osName}\n- Navigateur : ${browserName} ${browserVersion}\n- Résolution : ${screen.width}x${screen.height}\n- Langue : ${navigator.language}`;
             body += '\n\n---\nEnvoyé depuis Gantt Planner';
             const mailBody = encodeURIComponent(body);
             window.open(`mailto:ganttprohelp2025@gmail.com?subject=${mailSubject}&body=${mailBody}`, '_self');
