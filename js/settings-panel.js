@@ -181,7 +181,8 @@ class SettingsPanel {
 
     _getCustomization(key) {
         const settings = store.getSettings();
-        return settings.customization?.[key] || '';
+        const value = settings.customization?.[key];
+        return value !== undefined ? value : '';
     }
 
     _saveCustomization(key, value) {
