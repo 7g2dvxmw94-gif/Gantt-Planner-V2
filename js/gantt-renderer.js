@@ -903,6 +903,15 @@ class GanttRenderer {
     get effectiveColWidth() {
         return this._effectiveColWidth || ZOOM_CONFIG[this._zoomLevel].colWidth;
     }
+
+    get minBarWidth() {
+        const col = this.effectiveColWidth;
+        if (this._zoomLevel === 'month' || this._zoomLevel === 'quarter') {
+            // 1 day within a month column (assume ~30 days)
+            return Math.max(4, Math.round(col / 30));
+        }
+        return col; // day/week: 1 column = 1 day
+    }
 }
 
 export const ganttRenderer = new GanttRenderer();

@@ -19,6 +19,7 @@ class GanttInteractions {
         this._zoomColWidthFn = null;
         this._timelineStartFn = null;
         this._positionToDateFn = null;
+        this._minBarWidthFn = null;
         this._tooltip = null;
         this._dropIndicator = null;
         this._autoScrollRAF = null;
@@ -42,6 +43,7 @@ class GanttInteractions {
         this._zoomColWidthFn = opts.getColWidth;
         this._timelineStartFn = opts.getTimelineStart;
         this._positionToDateFn = opts.positionToDate;
+        this._minBarWidthFn = opts.getMinBarWidth || null;
 
         // Delegate click events
         this._container.addEventListener('click', (e) => this._handleClick(e));
@@ -239,18 +241,23 @@ class GanttInteractions {
         const scrollDelta = d.wrapper ? d.wrapper.scrollLeft - d.origScrollLeft : 0;
         const totalDx = dx + scrollDelta;
 
+        // Minimum bar width: 1 day in pixels
+        // In day/week views colWidth already represents 1 day.
+        // In month/quarter views colWidth is a full month, so use ~1/28.
+        const minWidth = this._minBarWidthFn ? this._minBarWidthFn() : colWidth;
+
         if (d.mode === 'move') {
             d.bar.style.left = (d.origLeft + totalDx) + 'px';
         } else if (d.mode === 'resize-left') {
             const newLeft = d.origLeft + totalDx;
             const newWidth = d.origWidth - totalDx;
-            if (newWidth >= colWidth) {
+            if (newWidth >= minWidth) {
                 d.bar.style.left = newLeft + 'px';
                 d.bar.style.width = newWidth + 'px';
             }
         } else if (d.mode === 'resize-right') {
             const newWidth = d.origWidth + totalDx;
-            if (newWidth >= colWidth) {
+            if (newWidth >= minWidth) {
                 d.bar.style.width = newWidth + 'px';
             }
         }
@@ -329,7 +336,8 @@ class GanttInteractions {
             dateStr = _formatDateFR(this._positionToDateFn(newLeft));
         } else {
             const rightEdge = newLeft + newWidth;
-            dateStr = _formatDateFR(this._positionToDateFn(rightEdge));
+            // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
+            dateStr = _formatDateFR(addDays(this._positionToDateFn(rightEdge), -1));
         }
 
         if (!this._tooltip) {
@@ -552,11 +560,14 @@ class GanttInteractions {
             } else {
                 const newWidth = parseFloat(d.bar.style.width);
                 const newStart = this._positionToDateFn(newLeft);
-                const newEnd = this._positionToDateFn(newLeft + newWidth);
+                // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
+                const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
 
                 if (d.mode === 'move') {
+                    // Preserve original duration to avoid drift from month-length differences
+                    const origDuration = daysBetween(new Date(d.origStartDate), new Date(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(newEnd);
+                    updates.endDate = formatDateISO(addDays(newStart, origDuration));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
