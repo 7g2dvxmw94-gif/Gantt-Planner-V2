@@ -2,7 +2,7 @@
    ONBOARDING - Interactive guide for new users
    ======================================== */
 
-const STORAGE_KEY = 'gantt_onboarding_done';
+const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
     {
@@ -52,7 +52,7 @@ class Onboarding {
 
     /** Auto-start on first visit, or call manually */
     tryAutoStart() {
-        if (localStorage.getItem(STORAGE_KEY)) return;
+        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
         // Defer so the UI is fully rendered
         setTimeout(() => this.start(), 600);
     }
@@ -221,7 +221,7 @@ class Onboarding {
 
     _finish() {
         this._active = false;
-        localStorage.setItem(STORAGE_KEY, '1');
+        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
         if (this._overlay) {
             this._overlay.classList.add('fade-out');
             setTimeout(() => {
