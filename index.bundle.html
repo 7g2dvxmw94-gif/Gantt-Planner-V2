@@ -5063,6 +5063,7 @@ tr.critical-path:hover {
     </nav>
 
     <!-- ==================== SCRIPTS ==================== -->
+    
     <script>
 (function() {
 "use strict";
@@ -5341,8 +5342,6 @@ const CURRENCIES = {
     CHF: { symbol: 'CHF', position: 'after', hourly: 'CHF/h', daily: 'CHF/d', space: true },
 };
 
-{ CURRENCIES };
-
 /**
  * Get the current currency config from store settings
  */
@@ -5413,7 +5412,6 @@ function clamp(value, min, max) {
    DATA STORE - Gantt Planner Pro
    Reactive store with localStorage persistence
    ======================================== */
-
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
@@ -7089,7 +7087,6 @@ class Store {
 
 // Singleton export
 const store = new Store();
-{ PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };
 
 
 // ====== js/theme.js ======
@@ -7097,7 +7094,6 @@ const store = new Store();
    THEME MANAGER - Day/Night Mode
    Gantt Planner Pro
    ======================================== */
-
 
 class ThemeManager {
     constructor() {
@@ -7203,7 +7199,6 @@ const themeManager = new ThemeManager();
    TASK MODAL - Create / Edit / Delete Tasks
    Gantt Planner Pro - Step 2
    ======================================== */
-
 
 class TaskModal {
     constructor() {
@@ -8243,13 +8238,6 @@ const taskModal = new TaskModal();
    Gantt Planner Pro
    ======================================== */
 
-    createElement, $, $$,
-    daysBetween, addDays, formatDateISO, formatDateShort,
-    getMonthsBetween, getWeeksBetween, getDaysBetween,
-    getMonthName, getWeekNumber, isToday, isWeekend,
-    getTaskColor, TASK_COLORS,
-} from './utils.js';
-
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
     day:     { colWidth: 36,  label: 'Jour' },
@@ -9112,7 +9100,6 @@ const ganttRenderer = new GanttRenderer();
    GANTT INTERACTIONS - Drag, Resize, Click
    Gantt Planner Pro - Step 2
    ======================================== */
-
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -10248,7 +10235,6 @@ const cloudBackup = new CloudBackup();
    Gantt Planner Pro
    ======================================== */
 
-
 class SettingsPanel {
     constructor() {
         this._panel = null;
@@ -10564,7 +10550,6 @@ const settingsPanel = new SettingsPanel();
    APP - Main Entry Point
    Gantt Planner Pro
    ======================================== */
-
 
 class App {
     constructor() {
