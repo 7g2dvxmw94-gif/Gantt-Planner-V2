@@ -20,7 +20,7 @@ const STEPS = [
     {
         target: '#addTaskBtn',
         title: 'Ajouter une tâche',
-        text: 'Créez une tâche, un jalon ou une phase. Raccourci : Ctrl+N.',
+        text: 'Créez une tâche, un jalon ou une phase. Raccourci : Ctrl+W.',
         position: 'bottom',
     },
     {
@@ -110,7 +110,7 @@ class Onboarding {
             if (e.key === 'Escape') this._finish();
             if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
             if (e.key === 'ArrowLeft') this._prev();
-            // Let app keyboard shortcuts (Ctrl+N, etc.) work by closing the overlay
+            // Let app keyboard shortcuts (Ctrl+W, etc.) work by closing the overlay
             if (e.ctrlKey && e.key.length === 1) this._finish();
         });
 

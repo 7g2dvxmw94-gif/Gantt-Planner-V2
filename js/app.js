@@ -1864,11 +1864,11 @@ thead{display:table-header-group}
     /* ---- Keyboard Shortcuts ---- */
 
     _bindKeyboardShortcuts() {
-        // Helper to fully block browser-default shortcuts (e.g. Ctrl+N in Edge)
+        // Helper to fully block browser-default shortcuts (e.g. Ctrl+W)
         const _prevent = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
 
         // Use capture phase on window (earliest possible interception) to beat
-        // Edge / Chromium browser-level shortcuts like Ctrl+N
+        // Edge / Chromium browser-level shortcuts like Ctrl+W
         window.addEventListener('keydown', (e) => {
             // Ctrl+Z: Undo
             if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
@@ -1903,8 +1903,8 @@ thead{display:table-header-group}
                 }
             }
 
-            // Ctrl+N: New task
-            if (e.ctrlKey && e.key === 'n') {
+            // Ctrl+W: New task
+            if (e.ctrlKey && e.key === 'w') {
                 _prevent(e);
                 this._showAddTaskDialog();
                 return;
@@ -1959,7 +1959,7 @@ thead{display:table-header-group}
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         const shortcuts = [
-            ['Ctrl+N', 'Nouvelle tâche'],
+            ['Ctrl+W', 'Nouvelle tâche'],
             ['Ctrl+Z', 'Annuler'],
             ['Ctrl+Y', 'Rétablir'],
             ['Ctrl+F', 'Rechercher'],

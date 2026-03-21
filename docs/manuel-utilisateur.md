@@ -150,7 +150,7 @@
 
 | Raccourci       | Action                        |
 |-----------------|-------------------------------|
-| `Ctrl+N`        | Nouvelle tâche                |
+| `Ctrl+W`        | Nouvelle tâche                |
 | `Ctrl+Z`        | Annuler                       |
 | `Ctrl+Y`        | Rétablir                      |
 | `Ctrl+F`        | Rechercher                    |
