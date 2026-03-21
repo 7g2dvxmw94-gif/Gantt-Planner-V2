@@ -2306,7 +2306,7 @@ thead{display:table-header-group}
             <h2 class="costs-title">Suivi des coûts</h2>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
                 <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
-                <select id="costsProjectFilter" class="filter-select" style="min-width:200px;">
+                <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
@@ -2449,7 +2449,7 @@ thead{display:table-header-group}
             <!-- Project filter -->
             <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:4px;">
                 <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
-                <select id="dashboardProjectFilter" class="filter-select" style="min-width:200px;">
+                <select id="dashboardProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
