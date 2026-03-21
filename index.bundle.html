@@ -12509,6 +12509,10 @@ thead{display:table-header-group}
                 <div class="modal-body" style="padding:12px 20px 20px">
                     <table style="width:100%">${rows}</table>
                     <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">Relancer le guide de démarrage</button>
+                    <button class="btn btn-primary" id="openContact" style="margin-top:8px;width:100%;gap:8px">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Contact / Signaler un bug
+                    </button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -12519,6 +12523,167 @@ thead{display:table-header-group}
             close();
             onboarding.start();
         });
+        overlay.querySelector('#openContact').addEventListener('click', () => {
+            close();
+            this._showContactModal();
+        });
+    }
+
+    _showContactModal() {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-label="Contact / Signaler un bug">
+                <div class="modal-header">
+                    <h2 class="modal-title">Contact / Signaler un bug</h2>
+                    <button class="icon-btn contact-close" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body" style="padding:16px 20px 20px">
+                    <div class="form-group">
+                        <label class="form-label">Type de message</label>
+                        <div class="type-switcher" id="contactTypeSwitcher">
+                            <button type="button" class="type-switcher-btn active" data-type="bug">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Signaler un bug
+                            </button>
+                            <button type="button" class="type-switcher-btn" data-type="question">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>
+                                Poser une question
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:16px">
+                        <label class="form-label" for="contactSubject">Sujet</label>
+                        <input class="input" type="text" id="contactSubject" placeholder="Résumé en quelques mots…" maxlength="120" />
+                    </div>
+                    <div class="form-group" style="margin-top:16px">
+                        <label class="form-label" for="contactDesc">Description</label>
+                        <textarea class="input" id="contactDesc" rows="5" style="resize:vertical;min-height:100px" placeholder="Décrivez le problème rencontré ou votre question…"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:16px" id="contactScreenshotGroup">
+                        <label class="form-label">Capture d'écran <span style="font-weight:400;color:var(--text-muted)">(optionnel)</span></label>
+                        <div id="contactDropZone" style="border:2px dashed var(--border-default);border-radius:var(--radius-md);padding:20px;text-align:center;cursor:pointer;transition:all var(--transition-fast);background:var(--bg-subtle)">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <p style="font-size:var(--font-size-sm);color:var(--text-muted);margin:0">Cliquez ou glissez-déposez une image ici</p>
+                            <input type="file" id="contactFileInput" accept="image/*" style="display:none" />
+                        </div>
+                        <div id="contactPreview" style="display:none;margin-top:8px;position:relative">
+                            <img id="contactPreviewImg" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);border:1px solid var(--border-default)" />
+                            <button type="button" id="contactRemoveImg" style="position:absolute;top:4px;right:4px;background:var(--bg-overlay);color:#fff;border:none;border-radius:var(--radius-full);width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1" aria-label="Supprimer l'image">&times;</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="contactCancel">Annuler</button>
+                    <button class="btn btn-primary" id="contactSend" style="gap:8px">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Envoyer
+                    </button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const close = () => overlay.remove();
+        overlay.querySelector('.contact-close').addEventListener('click', close);
+        overlay.querySelector('#contactCancel').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        // Type switcher
+        let contactType = 'bug';
+        const switcherBtns = overlay.querySelectorAll('#contactTypeSwitcher .type-switcher-btn');
+        switcherBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switcherBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                contactType = btn.dataset.type;
+                const desc = overlay.querySelector('#contactDesc');
+                desc.placeholder = contactType === 'bug'
+                    ? 'Décrivez le problème rencontré ou votre question…'
+                    : 'Posez votre question ici…';
+                overlay.querySelector('#contactScreenshotGroup').style.display = contactType === 'bug' ? '' : 'none';
+            });
+        });
+
+        // Screenshot handling
+        let screenshotFile = null;
+        const dropZone = overlay.querySelector('#contactDropZone');
+        const fileInput = overlay.querySelector('#contactFileInput');
+        const preview = overlay.querySelector('#contactPreview');
+        const previewImg = overlay.querySelector('#contactPreviewImg');
+        const removeImg = overlay.querySelector('#contactRemoveImg');
+
+        const handleFile = (file) => {
+            if (!file || !file.type.startsWith('image/')) return;
+            screenshotFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                dropZone.style.display = 'none';
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--color-primary)';
+            dropZone.style.background = 'var(--color-primary-light)';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--border-default)';
+            dropZone.style.background = 'var(--bg-subtle)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border-default)';
+            dropZone.style.background = 'var(--bg-subtle)';
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+        removeImg.addEventListener('click', () => {
+            screenshotFile = null;
+            fileInput.value = '';
+            previewImg.src = '';
+            preview.style.display = 'none';
+            dropZone.style.display = '';
+        });
+
+        // Send via mailto
+        overlay.querySelector('#contactSend').addEventListener('click', () => {
+            const subject = overlay.querySelector('#contactSubject').value.trim();
+            const desc = overlay.querySelector('#contactDesc').value.trim();
+            if (!subject) {
+                overlay.querySelector('#contactSubject').style.borderColor = 'var(--color-error)';
+                overlay.querySelector('#contactSubject').focus();
+                return;
+            }
+            if (!desc) {
+                overlay.querySelector('#contactDesc').style.borderColor = 'var(--color-error)';
+                overlay.querySelector('#contactDesc').focus();
+                return;
+            }
+            const prefix = contactType === 'bug' ? '[Bug]' : '[Question]';
+            const mailSubject = encodeURIComponent(`${prefix} ${subject}`);
+            let body = desc;
+            if (screenshotFile) {
+                body += '\n\n---\n[Une capture d\'écran a été sélectionnée. Veuillez l\'ajouter en pièce jointe à cet email.]';
+            }
+            body += '\n\n---\nEnvoyé depuis Gantt Planner';
+            const mailBody = encodeURIComponent(body);
+            window.open(`mailto:ganttprohelp2025@gmail.com?subject=${mailSubject}&body=${mailBody}`, '_self');
+            close();
+        });
+
+        // Reset border on input
+        overlay.querySelector('#contactSubject').addEventListener('input', function() {
+            this.style.borderColor = '';
+        });
+        overlay.querySelector('#contactDesc').addEventListener('input', function() {
+            this.style.borderColor = '';
+        });
+
+        overlay.querySelector('#contactSubject').focus();
     }
 
     _switchViewByIndex(index) {
