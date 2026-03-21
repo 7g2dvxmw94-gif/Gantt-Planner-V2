@@ -18,6 +18,7 @@ class GanttInteractions {
         this._dragData = null;
         this._zoomColWidthFn = null;
         this._timelineStartFn = null;
+        this._positionToDateFn = null;
         this._tooltip = null;
         this._dropIndicator = null;
         this._autoScrollRAF = null;
@@ -40,6 +41,7 @@ class GanttInteractions {
         this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
         this._timelineStartFn = opts.getTimelineStart;
+        this._positionToDateFn = opts.positionToDate;
 
         // Delegate click events
         this._container.addEventListener('click', (e) => this._handleClick(e));
@@ -319,21 +321,15 @@ class GanttInteractions {
 
     _updateResizeTooltip(e) {
         const d = this._dragData;
-        const colWidth = this._zoomColWidthFn();
-        const timelineStart = this._timelineStartFn();
         const newLeft = parseFloat(d.bar.style.left);
         const newWidth = parseFloat(d.bar.style.width);
 
         let dateStr;
         if (d.mode === 'resize-left') {
-            const startDayOffset = Math.round(newLeft / colWidth);
-            const newStart = addDays(timelineStart, startDayOffset);
-            dateStr = _formatDateFR(newStart);
+            dateStr = _formatDateFR(this._positionToDateFn(newLeft));
         } else {
             const rightEdge = newLeft + newWidth;
-            const endDayOffset = Math.round(rightEdge / colWidth) - 1;
-            const newEnd = addDays(timelineStart, endDayOffset);
-            dateStr = _formatDateFR(newEnd);
+            dateStr = _formatDateFR(this._positionToDateFn(rightEdge));
         }
 
         if (!this._tooltip) {
@@ -544,24 +540,19 @@ class GanttInteractions {
             }
 
             // Calculate date changes (horizontal)
-            const colWidth = this._zoomColWidthFn();
-            const timelineStart = this._timelineStartFn();
             const newLeft = parseFloat(d.bar.style.left);
 
             const updates = {};
 
             if (d.isMilestone) {
                 // Milestone: position is left + 8 (centered), startDate = endDate
-                const dayOffset = Math.round((newLeft + 8) / colWidth);
-                const newDate = formatDateISO(addDays(timelineStart, dayOffset));
+                const newDate = formatDateISO(this._positionToDateFn(newLeft + 8));
                 updates.startDate = newDate;
                 updates.endDate = newDate;
             } else {
                 const newWidth = parseFloat(d.bar.style.width);
-                const startDayOffset = Math.round(newLeft / colWidth);
-                const durationDays = Math.max(1, Math.round(newWidth / colWidth) - 1);
-                const newStart = addDays(timelineStart, startDayOffset);
-                const newEnd = addDays(newStart, durationDays);
+                const newStart = this._positionToDateFn(newLeft);
+                const newEnd = this._positionToDateFn(newLeft + newWidth);
 
                 if (d.mode === 'move') {
                     updates.startDate = formatDateISO(newStart);
@@ -569,9 +560,7 @@ class GanttInteractions {
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
-                    const rightEdge = newLeft + newWidth;
-                    const endDayOffset = Math.round(rightEdge / colWidth) - 1;
-                    updates.endDate = formatDateISO(addDays(timelineStart, endDayOffset));
+                    updates.endDate = formatDateISO(newEnd);
                 }
             }
 

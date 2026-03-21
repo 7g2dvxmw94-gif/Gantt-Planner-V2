@@ -698,6 +698,37 @@ class GanttRenderer {
         }
     }
 
+    /**
+     * Convert a pixel position (from timeline left edge) back to a Date.
+     * Inverse of _dateToPosition().
+     */
+    positionToDate(px) {
+        const effectiveColWidth = this._effectiveColWidth;
+        const rangeStart = new Date(this._timelineRange.start);
+        rangeStart.setHours(0, 0, 0, 0);
+
+        if (this._zoomLevel === 'day' || this._zoomLevel === 'week') {
+            const dayOffset = Math.round(px / effectiveColWidth);
+            return addDays(rangeStart, dayOffset);
+        } else {
+            const months = getMonthsBetween(this._timelineRange.start, this._timelineRange.end);
+            let offset = 0;
+            for (const m of months) {
+                const monthEnd = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+                const daysInMonth = monthEnd.getDate();
+                if (px < offset + effectiveColWidth) {
+                    const fraction = (px - offset) / effectiveColWidth;
+                    const dayInMonth = Math.round(fraction * daysInMonth);
+                    return new Date(m.getFullYear(), m.getMonth(), 1 + Math.min(dayInMonth, daysInMonth - 1));
+                }
+                offset += effectiveColWidth;
+            }
+            // Past the end – clamp to last day
+            const last = months[months.length - 1];
+            return new Date(last.getFullYear(), last.getMonth() + 1, 0);
+        }
+    }
+
     /* ---- Dependency Arrows ---- */
 
     _renderDependencies(body, tasks) {

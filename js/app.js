@@ -59,6 +59,7 @@ class App {
             },
             getColWidth: () => ganttRenderer.effectiveColWidth || 50,
             getTimelineStart: () => store.getTimelineRange().start,
+            positionToDate: (px) => ganttRenderer.positionToDate(px),
             onPinchZoom: (direction) => this._handlePinchZoom(direction),
         });
 
