@@ -14,7 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-
 /* ====== css/variables.css ====== */
 /* ========================================
    DESIGN TOKENS - GANTT PLANNER PRO
@@ -171,6 +170,7 @@
     --shadow-focus: 0 0 0 3px rgba(129, 140, 248, 0.3);
 }
 
+
 /* ====== css/base.css ====== */
 /* ========================================
    BASE & RESET STYLES
@@ -309,6 +309,7 @@ table {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) var(--bg-subtle);
 }
+
 
 /* ====== css/components.css ====== */
 /* ========================================
@@ -1182,6 +1183,20 @@ textarea.input {
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
+/* ---- Filter Bar ---- */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.filter-select {
+    width: auto;
+    min-width: 140px;
+    padding: var(--space-1) var(--space-5) var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+}
+
 /* ---- Undo/Redo Group ---- */
 .undo-redo-group {
     display: flex;
@@ -1239,7 +1254,7 @@ textarea.input {
     min-width: 16px;
     height: 16px;
     border-radius: 8px;
-    background: var(--color-danger, #EF4444);
+    background: var(--color-error, #EF4444);
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -2031,6 +2046,7 @@ textarea.input {
     font-size: 13px;
 }
 
+
 /* ====== css/layout.css ====== */
 /* ========================================
    LAYOUT - HEADER, TOOLBAR, MAIN, FOOTER
@@ -2237,6 +2253,7 @@ textarea.input {
     overflow: hidden;
 }
 
+
 /* ---- Mobile Bottom Nav ---- */
 .mobile-nav {
     display: none;
@@ -2280,6 +2297,7 @@ textarea.input {
     width: 24px;
     height: 24px;
 }
+
 
 
 /* ====== css/gantt.css ====== */
@@ -4224,6 +4242,7 @@ tr.critical-path:hover {
     accent-color: var(--color-primary);
 }
 
+
 /* ====== css/settings-panel.css ====== */
 /* ========================================
    SETTINGS PANEL - Side Panel Styles
@@ -4273,10 +4292,11 @@ tr.critical-path:hover {
 .settings-panel-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
+    position: relative;
 }
 
 .settings-panel-title {
@@ -4284,9 +4304,11 @@ tr.critical-path:hover {
     font-weight: var(--font-weight-bold);
     color: var(--text-primary);
     margin: 0;
+    text-align: center;
+    flex: 1;
 }
 
-.settings-panel-close {
+.settings-panel-back {
     width: 36px;
     height: 36px;
     display: flex;
@@ -4298,11 +4320,17 @@ tr.critical-path:hover {
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
+    flex-shrink: 0;
 }
 
-.settings-panel-close:hover {
+.settings-panel-back:hover {
     background: var(--bg-muted);
     color: var(--text-primary);
+}
+
+.settings-panel-header-spacer {
+    width: 36px;
+    flex-shrink: 0;
 }
 
 /* ---- Tabs ---- */
@@ -4355,10 +4383,26 @@ tr.critical-path:hover {
 /* ---- Group ---- */
 .settings-group {
     margin-bottom: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-default);
+}
+
+.settings-group:first-child {
+    border-top: none;
+    padding-top: 0;
 }
 
 .settings-group:last-child {
     margin-bottom: 0;
+}
+
+.settings-group-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-3) 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .settings-group-header {
@@ -4382,84 +4426,55 @@ tr.critical-path:hover {
     letter-spacing: 0.5px;
 }
 
-/* ---- Theme Options ---- */
-.settings-theme-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-2);
-}
-
-.settings-theme-btn {
+/* ---- Segmented Control ---- */
+.settings-segmented-control {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-2);
     background: var(--bg-subtle);
-    border: 2px solid var(--border-default);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-family: var(--font-sans);
+    padding: 3px;
+    gap: 2px;
 }
 
-.settings-theme-btn:hover {
-    background: var(--bg-muted);
-    border-color: var(--border-strong);
-}
-
-.settings-theme-btn.active {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-}
-
-.settings-theme-icon {
-    font-size: var(--font-size-xl);
-    line-height: 1;
-}
-
-.settings-theme-label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    color: var(--text-primary);
-}
-
-.settings-theme-btn.active .settings-theme-label {
-    color: var(--color-primary);
-    font-weight: var(--font-weight-semibold);
-}
-
-/* ---- Zoom Options ---- */
-.settings-zoom-options {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-2);
-}
-
-.settings-zoom-btn {
-    padding: var(--space-2) var(--space-3);
-    background: var(--bg-subtle);
-    border: 2px solid var(--border-default);
-    border-radius: var(--radius-md);
+.settings-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius-lg) - 2px);
     cursor: pointer;
     transition: all var(--transition-fast);
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.settings-segment:hover {
     color: var(--text-primary);
-    text-align: center;
-}
-
-.settings-zoom-btn:hover {
     background: var(--bg-muted);
-    border-color: var(--border-strong);
 }
 
-.settings-zoom-btn.active {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+.settings-segment.active {
+    background: var(--color-primary);
+    color: #fff;
     font-weight: var(--font-weight-semibold);
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+}
+
+.settings-segment.active svg {
+    stroke: #fff;
+}
+
+.settings-segment-icon {
+    display: flex;
+    align-items: center;
+    line-height: 1;
 }
 
 /* ---- Identity Fields ---- */
@@ -4534,6 +4549,7 @@ tr.critical-path:hover {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
 
 /* ====== css/responsive.css ====== */
 /* ========================================
@@ -4752,6 +4768,7 @@ tr.critical-path:hover {
         color: black;
     }
 }
+
 
     </style>
 </head>
@@ -5046,11 +5063,9 @@ tr.critical-path:hover {
     </nav>
 
     <!-- ==================== SCRIPTS ==================== -->
-
-    <!-- ==================== SCRIPTS (Bundled) ==================== -->
     <script>
-(function(){
-'use strict';
+(function() {
+"use strict";
 
 // ====== js/utils.js ======
 /* ========================================
@@ -5326,6 +5341,8 @@ const CURRENCIES = {
     CHF: { symbol: 'CHF', position: 'after', hourly: 'CHF/h', daily: 'CHF/d', space: true },
 };
 
+{ CURRENCIES };
+
 /**
  * Get the current currency config from store settings
  */
@@ -5389,6 +5406,7 @@ function debounce(fn, ms = 300) {
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
+
 
 // ====== js/store.js ======
 /* ========================================
@@ -6343,7 +6361,7 @@ class Store {
     }
 
     /**
-     * Compute costs for each task based on assigned resources' hourly rates + fixed costs.
+     * Compute costs for each task based on assigned resources' rates + fixed costs.
      * For hourly resources: duration_days × 8h × hourlyRate
      * For daily resources (TJM): duration_days × dailyRate
      * Total cost = resource cost + fixedCost
@@ -7071,6 +7089,7 @@ class Store {
 
 // Singleton export
 const store = new Store();
+{ PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };
 
 
 // ====== js/theme.js ======
@@ -7177,6 +7196,7 @@ class ThemeManager {
 }
 
 const themeManager = new ThemeManager();
+
 
 // ====== js/task-modal.js ======
 /* ========================================
@@ -8216,11 +8236,19 @@ class TaskModal {
 
 const taskModal = new TaskModal();
 
+
 // ====== js/gantt-renderer.js ======
 /* ========================================
    GANTT CHART RENDERER
    Gantt Planner Pro
    ======================================== */
+
+    createElement, $, $$,
+    daysBetween, addDays, formatDateISO, formatDateShort,
+    getMonthsBetween, getWeeksBetween, getDaysBetween,
+    getMonthName, getWeekNumber, isToday, isWeekend,
+    getTaskColor, TASK_COLORS,
+} from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -9078,6 +9106,7 @@ class GanttRenderer {
 
 const ganttRenderer = new GanttRenderer();
 
+
 // ====== js/gantt-interactions.js ======
 /* ========================================
    GANTT INTERACTIONS - Drag, Resize, Click
@@ -9677,12 +9706,13 @@ function _formatDateFR(date) {
 
 const ganttInteractions = new GanttInteractions();
 
+
 // ====== js/onboarding.js ======
 /* ========================================
    ONBOARDING - Interactive guide for new users
    ======================================== */
 
-const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
+const STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
     {
@@ -9732,7 +9762,7 @@ class Onboarding {
 
     /** Auto-start on first visit, or call manually */
     tryAutoStart() {
-        if (localStorage.getItem(ONBOARDING_STORAGE_KEY)) return;
+        if (localStorage.getItem(STORAGE_KEY)) return;
         // Defer so the UI is fully rendered
         setTimeout(() => this.start(), 600);
     }
@@ -9901,7 +9931,7 @@ class Onboarding {
 
     _finish() {
         this._active = false;
-        localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+        localStorage.setItem(STORAGE_KEY, '1');
         if (this._overlay) {
             this._overlay.classList.add('fade-out');
             setTimeout(() => {
@@ -9917,6 +9947,7 @@ class Onboarding {
 }
 
 const onboarding = new Onboarding();
+
 
 // ====== js/cloud-backup.js ======
 /* ========================================
@@ -10210,11 +10241,13 @@ class CloudBackup {
 
 const cloudBackup = new CloudBackup();
 
+
 // ====== js/settings-panel.js ======
 /* ========================================
    SETTINGS PANEL - Side Panel
    Gantt Planner Pro
    ======================================== */
+
 
 class SettingsPanel {
     constructor() {
@@ -10316,7 +10349,7 @@ class SettingsPanel {
                         <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
                         <select class="settings-field-input" id="settingsCurrency">
                             ${Object.entries(CURRENCIES).map(([code, c]) =>
-                                '<option value="' + code + '" ' + ((this._getCustomization('currency') || 'EUR') === code ? 'selected' : '') + '>' + c.symbol + ' – ' + code + '</option>'
+                                `<option value="${code}" ${(this._getCustomization('currency') || 'EUR') === code ? 'selected' : ''}>${c.symbol} – ${code}</option>`
                             ).join('')}
                         </select>
                     </div>
@@ -10471,7 +10504,11 @@ class SettingsPanel {
         this._overlay.classList.add('active');
         this._panel.classList.add('open');
         document.body.style.overflow = 'hidden';
+
+        // Refresh values from store
         this._refreshValues();
+
+        // Focus trap: focus the close button
         const closeBtn = this._panel.querySelector('#settingsPanelClose');
         if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
     }
@@ -10481,6 +10518,8 @@ class SettingsPanel {
         this._overlay.classList.remove('active');
         this._panel.classList.remove('open');
         document.body.style.overflow = '';
+
+        // Return focus to settings button
         const btn = document.getElementById('settingsBtn');
         if (btn) btn.focus();
     }
@@ -10494,6 +10533,7 @@ class SettingsPanel {
     }
 
     _refreshValues() {
+        // Identity fields
         const userNameInput = this._panel.querySelector('#settingsUserName');
         const nameInput = this._panel.querySelector('#settingsName');
         const logoInput = this._panel.querySelector('#settingsLogo');
@@ -10507,6 +10547,7 @@ class SettingsPanel {
         if (currencySelect) currencySelect.value = this._getCustomization('currency') || 'EUR';
     }
 
+    /* Apply stored customizations on init */
     applyStoredCustomizations() {
         const userName = this._getCustomization('userName');
         const brandName = this._getCustomization('brandName');
@@ -10516,6 +10557,7 @@ class SettingsPanel {
 }
 
 const settingsPanel = new SettingsPanel();
+
 
 // ====== js/app.js ======
 /* ========================================
@@ -12817,7 +12859,7 @@ thead{display:table-header-group}
             <h2 class="costs-title">Suivi des coûts</h2>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
                 <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
-                <select id="costsProjectFilter" class="filter-select" style="min-width:200px;">
+                <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
@@ -12960,7 +13002,7 @@ thead{display:table-header-group}
             <!-- Project filter -->
             <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:4px;">
                 <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
-                <select id="dashboardProjectFilter" class="filter-select" style="min-width:200px;">
+                <select id="dashboardProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
@@ -13024,9 +13066,9 @@ thead{display:table-header-group}
                         const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
                         return `<li class="dashboard-alert-item">
                             <span class="dashboard-alert-dot ${dotColor}"></span>
-                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-muted);font-size:11px;">- ${n.sub}</span>` : ''}</span>
+                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
                         </li>`;
-                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-muted);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
+                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
             </div>
 
             <!-- Tâches à venir / en retard -->
@@ -14648,6 +14690,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     app.init();
 });
+
+
 })();
     </script>
 </body>
