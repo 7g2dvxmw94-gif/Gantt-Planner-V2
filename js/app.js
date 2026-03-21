@@ -2023,16 +2023,13 @@ thead{display:table-header-group}
                         <textarea class="input" id="contactDesc" rows="5" style="resize:vertical;min-height:100px" placeholder="Décrivez le problème rencontré ou votre question…"></textarea>
                     </div>
                     <div class="form-group" style="margin-top:16px" id="contactScreenshotGroup">
-                        <label class="form-label">Capture d'écran <span style="font-weight:400;color:var(--text-muted)">(optionnel)</span></label>
+                        <label class="form-label">Captures d'écran <span style="font-weight:400;color:var(--text-muted)">(optionnel, plusieurs possibles)</span></label>
                         <div id="contactDropZone" style="border:2px dashed var(--border-default);border-radius:var(--radius-md);padding:20px;text-align:center;cursor:pointer;transition:all var(--transition-fast);background:var(--bg-subtle)">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <p style="font-size:var(--font-size-sm);color:var(--text-muted);margin:0">Cliquez ou glissez-déposez une image ici</p>
-                            <input type="file" id="contactFileInput" accept="image/*" style="display:none" />
+                            <p style="font-size:var(--font-size-sm);color:var(--text-muted);margin:0">Cliquez ou glissez-déposez des images ici</p>
+                            <input type="file" id="contactFileInput" accept="image/*" multiple style="display:none" />
                         </div>
-                        <div id="contactPreview" style="display:none;margin-top:8px;position:relative">
-                            <img id="contactPreviewImg" style="max-width:100%;max-height:200px;border-radius:var(--radius-md);border:1px solid var(--border-default)" />
-                            <button type="button" id="contactRemoveImg" style="position:absolute;top:4px;right:4px;background:var(--bg-overlay);color:#fff;border:none;border-radius:var(--radius-full);width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1" aria-label="Supprimer l'image">&times;</button>
-                        </div>
+                        <div id="contactPreviewList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2067,28 +2064,50 @@ thead{display:table-header-group}
             });
         });
 
-        // Screenshot handling
-        let screenshotFile = null;
+        // Screenshot handling (multiple)
+        const screenshotFiles = [];
         const dropZone = overlay.querySelector('#contactDropZone');
         const fileInput = overlay.querySelector('#contactFileInput');
-        const preview = overlay.querySelector('#contactPreview');
-        const previewImg = overlay.querySelector('#contactPreviewImg');
-        const removeImg = overlay.querySelector('#contactRemoveImg');
+        const previewList = overlay.querySelector('#contactPreviewList');
 
-        const handleFile = (file) => {
-            if (!file || !file.type.startsWith('image/')) return;
-            screenshotFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                dropZone.style.display = 'none';
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+        const renderPreviews = () => {
+            previewList.innerHTML = '';
+            screenshotFiles.forEach((entry, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:relative;display:inline-block';
+                const img = document.createElement('img');
+                img.src = entry.dataUrl;
+                img.style.cssText = 'max-width:120px;max-height:100px;border-radius:var(--radius-md);border:1px solid var(--border-default);object-fit:cover';
+                img.alt = entry.file.name;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerHTML = '&times;';
+                btn.title = 'Supprimer';
+                btn.style.cssText = 'position:absolute;top:2px;right:2px;background:var(--bg-overlay);color:#fff;border:none;border-radius:var(--radius-full);width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1';
+                btn.addEventListener('click', () => {
+                    screenshotFiles.splice(idx, 1);
+                    renderPreviews();
+                });
+                wrapper.appendChild(img);
+                wrapper.appendChild(btn);
+                previewList.appendChild(wrapper);
+            });
+        };
+
+        const handleFiles = (files) => {
+            Array.from(files).forEach(file => {
+                if (!file || !file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    screenshotFiles.push({ file, dataUrl: e.target.result });
+                    renderPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
         };
 
         dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files); fileInput.value = ''; });
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--color-primary)';
@@ -2102,17 +2121,10 @@ thead{display:table-header-group}
             e.preventDefault();
             dropZone.style.borderColor = 'var(--border-default)';
             dropZone.style.background = 'var(--bg-subtle)';
-            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-        });
-        removeImg.addEventListener('click', () => {
-            screenshotFile = null;
-            fileInput.value = '';
-            previewImg.src = '';
-            preview.style.display = 'none';
-            dropZone.style.display = '';
+            if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
         });
 
-        // Send via mailto
+        // Send via mailto + auto-download screenshots
         overlay.querySelector('#contactSend').addEventListener('click', () => {
             const subject = overlay.querySelector('#contactSubject').value.trim();
             const desc = overlay.querySelector('#contactDesc').value.trim();
@@ -2129,8 +2141,21 @@ thead{display:table-header-group}
             const prefix = contactType === 'bug' ? '[Bug]' : '[Question]';
             const mailSubject = encodeURIComponent(`${prefix} ${subject}`);
             let body = desc;
-            if (screenshotFile) {
-                body += '\n\n---\n[Une capture d\'écran a été sélectionnée. Veuillez l\'ajouter en pièce jointe à cet email.]';
+            if (screenshotFiles.length > 0) {
+                // Auto-download each screenshot so the user can easily attach them
+                screenshotFiles.forEach((entry, i) => {
+                    const a = document.createElement('a');
+                    a.href = entry.dataUrl;
+                    const ext = entry.file.name.split('.').pop() || 'png';
+                    a.download = screenshotFiles.length === 1
+                        ? `capture.${ext}`
+                        : `capture_${i + 1}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+                const plural = screenshotFiles.length > 1;
+                body += `\n\n---\n[${screenshotFiles.length} capture${plural ? 's' : ''} d'écran téléchargée${plural ? 's' : ''} dans votre dossier Téléchargements. Veuillez l${plural ? 'es' : 'a'} joindre en pièce${plural ? 's' : ''} jointe${plural ? 's' : ''} à cet email.]`;
             }
             body += '\n\n---\nEnvoyé depuis Gantt Planner';
             const mailBody = encodeURIComponent(body);
