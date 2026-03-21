@@ -732,6 +732,10 @@ class GanttRenderer {
     /* ---- Dependency Arrows ---- */
 
     _renderDependencies(body, tasks) {
+        // Check if links are hidden via settings
+        const settings = store.getSettings();
+        if (settings.customization?.showLinks === false) return;
+
         const rows = body.querySelectorAll('.gantt-row');
         if (!rows.length) return;
 

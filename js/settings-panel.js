@@ -115,6 +115,25 @@ class SettingsPanel {
 
             <div class="settings-group">
                 <div class="settings-group-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <h3>Affichage</h3>
+                </div>
+                <div class="settings-identity-fields">
+                    <div class="settings-field settings-field-toggle">
+                        <label class="settings-field-label" for="settingsShowLinks">Afficher les liens (dépendances)</label>
+                        <label class="settings-toggle">
+                            <input type="checkbox" id="settingsShowLinks" ${this._getCustomization('showLinks') !== false ? 'checked' : ''}>
+                            <span class="settings-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
                         <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
                         <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
@@ -221,6 +240,15 @@ class SettingsPanel {
                 this._saveCustomization('faviconUrl', faviconInput.value);
                 this._applyFavicon(faviconInput.value);
             }, 500));
+        }
+
+        // Show links toggle
+        const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
+        if (showLinksCheckbox) {
+            showLinksCheckbox.addEventListener('change', () => {
+                this._saveCustomization('showLinks', showLinksCheckbox.checked);
+                document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+            });
         }
 
         // Google Drive button
@@ -332,6 +360,9 @@ class SettingsPanel {
 
         const currencySelect = this._panel.querySelector('#settingsCurrency');
         if (currencySelect) currencySelect.value = this._getCustomization('currency') || 'EUR';
+
+        const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
+        if (showLinksCheckbox) showLinksCheckbox.checked = this._getCustomization('showLinks') !== false;
     }
 
     /* Apply stored customizations on init */

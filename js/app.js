@@ -39,6 +39,11 @@ class App {
             this._renderStats();
         });
 
+        // Re-render Gantt when links visibility changes
+        document.addEventListener('links-visibility-changed', () => {
+            ganttRenderer.refreshDependencies();
+        });
+
         // Initialize Gantt renderer
         ganttRenderer.init();
 
