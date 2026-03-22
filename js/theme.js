@@ -40,9 +40,9 @@ class ThemeManager {
             this._toggleBtn.addEventListener('click', () => this.toggle());
         }
 
-        // Keyboard shortcut: Ctrl+D
+        // Keyboard shortcut: Ctrl+D / Cmd+D
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'd') {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
                 e.preventDefault();
                 this.toggle();
             }

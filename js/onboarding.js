@@ -111,7 +111,7 @@ class Onboarding {
             if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
             if (e.key === 'ArrowLeft') this._prev();
             // Let app keyboard shortcuts work by closing the overlay
-            if (e.ctrlKey && e.key.length === 1) this._finish();
+            if ((e.ctrlKey || e.metaKey) && e.key.length === 1) this._finish();
         });
 
         document.body.appendChild(this._overlay);

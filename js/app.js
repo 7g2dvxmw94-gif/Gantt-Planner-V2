@@ -326,7 +326,8 @@ class App {
         const selectAllCb = document.createElement('input');
         selectAllCb.type = 'checkbox';
         selectAllCb.id = 'tableSelectAll';
-        selectAllCb.title = 'Tout sélectionner (Ctrl+A)';
+        const _isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
+        selectAllCb.title = `Tout sélectionner (${_isMac ? '⌘' : 'Ctrl'}+A)`;
         selectAllCb.addEventListener('change', (e) => {
             e.stopPropagation();
             if (selectAllCb.checked) this._selectAllTasks();
@@ -1873,8 +1874,9 @@ thead{display:table-header-group}
 
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', (e) => {
-            // Ctrl+Z: Undo
-            if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+            const mod = e.ctrlKey || e.metaKey;
+            // Ctrl+Z / Cmd+Z: Undo
+            if (mod && !e.shiftKey && e.key === 'z') {
                 _prevent(e);
                 if (store.undo()) {
                     ganttRenderer.render();
@@ -1885,8 +1887,8 @@ thead{display:table-header-group}
                 return;
             }
 
-            // Ctrl+Y or Ctrl+Shift+Z: Redo
-            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+            // Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z: Redo
+            if ((mod && e.key === 'y') || (mod && e.shiftKey && e.key === 'Z')) {
                 _prevent(e);
                 if (store.redo()) {
                     ganttRenderer.render();
@@ -1897,8 +1899,8 @@ thead{display:table-header-group}
                 return;
             }
 
-            // Ctrl+F: Focus search
-            if (e.ctrlKey && e.key === 'f') {
+            // Ctrl+F / Cmd+F: Focus search
+            if (mod && e.key === 'f') {
                 const searchInput = $('#searchInput');
                 if (searchInput) {
                     _prevent(e);
@@ -1906,8 +1908,8 @@ thead{display:table-header-group}
                 }
             }
 
-            // Ctrl+A: Select all tasks (in table view)
-            if (e.ctrlKey && e.key === 'a' && this._activeView === 'board') {
+            // Ctrl+A / Cmd+A: Select all tasks (in table view)
+            if (mod && e.key === 'a' && this._activeView === 'board') {
                 _prevent(e);
                 this._selectAllTasks();
             }
@@ -1938,7 +1940,7 @@ thead{display:table-header-group}
             }
 
             // 1,2,3: Switch views
-            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            if (!mod && !e.altKey) {
                 const activeEl = document.activeElement;
                 const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
                 if (!isInput) {
@@ -1954,11 +1956,13 @@ thead{display:table-header-group}
     _showKeyboardHelp() {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
+        const mod = isMac ? '⌘' : 'Ctrl';
         const shortcuts = [
-            ['Ctrl+Z', 'Annuler'],
-            ['Ctrl+Y', 'Rétablir'],
-            ['Ctrl+F', 'Rechercher'],
-            ['Ctrl+D', 'Mode sombre/clair'],
+            [`${mod}+Z`, 'Annuler'],
+            [`${mod}+Y`, 'Rétablir'],
+            [`${mod}+F`, 'Rechercher'],
+            [`${mod}+D`, 'Mode sombre/clair'],
             ['1 / 2 / 3', 'Changer de vue'],
             ['Suppr', 'Supprimer la sélection'],
             ['Échap', 'Fermer / Annuler'],

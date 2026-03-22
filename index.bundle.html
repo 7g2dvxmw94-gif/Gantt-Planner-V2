@@ -4858,13 +4858,13 @@ tr.critical-path:hover {
                 <circle cx="11" cy="11" r="8"/>
                 <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <input type="search" id="searchInput" placeholder="Rechercher... (Ctrl+F)" aria-label="Rechercher dans le projet">
+            <input type="search" id="searchInput" placeholder="Rechercher... (Ctrl/⌘+F)" aria-label="Rechercher dans le projet">
         </div>
 
         <!-- Header Actions -->
         <div class="header-actions">
             <!-- Theme Toggle -->
-            <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl+D)">
+            <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl/⌘+D)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon" aria-hidden="true">
                     <circle cx="12" cy="12" r="5"/>
                     <line x1="12" y1="1" x2="12" y2="3"/>
@@ -4963,13 +4963,13 @@ tr.critical-path:hover {
             <div class="toolbar-actions">
                 <!-- Undo/Redo -->
                 <div class="undo-redo-group" role="group" aria-label="Annuler/Rétablir">
-                    <button class="icon-btn" id="undoBtn" aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)">
+                    <button class="icon-btn" id="undoBtn" aria-label="Annuler (Ctrl/⌘+Z)" title="Annuler (Ctrl/⌘+Z)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <polyline points="1 4 1 10 7 10"/>
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
                         </svg>
                     </button>
-                    <button class="icon-btn" id="redoBtn" aria-label="Rétablir (Ctrl+Y)" title="Rétablir (Ctrl+Y)">
+                    <button class="icon-btn" id="redoBtn" aria-label="Rétablir (Ctrl/⌘+Y)" title="Rétablir (Ctrl/⌘+Y)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <polyline points="23 4 23 10 17 10"/>
                             <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>
@@ -7173,9 +7173,9 @@ class ThemeManager {
             this._toggleBtn.addEventListener('click', () => this.toggle());
         }
 
-        // Keyboard shortcut: Ctrl+D
+        // Keyboard shortcut: Ctrl+D / Cmd+D
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'd') {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
                 e.preventDefault();
                 this.toggle();
             }
@@ -9901,7 +9901,7 @@ class Onboarding {
             if (e.key === 'ArrowRight' || e.key === 'Enter') this._next();
             if (e.key === 'ArrowLeft') this._prev();
             // Let app keyboard shortcuts work by closing the overlay
-            if (e.ctrlKey && e.key.length === 1) this._finish();
+            if ((e.ctrlKey || e.metaKey) && e.key.length === 1) this._finish();
         });
 
         document.body.appendChild(this._overlay);
@@ -11025,7 +11025,8 @@ class App {
         const selectAllCb = document.createElement('input');
         selectAllCb.type = 'checkbox';
         selectAllCb.id = 'tableSelectAll';
-        selectAllCb.title = 'Tout sélectionner (Ctrl+A)';
+        const _isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
+        selectAllCb.title = `Tout sélectionner (${_isMac ? '⌘' : 'Ctrl'}+A)`;
         selectAllCb.addEventListener('change', (e) => {
             e.stopPropagation();
             if (selectAllCb.checked) this._selectAllTasks();
@@ -12572,8 +12573,9 @@ thead{display:table-header-group}
 
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', (e) => {
-            // Ctrl+Z: Undo
-            if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+            const mod = e.ctrlKey || e.metaKey;
+            // Ctrl+Z / Cmd+Z: Undo
+            if (mod && !e.shiftKey && e.key === 'z') {
                 _prevent(e);
                 if (store.undo()) {
                     ganttRenderer.render();
@@ -12584,8 +12586,8 @@ thead{display:table-header-group}
                 return;
             }
 
-            // Ctrl+Y or Ctrl+Shift+Z: Redo
-            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+            // Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z: Redo
+            if ((mod && e.key === 'y') || (mod && e.shiftKey && e.key === 'Z')) {
                 _prevent(e);
                 if (store.redo()) {
                     ganttRenderer.render();
@@ -12596,8 +12598,8 @@ thead{display:table-header-group}
                 return;
             }
 
-            // Ctrl+F: Focus search
-            if (e.ctrlKey && e.key === 'f') {
+            // Ctrl+F / Cmd+F: Focus search
+            if (mod && e.key === 'f') {
                 const searchInput = $('#searchInput');
                 if (searchInput) {
                     _prevent(e);
@@ -12605,8 +12607,8 @@ thead{display:table-header-group}
                 }
             }
 
-            // Ctrl+A: Select all tasks (in table view)
-            if (e.ctrlKey && e.key === 'a' && this._activeView === 'board') {
+            // Ctrl+A / Cmd+A: Select all tasks (in table view)
+            if (mod && e.key === 'a' && this._activeView === 'board') {
                 _prevent(e);
                 this._selectAllTasks();
             }
@@ -12637,7 +12639,7 @@ thead{display:table-header-group}
             }
 
             // 1,2,3: Switch views
-            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+            if (!mod && !e.altKey) {
                 const activeEl = document.activeElement;
                 const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
                 if (!isInput) {
@@ -12653,11 +12655,13 @@ thead{display:table-header-group}
     _showKeyboardHelp() {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
+        const mod = isMac ? '⌘' : 'Ctrl';
         const shortcuts = [
-            ['Ctrl+Z', 'Annuler'],
-            ['Ctrl+Y', 'Rétablir'],
-            ['Ctrl+F', 'Rechercher'],
-            ['Ctrl+D', 'Mode sombre/clair'],
+            [`${mod}+Z`, 'Annuler'],
+            [`${mod}+Y`, 'Rétablir'],
+            [`${mod}+F`, 'Rechercher'],
+            [`${mod}+D`, 'Mode sombre/clair'],
             ['1 / 2 / 3', 'Changer de vue'],
             ['Suppr', 'Supprimer la sélection'],
             ['Échap', 'Fermer / Annuler'],
