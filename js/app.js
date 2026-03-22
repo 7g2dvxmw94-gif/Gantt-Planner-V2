@@ -1830,6 +1830,15 @@ thead{display:table-header-group}
 
     _bindZoomControls() {
         const zoomBtns = $$('.zoom-btn[data-zoom]');
+
+        // Sync UI buttons with the actual zoom level stored in settings
+        const currentLevel = ganttRenderer.zoomLevel;
+        zoomBtns.forEach(b => b.classList.toggle('active', b.dataset.zoom === currentLevel));
+        const label = $('.zoom-label');
+        if (label) {
+            label.textContent = ganttRenderer.zoomConfig[currentLevel]?.label || '';
+        }
+
         zoomBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const level = btn.dataset.zoom;
@@ -1842,9 +1851,9 @@ thead{display:table-header-group}
                 btn.classList.add('active');
 
                 // Update label
-                const label = $('.zoom-label');
-                if (label) {
-                    label.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+                const lbl = $('.zoom-label');
+                if (lbl) {
+                    lbl.textContent = ganttRenderer.zoomConfig[level]?.label || '';
                 }
             });
         });
