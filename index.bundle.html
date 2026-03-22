@@ -8539,13 +8539,19 @@ class GanttRenderer {
                 const subRow = createElement('div', { className: 'timeline-weeks' });
 
                 if (this._zoomLevel === 'week') {
-                    // Show week numbers
+                    // Show week numbers, clipped to month boundaries
                     const weeks = getWeeksBetween(visibleStart, visibleEnd);
                     weeks.forEach(weekDate => {
+                        const weekEnd = addDays(weekDate, 6); // Sunday
+                        // Clip week to visible month range
+                        const clippedStart = new Date(Math.max(weekDate.getTime(), visibleStart.getTime()));
+                        const clippedEnd = new Date(Math.min(weekEnd.getTime(), visibleEnd.getTime()));
+                        const visibleDays = daysBetween(clippedStart, clippedEnd) + 1;
+                        if (visibleDays <= 0) return;
                         const weekNum = getWeekNumber(weekDate);
                         const weekEl = createElement('div', {
                             className: 'timeline-week',
-                            style: { width: (colWidth * 7) + 'px', minWidth: (colWidth * 7) + 'px' },
+                            style: { width: (colWidth * visibleDays) + 'px', minWidth: (colWidth * visibleDays) + 'px' },
                         }, `S${weekNum}`);
                         subRow.appendChild(weekEl);
                     });
