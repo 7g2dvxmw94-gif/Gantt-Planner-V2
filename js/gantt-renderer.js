@@ -8,7 +8,7 @@ import {
     createElement, $, $$,
     daysBetween, addDays, formatDateISO, formatDateShort,
     getMonthsBetween, getWeeksBetween, getDaysBetween,
-    getMonthName, getWeekNumber, isToday, isWeekend,
+    getMonthName, getWeekNumber, getWeekStart, isToday, isWeekend,
     getTaskColor, TASK_COLORS,
 } from './utils.js';
 
@@ -496,6 +496,7 @@ class GanttRenderer {
             this._dayColumns.forEach(day => {
                 let cls = 'gantt-timeline-grid-col';
                 if (isWeekend(day)) cls += ' weekend';
+                if (this._zoomLevel === 'week' && day.getDay() === 1) cls += ' week-start';
                 grid.appendChild(createElement('div', {
                     className: cls,
                     style: { width: colWidth + 'px', minWidth: colWidth + 'px' },

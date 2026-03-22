@@ -73,6 +73,11 @@
     font-size: var(--font-size-xs);
     color: var(--text-muted);
     min-width: 0;
+    border-left: 2px solid var(--border-default);
+}
+
+.timeline-week:first-child {
+    border-left: none;
 }
 
 .timeline-day {
@@ -255,6 +260,10 @@
 
 [data-theme="dark"] .gantt-timeline-grid-col.weekend {
     background: rgba(255, 255, 255, 0.02);
+}
+
+.gantt-timeline-grid-col.week-start {
+    border-left: 2px solid var(--border-default);
 }
 
 /* ---- Gantt Bar ---- */

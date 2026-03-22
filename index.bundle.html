@@ -2372,6 +2372,11 @@ textarea.input {
     font-size: var(--font-size-xs);
     color: var(--text-muted);
     min-width: 0;
+    border-left: 2px solid var(--border-default);
+}
+
+.timeline-week:first-child {
+    border-left: none;
 }
 
 .timeline-day {
@@ -2554,6 +2559,10 @@ textarea.input {
 
 [data-theme="dark"] .gantt-timeline-grid-col.weekend {
     background: rgba(255, 255, 255, 0.02);
+}
+
+.gantt-timeline-grid-col.week-start {
+    border-left: 2px solid var(--border-default);
 }
 
 /* ---- Gantt Bar ---- */
@@ -8764,6 +8773,7 @@ class GanttRenderer {
             this._dayColumns.forEach(day => {
                 let cls = 'gantt-timeline-grid-col';
                 if (isWeekend(day)) cls += ' weekend';
+                if (this._zoomLevel === 'week' && day.getDay() === 1) cls += ' week-start';
                 grid.appendChild(createElement('div', {
                     className: cls,
                     style: { width: colWidth + 'px', minWidth: colWidth + 'px' },
