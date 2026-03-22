@@ -1956,13 +1956,11 @@ thead{display:table-header-group}
     _showKeyboardHelp() {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
-        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
-        const mod = isMac ? '⌘' : 'Ctrl';
         const shortcuts = [
-            [`${mod}+Z`, 'Annuler'],
-            [`${mod}+Y`, 'Rétablir'],
-            [`${mod}+F`, 'Rechercher'],
-            [`${mod}+D`, 'Mode sombre/clair'],
+            ['Ctrl/⌘+Z', 'Annuler'],
+            ['Ctrl/⌘+Y', 'Rétablir'],
+            ['Ctrl/⌘+F', 'Rechercher'],
+            ['Ctrl/⌘+D', 'Mode sombre/clair'],
             ['1 / 2 / 3', 'Changer de vue'],
             ['Suppr', 'Supprimer la sélection'],
             ['Échap', 'Fermer / Annuler'],
