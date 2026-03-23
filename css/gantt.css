@@ -959,10 +959,50 @@ tr.critical-path:hover {
     flex: 1;
     overflow: auto;
     padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.resource-view-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.resource-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 16px;
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.resource-add-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--bg-subtle);
+    color: var(--color-primary);
+}
+
+.resource-add-btn span {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.resource-view-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: var(--space-4);
     align-content: start;
+    flex: 1;
 }
 
 .resource-card {
@@ -972,6 +1012,11 @@ tr.critical-path:hover {
     padding: var(--space-5);
     box-shadow: var(--shadow-sm);
     transition: box-shadow var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
 }
 
 .resource-card:hover {
@@ -983,6 +1028,7 @@ tr.critical-path:hover {
     align-items: center;
     gap: var(--space-3);
     margin-bottom: var(--space-4);
+    flex-shrink: 0;
 }
 
 .resource-card-info {
@@ -1013,6 +1059,7 @@ tr.critical-path:hover {
 /* Workload bar */
 .resource-workload {
     margin-bottom: var(--space-4);
+    flex-shrink: 0;
 }
 
 .resource-workload-header {
@@ -1062,6 +1109,26 @@ tr.critical-path:hover {
 .resource-task-list {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.resource-task-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.resource-task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.resource-task-list::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: var(--radius-full);
+}
+
+.resource-task-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .resource-task-item {
@@ -1200,18 +1267,6 @@ tr.critical-path:hover {
     margin-top: 2px;
 }
 
-/* Resource card add button */
-.resource-card-add {
-    border: 2px dashed var(--border-default);
-    background: transparent;
-    cursor: pointer;
-    transition: border-color var(--transition-fast), background var(--transition-fast);
-}
-
-.resource-card-add:hover {
-    border-color: var(--color-primary);
-    background: var(--bg-subtle);
-}
 
 /* Resource card actions */
 .resource-card-actions {

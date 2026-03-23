@@ -881,16 +881,23 @@ class App {
         container.innerHTML = '';
         container.className = 'resource-view';
 
-        // Add resource button (always visible as a special card)
-        const addCard = document.createElement('div');
-        addCard.className = 'resource-card resource-card-add';
-        addCard.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:120px;cursor:pointer;color:var(--text-muted);gap:8px"><span style="font-size:32px;line-height:1">+</span><span style="font-size:var(--font-size-sm)">Ajouter une ressource</span></div>';
-        addCard.addEventListener('click', () => this._showResourceModal());
-        container.appendChild(addCard);
+        // Header with add button
+        const header = document.createElement('div');
+        header.className = 'resource-view-header';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'resource-add-btn';
+        addBtn.innerHTML = '<span>+</span> Ajouter une ressource';
+        addBtn.addEventListener('click', () => this._showResourceModal());
+        header.appendChild(addBtn);
+        container.appendChild(header);
 
         if (resources.length === 0) {
             return;
         }
+
+        // Grid of resource cards
+        const grid = document.createElement('div');
+        grid.className = 'resource-view-grid';
 
         resources.forEach(resource => {
             const assignedTasks = allTasks.filter(t =>
@@ -1036,8 +1043,10 @@ class App {
                 card.appendChild(taskList);
             }
 
-            container.appendChild(card);
+            grid.appendChild(card);
         });
+
+        container.appendChild(grid);
     }
 
     /* ---- Toolbar ---- */
