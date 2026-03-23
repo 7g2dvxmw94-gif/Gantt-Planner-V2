@@ -223,8 +223,8 @@ class App {
 
     /* ---- Board / Table View (Vue Tableau) ---- */
 
-    _getFilteredTasks(includePhases = false) {
-        let tasks = store.getTasks();
+    _getFilteredTasks(includePhases = false, projectId = null) {
+        let tasks = store.getTasks(projectId);
         const { status, assignee, phase, priority, dateStart, dateEnd, search } = this._filters;
 
         return tasks.filter(task => {
@@ -2465,9 +2465,10 @@ thead{display:table-header-group}
         const phaseMap = new Map();
         projects.forEach(p => {
             const costs = store.getTaskCosts(p.id);
+            const filteredTaskIds = new Set(this._getFilteredTasks(false, p.id).map(t => t.id));
             const tasks = store.getTasks(p.id);
             tasks.filter(t => t.isPhase).forEach(ph => phaseMap.set(ph.id, ph));
-            allCostTasks = allCostTasks.concat(costs.tasks);
+            allCostTasks = allCostTasks.concat(costs.tasks.filter(tc => filteredTaskIds.has(tc.task.id)));
         });
 
         const totalEstimated = allCostTasks.reduce((s, tc) => s + tc.cost, 0);
@@ -2659,7 +2660,7 @@ thead{display:table-header-group}
         const projectStats = [];
 
         projects.forEach(p => {
-            const tasks = store.getTasks(p.id).filter(t => !t.isPhase);
+            const tasks = this._getFilteredTasks(false, p.id);
             const done = tasks.filter(t => t.progress >= 100).length;
             const active = tasks.length - done;
             const avg = tasks.length ? Math.round(tasks.reduce((s, t) => s + (t.progress || 0), 0) / tasks.length) : 0;
@@ -2682,7 +2683,7 @@ thead{display:table-header-group}
         // Gather upcoming/overdue tasks across all projects for the dashboard
         const allUpcoming = [];
         projects.forEach(p => {
-            store.getTasks(p.id).filter(t => !t.isPhase && t.progress < 100).forEach(t => {
+            this._getFilteredTasks(false, p.id).filter(t => t.progress < 100).forEach(t => {
                 const daysLeft = Math.ceil((new Date(t.endDate) - new Date()) / (1000 * 60 * 60 * 24));
                 allUpcoming.push({ ...t, projectName: p.name, daysLeft });
             });
