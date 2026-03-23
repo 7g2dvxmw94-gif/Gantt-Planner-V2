@@ -2427,6 +2427,8 @@ thead{display:table-header-group}
                         panel.remove();
                         if (n.projectId) {
                             store.setActiveProject(n.projectId);
+                            this._dashboardFilterProjectId = null;
+                            this._costsFilterProjectId = null;
                             ganttRenderer.render();
                             this._renderProjectName();
                         }
@@ -2817,6 +2819,8 @@ thead{display:table-header-group}
         container.querySelectorAll('[data-project-id]').forEach(row => {
             row.addEventListener('click', () => {
                 store.setActiveProject(row.dataset.projectId);
+                this._dashboardFilterProjectId = null;
+                this._costsFilterProjectId = null;
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
@@ -4210,6 +4214,8 @@ tr:nth-child(even){background:#fafbfc}
             const dup = store.duplicateProject(activeProject.id);
             if (dup) {
                 store.setActiveProject(dup.id);
+                this._dashboardFilterProjectId = null;
+                this._costsFilterProjectId = null;
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
@@ -4290,6 +4296,8 @@ tr:nth-child(even){background:#fafbfc}
         });
 
         store.setActiveProject(project.id);
+        this._dashboardFilterProjectId = null;
+        this._costsFilterProjectId = null;
         ganttRenderer.render();
         this._renderStats();
         this._renderProjectName();
