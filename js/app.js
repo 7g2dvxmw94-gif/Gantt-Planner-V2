@@ -17,7 +17,7 @@ class App {
     constructor() {
         this._activeView = 'timeline';
         this._showCriticalPath = false;
-        this._filters = { status: 'all', assignee: 'all', phase: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._filters = { status: [], assignee: [], phase: [], priority: [], dateStart: '', dateEnd: '', search: '' };
         this._tableSortKey = 'name';
         this._tableSortDir = 'asc';
         this._selectedTaskIds = new Set();
@@ -231,23 +231,26 @@ class App {
             if (!includePhases && task.isPhase) return false;
             if (task.isPhase) return true;
 
-            if (status !== 'all' && task.status !== status) return false;
+            if (status.length > 0 && !status.includes(task.status)) return false;
 
-            if (assignee === 'none') {
+            if (assignee.length > 0) {
                 const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
-                if (assigneeIds.length > 0) return false;
-            } else if (assignee !== 'all') {
-                const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
-                if (!assigneeIds.includes(assignee)) return false;
+                if (assignee.includes('none')) {
+                    if (assigneeIds.length > 0 && !assignee.some(a => a !== 'none' && assigneeIds.includes(a))) return false;
+                } else {
+                    if (!assignee.some(a => assigneeIds.includes(a))) return false;
+                }
             }
 
-            if (phase === 'none') {
-                if (task.parentId) return false;
-            } else if (phase !== 'all') {
-                if (task.parentId !== phase) return false;
+            if (phase.length > 0) {
+                if (phase.includes('none')) {
+                    if (task.parentId && !phase.includes(task.parentId)) return false;
+                } else {
+                    if (!phase.includes(task.parentId || 'none')) return false;
+                }
             }
 
-            if (priority !== 'all' && task.priority !== priority) return false;
+            if (priority.length > 0 && !priority.includes(task.priority)) return false;
 
             if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
             if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
@@ -3826,61 +3829,37 @@ tr:nth-child(even){background:#fafbfc}
         filterIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
         filterBar.appendChild(filterIcon);
 
-        // Status filter
-        const statusGroup = this._createFilterGroup('Statut', 'filterStatus', [
-            { value: 'all', label: 'Tous' },
+        // Status filter (multi-select)
+        const statusGroup = this._createMultiFilterGroup('Statut', 'filterStatus', [
             { value: 'todo', label: 'À faire' },
             { value: 'in_progress', label: 'En cours' },
             { value: 'done', label: 'Terminé' },
-        ]);
+        ], 'Tous');
         filterBar.appendChild(statusGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
-        // Assignee filter
-        const assigneeGroup = document.createElement('div');
-        assigneeGroup.className = 'filter-group';
-        const assigneeLabel = document.createElement('label');
-        assigneeLabel.className = 'filter-label';
-        assigneeLabel.textContent = 'Ressource';
-        assigneeGroup.appendChild(assigneeLabel);
-        const assigneeSel = document.createElement('select');
-        assigneeSel.className = 'select filter-select';
-        assigneeSel.id = 'filterAssignee';
-        this._populateAssigneeFilter(assigneeSel);
-        assigneeSel.addEventListener('change', () => this._applyFilters());
-        assigneeGroup.appendChild(assigneeSel);
+        // Assignee filter (multi-select)
+        const assigneeGroup = this._createMultiFilterGroup('Ressource', 'filterAssignee', this._getAssigneeOptions(), 'Toutes');
         filterBar.appendChild(assigneeGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
-        // Phase filter
-        const phaseGroup = document.createElement('div');
-        phaseGroup.className = 'filter-group';
-        const phaseLabel = document.createElement('label');
-        phaseLabel.className = 'filter-label';
-        phaseLabel.textContent = 'Phase';
-        phaseGroup.appendChild(phaseLabel);
-        const phaseSel = document.createElement('select');
-        phaseSel.className = 'select filter-select';
-        phaseSel.id = 'filterPhase';
-        this._populatePhaseFilter(phaseSel);
-        phaseSel.addEventListener('change', () => this._applyFilters());
-        phaseGroup.appendChild(phaseSel);
+        // Phase filter (multi-select)
+        const phaseGroup = this._createMultiFilterGroup('Phase', 'filterPhase', this._getPhaseOptions(), 'Toutes');
         filterBar.appendChild(phaseGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
-        // Priority filter
-        const priorityGroup = this._createFilterGroup('Priorité', 'filterPriority', [
-            { value: 'all', label: 'Toutes' },
+        // Priority filter (multi-select)
+        const priorityGroup = this._createMultiFilterGroup('Priorité', 'filterPriority', [
             { value: 'high', label: 'Haute' },
             { value: 'medium', label: 'Moyenne' },
             { value: 'low', label: 'Basse' },
-        ]);
+        ], 'Toutes');
         filterBar.appendChild(priorityGroup);
 
         // Separator
@@ -3934,28 +3913,99 @@ tr:nth-child(even){background:#fafbfc}
         resetBtn.addEventListener('click', () => this._resetFilters());
         filterBar.appendChild(resetBtn);
 
+        // Close multi-filter dropdowns on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.filter-multi')) {
+                document.querySelectorAll('.filter-multi.open').forEach(el => el.classList.remove('open'));
+            }
+        });
+
         mainContainer.insertBefore(filterBar, content);
     }
 
-    _createFilterGroup(labelText, selectId, options) {
+    _createMultiFilterGroup(labelText, filterId, options, allLabel) {
         const group = document.createElement('div');
         group.className = 'filter-group';
         const label = document.createElement('label');
         label.className = 'filter-label';
         label.textContent = labelText;
         group.appendChild(label);
-        const select = document.createElement('select');
-        select.className = 'select filter-select';
-        select.id = selectId;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'filter-multi';
+        wrapper.id = filterId;
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'filter-multi-toggle';
+        const toggleText = document.createElement('span');
+        toggleText.className = 'filter-multi-toggle-text';
+        toggleText.textContent = allLabel;
+        toggle.appendChild(toggleText);
+        const badge = document.createElement('span');
+        badge.className = 'filter-multi-badge';
+        badge.style.display = 'none';
+        toggle.appendChild(badge);
+        const arrow = document.createElement('span');
+        arrow.className = 'filter-multi-arrow';
+        arrow.textContent = '▾';
+        toggle.appendChild(arrow);
+        wrapper.appendChild(toggle);
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'filter-multi-dropdown';
+
         options.forEach(opt => {
-            const o = document.createElement('option');
-            o.value = opt.value;
-            o.textContent = opt.label;
-            select.appendChild(o);
+            const item = document.createElement('label');
+            item.className = 'filter-multi-option';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = opt.value;
+            cb.addEventListener('change', () => this._onMultiFilterChange(wrapper, allLabel));
+            item.appendChild(cb);
+            const span = document.createElement('span');
+            span.textContent = opt.label;
+            item.appendChild(span);
+            dropdown.appendChild(item);
         });
-        select.addEventListener('change', () => this._applyFilters());
-        group.appendChild(select);
+
+        wrapper.appendChild(dropdown);
+        group.appendChild(wrapper);
+
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other open multi-filters
+            document.querySelectorAll('.filter-multi.open').forEach(el => {
+                if (el !== wrapper) el.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        });
+
         return group;
+    }
+
+    _onMultiFilterChange(wrapper, allLabel) {
+        const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
+        const checked = [...checkboxes].filter(cb => cb.checked);
+        const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
+        const badge = wrapper.querySelector('.filter-multi-badge');
+
+        if (checked.length === 0) {
+            toggleText.textContent = allLabel;
+            badge.style.display = 'none';
+        } else if (checked.length === 1) {
+            toggleText.textContent = checked[0].parentElement.querySelector('span').textContent;
+            badge.style.display = 'none';
+        } else {
+            toggleText.textContent = checked[0].parentElement.querySelector('span').textContent;
+            badge.textContent = '+' + (checked.length - 1);
+            badge.style.display = '';
+        }
+
+        checked.forEach(cb => cb.parentElement.classList.add('selected'));
+        [...checkboxes].filter(cb => !cb.checked).forEach(cb => cb.parentElement.classList.remove('selected'));
+
+        this._applyFilters();
     }
 
     _createFilterSep() {
@@ -3964,34 +4014,32 @@ tr:nth-child(even){background:#fafbfc}
         return sep;
     }
 
-    _populatePhaseFilter(select) {
+    _getPhaseOptions() {
         const tasks = store.getTasks();
         const phases = tasks.filter(t => t.isPhase);
-        select.innerHTML = '<option value="all">Toutes les phases</option><option value="none">Sans phase</option>';
-        phases.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            select.appendChild(opt);
-        });
+        const options = [{ value: 'none', label: 'Sans phase' }];
+        phases.forEach(p => options.push({ value: p.id, label: p.name }));
+        return options;
     }
 
-    _populateAssigneeFilter(select) {
+    _getAssigneeOptions() {
         const resources = store.getResources();
-        select.innerHTML = '<option value="all">Toutes les ressources</option><option value="none">Non assigné</option>';
-        resources.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r.id;
-            opt.textContent = r.name;
-            select.appendChild(opt);
-        });
+        const options = [{ value: 'none', label: 'Non assigné' }];
+        resources.forEach(r => options.push({ value: r.id, label: r.name }));
+        return options;
+    }
+
+    _getMultiFilterValues(filterId) {
+        const wrapper = document.getElementById(filterId);
+        if (!wrapper) return [];
+        return [...wrapper.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
     }
 
     _applyFilters() {
-        this._filters.status = $('#filterStatus')?.value || 'all';
-        this._filters.assignee = $('#filterAssignee')?.value || 'all';
-        this._filters.phase = $('#filterPhase')?.value || 'all';
-        this._filters.priority = $('#filterPriority')?.value || 'all';
+        this._filters.status = this._getMultiFilterValues('filterStatus');
+        this._filters.assignee = this._getMultiFilterValues('filterAssignee');
+        this._filters.phase = this._getMultiFilterValues('filterPhase');
+        this._filters.priority = this._getMultiFilterValues('filterPriority');
         this._filters.dateStart = $('#filterDateStart')?.value || '';
         this._filters.dateEnd = $('#filterDateEnd')?.value || '';
 
@@ -3999,20 +4047,26 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _resetFilters() {
-        this._filters = { status: 'all', assignee: 'all', phase: 'all', priority: 'all', dateStart: '', dateEnd: '', search: '' };
+        this._filters = { status: [], assignee: [], phase: [], priority: [], dateStart: '', dateEnd: '', search: '' };
 
-        const filterStatus = $('#filterStatus');
-        const filterAssignee = $('#filterAssignee');
-        const filterPhase = $('#filterPhase');
-        const filterPriority = $('#filterPriority');
+        // Uncheck all multi-filter checkboxes and reset labels
+        ['filterStatus', 'filterAssignee', 'filterPhase', 'filterPriority'].forEach(id => {
+            const wrapper = document.getElementById(id);
+            if (!wrapper) return;
+            wrapper.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+                cb.parentElement.classList.remove('selected');
+            });
+            const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
+            const badge = wrapper.querySelector('.filter-multi-badge');
+            if (toggleText) toggleText.textContent = id === 'filterStatus' ? 'Tous' : 'Toutes';
+            if (badge) badge.style.display = 'none';
+        });
+
         const filterDateStart = $('#filterDateStart');
         const filterDateEnd = $('#filterDateEnd');
         const searchInput = $('#searchInput');
 
-        if (filterStatus) filterStatus.value = 'all';
-        if (filterAssignee) filterAssignee.value = 'all';
-        if (filterPhase) filterPhase.value = 'all';
-        if (filterPriority) filterPriority.value = 'all';
         if (filterDateStart) filterDateStart.value = '';
         if (filterDateEnd) filterDateEnd.value = '';
         if (searchInput) searchInput.value = '';
