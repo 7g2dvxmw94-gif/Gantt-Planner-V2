@@ -11106,50 +11106,59 @@ class App {
 
     /* ---- Board / Table View (Vue Tableau) ---- */
 
+    _matchesFilters(task) {
+        const { status, assignee, phase, priority, dateStart, dateEnd, search } = this._filters;
+
+        if (status.length > 0 && !status.includes(task.status)) return false;
+
+        if (assignee.length > 0) {
+            const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+            if (assignee.includes('none')) {
+                if (assigneeIds.length > 0 && !assignee.some(a => a !== 'none' && assigneeIds.includes(a))) return false;
+            } else {
+                if (!assignee.some(a => assigneeIds.includes(a))) return false;
+            }
+        }
+
+        if (phase.length > 0) {
+            if (phase.includes('none')) {
+                if (task.parentId && !phase.includes(task.parentId)) return false;
+            } else {
+                if (!phase.includes(task.parentId || 'none')) return false;
+            }
+        }
+
+        if (priority.length > 0 && !priority.includes(task.priority)) return false;
+
+        if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
+        if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
+
+        if (search) {
+            const q = search.toLowerCase();
+            const nameMatch = task.name.toLowerCase().includes(q);
+            const descMatch = (task.description || '').toLowerCase().includes(q);
+            const assigneeMatch = (task.assignees || []).some(id => {
+                const r = store.getResource(id);
+                return r && r.name.toLowerCase().includes(q);
+            });
+            if (!nameMatch && !descMatch && !assigneeMatch) return false;
+        }
+
+        return true;
+    }
+
+    _hasActiveFilters() {
+        const { status, assignee, phase, priority, dateStart, dateEnd, search } = this._filters;
+        return status.length > 0 || assignee.length > 0 || phase.length > 0 || priority.length > 0 || dateStart || dateEnd || search;
+    }
+
     _getFilteredTasks(includePhases = false) {
         let tasks = store.getTasks();
-        const { status, assignee, phase, priority, dateStart, dateEnd, search } = this._filters;
 
         return tasks.filter(task => {
             if (!includePhases && task.isPhase) return false;
             if (task.isPhase) return true;
-
-            if (status.length > 0 && !status.includes(task.status)) return false;
-
-            if (assignee.length > 0) {
-                const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
-                if (assignee.includes('none')) {
-                    if (assigneeIds.length > 0 && !assignee.some(a => a !== 'none' && assigneeIds.includes(a))) return false;
-                } else {
-                    if (!assignee.some(a => assigneeIds.includes(a))) return false;
-                }
-            }
-
-            if (phase.length > 0) {
-                if (phase.includes('none')) {
-                    if (task.parentId && !phase.includes(task.parentId)) return false;
-                } else {
-                    if (!phase.includes(task.parentId || 'none')) return false;
-                }
-            }
-
-            if (priority.length > 0 && !priority.includes(task.priority)) return false;
-
-            if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
-            if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
-
-            if (search) {
-                const q = search.toLowerCase();
-                const nameMatch = task.name.toLowerCase().includes(q);
-                const descMatch = (task.description || '').toLowerCase().includes(q);
-                const assigneeMatch = (task.assignees || []).some(id => {
-                    const r = store.getResource(id);
-                    return r && r.name.toLowerCase().includes(q);
-                });
-                if (!nameMatch && !descMatch && !assigneeMatch) return false;
-            }
-
-            return true;
+            return this._matchesFilters(task);
         });
     }
 
@@ -13329,11 +13338,16 @@ thead{display:table-header-group}
         // Aggregate costs across filtered projects
         let allCostTasks = [];
         const phaseMap = new Map();
+        const hasFilters = this._hasActiveFilters();
         projects.forEach(p => {
             const costs = store.getTaskCosts(p.id);
             const tasks = store.getTasks(p.id);
             tasks.filter(t => t.isPhase).forEach(ph => phaseMap.set(ph.id, ph));
-            allCostTasks = allCostTasks.concat(costs.tasks);
+            if (hasFilters) {
+                allCostTasks = allCostTasks.concat(costs.tasks.filter(tc => this._matchesFilters(tc.task)));
+            } else {
+                allCostTasks = allCostTasks.concat(costs.tasks);
+            }
         });
 
         const totalEstimated = allCostTasks.reduce((s, tc) => s + tc.cost, 0);
@@ -13520,13 +13534,22 @@ thead{display:table-header-group}
         let totalBudget = 0, totalBudgetUsed = 0;
         const projectStats = [];
 
+        const hasFilters = this._hasActiveFilters();
         projects.forEach(p => {
-            const tasks = store.getTasks(p.id).filter(t => !t.isPhase);
+            let tasks = store.getTasks(p.id).filter(t => !t.isPhase);
+            if (hasFilters) tasks = tasks.filter(t => this._matchesFilters(t));
             const done = tasks.filter(t => t.progress >= 100).length;
             const active = tasks.length - done;
             const avg = tasks.length ? Math.round(tasks.reduce((s, t) => s + (t.progress || 0), 0) / tasks.length) : 0;
             const overdue = tasks.filter(t => t.endDate && t.endDate < today && t.progress < 100).length;
             const costs = store.getTaskCosts(p.id);
+            // Filter cost tasks if toolbar filters are active
+            if (hasFilters) {
+                const filteredIds = new Set(tasks.map(t => t.id));
+                costs.tasks = costs.tasks.filter(tc => filteredIds.has(tc.task.id));
+                costs.totalCost = costs.tasks.reduce((s, tc) => s + tc.cost, 0);
+                costs.totalCostDone = costs.tasks.reduce((s, tc) => s + tc.costDone, 0);
+            }
 
             totalTasks += tasks.length;
             completedTasks += done;
@@ -13544,7 +13567,7 @@ thead{display:table-header-group}
         // Gather upcoming/overdue tasks across all projects for the dashboard
         const allUpcoming = [];
         projects.forEach(p => {
-            store.getTasks(p.id).filter(t => !t.isPhase && t.progress < 100).forEach(t => {
+            store.getTasks(p.id).filter(t => !t.isPhase && t.progress < 100 && (!hasFilters || this._matchesFilters(t))).forEach(t => {
                 const daysLeft = Math.ceil((new Date(t.endDate) - new Date()) / (1000 * 60 * 60 * 24));
                 allUpcoming.push({ ...t, projectName: p.name, daysLeft });
             });
