@@ -2249,6 +2249,8 @@ textarea.input {
     flex: 1;
     display: flex;
     overflow: hidden;
+    position: relative;
+    z-index: 0;
 }
 
 
@@ -3618,7 +3620,9 @@ tr.critical-path:hover {
     background: var(--bg-base);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
-    overflow-x: auto;
+    overflow: visible;
+    position: relative;
+    z-index: 100;
 }
 
 .filter-bar-icon {
