@@ -17,6 +17,7 @@ class GanttInteractions {
         this._isDragging = false;
         this._dragData = null;
         this._zoomColWidthFn = null;
+        this._zoomLevelFn = null;
         this._timelineStartFn = null;
         this._positionToDateFn = null;
         this._minBarWidthFn = null;
@@ -41,6 +42,7 @@ class GanttInteractions {
         this._onUpdate = opts.onUpdate;
         this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
+        this._zoomLevelFn = opts.getZoomLevel || null;
         this._timelineStartFn = opts.getTimelineStart;
         this._positionToDateFn = opts.positionToDate;
         this._minBarWidthFn = opts.getMinBarWidth || null;
@@ -246,17 +248,26 @@ class GanttInteractions {
         // In month/quarter views colWidth is a full month, so use ~1/28.
         const minWidth = this._minBarWidthFn ? this._minBarWidthFn() : colWidth;
 
+        // Snap to day gridlines in day/week views for precise positioning
+        const zoomLevel = this._zoomLevelFn ? this._zoomLevelFn() : null;
+        const snap = (zoomLevel === 'day' || zoomLevel === 'week');
+
         if (d.mode === 'move') {
-            d.bar.style.left = (d.origLeft + totalDx) + 'px';
+            let newLeft = d.origLeft + totalDx;
+            if (snap) newLeft = Math.round(newLeft / colWidth) * colWidth;
+            d.bar.style.left = newLeft + 'px';
         } else if (d.mode === 'resize-left') {
-            const newLeft = d.origLeft + totalDx;
-            const newWidth = d.origWidth - totalDx;
+            let newLeft = d.origLeft + totalDx;
+            if (snap) newLeft = Math.round(newLeft / colWidth) * colWidth;
+            const newWidth = d.origLeft + d.origWidth - newLeft;
             if (newWidth >= minWidth) {
                 d.bar.style.left = newLeft + 'px';
                 d.bar.style.width = newWidth + 'px';
             }
         } else if (d.mode === 'resize-right') {
-            const newWidth = d.origWidth + totalDx;
+            let rawRight = d.origLeft + d.origWidth + totalDx;
+            if (snap) rawRight = Math.round(rawRight / colWidth) * colWidth;
+            const newWidth = rawRight - d.origLeft;
             if (newWidth >= minWidth) {
                 d.bar.style.width = newWidth + 'px';
             }

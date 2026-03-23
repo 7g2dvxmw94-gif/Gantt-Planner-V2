@@ -63,6 +63,7 @@ class App {
                 this._renderStats();
             },
             getColWidth: () => ganttRenderer.effectiveColWidth || 50,
+            getZoomLevel: () => ganttRenderer.zoomLevel,
             getTimelineStart: () => store.getTimelineRange().start,
             positionToDate: (px) => ganttRenderer.positionToDate(px),
             getMinBarWidth: () => ganttRenderer.minBarWidth,
