@@ -878,8 +878,19 @@ class App {
         const container = $('#resourceView');
         if (!container) return;
 
-        const resources = store.getResources();
+        const allResources = store.getResources();
         const allTasks = this._getFilteredTasks(false);
+
+        // Only show resources assigned to at least one task in the current project,
+        // plus always show all resources when no tasks exist yet
+        const assignedIds = new Set();
+        allTasks.forEach(t => {
+            (t.assignees || []).forEach(id => assignedIds.add(id));
+            if (t.assignee) assignedIds.add(t.assignee);
+        });
+        const resources = allTasks.length > 0
+            ? allResources.filter(r => assignedIds.has(r.id))
+            : allResources;
 
         container.innerHTML = '';
         container.className = 'resource-view';
@@ -4150,6 +4161,8 @@ tr:nth-child(even){background:#fafbfc}
             nameSpan.addEventListener('click', (e) => {
                 e.stopPropagation();
                 store.setActiveProject(p.id);
+                this._dashboardFilterProjectId = null;
+                this._costsFilterProjectId = null;
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
