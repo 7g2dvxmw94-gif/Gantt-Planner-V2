@@ -21,8 +21,8 @@ class App {
         this._tableSortKey = 'name';
         this._tableSortDir = 'asc';
         this._selectedTaskIds = new Set();
-        this._dashboardFilterProjectId = 'all';
-        this._costsFilterProjectId = 'all';
+        this._dashboardFilterProjectId = null;
+        this._costsFilterProjectId = null;
     }
 
     init() {
@@ -2436,6 +2436,10 @@ thead{display:table-header-group}
         if (!container) return;
 
         const allProjects = store.getProjects();
+        if (this._costsFilterProjectId === null) {
+            const active = store.getActiveProject();
+            this._costsFilterProjectId = active ? active.id : 'all';
+        }
         let filterId = this._costsFilterProjectId;
         if (filterId !== 'all' && !allProjects.find(p => p.id === filterId)) {
             filterId = 'all';
@@ -2623,6 +2627,10 @@ thead{display:table-header-group}
         if (!container) return;
 
         const allProjects = store.getProjects();
+        if (this._dashboardFilterProjectId === null) {
+            const active = store.getActiveProject();
+            this._dashboardFilterProjectId = active ? active.id : 'all';
+        }
         let filterId = this._dashboardFilterProjectId;
         if (filterId !== 'all' && !allProjects.find(p => p.id === filterId)) {
             filterId = 'all';
