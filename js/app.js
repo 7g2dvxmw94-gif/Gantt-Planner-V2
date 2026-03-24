@@ -889,9 +889,10 @@ class App {
             (t.assignees || []).forEach(id => assignedIds.add(id));
             if (t.assignee) assignedIds.add(t.assignee);
         });
+        const filteredAssigneeIds = this._filters.assignee;
         const resources = allTasks.length > 0
-            ? allResources.filter(r => assignedIds.has(r.id))
-            : allResources;
+            ? allResources.filter(r => assignedIds.has(r.id) && (filteredAssigneeIds.length === 0 || filteredAssigneeIds.includes(r.id)))
+            : (filteredAssigneeIds.length > 0 ? allResources.filter(r => filteredAssigneeIds.includes(r.id)) : allResources);
 
         container.innerHTML = '';
         container.className = 'resource-view';
