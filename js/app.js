@@ -2552,7 +2552,7 @@ thead{display:table-header-group}
                             value="${typeof tc.task.actualCost === 'number' ? tc.task.actualCost : Math.round(tc.costDone)}"
                             min="0" step="1" title="Coût réel (éditable)" />
                     </td>
-                    <td style="text-align:right;color:${ecartColor};font-weight:500;">
+                    <td style="text-align:right;color:${ecartColor};font-weight:500;white-space:nowrap;">
                         ${ecart >= 0 ? '+' : ''}${fmt(ecart)}
                     </td>
                 </tr>`;
@@ -2605,7 +2605,7 @@ thead{display:table-header-group}
                         <th style="text-align:right;">Coût fixe</th>
                         <th style="text-align:right;">Coût estimé total</th>
                         <th style="text-align:right;">Coût réel</th>
-                        <th style="text-align:right;">Écart</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Écart</th>
                     </tr>
                 </thead>
                 <tbody>${tableRows}</tbody>
@@ -2615,7 +2615,7 @@ thead{display:table-header-group}
                         <td style="text-align:right;font-weight:700;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;">${fmt(totalActual)}</td>
-                        <td style="text-align:right;font-weight:700;color:${varianceColor}">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
+                        <td style="text-align:right;font-weight:700;color:${varianceColor};white-space:nowrap;">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
                     </tr>
                 </tfoot>
             </table>
