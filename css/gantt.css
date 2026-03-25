@@ -1017,6 +1017,7 @@ tr.critical-path:hover {
     height: 280px;
     min-height: 280px;
     max-height: 280px;
+    overflow: hidden;
 }
 
 .resource-card:hover {
@@ -1111,6 +1112,7 @@ tr.critical-path:hover {
     flex-direction: column;
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
 }
 
