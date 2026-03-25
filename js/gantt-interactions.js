@@ -25,6 +25,8 @@ class GanttInteractions {
         this._dropIndicator = null;
         this._autoScrollRAF = null;
         this._autoScrollSpeed = 0;
+        this._tooltipEl = null;
+        this._tooltipTaskId = null;
     }
 
     /**
@@ -61,6 +63,11 @@ class GanttInteractions {
         this._container.addEventListener('touchstart', (e) => this._handleTouchStart(e), { passive: false });
         document.addEventListener('touchmove', (e) => this._handleTouchMove(e), { passive: false });
         document.addEventListener('touchend', (e) => this._handleTouchEnd(e));
+
+        // Hover tooltips
+        this._container.addEventListener('mouseover', (e) => this._handleBarMouseOver(e));
+        this._container.addEventListener('mouseout', (e) => this._handleBarMouseOut(e));
+        this._container.addEventListener('mousemove', (e) => this._handleBarMouseMove(e));
     }
 
     /* ---- Click ---- */
@@ -333,6 +340,111 @@ class GanttInteractions {
             this._autoScrollRAF = null;
         }
         this._autoScrollSpeed = 0;
+    }
+
+    /* ---- Hover Tooltips ---- */
+
+    _handleBarMouseOver(e) {
+        if (this._isDragging) return;
+        const bar = e.target.closest('.gantt-bar, .gantt-milestone, .gantt-permit');
+        if (!bar) return;
+        const taskId = bar.dataset.taskId;
+        if (!taskId || taskId === this._tooltipTaskId) return;
+        this._tooltipTaskId = taskId;
+        const task = store.getTask(taskId);
+        if (task) this._showHoverTooltip(task, e);
+    }
+
+    _handleBarMouseOut(e) {
+        const bar = e.target.closest('.gantt-bar, .gantt-milestone, .gantt-permit');
+        if (!bar) return;
+        if (!bar.contains(e.relatedTarget)) {
+            this._tooltipTaskId = null;
+            this._hideHoverTooltip();
+        }
+    }
+
+    _handleBarMouseMove(e) {
+        if (this._tooltipEl) this._positionHoverTooltip(e.clientX, e.clientY);
+    }
+
+    _showHoverTooltip(task, e) {
+        this._hideHoverTooltip();
+        const el = document.createElement('div');
+        el.className = 'gantt-hover-tooltip';
+        el.innerHTML = this._buildTooltipHTML(task);
+        document.body.appendChild(el);
+        this._tooltipEl = el;
+        this._positionHoverTooltip(e.clientX, e.clientY);
+        requestAnimationFrame(() => el.classList.add('visible'));
+    }
+
+    _hideHoverTooltip() {
+        if (this._tooltipEl) {
+            this._tooltipEl.remove();
+            this._tooltipEl = null;
+        }
+        this._tooltipTaskId = null;
+    }
+
+    _positionHoverTooltip(x, y) {
+        if (!this._tooltipEl) return;
+        const margin = 14;
+        const el = this._tooltipEl;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const rect = el.getBoundingClientRect();
+        let left = x + margin;
+        let top = y - rect.height / 2;
+        if (left + rect.width > vw - 8) left = x - rect.width - margin;
+        if (top < 8) top = 8;
+        if (top + rect.height > vh - 8) top = vh - rect.height - 8;
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+    }
+
+    _buildTooltipHTML(task) {
+        const resources = store.getResources();
+        const assigneeNames = (task.assignees || [])
+            .map(id => resources.find(r => r.id === id))
+            .filter(Boolean)
+            .map(r => r.name);
+
+        const fmt = (iso) => {
+            if (!iso) return '\u2014';
+            const d = new Date(iso);
+            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+
+        const dot = `<span class="gtt-dot" style="background:${task.color || '#6366F1'}"></span>`;
+        let html = `<div class="gtt-header">${dot}<span class="gtt-title">${task.name}</span></div>`;
+        html += `<div class="gtt-body">`;
+
+        if (task.isMilestone) {
+            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)}</span></div>`;
+        } else if (task.isPermit) {
+            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
+            if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${task.permitStatus}</span></div>`;
+            if (task.permitDossier) html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udccb</span><span>N\u00b0 ${task.permitDossier}</span></div>`;
+        } else {
+            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)} \u2192 ${fmt(task.endDate)}</span></div>`;
+            const dur = (task.startDate && task.endDate)
+                ? Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1
+                : null;
+            if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${dur} jour${dur > 1 ? 's' : ''}</span></div>`;
+            if (typeof task.progress === 'number') {
+                const pct = task.progress;
+                const bar = `<span class="gtt-progress-bar"><span class="gtt-progress-fill" style="width:${pct}%"></span></span>`;
+                html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcca</span>${bar}<span class="gtt-progress-label">${pct}%</span></div>`;
+            }
+        }
+
+        if (assigneeNames.length > 0) {
+            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udc64</span><span>${assigneeNames.join(', ')}</span></div>`;
+        }
+
+        html += `</div>`;
+        return html;
     }
 
     /* ---- Resize Tooltip ---- */
