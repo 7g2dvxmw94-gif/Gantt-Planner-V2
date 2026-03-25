@@ -1195,8 +1195,18 @@ textarea.input {
 }
 .costs-view {
     padding: 24px;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+}
+@media (min-width: 1600px) {
+    .costs-view {
+        max-width: 90%;
+    }
+}
+@media (min-width: 2000px) {
+    .costs-view {
+        max-width: 85%;
+    }
 }
 .costs-header {
     margin-bottom: 24px;
@@ -1209,8 +1219,16 @@ textarea.input {
 }
 .costs-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 16px;
+}
+@media (min-width: 1600px) {
+    .costs-kpi-grid {
+        gap: 20px;
+    }
+    .costs-kpi {
+        padding: 20px 24px;
+    }
 }
 .costs-kpi {
     background: var(--bg-elevated, #fff);
@@ -1301,6 +1319,25 @@ textarea.input {
 }
 .costs-actual-input:hover {
     border-color: var(--border-strong, #CBD5E1);
+}
+@media (min-width: 1600px) {
+    .costs-table-wrap {
+        padding: 20px 24px;
+    }
+    .cost-table {
+        font-size: 14px;
+    }
+    .cost-table th {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+    .cost-table td {
+        padding: 10px 12px;
+    }
+    .costs-actual-input {
+        width: 110px;
+        font-size: 14px;
+    }
 }
 
 /* ---- Dashboard Permit Section ---- */
