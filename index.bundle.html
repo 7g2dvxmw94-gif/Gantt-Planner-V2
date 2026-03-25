@@ -12495,6 +12495,7 @@ thead{display:table-header-group}
 .gantt-tl-phase{position:absolute;height:8px;border-radius:2px;top:8px;opacity:0.7}
 .gantt-tl-phase::before,.gantt-tl-phase::after{content:'';position:absolute;bottom:0;width:6px;height:10px;background:inherit;clip-path:polygon(0 0,100% 0,50% 100%)}
 .gantt-tl-phase::before{left:0}.gantt-tl-phase::after{right:0}
+.gantt-tl-milestone{position:absolute;width:14px;height:14px;top:5px;transform:rotate(45deg);border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,0.15)}
 .resource-section{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px}
 .res-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;width:calc(50% - 8px);box-sizing:border-box;page-break-inside:avoid;break-inside:avoid}
 .res-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -12667,7 +12668,7 @@ thead{display:table-header-group}
             const visEnd = new Date(Math.min(te.getTime() + DAY, endExcl.getTime()));
 
             let rowHtml = `<div class="gantt-tl-row">`;
-            rowHtml += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : ''}${task.name}</div>`;
+            rowHtml += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : (task.isMilestone ? '◆ ' : '')}${task.name}</div>`;
             rowHtml += `<div class="gantt-tl-track">`;
 
             if (visStart < endExcl && visEnd > start) {
@@ -12677,6 +12678,8 @@ thead{display:table-header-group}
 
                 if (task.isPhase) {
                     rowHtml += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${color}"></div>`;
+                } else if (task.isMilestone) {
+                    rowHtml += `<div class="gantt-tl-milestone" style="left:calc(${leftPct}% - 7px);background:${color}"></div>`;
                 } else {
                     const approxPx = (widthPct / 100) * estTrackPx;
                     const barLabel = approxPx > 60
