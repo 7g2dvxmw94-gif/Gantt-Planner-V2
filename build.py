@@ -25,6 +25,7 @@ JS_FILES = [
     'js/gantt-interactions.js',
     'js/onboarding.js',
     'js/cloud-backup.js',
+    'js/onedrive-backup.js',
     'js/settings-panel.js',
     'js/app.js',
 ]

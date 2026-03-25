@@ -155,6 +155,25 @@ class SettingsPanel {
 
             <div class="settings-group">
                 <div class="settings-group-header">
+                    <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10.813 0H0v10.813h10.813z" fill="#f25022"/>
+                        <path d="M22.957 0H12.144v10.813h10.813z" fill="#7fba00"/>
+                        <path d="M10.813 12.187H0V23h10.813z" fill="#00a4ef"/>
+                        <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
+                    </svg>
+                    <h3>OneDrive</h3>
+                </div>
+                <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Microsoft OneDrive.</p>
+                <button class="btn btn-primary" id="settingsOneDriveBtn" style="width: 100%; margin-top: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    Gérer les sauvegardes OneDrive
+                </button>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
                     </svg>
@@ -258,6 +277,15 @@ class SettingsPanel {
             gdriveBtn.addEventListener('click', () => {
                 this.close();
                 document.dispatchEvent(new CustomEvent('open-cloud-backup'));
+            });
+        }
+
+        // OneDrive button
+        const onedriveBtn = this._panel.querySelector('#settingsOneDriveBtn');
+        if (onedriveBtn) {
+            onedriveBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('open-onedrive-backup'));
             });
         }
 

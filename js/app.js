@@ -11,6 +11,7 @@ import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
+import { oneDriveBackup } from './onedrive-backup.js';
 import { settingsPanel } from './settings-panel.js';
 
 class App {
@@ -1102,6 +1103,9 @@ class App {
 
         // Google Drive modal triggered from settings panel via custom event
         document.addEventListener('open-cloud-backup', () => this._showCloudBackupModal());
+
+        // OneDrive modal triggered from settings panel via custom event
+        document.addEventListener('open-onedrive-backup', () => this._showOneDriveBackupModal());
 
         const criticalPathBtn = $('#criticalPathBtn');
         if (criticalPathBtn) {
@@ -3719,6 +3723,380 @@ tr:nth-child(even){background:#fafbfc}
         } catch (err) {
             container.innerHTML = '<div class="cloud-empty">Erreur de chargement</div>';
             console.error('Failed to load backups:', err);
+        }
+    }
+
+    /* ---- OneDrive Backup Modal ---- */
+
+    _showOneDriveBackupModal() {
+        const existing = document.getElementById('onedriveBackupModal');
+        if (existing) { existing.remove(); return; }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'onedriveBackupModal';
+        overlay.className = 'cloud-modal-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'onedriveModalTitle');
+
+        const modal = document.createElement('div');
+        modal.className = 'cloud-modal';
+
+        const clientId = localStorage.getItem('gantt-planner-onedrive-clientid');
+        if (!clientId) {
+            modal.innerHTML = this._onedriveConfigHTML();
+        } else if (oneDriveBackup.isSignedIn()) {
+            this._renderOneDrivePanel(modal);
+        } else {
+            modal.innerHTML = `
+                <div class="cloud-modal-header">
+                    <h2 id="onedriveModalTitle">OneDrive</h2>
+                    <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+                </div>
+                <div class="cloud-modal-body">
+                    <div class="cloud-modal-loading">Connexion à OneDrive...</div>
+                    <button class="btn btn-secondary" id="onedriveCancelInit" style="width: 100%; margin-top: 16px; font-size: 12px;">Annuler / Modifier le Client ID</button>
+                </div>`;
+            const closeBtn = modal.querySelector('.cloud-modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => {
+                document.getElementById('onedriveBackupModal')?.remove();
+            });
+            const cancelBtn = modal.querySelector('#onedriveCancelInit');
+            if (cancelBtn) cancelBtn.addEventListener('click', () => {
+                localStorage.removeItem('gantt-planner-onedrive-clientid');
+                modal.innerHTML = this._onedriveConfigHTML();
+                this._bindOneDriveConfigForm(modal);
+            });
+            this._initOneDriveAndShowPanel(modal, clientId);
+        }
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        setTimeout(() => this._bindOneDriveConfigForm(modal), 0);
+    }
+
+    _onedriveConfigHTML() {
+        return `
+            <div class="cloud-modal-header">
+                <h2 id="onedriveModalTitle">OneDrive</h2>
+                <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="cloud-modal-body">
+                <div class="cloud-setup-info">
+                    <div class="cloud-gdrive-logo">
+                        <svg width="40" height="40" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10.813 0H0v10.813h10.813z" fill="#f25022"/>
+                            <path d="M22.957 0H12.144v10.813h10.813z" fill="#7fba00"/>
+                            <path d="M10.813 12.187H0V23h10.813z" fill="#00a4ef"/>
+                            <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
+                        </svg>
+                    </div>
+                    <h3>Sauvegarde OneDrive</h3>
+                    <p>Vos sauvegardes seront stockées dans un dossier <strong>"Gantt Planner Backups"</strong> de votre OneDrive personnel.</p>
+                    <div class="cloud-steps-info">
+                        <p><strong>Configuration (une seule fois) :</strong></p>
+                        <ol>
+                            <li>Allez sur <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener">portal.azure.com → Inscriptions d'applications</a></li>
+                            <li>Cliquez sur <strong>Nouvelle inscription</strong></li>
+                            <li>Donnez un nom (ex: "Gantt Planner")</li>
+                            <li>Type de compte : <strong>Comptes dans un annuaire organisationnel et comptes personnels Microsoft</strong></li>
+                            <li>URI de redirection : <strong>Application monopage (SPA)</strong> → <code>${window.location.origin}${window.location.pathname}</code></li>
+                            <li>Copiez le <strong>ID d'application (client)</strong> ci-dessous</li>
+                        </ol>
+                    </div>
+                </div>
+                <form id="onedriveConfigForm" class="cloud-config-form">
+                    <div class="form-group">
+                        <label for="cfgOnedriveClientId">Client ID Microsoft *</label>
+                        <input type="text" id="cfgOnedriveClientId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à OneDrive</button>
+                </form>
+            </div>`;
+    }
+
+    _bindOneDriveConfigForm(modal) {
+        const form = modal.querySelector('#onedriveConfigForm');
+        if (!form) return;
+
+        const closeBtn = modal.querySelector('.cloud-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => {
+            document.getElementById('onedriveBackupModal')?.remove();
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientId = form.querySelector('#cfgOnedriveClientId').value.trim();
+            if (!clientId) return;
+
+            try {
+                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                localStorage.setItem('gantt-planner-onedrive-clientid', clientId);
+                await oneDriveBackup.init(clientId);
+                this._renderOneDrivePanel(modal);
+            } catch (err) {
+                this._showToast('Erreur OneDrive: ' + err.message, 'error');
+                form.querySelector('button[type="submit"]').textContent = 'Connecter à OneDrive';
+            }
+        });
+    }
+
+    async _initOneDriveAndShowPanel(modal, clientId) {
+        try {
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+            );
+            await Promise.race([oneDriveBackup.init(clientId), timeout]);
+            this._renderOneDrivePanel(modal);
+        } catch (err) {
+            modal.innerHTML = this._onedriveConfigHTML();
+            this._bindOneDriveConfigForm(modal);
+            this._showToast('Erreur OneDrive: ' + err.message, 'error');
+        }
+    }
+
+    _renderOneDrivePanel(modal) {
+        const user = oneDriveBackup.getUser();
+        const isSignedIn = oneDriveBackup.isSignedIn();
+
+        modal.innerHTML = `
+            <div class="cloud-modal-header">
+                <h2 id="onedriveModalTitle">OneDrive</h2>
+                <button class="cloud-modal-close" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="cloud-modal-body">
+                ${isSignedIn ? this._onedriveLoggedInHTML(user) : this._onedriveLoginHTML()}
+                <div id="onedriveBackupList" class="cloud-backup-list"></div>
+            </div>`;
+
+        const closeBtn = modal.querySelector('.cloud-modal-close');
+        closeBtn.addEventListener('click', () => {
+            document.getElementById('onedriveBackupModal')?.remove();
+        });
+
+        if (isSignedIn) {
+            this._bindOneDriveActions(modal);
+            this._refreshOneDriveBackupList(modal);
+        } else {
+            this._bindOneDriveLogin(modal);
+        }
+
+        oneDriveBackup.on('auth', () => {
+            this._renderOneDrivePanel(modal);
+        });
+    }
+
+    _onedriveLoginHTML() {
+        return `
+            <div class="cloud-auth-section">
+                <div class="cloud-gdrive-logo" style="text-align:center; margin-bottom: 16px;">
+                    <svg width="36" height="36" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10.813 0H0v10.813h10.813z" fill="#f25022"/>
+                        <path d="M22.957 0H12.144v10.813h10.813z" fill="#7fba00"/>
+                        <path d="M10.813 12.187H0V23h10.813z" fill="#00a4ef"/>
+                        <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
+                    </svg>
+                </div>
+                <p>Connectez-vous avec votre compte Microsoft pour sauvegarder vos projets dans OneDrive.</p>
+                <button class="btn btn-primary cloud-microsoft-btn" id="cloudMicrosoftLogin" style="width: 100%; margin-bottom: 12px;">
+                    Se connecter avec Microsoft
+                </button>
+                <button class="btn btn-secondary" id="onedriveResetConfig" style="width: 100%; font-size: 12px;">
+                    Modifier le Client ID
+                </button>
+            </div>`;
+    }
+
+    _onedriveLoggedInHTML(user) {
+        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
+        return `
+            <div class="cloud-user-bar">
+                <div class="cloud-user-info">
+                    <span class="cloud-user-name">${name}</span>
+                    ${email}
+                </div>
+                <button class="btn btn-secondary btn-sm" id="onedriveSignOut">Déconnexion</button>
+            </div>
+            <div class="cloud-actions">
+                <button class="btn btn-primary" id="onedriveSaveAll" style="flex: 1;">
+                    Sauvegarder tous les projets
+                </button>
+                <button class="btn btn-secondary" id="onedriveSaveCurrent" style="flex: 1;">
+                    Sauvegarder projet actif
+                </button>
+            </div>`;
+    }
+
+    _bindOneDriveLogin(modal) {
+        const msBtn = modal.querySelector('#cloudMicrosoftLogin');
+        if (msBtn) {
+            msBtn.addEventListener('click', async () => {
+                try {
+                    msBtn.textContent = 'Connexion...';
+                    msBtn.disabled = true;
+                    await oneDriveBackup.signIn();
+                    this._renderOneDrivePanel(modal);
+                } catch (err) {
+                    this._showToast('Erreur connexion Microsoft: ' + err.message, 'error');
+                    msBtn.textContent = 'Se connecter avec Microsoft';
+                    msBtn.disabled = false;
+                }
+            });
+        }
+
+        const resetBtn = modal.querySelector('#onedriveResetConfig');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                localStorage.removeItem('gantt-planner-onedrive-clientid');
+                oneDriveBackup.signOut();
+                modal.innerHTML = this._onedriveConfigHTML();
+                this._bindOneDriveConfigForm(modal);
+            });
+        }
+    }
+
+    _bindOneDriveActions(modal) {
+        const signOutBtn = modal.querySelector('#onedriveSignOut');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', () => {
+                oneDriveBackup.signOut();
+                this._renderOneDrivePanel(modal);
+            });
+        }
+
+        const saveAllBtn = modal.querySelector('#onedriveSaveAll');
+        if (saveAllBtn) {
+            saveAllBtn.addEventListener('click', async () => {
+                try {
+                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.disabled = true;
+                    const data = store.exportAllProjects();
+                    const date = new Date().toLocaleDateString('fr-FR');
+                    await oneDriveBackup.saveBackup(`Backup complet - ${date}`, data);
+                    this._showToast('Sauvegarde OneDrive réussie', 'success');
+                    this._refreshOneDriveBackupList(modal);
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.disabled = false;
+                }
+            });
+        }
+
+        const saveCurrentBtn = modal.querySelector('#onedriveSaveCurrent');
+        if (saveCurrentBtn) {
+            saveCurrentBtn.addEventListener('click', async () => {
+                try {
+                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.disabled = true;
+                    const project = store.getActiveProject();
+                    const tasks = store.getTasks();
+                    const resources = store.getResources();
+                    const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
+                    await oneDriveBackup.saveBackup(project.name, data);
+                    this._showToast(`"${project.name}" sauvegardé sur OneDrive`, 'success');
+                    this._refreshOneDriveBackupList(modal);
+                } catch (err) {
+                    this._showToast('Erreur: ' + err.message, 'error');
+                } finally {
+                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.disabled = false;
+                }
+            });
+        }
+    }
+
+    async _refreshOneDriveBackupList(modal) {
+        const container = modal.querySelector('#onedriveBackupList');
+        if (!container) return;
+
+        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+
+        try {
+            const backups = await oneDriveBackup.listBackups();
+            if (backups.length === 0) {
+                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans OneDrive</div>';
+                return;
+            }
+
+            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            backups.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'cloud-backup-item';
+                const date = b.createdAt.toLocaleDateString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                const size = b.size > 1024 * 1024
+                    ? (b.size / (1024 * 1024)).toFixed(1) + ' Mo'
+                    : Math.round(b.size / 1024) + ' Ko';
+
+                item.innerHTML = `
+                    <div class="cloud-backup-info">
+                        <div class="cloud-backup-name">${b.name}</div>
+                        <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
+                    </div>
+                    <div class="cloud-backup-actions">
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                    </div>`;
+                container.appendChild(item);
+            });
+
+            container.querySelectorAll('.cloud-restore-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    try {
+                        btn.textContent = '...';
+                        const data = await oneDriveBackup.loadBackup(id);
+                        if (data.type === 'full-backup') {
+                            const result = store.importAllProjects(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                            }
+                        } else {
+                            const result = store.importProject(data);
+                            if (result) {
+                                ganttRenderer.render();
+                                this._renderStats();
+                                this._renderProjectName();
+                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                            }
+                        }
+                    } catch (err) {
+                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                    } finally {
+                        btn.textContent = 'Restaurer';
+                    }
+                });
+            });
+
+            container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    const id = btn.dataset.id;
+                    try {
+                        await oneDriveBackup.deleteBackup(id);
+                        this._refreshOneDriveBackupList(modal);
+                        this._showToast('Sauvegarde supprimée', 'info');
+                    } catch (err) {
+                        this._showToast('Erreur: ' + err.message, 'error');
+                    }
+                });
+            });
+        } catch (err) {
+            container.innerHTML = '<div class="cloud-empty">Erreur de chargement</div>';
+            console.error('Failed to load OneDrive backups:', err);
         }
     }
 
