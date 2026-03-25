@@ -155,7 +155,7 @@ function createDefaultProject(resources) {
             color: '#8B5CF6',
             assignee: resources[0].id,
             assignees: [resources[0].id],
-            fixedCost: 500,
+            fixedCosts: [{ name: 'Matériel', amount: 500 }],
             isMilestone: false,
             isPhase: false,
             order: 1,
@@ -259,7 +259,7 @@ function createDefaultProject(resources) {
             color: '#3B82F6',
             assignee: resources[3].id,
             assignees: [resources[3].id],
-            fixedCost: 2000,
+            fixedCosts: [{ name: 'Sous-traitance', amount: 1500 }, { name: 'Matériel', amount: 500 }],
             isMilestone: false,
             isPhase: false,
             order: 6,
@@ -982,7 +982,11 @@ class Store {
                     resourceCost += durationDays * HOURS_PER_DAY * (r.hourlyRate || 0);
                 }
             }
-            const fixedCost = task.fixedCost || 0;
+            // Support both new fixedCosts array and legacy fixedCost number
+            const fixedCosts = Array.isArray(task.fixedCosts) ? task.fixedCosts : [];
+            const fixedCost = fixedCosts.length > 0
+                ? fixedCosts.reduce((s, fc) => s + (fc.amount || 0), 0)
+                : (task.fixedCost || 0);
             const cost = resourceCost + fixedCost;
             const costDone = cost * (task.progress || 0) / 100;
 
@@ -1000,6 +1004,7 @@ class Store {
                 })),
                 resourceCost,
                 fixedCost,
+                fixedCosts,
                 cost,
                 costDone,
             });

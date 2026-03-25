@@ -209,26 +209,26 @@ class TaskModal {
         colorAssignRow.appendChild(assigneeGroup);
         body.appendChild(colorAssignRow);
 
-        // Fixed cost row
-        const costRow = createElement('div', { className: 'form-row' });
-        const fixedCostGroup = createElement('div', { className: 'form-group' });
-        fixedCostGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskFixedCost' }, 'Coût fixe (' + getCurrencySymbol() + ')'));
-        this._fixedCostInput = createElement('input', {
-            className: 'input',
-            type: 'number',
-            id: 'taskFixedCost',
-            min: '0',
-            step: '1',
-            value: '0',
-            placeholder: 'Ex: 5000 (matériel, sous-traitance...)',
-        });
-        fixedCostGroup.appendChild(this._fixedCostInput);
+        // Fixed costs section (multiple named costs)
+        const fixedCostsGroup = createElement('div', { className: 'form-group' });
+        const fixedCostsHeader = createElement('div', { className: 'fixed-costs-header' });
+        fixedCostsHeader.appendChild(createElement('label', { className: 'form-label' }, 'Coûts fixes (' + getCurrencySymbol() + ')'));
+        const addCostBtn = createElement('button', {
+            className: 'btn btn-xs btn-outline fixed-costs-add-btn',
+            type: 'button',
+        }, '+ Ajouter un coût');
+        addCostBtn.addEventListener('click', () => this._addFixedCostRow());
+        fixedCostsHeader.appendChild(addCostBtn);
+        fixedCostsGroup.appendChild(fixedCostsHeader);
+        this._fixedCostsList = createElement('div', { className: 'fixed-costs-list' });
+        fixedCostsGroup.appendChild(this._fixedCostsList);
+        this._fixedCostsTotalEl = createElement('div', { className: 'fixed-costs-total' });
+        fixedCostsGroup.appendChild(this._fixedCostsTotalEl);
         const fixedCostHint = createElement('div', {
             style: { fontSize: '11px', color: 'var(--text-muted, #999)', marginTop: '4px' },
-        }, 'Coût forfaitaire hors ressources (matériel, sous-traitance, frais...)');
-        fixedCostGroup.appendChild(fixedCostHint);
-        costRow.appendChild(fixedCostGroup);
-        body.appendChild(costRow);
+        }, 'Coûts forfaitaires hors ressources (matériel, sous-traitance, frais...)');
+        fixedCostsGroup.appendChild(fixedCostHint);
+        body.appendChild(fixedCostsGroup);
 
         // Dependencies row (predecessors + successors side by side)
         this._depRow = createElement('div', { className: 'form-row' });
@@ -547,8 +547,8 @@ class TaskModal {
         // Reset color
         $$('.color-swatch', this._colorPicker).forEach((s, i) => s.classList.toggle('active', i === 0));
 
-        // Reset fixed cost
-        this._fixedCostInput.value = 0;
+        // Reset fixed costs
+        this._populateFixedCosts([]);
 
         // Reset permit fields
         this._resetPermitFields();
@@ -609,8 +609,10 @@ class TaskModal {
             s.classList.toggle('active', s.dataset.color === task.color);
         });
 
-        // Fixed cost
-        this._fixedCostInput.value = task.fixedCost || 0;
+        // Fixed costs (support legacy fixedCost field)
+        const fixedCosts = Array.isArray(task.fixedCosts) ? task.fixedCosts
+            : (task.fixedCost ? [{ name: 'Coût fixe', amount: task.fixedCost }] : []);
+        this._populateFixedCosts(fixedCosts);
 
         // Assignees (multi)
         this._populateAssignees(task.assignees || (task.assignee ? [task.assignee] : []));
@@ -958,7 +960,7 @@ class TaskModal {
             color: activeColor ? activeColor.dataset.color : '#6366F1',
             assignee: selectedAssignees[0] || null,
             assignees: selectedAssignees,
-            fixedCost: parseFloat(this._fixedCostInput.value) || 0,
+            fixedCosts: this._getFixedCosts(),
             dependencies: this._getSelectedPredecessors(),
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,
@@ -1013,6 +1015,84 @@ class TaskModal {
 
         this.close();
         if (this._onSave) this._onSave();
+    }
+
+    /* ---- Fixed Costs ---- */
+
+    _populateFixedCosts(costs) {
+        this._fixedCostsList.innerHTML = '';
+        if (costs.length === 0) {
+            // Add one empty row by default for convenience
+            this._addFixedCostRow('', 0, true);
+        } else {
+            costs.forEach(fc => this._addFixedCostRow(fc.name || '', fc.amount || 0));
+        }
+        this._updateFixedCostsTotal();
+    }
+
+    _addFixedCostRow(name = '', amount = 0, isEmpty = false) {
+        const row = createElement('div', { className: 'fixed-cost-row' });
+
+        const nameInput = createElement('input', {
+            className: 'input fixed-cost-name',
+            type: 'text',
+            placeholder: 'Libellé (ex: Matériel)',
+            value: name,
+        });
+
+        const amountInput = createElement('input', {
+            className: 'input fixed-cost-amount',
+            type: 'number',
+            min: '0',
+            step: '1',
+            placeholder: '0',
+            value: isEmpty ? '' : (amount || ''),
+        });
+        amountInput.addEventListener('input', () => this._updateFixedCostsTotal());
+
+        const removeBtn = createElement('button', {
+            className: 'btn btn-xs btn-icon fixed-cost-remove',
+            type: 'button',
+            title: 'Supprimer ce coût',
+        }, '×');
+        removeBtn.addEventListener('click', () => {
+            row.remove();
+            if (this._fixedCostsList.children.length === 0) {
+                this._addFixedCostRow('', 0, true);
+            }
+            this._updateFixedCostsTotal();
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(amountInput);
+        row.appendChild(removeBtn);
+        this._fixedCostsList.appendChild(row);
+        return row;
+    }
+
+    _updateFixedCostsTotal() {
+        const costs = this._getFixedCosts();
+        const total = costs.reduce((s, fc) => s + fc.amount, 0);
+        const symbol = getCurrencySymbol();
+        if (total > 0) {
+            this._fixedCostsTotalEl.textContent = `Total coûts fixes : ${total.toLocaleString('fr-FR')} ${symbol}`;
+            this._fixedCostsTotalEl.style.display = '';
+        } else {
+            this._fixedCostsTotalEl.style.display = 'none';
+        }
+    }
+
+    _getFixedCosts() {
+        const rows = this._fixedCostsList.querySelectorAll('.fixed-cost-row');
+        const costs = [];
+        rows.forEach(row => {
+            const name = row.querySelector('.fixed-cost-name').value.trim();
+            const amount = parseFloat(row.querySelector('.fixed-cost-amount').value) || 0;
+            if (amount > 0) {
+                costs.push({ name: name || 'Coût fixe', amount });
+            }
+        });
+        return costs;
     }
 
     /* ---- Delete ---- */

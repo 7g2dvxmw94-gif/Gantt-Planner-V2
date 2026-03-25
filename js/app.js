@@ -2552,7 +2552,7 @@ thead{display:table-header-group}
                     <td>${resNames}</td>
                     <td style="text-align:center;">${tc.durationDays} j</td>
                     <td style="text-align:center;">${rates}</td>
-                    <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted, #999)'};">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
+                    <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted, #999)'};"${tc.fixedCosts && tc.fixedCosts.length > 0 ? ` title="${tc.fixedCosts.map(fc => fc.name + ' : ' + fmt(fc.amount)).join('\n')}"` : ''}>${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}${tc.fixedCosts && tc.fixedCosts.length > 1 ? ` <span class="fixed-costs-badge" title="${tc.fixedCosts.map(fc => fc.name + ' : ' + fmt(fc.amount)).join('\n')}">${tc.fixedCosts.length}</span>` : ''}</td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(tc.cost)}</td>
                     <td style="text-align:right;">
                         <input type="number" class="costs-actual-input" data-task-id="${tc.task.id}"
@@ -2910,7 +2910,7 @@ thead{display:table-header-group}
                 <td>${resNames}</td>
                 <td style="text-align:center;">${rates}</td>
                 <td style="text-align:center;">${tc.durationDays}j</td>
-                <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}</td>
+                <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};"${tc.fixedCosts && tc.fixedCosts.length > 0 ? ` title="${tc.fixedCosts.map(fc => fc.name + ' : ' + formatCost(fc.amount)).join('\n')}"` : ''}>${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}${tc.fixedCosts && tc.fixedCosts.length > 1 ? ` <span class="fixed-costs-badge">${tc.fixedCosts.length}</span>` : ''}</td>
                 <td style="text-align:right;font-weight:600;white-space:nowrap;">${formatCost(tc.cost)}</td>
                 <td style="text-align:right;white-space:nowrap;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
                 <td style="width:80px;">

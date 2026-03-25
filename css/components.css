@@ -1766,6 +1766,102 @@ textarea.input {
     background: #dc2626;
 }
 
+/* Fixed costs in task modal */
+.fixed-costs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.fixed-costs-header .form-label {
+    margin: 0;
+}
+
+.fixed-costs-add-btn {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-base);
+    color: var(--color-primary);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.fixed-costs-add-btn:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.fixed-costs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.fixed-cost-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 28px;
+    gap: 8px;
+    align-items: center;
+}
+
+.fixed-cost-name {
+    font-size: var(--font-size-sm);
+}
+
+.fixed-cost-amount {
+    font-size: var(--font-size-sm);
+    text-align: right;
+}
+
+.fixed-cost-remove {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-base);
+    color: var(--text-muted, #999);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+}
+
+.fixed-cost-remove:hover {
+    background: #FEE2E2;
+    color: #EF4444;
+    border-color: #FECACA;
+}
+
+.fixed-costs-total {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 6px;
+    text-align: right;
+}
+
+.fixed-costs-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 999px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
 .cloud-empty, .cloud-loading {
     text-align: center;
     padding: 24px;
