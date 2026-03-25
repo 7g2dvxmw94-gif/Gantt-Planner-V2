@@ -2526,9 +2526,9 @@ thead{display:table-header-group}
                 const groupFixed = group.items.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
                 tableRows += `<tr class="costs-phase-row">
                     <td colspan="4" class="costs-phase-name">${group.phase.name}</td>
-                    <td style="text-align:right;font-weight:600;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
-                    <td style="text-align:right;font-weight:600;">${fmt(groupEstimated)}</td>
-                    <td style="text-align:right;font-weight:600;">${fmt(groupActual)}</td>
+                    <td style="text-align:right;font-weight:600;white-space:nowrap;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
+                    <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupEstimated)}</td>
+                    <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupActual)}</td>
                     <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
                 </tr>`;
             }
@@ -2545,8 +2545,8 @@ thead{display:table-header-group}
                     <td>${resNames}</td>
                     <td style="text-align:center;">${tc.durationDays} j</td>
                     <td style="text-align:center;">${rates}</td>
-                    <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted, #999)'};">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
-                    <td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
+                    <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted, #999)'};">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
+                    <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(tc.cost)}</td>
                     <td style="text-align:right;">
                         <input type="number" class="costs-actual-input" data-task-id="${tc.task.id}"
                             value="${typeof tc.task.actualCost === 'number' ? tc.task.actualCost : Math.round(tc.costDone)}"
@@ -2602,9 +2602,9 @@ thead{display:table-header-group}
                         <th>Ressource(s)</th>
                         <th style="text-align:center;">Durée (j)</th>
                         <th style="text-align:center;">Taux horaire</th>
-                        <th style="text-align:right;">Coût fixe</th>
-                        <th style="text-align:right;">Coût estimé total</th>
-                        <th style="text-align:right;">Coût réel</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût fixe</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût estimé total</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût réel</th>
                         <th style="text-align:right;min-width:110px;white-space:nowrap;">Écart</th>
                     </tr>
                 </thead>
@@ -2612,9 +2612,9 @@ thead{display:table-header-group}
                 <tfoot>
                     <tr>
                         <td colspan="4" style="font-weight:700;">Total</td>
-                        <td style="text-align:right;font-weight:700;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
-                        <td style="text-align:right;font-weight:700;">${fmt(totalEstimated)}</td>
-                        <td style="text-align:right;font-weight:700;">${fmt(totalActual)}</td>
+                        <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
+                        <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalEstimated)}</td>
+                        <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalActual)}</td>
                         <td style="text-align:right;font-weight:700;color:${varianceColor};white-space:nowrap;">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
                     </tr>
                 </tfoot>
@@ -2903,9 +2903,9 @@ thead{display:table-header-group}
                 <td>${resNames}</td>
                 <td style="text-align:center;">${rates}</td>
                 <td style="text-align:center;">${tc.durationDays}j</td>
-                <td style="text-align:right;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}</td>
-                <td style="text-align:right;font-weight:600;">${formatCost(tc.cost)}</td>
-                <td style="text-align:right;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
+                <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};">${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}</td>
+                <td style="text-align:right;font-weight:600;white-space:nowrap;">${formatCost(tc.cost)}</td>
+                <td style="text-align:right;white-space:nowrap;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
                 <td style="width:80px;">
                     <div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">
                         <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
@@ -2924,9 +2924,9 @@ thead{display:table-header-group}
                             <th>Ressource(s)</th>
                             <th style="text-align:center;">Taux</th>
                             <th style="text-align:center;">Durée</th>
-                            <th style="text-align:right;">Coût fixe</th>
-                            <th style="text-align:right;">Coût total</th>
-                            <th style="text-align:right;">Consommé</th>
+                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût fixe</th>
+                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût total</th>
+                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Consommé</th>
                             <th style="text-align:center;">Avancement</th>
                         </tr>
                     </thead>
@@ -2934,9 +2934,9 @@ thead{display:table-header-group}
                     <tfoot>
                         <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
                             <td colspan="4">Total</td>
-                            <td style="text-align:right;">${totalFixed > 0 ? formatCost(totalFixed) : '—'}</td>
-                            <td style="text-align:right;">${formatCost(totalCost)}</td>
-                            <td style="text-align:right;">${formatCost(totalCostDone)}</td>
+                            <td style="text-align:right;white-space:nowrap;">${totalFixed > 0 ? formatCost(totalFixed) : '—'}</td>
+                            <td style="text-align:right;white-space:nowrap;">${formatCost(totalCost)}</td>
+                            <td style="text-align:right;white-space:nowrap;">${formatCost(totalCostDone)}</td>
                             <td></td>
                         </tr>
                     </tfoot>
