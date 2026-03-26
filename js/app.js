@@ -2846,8 +2846,10 @@ thead{display:table-header-group}
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
                 ganttRenderer.render();
+                ganttRenderer.setVisibleTaskIds(null);
                 this._renderStats();
                 this._renderProjectName();
+                this._refreshPhaseFilter();
                 // Switch to timeline view
                 this._switchView('timeline');
                 const tabs = $$('.tab[role="tab"]');
@@ -4443,6 +4445,32 @@ tr:nth-child(even){background:#fafbfc}
         return options;
     }
 
+    _refreshPhaseFilter() {
+        const wrapper = document.getElementById('filterPhase');
+        if (!wrapper) return;
+        const dropdown = wrapper.querySelector('.filter-multi-dropdown');
+        if (!dropdown) return;
+        dropdown.innerHTML = '';
+        this._getPhaseOptions().forEach(opt => {
+            const item = document.createElement('label');
+            item.className = 'filter-multi-option';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = opt.value;
+            cb.addEventListener('change', () => this._onMultiFilterChange(wrapper, 'Toutes'));
+            item.appendChild(cb);
+            const span = document.createElement('span');
+            span.textContent = opt.label;
+            item.appendChild(span);
+            dropdown.appendChild(item);
+        });
+        const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
+        const badge = wrapper.querySelector('.filter-multi-badge');
+        if (toggleText) toggleText.textContent = 'Toutes';
+        if (badge) badge.style.display = 'none';
+        this._filters.phase = [];
+    }
+
     _getAssigneeOptions() {
         const resources = store.getResources();
         const options = [{ value: 'none', label: 'Non assigné' }];
@@ -4469,6 +4497,7 @@ tr:nth-child(even){background:#fafbfc}
 
     _resetFilters() {
         this._filters = { status: [], assignee: [], phase: [], priority: [], dateStart: '', dateEnd: '', search: '' };
+        ganttRenderer.setVisibleTaskIds(null);
 
         // Uncheck all multi-filter checkboxes and reset labels
         ['filterStatus', 'filterAssignee', 'filterPhase', 'filterPriority'].forEach(id => {
@@ -4499,6 +4528,7 @@ tr:nth-child(even){background:#fafbfc}
         const tasks = this._getFilteredTasks(true);
         const visibleIds = new Set(tasks.map(t => t.id));
 
+        const visibleRowIds = new Set(visibleIds);
         $$('.gantt-row').forEach(row => {
             const taskId = row.dataset.taskId;
             if (!taskId) return;
@@ -4510,11 +4540,13 @@ tr:nth-child(even){background:#fafbfc}
                 const children = store.getChildTasks(task.id);
                 const hasVisibleChild = children.some(c => visibleIds.has(c.id));
                 row.style.display = hasVisibleChild ? '' : 'none';
+                if (hasVisibleChild) visibleRowIds.add(taskId);
             } else {
                 row.style.display = visibleIds.has(taskId) ? '' : 'none';
             }
         });
 
+        ganttRenderer.setVisibleTaskIds(visibleRowIds);
         ganttRenderer.refreshDependencies();
     }
 
@@ -4566,8 +4598,10 @@ tr:nth-child(even){background:#fafbfc}
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
                 ganttRenderer.render();
+                ganttRenderer.setVisibleTaskIds(null);
                 this._renderStats();
                 this._renderProjectName();
+                this._refreshPhaseFilter();
                 this._refreshCurrentView();
                 dropdown.remove();
             });
@@ -4697,8 +4731,10 @@ tr:nth-child(even){background:#fafbfc}
         this._dashboardFilterProjectId = null;
         this._costsFilterProjectId = null;
         ganttRenderer.render();
+        ganttRenderer.setVisibleTaskIds(null);
         this._renderStats();
         this._renderProjectName();
+        this._refreshPhaseFilter();
         this._refreshCurrentView();
         this._showToast(`Projet "${project.name}" créé`, 'success');
     }

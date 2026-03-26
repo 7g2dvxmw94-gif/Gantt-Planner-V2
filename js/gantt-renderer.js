@@ -34,6 +34,9 @@ class GanttRenderer {
         this._criticalPath = null;
         this._flatNodes = [];
         this._virtualActive = false;
+        this._tooltipEl = null;
+        this._tooltipTaskId = null;
+        this._visibleTaskIds = null;
     }
 
     init() {
@@ -218,14 +221,28 @@ class GanttRenderer {
             row.style.height = ROW_HEIGHT + 'px';
             body.appendChild(row);
         }
+
+        // Re-apply visibility filter if active
+        if (this._visibleTaskIds) {
+            body.querySelectorAll('.gantt-row').forEach(row => {
+                const taskId = row.dataset.taskId;
+                if (taskId && !this._visibleTaskIds.has(taskId)) {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        this.refreshDependencies();
     }
 
     /** Re-render dependency arrows (called after filter changes) */
     refreshDependencies() {
         if (!this._lastBody || !this._lastTasks) return;
-        const existing = this._lastBody.querySelector('.gantt-dependencies-layer');
-        if (existing) existing.remove();
         this._renderDependencies(this._lastBody, this._lastTasks);
+    }
+
+    setVisibleTaskIds(ids) {
+        this._visibleTaskIds = ids || null;
     }
 
     /* ---- Header ---- */
@@ -775,6 +792,8 @@ class GanttRenderer {
         // Use actual DOM positions for Y coordinates (row.offsetTop)
         // Wait for layout to be ready
         requestAnimationFrame(() => {
+            const stale = body.querySelector('.gantt-dependencies-layer');
+            if (stale) stale.remove();
             const bodyRect = body.getBoundingClientRect();
             const totalHeight = body.scrollHeight;
 
