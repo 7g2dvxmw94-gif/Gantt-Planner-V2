@@ -6002,16 +6002,51 @@ function getCurrencyConfig() {
 }
 
 /**
- * Format a value with the current currency symbol
+ * Format a value with the current currency symbol.
+ * Automatically abbreviates: K (thousands), M (millions), G (billions).
+ * Examples: 1500 → "1.5 K€", 2500000 → "2.5 M€", 3000000000 → "3 G€"
  */
 function formatCurrency(value) {
     const c = getCurrencyConfig();
-    const num = value === 0 ? '0'
-        : value >= 1000 ? (value / 1000).toFixed(1) + 'k'
-        : Math.round(value).toString();
-    return c.position === 'before'
-        ? c.symbol + (c.space ? ' ' : '') + num
-        : num + (c.space ? ' ' : '') + c.symbol;
+    const multiChar = c.symbol.length > 1;
+
+    const fmt = v => {
+        const r = Math.round(v * 10) / 10;
+        return Number.isInteger(r) ? r.toFixed(0) : r.toFixed(1);
+    };
+
+    let amount, suffix;
+    const abs = Math.abs(value);
+    if (value === 0) {
+        amount = '0'; suffix = '';
+    } else if (abs >= 999_950_000_000) {
+        // >= 999.95 G → would show "1000 G" without this; G is the max unit
+        amount = fmt(value / 1e9); suffix = ' G';
+    } else if (abs >= 1e9) {
+        amount = fmt(value / 1e9); suffix = ' G';
+    } else if (abs >= 999_950_000) {
+        // Would round to "1000 M" → promote to G
+        amount = fmt(value / 1e9); suffix = ' G';
+    } else if (abs >= 1e6) {
+        amount = fmt(value / 1e6); suffix = ' M';
+    } else if (abs >= 999_950) {
+        // Would round to "1000 K" → promote to M
+        amount = fmt(value / 1e6); suffix = ' M';
+    } else if (abs >= 1e3) {
+        amount = fmt(value / 1e3); suffix = ' K';
+    } else {
+        amount = Math.round(value).toString(); suffix = '';
+    }
+
+    const scaled = suffix !== '';
+    if (c.position === 'before') {
+        // e.g. "$1.5 K" or "$500"
+        return c.symbol + (c.space && !scaled ? ' ' : '') + amount + suffix;
+    } else {
+        // e.g. "1.5 K€" or "500 €" or "1.5 K CHF"
+        const sep = scaled ? (multiChar ? ' ' : '') : (c.space ? ' ' : '');
+        return amount + suffix + sep + c.symbol;
+    }
 }
 
 /**
