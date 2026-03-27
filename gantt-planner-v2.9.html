@@ -1500,6 +1500,76 @@ textarea.input {
     border-bottom: none;
 }
 
+/* ---- Sortable table headers ---- */
+.cost-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+}
+.cost-table th.sortable:hover {
+    color: var(--text-secondary);
+}
+.cost-table th .sort-icon {
+    display: inline-block;
+    margin-left: 3px;
+    opacity: 0.25;
+    font-style: normal;
+    font-size: 10px;
+}
+.cost-table th.sorted-asc .sort-icon,
+.cost-table th.sorted-desc .sort-icon {
+    opacity: 1;
+    color: var(--color-primary);
+}
+
+/* ---- Dashboard table cell helpers ---- */
+.dt-name      { font-weight: 500; }
+.dt-secondary { color: var(--text-secondary); }
+.dt-bold      { font-weight: 600; }
+.dt-center    { text-align: center; }
+.dt-right     { text-align: right; white-space: nowrap; }
+.dt-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    border: 1px solid;
+}
+.dt-deadline strong { font-weight: 600; }
+.dt-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+.dt-progress-bar {
+    width: 56px;
+    height: 5px;
+    background: var(--bg-muted, #f1f5f9);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.dt-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+.dt-bar {
+    background: var(--bg-muted, #f1f5f9);
+    border-radius: 4px;
+    height: 5px;
+    overflow: hidden;
+}
+.dt-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+.dt-total {
+    font-weight: 700;
+    border-top: 2px solid var(--border-default, #E2E8F0);
+}
+
 /* ---- Costs View (5e onglet) ---- */
 #costsView {
     overflow-y: auto;
@@ -14987,8 +15057,8 @@ thead{display:table-header-group}
                 allUpcoming.push({ ...t, projectName: p.name, daysLeft });
             });
         });
-        allUpcoming.sort((a, b) => a.daysLeft - b.daysLeft);
-        const upcomingItems = allUpcoming.slice(0, 10);
+        this._dashUpcomingItems = allUpcoming;
+        if (!this._prioritySort) this._prioritySort = { col: 'daysLeft', dir: 'asc' };
 
         container.innerHTML = `
         <div class="dashboard-grid">
@@ -15066,44 +15136,20 @@ thead{display:table-header-group}
 
             <!-- Tâches à venir / en retard -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Tâches prioritaires (${upcomingItems.length})</h3>
-                ${upcomingItems.length === 0
+                <h3>Tâches prioritaires (${this._dashUpcomingItems.length})</h3>
+                ${this._dashUpcomingItems.length === 0
                     ? '<div class="notif-empty">Aucune tâche en cours</div>'
                     : `<div style="overflow-x:auto;">
-                        <table class="cost-table">
+                        <table class="cost-table" id="priorityTable">
                             <thead><tr>
-                                <th>Tâche</th>
-                                <th>Projet</th>
-                                <th style="text-align:center;">Priorité</th>
-                                <th style="text-align:center;">Échéance</th>
-                                <th style="text-align:center;">Progression</th>
-                                <th style="text-align:center;">Statut</th>
+                                <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-sort="projectName">Projet <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="priority">Priorité <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="daysLeft">Échéance <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="progress">Progression <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="status">Statut <span class="sort-icon">↕</span></th>
                             </tr></thead>
-                            <tbody>${upcomingItems.map(t => {
-                                const isOverdue = t.daysLeft < 0;
-                                const isUrgent = t.daysLeft >= 0 && t.daysLeft <= 3;
-                                const deadlineColor = isOverdue ? '#EF4444' : isUrgent ? '#F59E0B' : 'var(--text-secondary)';
-                                const deadlineText = isOverdue ? `<strong>En retard (${Math.abs(t.daysLeft)}j)</strong>` : t.daysLeft === 0 ? '<strong>Aujourd\'hui</strong>' : `J-${t.daysLeft}`;
-                                const priorityColors = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
-                                const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
-                                const pColor = priorityColors[t.priority] || '#64748B';
-                                const barColor = t.progress > 0 ? '#6366F1' : 'var(--border-default,#E2E8F0)';
-                                return `<tr>
-                                    <td style="font-weight:500;">${t.name}</td>
-                                    <td style="color:var(--text-secondary);font-size:12px;">${t.projectName}</td>
-                                    <td style="text-align:center;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:${pColor}15;color:${pColor};border:1px solid ${pColor}30;">${priorityLabels[t.priority] || t.priority}</span></td>
-                                    <td style="text-align:center;color:${deadlineColor};font-size:12px;">${deadlineText}</td>
-                                    <td style="text-align:center;">
-                                        <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
-                                            <div style="width:60px;height:6px;background:var(--bg-muted,#f1f5f9);border-radius:3px;overflow:hidden;">
-                                                <div style="width:${t.progress}%;height:100%;background:${barColor};border-radius:3px;"></div>
-                                            </div>
-                                            <span style="font-size:11px;color:var(--text-secondary);">${t.progress}%</span>
-                                        </div>
-                                    </td>
-                                    <td style="text-align:center;font-size:12px;">${t.status === 'in_progress' ? 'En cours' : t.status === 'done' ? 'Terminé' : 'À faire'}</td>
-                                </tr>`;
-                            }).join('')}</tbody>
+                            <tbody id="priorityTableBody">${this._renderPriorityTableRows()}</tbody>
                         </table>
                     </div>`}
             </div>
@@ -15150,6 +15196,131 @@ thead{display:table-header-group}
         if (permitPdfBtn) {
             permitPdfBtn.addEventListener('click', () => this._exportPermitsPDF());
         }
+
+        // Sort handlers for both tables
+        this._bindDashboardSortHandlers(container);
+    }
+
+    _renderPriorityTableRows() {
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        const statusOrder = { in_progress: 0, todo: 1, done: 2 };
+        const { col, dir } = this._prioritySort;
+        const sorted = [...this._dashUpcomingItems].sort((a, b) => {
+            let va, vb;
+            if (col === 'priority') { va = priorityOrder[a.priority] ?? 3; vb = priorityOrder[b.priority] ?? 3; }
+            else if (col === 'status') { va = statusOrder[a.status] ?? 3; vb = statusOrder[b.status] ?? 3; }
+            else if (col === 'name' || col === 'projectName') { va = (a[col] || '').toLowerCase(); vb = (b[col] || '').toLowerCase(); return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+            else { va = a[col] ?? 0; vb = b[col] ?? 0; }
+            return dir === 'asc' ? va - vb : vb - va;
+        });
+        const priorityColors  = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
+        const priorityLabels  = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const statusLabels    = { in_progress: 'En cours', done: 'Terminé', todo: 'À faire' };
+        return sorted.slice(0, 10).map(t => {
+            const isOverdue = t.daysLeft < 0;
+            const isUrgent  = !isOverdue && t.daysLeft <= 3;
+            const deadlineColor = isOverdue ? '#EF4444' : isUrgent ? '#F59E0B' : 'var(--text-secondary)';
+            const deadlineText  = isOverdue ? `<strong>Retard (${Math.abs(t.daysLeft)}j)</strong>` : t.daysLeft === 0 ? '<strong>Auj.</strong>' : `J-${t.daysLeft}`;
+            const pColor   = priorityColors[t.priority] || '#64748B';
+            const barColor = t.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
+            return `<tr>
+                <td class="dt-name">${t.name}</td>
+                <td class="dt-secondary">${t.projectName}</td>
+                <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[t.priority] || t.priority || '—'}</span></td>
+                <td class="dt-center dt-deadline" style="color:${deadlineColor};">${deadlineText}</td>
+                <td class="dt-center">
+                    <div class="dt-progress-wrap">
+                        <div class="dt-progress-bar"><div class="dt-progress-fill" style="width:${t.progress}%;background:${barColor};"></div></div>
+                        <span class="dt-secondary">${t.progress}%</span>
+                    </div>
+                </td>
+                <td class="dt-center dt-secondary">${statusLabels[t.status] || t.status || '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    _renderCostTableRows() {
+        const { col, dir } = this._costSort;
+        const sorted = [...this._dashAllTaskCosts].sort((a, b) => {
+            let va, vb;
+            if (col === 'name') { va = (a.task.name || '').toLowerCase(); vb = (b.task.name || '').toLowerCase(); return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+            if (col === 'resources') { va = (a.assignedResources[0]?.name || '').toLowerCase(); vb = (b.assignedResources[0]?.name || '').toLowerCase(); return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+            if (col === 'progress') { va = a.task.progress ?? 0; vb = b.task.progress ?? 0; }
+            else { va = a[col] ?? 0; vb = b[col] ?? 0; }
+            return dir === 'asc' ? va - vb : vb - va;
+        });
+        return sorted.map(tc => {
+            const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
+            const rates    = tc.assignedResources.map(r => formatRate(r.hourlyRate, 'hourly')).join(', ') || '—';
+            const pct      = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
+            const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
+            const fixedTip = tc.fixedCosts?.length > 0 ? ` title="${tc.fixedCosts.map(fc => fc.name + ' : ' + formatCurrency(fc.amount)).join('\n')}"` : '';
+            return `<tr>
+                <td class="dt-name">${tc.task.name}</td>
+                <td>${resNames}</td>
+                <td class="dt-center dt-secondary">${rates}</td>
+                <td class="dt-center">${tc.durationDays}j</td>
+                <td class="dt-right dt-secondary"${fixedTip} style="${tc.fixedCost > 0 ? 'color:var(--text-primary)' : ''}">${tc.fixedCost > 0 ? formatCurrency(tc.fixedCost) : '—'}${tc.fixedCosts?.length > 1 ? ` <span class="fixed-costs-badge">${tc.fixedCosts.length}</span>` : ''}</td>
+                <td class="dt-right dt-bold">${formatCurrency(tc.cost)}</td>
+                <td class="dt-right dt-secondary">${formatCurrency(tc.costDone)}</td>
+                <td class="dt-center" style="width:80px;">
+                    <div class="dt-bar"><div class="dt-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    _bindDashboardSortHandlers(container) {
+        const updateHeaders = (table, sortState) => {
+            table.querySelectorAll('th[data-sort]').forEach(th => {
+                const icon = th.querySelector('.sort-icon');
+                if (!icon) return;
+                if (th.dataset.sort === sortState.col) {
+                    th.classList.add(sortState.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                    th.classList.remove(sortState.dir === 'asc' ? 'sorted-desc' : 'sorted-asc');
+                    icon.textContent = sortState.dir === 'asc' ? '↑' : '↓';
+                } else {
+                    th.classList.remove('sorted-asc', 'sorted-desc');
+                    icon.textContent = '↕';
+                }
+            });
+        };
+
+        const priorityTable = container.querySelector('#priorityTable');
+        if (priorityTable) {
+            updateHeaders(priorityTable, this._prioritySort);
+            priorityTable.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.dataset.sort;
+                    if (this._prioritySort.col === col) {
+                        this._prioritySort.dir = this._prioritySort.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this._prioritySort = { col, dir: 'asc' };
+                    }
+                    const tbody = container.querySelector('#priorityTableBody');
+                    if (tbody) tbody.innerHTML = this._renderPriorityTableRows();
+                    updateHeaders(priorityTable, this._prioritySort);
+                });
+            });
+        }
+
+        const costTable = container.querySelector('#costTable');
+        if (costTable) {
+            updateHeaders(costTable, this._costSort);
+            costTable.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.dataset.sort;
+                    if (this._costSort.col === col) {
+                        this._costSort.dir = this._costSort.dir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this._costSort = { col, dir: col === 'name' || col === 'resources' ? 'asc' : 'desc' };
+                    }
+                    const tbody = container.querySelector('#costTableBody');
+                    if (tbody) tbody.innerHTML = this._renderCostTableRows();
+                    updateHeaders(costTable, this._costSort);
+                });
+            });
+        }
     }
 
     _renderDashboardCostTable(projectStats) {
@@ -15169,59 +15340,36 @@ thead{display:table-header-group}
             </div>`;
         }
 
-        // Sort by cost descending
-        allTaskCosts.sort((a, b) => b.cost - a.cost);
+        this._dashAllTaskCosts = allTaskCosts;
+        if (!this._costSort) this._costSort = { col: 'cost', dir: 'desc' };
 
-        const totalCost = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
+        const totalCost     = allTaskCosts.reduce((s, tc) => s + tc.cost, 0);
         const totalCostDone = allTaskCosts.reduce((s, tc) => s + tc.costDone, 0);
-        const formatCost = (v) => formatCurrency(v);
-
-        const totalFixed = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
-
-        const rows = allTaskCosts.map(tc => {
-            const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
-            const rates = tc.assignedResources.map(r => formatRate(r.hourlyRate, 'hourly')).join(', ') || '—';
-            const pct = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
-            const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? '#6366F1' : 'var(--border-default, #E2E8F0)';
-            return `<tr>
-                <td style="font-weight:500;">${tc.task.name}</td>
-                <td>${resNames}</td>
-                <td style="text-align:center;">${rates}</td>
-                <td style="text-align:center;">${tc.durationDays}j</td>
-                <td style="text-align:right;white-space:nowrap;color:${tc.fixedCost > 0 ? 'var(--text-primary)' : 'var(--text-muted,#999)'};"${tc.fixedCosts && tc.fixedCosts.length > 0 ? ` title="${tc.fixedCosts.map(fc => fc.name + ' : ' + formatCost(fc.amount)).join('\n')}"` : ''}>${tc.fixedCost > 0 ? formatCost(tc.fixedCost) : '—'}${tc.fixedCosts && tc.fixedCosts.length > 1 ? ` <span class="fixed-costs-badge">${tc.fixedCosts.length}</span>` : ''}</td>
-                <td style="text-align:right;font-weight:600;white-space:nowrap;">${formatCost(tc.cost)}</td>
-                <td style="text-align:right;white-space:nowrap;color:var(--text-secondary);">${formatCost(tc.costDone)}</td>
-                <td style="width:80px;">
-                    <div style="background:var(--bg-muted,#f1f5f9);border-radius:4px;height:6px;overflow:hidden;">
-                        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
+        const totalFixed    = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         return `<div class="dashboard-card" style="grid-column: 1 / -1;">
             <h3>Coûts par tâche</h3>
             <div style="overflow-x:auto;">
-                <table class="cost-table">
+                <table class="cost-table" id="costTable">
                     <thead>
                         <tr>
-                            <th>Tâche</th>
-                            <th>Ressource(s)</th>
-                            <th style="text-align:center;">Taux</th>
-                            <th style="text-align:center;">Durée</th>
-                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût fixe</th>
-                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût total</th>
-                            <th style="text-align:right;min-width:110px;white-space:nowrap;">Consommé</th>
-                            <th style="text-align:center;">Avancement</th>
+                            <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="resources">Ressource(s) <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="rate">Taux <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="durationDays">Durée <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="fixedCost">Coût fixe <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="cost">Coût total <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="costDone">Consommé <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="progress">Avancement <span class="sort-icon">↕</span></th>
                         </tr>
                     </thead>
-                    <tbody>${rows}</tbody>
+                    <tbody id="costTableBody">${this._renderCostTableRows()}</tbody>
                     <tfoot>
-                        <tr style="font-weight:700;border-top:2px solid var(--border-default,#E2E8F0);">
+                        <tr class="dt-total">
                             <td colspan="4">Total</td>
-                            <td style="text-align:right;white-space:nowrap;">${totalFixed > 0 ? formatCost(totalFixed) : '—'}</td>
-                            <td style="text-align:right;white-space:nowrap;">${formatCost(totalCost)}</td>
-                            <td style="text-align:right;white-space:nowrap;">${formatCost(totalCostDone)}</td>
+                            <td class="dt-right">${totalFixed > 0 ? formatCurrency(totalFixed) : '—'}</td>
+                            <td class="dt-right">${formatCurrency(totalCost)}</td>
+                            <td class="dt-right">${formatCurrency(totalCostDone)}</td>
                             <td></td>
                         </tr>
                     </tfoot>
