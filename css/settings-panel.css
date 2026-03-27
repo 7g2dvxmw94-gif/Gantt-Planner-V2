@@ -337,6 +337,111 @@
     box-shadow: var(--shadow-focus);
 }
 
+/* ---- Color Presets ---- */
+.color-presets {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    padding: 0;
+}
+
+.color-swatch:hover {
+    transform: scale(1.12);
+    box-shadow: var(--shadow-md);
+}
+
+.color-swatch.active {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+    transform: scale(1.08);
+}
+
+.custom-color-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.custom-color-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.custom-color-wrap:hover {
+    border-color: var(--color-primary);
+}
+
+.custom-color-wrap input[type="color"] {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    flex-shrink: 0;
+}
+
+.custom-color-hex {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+}
+
+/* ---- Font Size Toggle ---- */
+.font-size-toggle {
+    display: flex;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.font-size-btn {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.font-size-btn:not(:last-child) {
+    border-right: 1px solid var(--border-default);
+}
+
+.font-size-btn:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+
+.font-size-btn.active {
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: var(--font-weight-semibold);
+}
+
 /* ---- Coming Soon ---- */
 .settings-coming-soon {
     font-size: var(--font-size-sm);

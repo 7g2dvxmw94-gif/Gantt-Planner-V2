@@ -6,6 +6,31 @@
 import { store } from './store.js';
 import { CURRENCIES } from './utils.js';
 
+const COLOR_PRESETS = [
+    { id: 'indigo',  name: 'Indigo',   primary: '#6366F1', hover: '#4F46E5', light: '#EEF2FF', dark: '#4338CA' },
+    { id: 'violet',  name: 'Violet',   primary: '#8B5CF6', hover: '#7C3AED', light: '#F5F3FF', dark: '#6D28D9' },
+    { id: 'blue',    name: 'Bleu',     primary: '#3B82F6', hover: '#2563EB', light: '#EFF6FF', dark: '#1D4ED8' },
+    { id: 'cyan',    name: 'Cyan',     primary: '#06B6D4', hover: '#0891B2', light: '#ECFEFF', dark: '#0E7490' },
+    { id: 'emerald', name: 'Émeraude',primary: '#10B981', hover: '#059669', light: '#ECFDF5', dark: '#047857' },
+    { id: 'orange',  name: 'Orange',   primary: '#F59E0B', hover: '#D97706', light: '#FFFBEB', dark: '#B45309' },
+    { id: 'rose',    name: 'Rose',     primary: '#EC4899', hover: '#DB2777', light: '#FDF2F8', dark: '#BE185D' },
+    { id: 'slate',   name: 'Ardoise',  primary: '#64748B', hover: '#475569', light: '#F8FAFC', dark: '#334155' },
+];
+
+const FONT_PRESETS = {
+    'Inter':     { stack: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", url: null },
+    'Roboto':    { stack: "'Roboto', sans-serif",    url: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap' },
+    'Open Sans': { stack: "'Open Sans', sans-serif", url: 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap' },
+    'Lato':      { stack: "'Lato', sans-serif",      url: 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap' },
+    'Nunito':    { stack: "'Nunito', sans-serif",    url: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap' },
+};
+
+const FONT_SIZES = {
+    compact: { label: 'Compact', base: '13px' },
+    normal:  { label: 'Normal',  base: '16px' },
+    large:   { label: 'Large',   base: '18px' },
+};
+
 class SettingsPanel {
     constructor() {
         this._panel = null;
@@ -172,6 +197,14 @@ class SettingsPanel {
                 </button>
             </div>
 
+            ${this._renderCouleursGroup()}
+            ${this._renderTypographieGroup()}
+        `;
+    }
+
+    _renderCouleursGroup() {
+        const savedColor = this._getCustomization('accentColor') || '#6366F1';
+        return `
             <div class="settings-group">
                 <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -179,9 +212,34 @@ class SettingsPanel {
                     </svg>
                     <h3>Couleurs</h3>
                 </div>
-                <p class="settings-coming-soon">La personnalisation des couleurs sera disponible prochainement.</p>
+                <p class="settings-group-description">Personnalisez la couleur d'accentuation aux couleurs de votre société.</p>
+                <div class="color-presets">
+                    ${COLOR_PRESETS.map(p => `
+                        <button class="color-swatch${savedColor === p.primary ? ' active' : ''}"
+                                data-primary="${p.primary}"
+                                data-hover="${p.hover}"
+                                data-light="${p.light}"
+                                data-dark="${p.dark}"
+                                title="${p.name}"
+                                style="background:${p.primary}">
+                        </button>
+                    `).join('')}
+                </div>
+                <div class="custom-color-field">
+                    <label class="settings-field-label">Couleur personnalisée</label>
+                    <div class="custom-color-wrap">
+                        <input type="color" id="settingsAccentColor" value="${savedColor}">
+                        <span class="custom-color-hex" id="settingsAccentColorHex">${savedColor}</span>
+                    </div>
+                </div>
             </div>
+        `;
+    }
 
+    _renderTypographieGroup() {
+        const savedFont = this._getCustomization('fontFamily') || 'Inter';
+        const savedSize = this._getCustomization('fontSize') || 'normal';
+        return `
             <div class="settings-group">
                 <div class="settings-group-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -191,7 +249,24 @@ class SettingsPanel {
                     </svg>
                     <h3>Typographie</h3>
                 </div>
-                <p class="settings-coming-soon">La personnalisation de la typographie sera disponible prochainement.</p>
+                <div class="settings-identity-fields">
+                    <div class="settings-field">
+                        <label class="settings-field-label" for="settingsFontFamily">Police</label>
+                        <select class="settings-field-input" id="settingsFontFamily">
+                            ${Object.keys(FONT_PRESETS).map(name => `
+                                <option value="${name}" ${savedFont === name ? 'selected' : ''}>${name}${name === 'Inter' ? ' (défaut)' : ''}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="settings-field">
+                        <label class="settings-field-label">Taille de texte</label>
+                        <div class="font-size-toggle">
+                            ${Object.entries(FONT_SIZES).map(([key, { label }]) => `
+                                <button class="font-size-btn${savedSize === key ? ' active' : ''}" data-size="${key}">${label}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -294,10 +369,64 @@ class SettingsPanel {
         if (currencySelect) {
             currencySelect.addEventListener('change', () => {
                 this._saveCustomization('currency', currencySelect.value);
-                // Dispatch event so views re-render with new currency
                 document.dispatchEvent(new CustomEvent('currency-changed'));
             });
         }
+
+        // Color swatches
+        this._panel.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                const { primary, hover, light, dark } = swatch.dataset;
+                this._applyAccentColor(primary, hover, light, dark);
+                this._saveCustomization('accentColor', primary);
+                this._saveCustomization('accentColorHover', hover);
+                this._saveCustomization('accentColorLight', light);
+                this._saveCustomization('accentColorDark', dark);
+                this._panel.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                const picker = this._panel.querySelector('#settingsAccentColor');
+                if (picker) picker.value = primary;
+                const hexLabel = this._panel.querySelector('#settingsAccentColorHex');
+                if (hexLabel) hexLabel.textContent = primary;
+            });
+        });
+
+        // Custom color picker
+        const colorPicker = this._panel.querySelector('#settingsAccentColor');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', this._debounce(() => {
+                const hex = colorPicker.value;
+                const palette = this._computeColorPalette(hex);
+                this._applyAccentColor(palette.primary, palette.hover, palette.light, palette.dark);
+                this._saveCustomization('accentColor', palette.primary);
+                this._saveCustomization('accentColorHover', palette.hover);
+                this._saveCustomization('accentColorLight', palette.light);
+                this._saveCustomization('accentColorDark', palette.dark);
+                this._panel.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                const hexLabel = this._panel.querySelector('#settingsAccentColorHex');
+                if (hexLabel) hexLabel.textContent = hex;
+            }, 80));
+        }
+
+        // Font family
+        const fontSelect = this._panel.querySelector('#settingsFontFamily');
+        if (fontSelect) {
+            fontSelect.addEventListener('change', () => {
+                this._applyFontFamily(fontSelect.value);
+                this._saveCustomization('fontFamily', fontSelect.value);
+            });
+        }
+
+        // Font size buttons
+        this._panel.querySelectorAll('.font-size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const size = btn.dataset.size;
+                this._applyFontSize(size);
+                this._saveCustomization('fontSize', size);
+                this._panel.querySelectorAll('.font-size-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
     }
 
     _debounce(fn, delay) {
@@ -339,6 +468,77 @@ class SettingsPanel {
             document.head.appendChild(link);
         }
         link.href = url;
+    }
+
+    _applyAccentColor(primary, hover, light, dark) {
+        const root = document.documentElement;
+        root.style.setProperty('--color-primary', primary);
+        root.style.setProperty('--color-primary-hover', hover);
+        root.style.setProperty('--color-primary-light', light);
+        root.style.setProperty('--color-primary-dark', dark);
+        const r = parseInt(primary.slice(1, 3), 16);
+        const g = parseInt(primary.slice(3, 5), 16);
+        const b = parseInt(primary.slice(5, 7), 16);
+        root.style.setProperty('--shadow-focus', `0 0 0 3px rgba(${r}, ${g}, ${b}, 0.3)`);
+    }
+
+    _computeColorPalette(hex) {
+        const [h, s, l] = this._hexToHsl(hex);
+        return {
+            primary: hex,
+            hover: this._hslToHex(h, Math.min(s + 5, 100), Math.max(l - 12, 10)),
+            light: this._hslToHex(h, Math.max(s - 20, 10), Math.min(l + 38, 96)),
+            dark:  this._hslToHex(h, Math.min(s + 5, 100), Math.max(l - 22, 5)),
+        };
+    }
+
+    _hexToHsl(hex) {
+        let r = parseInt(hex.slice(1, 3), 16) / 255;
+        let g = parseInt(hex.slice(3, 5), 16) / 255;
+        let b = parseInt(hex.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0;
+        const l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+            }
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+
+    _hslToHex(h, s, l) {
+        s /= 100; l /= 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => {
+            const k = (n + h / 30) % 12;
+            const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * c).toString(16).padStart(2, '0');
+        };
+        return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    _applyFontFamily(fontName) {
+        const preset = FONT_PRESETS[fontName];
+        if (!preset) return;
+        if (preset.url && !document.querySelector(`link[data-font="${fontName}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = preset.url;
+            link.setAttribute('data-font', fontName);
+            document.head.appendChild(link);
+        }
+        document.documentElement.style.setProperty('--font-sans', preset.stack);
+    }
+
+    _applyFontSize(size) {
+        const preset = FONT_SIZES[size];
+        if (!preset) return;
+        document.documentElement.style.setProperty('--font-size-base', preset.base);
     }
 
     /* ---- Open / Close ---- */
@@ -392,6 +592,29 @@ class SettingsPanel {
 
         const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
         if (showLinksCheckbox) showLinksCheckbox.checked = this._getCustomization('showLinks') !== false;
+
+        // Color: sync swatch active state and picker value
+        const savedColor = this._getCustomization('accentColor');
+        if (savedColor) {
+            this._panel.querySelectorAll('.color-swatch').forEach(s =>
+                s.classList.toggle('active', s.dataset.primary === savedColor)
+            );
+            const picker = this._panel.querySelector('#settingsAccentColor');
+            if (picker) picker.value = savedColor;
+            const hexLabel = this._panel.querySelector('#settingsAccentColorHex');
+            if (hexLabel) hexLabel.textContent = savedColor;
+        }
+
+        // Font family
+        const savedFont = this._getCustomization('fontFamily');
+        const fontSelect = this._panel.querySelector('#settingsFontFamily');
+        if (fontSelect && savedFont) fontSelect.value = savedFont;
+
+        // Font size
+        const savedSize = this._getCustomization('fontSize') || 'normal';
+        this._panel.querySelectorAll('.font-size-btn').forEach(btn =>
+            btn.classList.toggle('active', btn.dataset.size === savedSize)
+        );
     }
 
     /* Apply stored customizations on init */
@@ -400,6 +623,28 @@ class SettingsPanel {
         const brandName = this._getCustomization('brandName');
         if (userName) this._applyUserInitials(userName);
         if (brandName) this._applyBrandName(brandName);
+
+        // Accent color
+        const accentColor = this._getCustomization('accentColor');
+        if (accentColor) {
+            const hover = this._getCustomization('accentColorHover');
+            const light = this._getCustomization('accentColorLight');
+            const dark  = this._getCustomization('accentColorDark');
+            if (hover && light && dark) {
+                this._applyAccentColor(accentColor, hover, light, dark);
+            } else {
+                const palette = this._computeColorPalette(accentColor);
+                this._applyAccentColor(palette.primary, palette.hover, palette.light, palette.dark);
+            }
+        }
+
+        // Font family
+        const fontFamily = this._getCustomization('fontFamily');
+        if (fontFamily) this._applyFontFamily(fontFamily);
+
+        // Font size
+        const fontSize = this._getCustomization('fontSize');
+        if (fontSize) this._applyFontSize(fontSize);
     }
 }
 
