@@ -337,7 +337,7 @@
     box-shadow: var(--shadow-focus);
 }
 
-/* ---- Color Presets ---- */
+/* ---- Color Presets (settings panel only) ---- */
 .color-presets {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -345,7 +345,7 @@
     margin-bottom: var(--space-3);
 }
 
-.color-swatch {
+.color-presets .color-swatch {
     width: 100%;
     aspect-ratio: 1;
     border-radius: var(--radius-md);
@@ -355,12 +355,12 @@
     padding: 0;
 }
 
-.color-swatch:hover {
+.color-presets .color-swatch:hover {
     transform: scale(1.12);
     box-shadow: var(--shadow-md);
 }
 
-.color-swatch.active {
+.color-presets .color-swatch.active {
     border-color: var(--text-primary);
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
     transform: scale(1.08);
