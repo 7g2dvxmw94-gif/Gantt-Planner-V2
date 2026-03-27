@@ -4944,18 +4944,27 @@ tr.critical-path:hover {
     display: flex;
     border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
-    padding: 0 var(--space-5);
-    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.settings-panel-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .settings-tab {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2) var(--space-2);
     font-family: var(--font-sans);
     font-weight: var(--font-weight-medium);
-    font-size: var(--font-size-sm);
+    font-size: 11px;
     color: var(--text-secondary);
     cursor: pointer;
     border: none;
