@@ -1138,9 +1138,138 @@ class App {
 
         const helpBtn = $('#helpBtn');
         if (helpBtn) {
-            helpBtn.addEventListener('click', () => this._showKeyboardHelp());
+            this._initHelpDropdown(helpBtn);
         }
 
+    }
+
+    _initHelpDropdown(helpBtn) {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'help-dropdown';
+        dropdown.id = 'helpDropdown';
+        dropdown.innerHTML = `
+            <button class="help-dropdown-item" id="hdGuide">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                Guide de démarrage
+            </button>
+            <button class="help-dropdown-item" id="hdShortcuts">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
+                Raccourcis clavier
+            </button>
+            <button class="help-dropdown-item" id="hdChangelog">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                Nouveautés
+                <span class="help-dropdown-badge">v3.0</span>
+            </button>
+            <div class="help-dropdown-divider"></div>
+            <button class="help-dropdown-item" id="hdContact">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Contact / Signaler un bug
+            </button>
+        `;
+        document.body.appendChild(dropdown);
+
+        helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = helpBtn.getBoundingClientRect();
+            dropdown.style.top  = (rect.bottom + 8) + 'px';
+            dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+            dropdown.classList.toggle('visible');
+        });
+
+        document.addEventListener('click', () => dropdown.classList.remove('visible'));
+        dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+        dropdown.querySelector('#hdGuide').addEventListener('click', () => {
+            dropdown.classList.remove('visible');
+            onboarding.start();
+        });
+        dropdown.querySelector('#hdShortcuts').addEventListener('click', () => {
+            dropdown.classList.remove('visible');
+            this._showKeyboardHelp();
+        });
+        dropdown.querySelector('#hdChangelog').addEventListener('click', () => {
+            dropdown.classList.remove('visible');
+            this._showChangelogModal();
+        });
+        dropdown.querySelector('#hdContact').addEventListener('click', () => {
+            dropdown.classList.remove('visible');
+            this._showContactModal();
+        });
+    }
+
+    _showChangelogModal() {
+        const changelog = [
+            { version: '3.0', date: '2026-03-27', label: 'Majeur', entries: [
+                'Panneau Réglages réorganisé en 4 onglets : Profil, Apparence, Général, Synchro',
+                'Upload de photo de profil avec fallback sur les initiales',
+                'Menu Aide transformé en dropdown avec Guide, Raccourcis, Nouveautés, Contact',
+            ]},
+            { version: '2.9', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Tri par colonne dans les tableaux Dashboard (Tâches prioritaires & Coûts)',
+                'Typographie unifiée dans les tableaux (classes .dt-*)',
+            ]},
+            { version: '2.8', date: '2026-03-27', label: 'Correctif', entries: [
+                'Palette de couleurs dans le modal de tâche restaurée en ronds',
+            ]},
+            { version: '2.7', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Formatage K / M / G pour tous les montants (toutes devises)',
+                'Gestion des cas limites (ex: 999 999 → 1 M€)',
+            ]},
+            { version: '2.6', date: '2026-03-27', label: 'Fonctionnalité', entries: [
+                'Personnalisation couleur d\'accentuation (8 palettes + couleur libre)',
+                'Personnalisation typographie : 5 polices + 3 tailles de texte',
+            ]},
+            { version: '2.5', date: '2026-03-26', label: 'Correctif', entries: [
+                'Les liens de dépendances se masquent correctement avec tous les filtres',
+            ]},
+            { version: '2.4', date: '2026-03-26', label: 'Correctif', entries: [
+                'Le filtre Phase se recharge avec les phases du projet actif',
+                'Correction de la race condition sur le SVG des dépendances',
+            ]},
+            { version: '2.3', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Toggle Franchi / Non-franchi pour les jalons (remplace la barre de progression)',
+                'Correction de la double infobulle sur les jalons',
+            ]},
+            { version: '2.2', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Infobulles au survol des tâches et jalons dans la Timeline',
+            ]},
+            { version: '2.1', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Champ de recherche dans le sélecteur "Assigné à"',
+            ]},
+        ];
+
+        const labelColors = { 'Majeur': '#6366F1', 'Fonctionnalité': '#10B981', 'Amélioration': '#3B82F6', 'Correctif': '#F59E0B' };
+
+        const rows = changelog.map(v => `
+            <div class="changelog-entry">
+                <div class="changelog-version-row">
+                    <span class="changelog-version">v${v.version}</span>
+                    <span class="changelog-label" style="background:${labelColors[v.label] || '#64748B'}18;color:${labelColors[v.label] || '#64748B'};border:1px solid ${labelColors[v.label] || '#64748B'}35;">${v.label}</span>
+                    <span class="changelog-date">${v.date}</span>
+                </div>
+                <ul class="changelog-list">
+                    ${v.entries.map(e => `<li>${e}</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column;" role="dialog" aria-modal="true" aria-label="Nouveautés">
+                <div class="modal-header">
+                    <h2 class="modal-title">Nouveautés</h2>
+                    <button class="icon-btn changelog-close" aria-label="Fermer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="overflow-y:auto;padding:8px 20px 20px;">${rows}</div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => overlay.remove();
+        overlay.querySelector('.changelog-close').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     }
 
     _showAddTaskDialog() {
