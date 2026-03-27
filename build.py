@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build script to bundle index.html + CSS + JS into index.bundle.html"""
+"""Build script to bundle index.html + CSS + JS into gantt-planner-vX.Y.html"""
 
 import re
 import os
@@ -58,7 +58,13 @@ def strip_imports_exports(js_content):
 
     return js_content
 
+def get_version():
+    version_path = os.path.join(BASE_DIR, 'VERSION')
+    with open(version_path, 'r', encoding='utf-8') as f:
+        return f.read().strip()
+
 def build():
+    version = get_version()
     # Read the HTML template
     html = read_file('index.html')
 
@@ -93,12 +99,13 @@ def build():
     html = html[:script_idx] + f'    \n    <script>\n(function() {{\n"use strict";\n\n{js_bundle}\n\n}})();\n    </script>' + html[script_idx + len(script_marker):]
 
     # Write the bundle
-    output_path = os.path.join(BASE_DIR, 'index.bundle.html')
+    output_name = f'gantt-planner-v{version}.html'
+    output_path = os.path.join(BASE_DIR, output_name)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
 
     line_count = html.count('\n') + 1
-    print(f'Built index.bundle.html ({line_count} lines)')
+    print(f'Built {output_name} ({line_count} lines)')
 
 if __name__ == '__main__':
     build()
