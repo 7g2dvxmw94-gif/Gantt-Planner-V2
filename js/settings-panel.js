@@ -94,6 +94,10 @@ class SettingsPanel {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
                     Synchro
                 </button>
+                <button class="settings-tab" data-tab="aide" aria-label="Aide">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>
+                    Aide
+                </button>
             </div>
 
             <div class="settings-panel-body">
@@ -112,6 +116,7 @@ class SettingsPanel {
             case 'apparence': return this._renderApparenceTab();
             case 'general':   return this._renderGeneralTab();
             case 'synchro':   return this._renderSynchroTab();
+            case 'aide':      return this._renderAideTab();
             default:          return '';
         }
     }
@@ -314,6 +319,102 @@ class SettingsPanel {
         `;
     }
 
+    _renderAideTab() {
+        const changelog = [
+            { version: '3.0', date: '2026-03-27', label: 'Majeur', entries: [
+                'Panneau Réglages réorganisé en 5 onglets',
+                'Upload de photo de profil',
+                'Aide intégrée dans le panneau Réglages',
+            ]},
+            { version: '2.9', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Tri par colonne dans les tableaux Dashboard',
+                'Typographie unifiée dans les tableaux',
+            ]},
+            { version: '2.8', date: '2026-03-27', label: 'Correctif', entries: [
+                'Palette de couleurs dans le modal de tâche restaurée en ronds',
+            ]},
+            { version: '2.7', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Formatage K / M / G pour tous les montants',
+            ]},
+            { version: '2.6', date: '2026-03-27', label: 'Fonctionnalité', entries: [
+                'Personnalisation couleurs d\'accentuation et typographie',
+            ]},
+            { version: '2.5', date: '2026-03-26', label: 'Correctif', entries: [
+                'Liens de dépendances masqués correctement avec tous les filtres',
+            ]},
+            { version: '2.4', date: '2026-03-26', label: 'Correctif', entries: [
+                'Filtre Phase recharge les phases du projet actif',
+            ]},
+            { version: '2.3', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Toggle Franchi / Non-franchi pour les jalons',
+            ]},
+            { version: '2.2', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Infobulles au survol des tâches et jalons',
+            ]},
+            { version: '2.1', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Champ de recherche dans le sélecteur "Assigné à"',
+            ]},
+        ];
+        const labelColors = { 'Majeur': '#6366F1', 'Fonctionnalité': '#10B981', 'Amélioration': '#3B82F6', 'Correctif': '#F59E0B' };
+        const changelogHTML = changelog.map(v => `
+            <div class="changelog-entry">
+                <div class="changelog-version-row">
+                    <span class="changelog-version">v${v.version}</span>
+                    <span class="changelog-label" style="background:${labelColors[v.label] || '#64748B'}18;color:${labelColors[v.label] || '#64748B'};border:1px solid ${labelColors[v.label] || '#64748B'}35;">${v.label}</span>
+                    <span class="changelog-date">${v.date}</span>
+                </div>
+                <ul class="changelog-list">
+                    ${v.entries.map(e => `<li>${e}</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
+
+        return `
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                        <h3>Actions</h3>
+                    </div>
+                    <div class="aide-actions">
+                        <button class="aide-action-btn" id="aideGuide">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                            <div>
+                                <div class="aide-action-label">Guide de démarrage</div>
+                                <div class="aide-action-desc">Relancer le tutoriel interactif</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <button class="aide-action-btn" id="aideShortcuts">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
+                            <div>
+                                <div class="aide-action-label">Raccourcis clavier</div>
+                                <div class="aide-action-desc">Voir tous les raccourcis disponibles</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <button class="aide-action-btn" id="aideContact">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            <div>
+                                <div class="aide-action-label">Contact / Signaler un bug</div>
+                                <div class="aide-action-desc">Envoyer un message à l'équipe</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <h3>Nouveautés</h3>
+                    </div>
+                    <div class="changelog-scroll">${changelogHTML}</div>
+                </div>
+            </div>
+        `;
+    }
+
     /* ---- Helpers ---- */
 
     _getCustomization(key) {
@@ -332,7 +433,12 @@ class SettingsPanel {
 
     _bindToggle() {
         const btn = document.getElementById('settingsBtn');
-        if (btn) btn.addEventListener('click', () => this.toggle());
+        if (btn) {
+            btn.addEventListener('click', () => this.toggle());
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.toggle(); }
+            });
+        }
     }
 
     _bindKeyboard() {
@@ -368,6 +474,7 @@ class SettingsPanel {
             case 'apparence': this._bindApparenceEvents(); break;
             case 'general':   this._bindGeneralEvents();   break;
             case 'synchro':   this._bindSynchroEvents();   break;
+            case 'aide':      this._bindAideEvents();      break;
         }
     }
 
@@ -503,6 +610,29 @@ class SettingsPanel {
             showLinksCheckbox.addEventListener('change', () => {
                 this._saveCustomization('showLinks', showLinksCheckbox.checked);
                 document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+            });
+        }
+    }
+
+    _bindAideEvents() {
+        const guideBtn = this._panel.querySelector('#aideGuide');
+        if (guideBtn) {
+            guideBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('launch-onboarding'));
+            });
+        }
+        const shortcutsBtn = this._panel.querySelector('#aideShortcuts');
+        if (shortcutsBtn) {
+            shortcutsBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('show-keyboard-help'));
+            });
+        }
+        const contactBtn = this._panel.querySelector('#aideContact');
+        if (contactBtn) {
+            contactBtn.addEventListener('click', () => {
+                window.location.href = 'mailto:support@gantt-planner.app';
             });
         }
     }
