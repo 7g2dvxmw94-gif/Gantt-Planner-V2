@@ -141,6 +141,7 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--space-5);
+    padding-bottom: var(--space-2);
 }
 
 /* ---- Group ---- */
@@ -564,6 +565,18 @@
     flex-direction: column;
     gap: var(--space-3);
     padding-right: var(--space-1);
+}
+
+/* ---- Footer ---- */
+.settings-panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-default);
+    flex-shrink: 0;
+    background: var(--bg-base);
 }
 
 /* ---- Coming Soon ---- */

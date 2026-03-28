@@ -37,6 +37,7 @@ class SettingsPanel {
         this._overlay = null;
         this._isOpen = false;
         this._activeTab = 'profil';
+        this._snapshot = null;
     }
 
     init() {
@@ -50,7 +51,7 @@ class SettingsPanel {
     _buildPanel() {
         this._overlay = document.createElement('div');
         this._overlay.className = 'settings-overlay';
-        this._overlay.addEventListener('click', () => this.close());
+        this._overlay.addEventListener('click', () => this._cancel());
 
         this._panel = document.createElement('aside');
         this._panel.className = 'settings-panel';
@@ -63,6 +64,7 @@ class SettingsPanel {
 
         this._bindInternalEvents();
         this._bindTabEvents('profil');
+        this._bindFooterEvents();
     }
 
     _renderPanel() {
@@ -104,6 +106,11 @@ class SettingsPanel {
                 <div id="settingsTabContent">
                     ${this._renderTabContent('profil')}
                 </div>
+            </div>
+
+            <div class="settings-panel-footer">
+                <button class="btn btn-ghost" id="settingsCancelBtn">Annuler</button>
+                <button class="btn btn-primary" id="settingsSaveBtn">Enregistrer</button>
             </div>
         `;
     }
@@ -449,14 +456,14 @@ class SettingsPanel {
 
     _bindKeyboard() {
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isOpen) this.close();
+            if (e.key === 'Escape' && this._isOpen) this._cancel();
         });
     }
 
     _bindInternalEvents() {
-        // Close button
+        // Close button → cancel (revert changes)
         this._panel.querySelector('#settingsPanelClose')
-            .addEventListener('click', () => this.close());
+            .addEventListener('click', () => this._cancel());
 
         // Tab switching
         this._panel.querySelectorAll('.settings-tab').forEach(tab => {
@@ -807,9 +814,61 @@ class SettingsPanel {
         document.documentElement.style.setProperty('--font-size-base', preset.base);
     }
 
+    /* ---- Footer ---- */
+
+    _bindFooterEvents() {
+        const saveBtn   = this._panel.querySelector('#settingsSaveBtn');
+        const cancelBtn = this._panel.querySelector('#settingsCancelBtn');
+        if (saveBtn)   saveBtn.addEventListener('click',   () => this._save());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this._cancel());
+    }
+
+    _save() {
+        this._snapshot = null;
+        this.close();
+        document.dispatchEvent(new CustomEvent('settings-saved'));
+    }
+
+    _cancel() {
+        if (this._snapshot) {
+            this._revertToSnapshot();
+        }
+        this._snapshot = null;
+        this.close();
+    }
+
+    _revertToSnapshot() {
+        const snap = this._snapshot;
+        store.updateSettings({ customization: snap });
+        // Revert visual state
+        if (snap.avatarPhoto) {
+            this._applyAvatarPhoto(snap.avatarPhoto);
+        } else {
+            this._applyAvatarPhoto('');
+            this._applyUserInitials(snap.userName || '');
+        }
+        if (snap.brandName)  this._applyBrandName(snap.brandName);
+        if (snap.faviconUrl) this._applyFavicon(snap.faviconUrl);
+        const accent = snap.accentColor;
+        if (accent) {
+            const h = snap.accentColorHover, l = snap.accentColorLight, d = snap.accentColorDark;
+            if (h && l && d) this._applyAccentColor(accent, h, l, d);
+            else { const p = this._computeColorPalette(accent); this._applyAccentColor(p.primary, p.hover, p.light, p.dark); }
+        } else {
+            this._applyAccentColor('#6366F1', '#4F46E5', '#EEF2FF', '#4338CA');
+        }
+        this._applyFontFamily(snap.fontFamily || 'Inter');
+        this._applyFontSize(snap.fontSize || 'normal');
+        document.dispatchEvent(new CustomEvent('currency-changed'));
+        document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+    }
+
     /* ---- Open / Close ---- */
 
     open() {
+        // Snapshot current state before any changes
+        const settings = store.getSettings();
+        this._snapshot = { ...(settings.customization || {}) };
         this._isOpen = true;
         this._overlay.classList.add('active');
         this._panel.classList.add('open');
