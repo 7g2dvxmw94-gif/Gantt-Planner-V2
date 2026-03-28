@@ -127,7 +127,9 @@ class SettingsPanel {
         const logoUrl     = this._getCustomization('logoUrl')     || '';
         const faviconUrl  = this._getCustomization('faviconUrl')  || '';
         const avatarPhoto = this._getCustomization('avatarPhoto') || '';
-        const initials    = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+        const savedInitials = this._getCustomization('initials')  || '';
+        const autoInitials  = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+        const initials      = savedInitials || autoInitials;
 
         return `
             <div class="settings-section">
@@ -157,6 +159,10 @@ class SettingsPanel {
                         <div class="settings-field">
                             <label class="settings-field-label" for="settingsUserName">Prénom Nom</label>
                             <input type="text" class="settings-field-input" id="settingsUserName" placeholder="Jean Dupont" value="${userName}">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsInitials">Initiales <span style="font-weight:400;color:var(--text-muted)">(2 caractères max)</span></label>
+                            <input type="text" class="settings-field-input" id="settingsInitials" placeholder="${autoInitials || 'JD'}" value="${savedInitials}" maxlength="2" style="text-transform:uppercase;width:80px;">
                         </div>
                         <div class="settings-field">
                             <label class="settings-field-label" for="settingsName">Nom de l'entreprise</label>
@@ -506,21 +512,36 @@ class SettingsPanel {
             });
         }
 
-        const userNameInput = this._panel.querySelector('#settingsUserName');
-        const nameInput     = this._panel.querySelector('#settingsName');
-        const logoInput     = this._panel.querySelector('#settingsLogo');
-        const faviconInput  = this._panel.querySelector('#settingsFavicon');
+        const userNameInput  = this._panel.querySelector('#settingsUserName');
+        const initialsInput  = this._panel.querySelector('#settingsInitials');
+        const nameInput      = this._panel.querySelector('#settingsName');
+        const logoInput      = this._panel.querySelector('#settingsLogo');
+        const faviconInput   = this._panel.querySelector('#settingsFavicon');
+
+        if (initialsInput) {
+            initialsInput.addEventListener('input', this._debounce(() => {
+                const val = initialsInput.value.toUpperCase();
+                initialsInput.value = val;
+                this._saveCustomization('initials', val);
+                if (!this._getCustomization('avatarPhoto')) {
+                    this._applyUserInitials(this._getCustomization('userName') || '');
+                    const preview = this._panel.querySelector('#settingsAvatarPreview span');
+                    if (preview) preview.textContent = val || (this._getCustomization('userName') || '?').trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+                }
+            }, 300));
+        }
 
         if (userNameInput) {
             userNameInput.addEventListener('input', this._debounce(() => {
                 this._saveCustomization('userName', userNameInput.value);
-                this._applyUserInitials(userNameInput.value);
-                // Update preview initials if no photo
-                if (!this._getCustomization('avatarPhoto')) {
-                    const preview = this._panel.querySelector('#settingsAvatarPreview span');
-                    if (preview) {
-                        const initials = userNameInput.value.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
-                        preview.textContent = initials;
+                // Only auto-update initials if user hasn't set custom ones
+                if (!this._getCustomization('initials')) {
+                    this._applyUserInitials(userNameInput.value);
+                    if (!this._getCustomization('avatarPhoto')) {
+                        const preview = this._panel.querySelector('#settingsAvatarPreview span');
+                        if (preview) {
+                            preview.textContent = userNameInput.value.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+                        }
                     }
                 }
             }, 500));
@@ -668,14 +689,17 @@ class SettingsPanel {
         const avatar = document.querySelector('.header-actions .avatar');
         if (!avatar) return;
         if (this._getCustomization('avatarPhoto')) return; // photo takes priority
-        if (userName && userName.trim()) {
+        const custom = this._getCustomization('initials');
+        if (custom) {
+            avatar.textContent = custom;
+        } else if (userName && userName.trim()) {
             const initials = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
             avatar.textContent = initials;
-            avatar.setAttribute('aria-label', `Profil utilisateur - ${userName.trim()}`);
         } else {
             avatar.textContent = '?';
-            avatar.setAttribute('aria-label', 'Profil utilisateur');
         }
+        const label = userName && userName.trim() ? `Profil - ${userName.trim()}` : 'Profil utilisateur';
+        avatar.setAttribute('aria-label', label);
     }
 
     _applyBrandName(name) {
@@ -818,8 +842,8 @@ class SettingsPanel {
 
         if (avatarPhoto) {
             this._applyAvatarPhoto(avatarPhoto);
-        } else if (userName) {
-            this._applyUserInitials(userName);
+        } else {
+            this._applyUserInitials(userName || '');
         }
         if (brandName)  this._applyBrandName(brandName);
         if (faviconUrl) this._applyFavicon(faviconUrl);
