@@ -72,7 +72,7 @@ class SettingsPanel {
             <div class="settings-panel-header">
                 <button class="settings-panel-back" id="settingsPanelClose" aria-label="Fermer les réglages">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"/>
+                        <polyline points="9 18 15 12 9 6"/>
                     </svg>
                 </button>
                 <h2 class="settings-panel-title">Réglages</h2>
