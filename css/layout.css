@@ -42,6 +42,13 @@
     font-size: var(--font-size-sm);
 }
 
+.logo-img {
+    height: 32px;
+    max-width: 120px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+}
+
 .project-selector {
     display: flex;
     align-items: center;

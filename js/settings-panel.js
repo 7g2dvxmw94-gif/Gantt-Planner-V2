@@ -575,7 +575,8 @@ class SettingsPanel {
             maxBytes:     2 * 1024 * 1024,
             renderPreview: (src) => `<img src="${src}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`,
             renderEmpty:   () => `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
-            onSave: () => this._switchTab('profil'),
+            onSave:   (src) => { this._applyLogo(src);  this._switchTab('profil'); },
+            onRemove: ()    => { this._applyLogo('');   this._switchTab('profil'); },
         });
 
         // Favicon upload
@@ -803,6 +804,26 @@ class SettingsPanel {
         }
     }
 
+    _applyLogo(src) {
+        const logoWrap = document.querySelector('.logo');
+        if (!logoWrap) return;
+        const logoIcon = logoWrap.querySelector('.logo-icon');
+        let logoImg = logoWrap.querySelector('.logo-img');
+        if (src) {
+            if (!logoImg) {
+                logoImg = document.createElement('img');
+                logoImg.className = 'logo-img';
+                logoImg.alt = 'Logo';
+                logoWrap.insertBefore(logoImg, logoWrap.firstChild);
+            }
+            logoImg.src = src;
+            if (logoIcon) logoIcon.style.display = 'none';
+        } else {
+            if (logoImg) logoImg.remove();
+            if (logoIcon) logoIcon.style.display = '';
+        }
+    }
+
     _applyFavicon(src) {
         let link = document.querySelector("link[rel~='icon']");
         if (!link) {
@@ -934,6 +955,7 @@ class SettingsPanel {
             this._applyUserInitials(snap.userName || '');
         }
         if (snap.brandName)   this._applyBrandName(snap.brandName);
+        this._applyLogo(snap.logoData || '');
         if (snap.faviconData) this._applyFavicon(snap.faviconData);
         const accent = snap.accentColor;
         if (accent) {
@@ -991,6 +1013,7 @@ class SettingsPanel {
             this._applyUserInitials(userName || '');
         }
         if (brandName)   this._applyBrandName(brandName);
+        this._applyLogo(this._getCustomization('logoData') || '');
         if (faviconData) this._applyFavicon(faviconData);
 
         const accentColor = this._getCustomization('accentColor');
