@@ -502,6 +502,37 @@
     padding: 5px 12px;
 }
 
+/* ---- Asset Upload (Logo / Favicon) ---- */
+.asset-upload-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--bg-subtle);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+}
+
+.asset-upload-preview {
+    width: 80px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    padding: 4px;
+}
+
+.asset-upload-preview--sm {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+}
+
 /* ---- Aide Tab ---- */
 .aide-actions {
     display: flex;

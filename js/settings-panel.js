@@ -129,12 +129,12 @@ class SettingsPanel {
     }
 
     _renderProfilTab() {
-        const userName    = this._getCustomization('userName')    || '';
-        const brandName   = this._getCustomization('brandName')   || '';
-        const logoUrl     = this._getCustomization('logoUrl')     || '';
-        const faviconUrl  = this._getCustomization('faviconUrl')  || '';
-        const avatarPhoto = this._getCustomization('avatarPhoto') || '';
-        const savedInitials = this._getCustomization('initials')  || '';
+        const userName      = this._getCustomization('userName')    || '';
+        const brandName     = this._getCustomization('brandName')   || '';
+        const logoData      = this._getCustomization('logoData')    || '';
+        const faviconData   = this._getCustomization('faviconData') || '';
+        const avatarPhoto   = this._getCustomization('avatarPhoto') || '';
+        const savedInitials = this._getCustomization('initials')    || '';
         const autoInitials  = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
         const initials      = savedInitials || autoInitials;
 
@@ -175,14 +175,52 @@ class SettingsPanel {
                             <label class="settings-field-label" for="settingsName">Nom de l'entreprise</label>
                             <input type="text" class="settings-field-input" id="settingsName" placeholder="Mon entreprise" value="${brandName}">
                         </div>
-                        <div class="settings-field">
-                            <label class="settings-field-label" for="settingsLogo">Logo (URL)</label>
-                            <input type="url" class="settings-field-input" id="settingsLogo" placeholder="https://example.com/logo.png" value="${logoUrl}">
+                    </div>
+                </div>
+
+                <!-- Logo -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <h3>Logo</h3>
+                    </div>
+                    <div class="asset-upload-wrap">
+                        <div class="asset-upload-preview" id="settingsLogoPreview">
+                            ${logoData
+                                ? `<img src="${logoData}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`
+                                : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`}
                         </div>
-                        <div class="settings-field">
-                            <label class="settings-field-label" for="settingsFavicon">Favicon (URL)</label>
-                            <input type="url" class="settings-field-input" id="settingsFavicon" placeholder="https://example.com/favicon.ico" value="${faviconUrl}">
+                        <div class="avatar-upload-info">
+                            <p class="avatar-upload-hint">PNG, SVG ou JPG · Max 2 Mo</p>
+                            <div class="avatar-upload-actions">
+                                <button class="btn btn-secondary" id="settingsLogoUploadBtn">Choisir un logo</button>
+                                ${logoData ? `<button class="btn btn-ghost" id="settingsLogoRemoveBtn">Supprimer</button>` : ''}
+                            </div>
                         </div>
+                        <input type="file" id="settingsLogoInput" accept="image/*" style="display:none">
+                    </div>
+                </div>
+
+                <!-- Favicon -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                        <h3>Favicon</h3>
+                    </div>
+                    <div class="asset-upload-wrap">
+                        <div class="asset-upload-preview asset-upload-preview--sm" id="settingsFaviconPreview">
+                            ${faviconData
+                                ? `<img src="${faviconData}" alt="Favicon" style="max-width:100%;max-height:100%;object-fit:contain;">`
+                                : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>`}
+                        </div>
+                        <div class="avatar-upload-info">
+                            <p class="avatar-upload-hint">ICO, PNG ou SVG · Max 512 Ko</p>
+                            <div class="avatar-upload-actions">
+                                <button class="btn btn-secondary" id="settingsFaviconUploadBtn">Choisir un favicon</button>
+                                ${faviconData ? `<button class="btn btn-ghost" id="settingsFaviconRemoveBtn">Supprimer</button>` : ''}
+                            </div>
+                        </div>
+                        <input type="file" id="settingsFaviconInput" accept="image/*,.ico" style="display:none">
                     </div>
                 </div>
             </div>
@@ -522,8 +560,33 @@ class SettingsPanel {
         const userNameInput  = this._panel.querySelector('#settingsUserName');
         const initialsInput  = this._panel.querySelector('#settingsInitials');
         const nameInput      = this._panel.querySelector('#settingsName');
-        const logoInput      = this._panel.querySelector('#settingsLogo');
-        const faviconInput   = this._panel.querySelector('#settingsFavicon');
+
+        // Logo upload
+        this._bindAssetUpload({
+            uploadBtnId:  'settingsLogoUploadBtn',
+            removeBtnId:  'settingsLogoRemoveBtn',
+            fileInputId:  'settingsLogoInput',
+            previewId:    'settingsLogoPreview',
+            storeKey:     'logoData',
+            maxBytes:     2 * 1024 * 1024,
+            renderPreview: (src) => `<img src="${src}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">`,
+            renderEmpty:   () => `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+            onSave: () => this._switchTab('profil'),
+        });
+
+        // Favicon upload
+        this._bindAssetUpload({
+            uploadBtnId:  'settingsFaviconUploadBtn',
+            removeBtnId:  'settingsFaviconRemoveBtn',
+            fileInputId:  'settingsFaviconInput',
+            previewId:    'settingsFaviconPreview',
+            storeKey:     'faviconData',
+            maxBytes:     512 * 1024,
+            renderPreview: (src) => `<img src="${src}" alt="Favicon" style="max-width:100%;max-height:100%;object-fit:contain;">`,
+            renderEmpty:   () => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>`,
+            onSave: (src) => { this._applyFavicon(src); this._switchTab('profil'); },
+            onRemove: () => { this._applyFavicon(''); this._switchTab('profil'); },
+        });
 
         if (initialsInput) {
             initialsInput.addEventListener('input', this._debounce(() => {
@@ -559,16 +622,36 @@ class SettingsPanel {
                 this._applyBrandName(nameInput.value);
             }, 500));
         }
-        if (logoInput) {
-            logoInput.addEventListener('input', this._debounce(() => {
-                this._saveCustomization('logoUrl', logoInput.value);
-            }, 500));
+    }
+
+    _bindAssetUpload({ uploadBtnId, removeBtnId, fileInputId, previewId, storeKey, maxBytes, renderPreview, renderEmpty, onSave, onRemove }) {
+        const uploadBtn  = this._panel.querySelector(`#${uploadBtnId}`);
+        const fileInput  = this._panel.querySelector(`#${fileInputId}`);
+        const removeBtn  = this._panel.querySelector(`#${removeBtnId}`);
+        const preview    = this._panel.querySelector(`#${previewId}`);
+
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file || file.size > maxBytes) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const src = ev.target.result;
+                    this._saveCustomization(storeKey, src);
+                    if (preview) preview.innerHTML = renderPreview(src);
+                    if (onSave) onSave(src);
+                };
+                reader.readAsDataURL(file);
+            });
         }
-        if (faviconInput) {
-            faviconInput.addEventListener('input', this._debounce(() => {
-                this._saveCustomization('faviconUrl', faviconInput.value);
-                this._applyFavicon(faviconInput.value);
-            }, 500));
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                this._saveCustomization(storeKey, '');
+                if (preview) preview.innerHTML = renderEmpty();
+                if (onRemove) onRemove();
+                else if (onSave) onSave('');
+            });
         }
     }
 
@@ -716,15 +799,14 @@ class SettingsPanel {
         }
     }
 
-    _applyFavicon(url) {
-        if (!url) return;
+    _applyFavicon(src) {
         let link = document.querySelector("link[rel~='icon']");
         if (!link) {
             link = document.createElement('link');
             link.rel = 'icon';
             document.head.appendChild(link);
         }
-        link.href = url;
+        link.href = src || '';
     }
 
     _applyAvatarPhoto(dataUrl) {
@@ -847,8 +929,8 @@ class SettingsPanel {
             this._applyAvatarPhoto('');
             this._applyUserInitials(snap.userName || '');
         }
-        if (snap.brandName)  this._applyBrandName(snap.brandName);
-        if (snap.faviconUrl) this._applyFavicon(snap.faviconUrl);
+        if (snap.brandName)   this._applyBrandName(snap.brandName);
+        if (snap.faviconData) this._applyFavicon(snap.faviconData);
         const accent = snap.accentColor;
         if (accent) {
             const h = snap.accentColorHover, l = snap.accentColorLight, d = snap.accentColorDark;
@@ -897,15 +979,15 @@ class SettingsPanel {
         const userName    = this._getCustomization('userName');
         const brandName   = this._getCustomization('brandName');
         const avatarPhoto = this._getCustomization('avatarPhoto');
-        const faviconUrl  = this._getCustomization('faviconUrl');
+        const faviconData = this._getCustomization('faviconData');
 
         if (avatarPhoto) {
             this._applyAvatarPhoto(avatarPhoto);
         } else {
             this._applyUserInitials(userName || '');
         }
-        if (brandName)  this._applyBrandName(brandName);
-        if (faviconUrl) this._applyFavicon(faviconUrl);
+        if (brandName)   this._applyBrandName(brandName);
+        if (faviconData) this._applyFavicon(faviconData);
 
         const accentColor = this._getCustomization('accentColor');
         if (accentColor) {
