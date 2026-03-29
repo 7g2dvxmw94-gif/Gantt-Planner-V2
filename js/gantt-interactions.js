@@ -422,6 +422,11 @@ class GanttInteractions {
 
         if (task.isMilestone) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)}</span></div>`;
+            const franchi = task.progress >= 100;
+            const statusColor = franchi ? '#10B981' : '#F59E0B';
+            const statusIcon  = franchi ? '✓' : '○';
+            const statusLabel = franchi ? 'Franchi' : 'Non franchi';
+            html += `<div class="gtt-row"><span class="gtt-icon" style="color:${statusColor};font-weight:700;">${statusIcon}</span><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></div>`;
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
             if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${task.permitStatus}</span></div>`;
