@@ -4662,6 +4662,39 @@ tr:nth-child(even){background:#fafbfc}
         const projects = store.getProjects();
         const activeProject = store.getActiveProject();
 
+        // Search bar (only shown when more than 5 projects)
+        if (projects.length > 5) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'project-search-wrap';
+            const searchInput = document.createElement('input');
+            searchInput.type = 'search';
+            searchInput.className = 'project-search-input';
+            searchInput.placeholder = 'Rechercher un projet…';
+            searchInput.setAttribute('aria-label', 'Rechercher un projet');
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim().toLowerCase();
+                projectList.querySelectorAll('.project-dropdown-item[data-project-id]').forEach(item => {
+                    const name = item.querySelector('.project-item-name')?.textContent.toLowerCase() || '';
+                    item.style.display = name.includes(q) ? '' : 'none';
+                });
+                noResult.style.display = projectList.querySelectorAll('.project-dropdown-item[data-project-id]:not([style*="none"])').length === 0 ? '' : 'none';
+            });
+            searchInput.addEventListener('click', e => e.stopPropagation());
+            searchInput.addEventListener('keydown', e => e.stopPropagation());
+            searchWrap.appendChild(searchInput);
+            dropdown.appendChild(searchWrap);
+            setTimeout(() => searchInput.focus(), 50);
+        }
+
+        // Scrollable project list
+        const projectList = document.createElement('div');
+        projectList.className = 'project-list-scroll';
+
+        const noResult = document.createElement('div');
+        noResult.className = 'project-search-empty';
+        noResult.textContent = 'Aucun projet trouvé';
+        noResult.style.display = 'none';
+
         projects.forEach(p => {
             const item = document.createElement('div');
             item.className = 'project-dropdown-item' + (p.id === activeProject.id ? ' active' : '');
@@ -4698,8 +4731,11 @@ tr:nth-child(even){background:#fafbfc}
             item.appendChild(renameBtn);
 
             item.style.cssText = 'display: flex; align-items: center; gap: 4px;';
-            dropdown.appendChild(item);
+            projectList.appendChild(item);
         });
+
+        projectList.appendChild(noResult);
+        dropdown.appendChild(projectList);
 
         // Divider
         dropdown.appendChild(document.createElement('hr'));
