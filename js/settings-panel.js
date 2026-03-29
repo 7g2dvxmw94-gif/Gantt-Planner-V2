@@ -36,6 +36,8 @@ class SettingsPanel {
         this._panel = null;
         this._overlay = null;
         this._isOpen = false;
+        this._activeTab = 'profil';
+        this._snapshot = null;
     }
 
     init() {
@@ -47,12 +49,10 @@ class SettingsPanel {
     /* ---- Build DOM ---- */
 
     _buildPanel() {
-        // Overlay
         this._overlay = document.createElement('div');
         this._overlay.className = 'settings-overlay';
-        this._overlay.addEventListener('click', () => this.close());
+        this._overlay.addEventListener('click', () => this._cancel());
 
-        // Panel
         this._panel = document.createElement('aside');
         this._panel.className = 'settings-panel';
         this._panel.setAttribute('role', 'dialog');
@@ -62,8 +62,9 @@ class SettingsPanel {
         document.body.appendChild(this._overlay);
         document.body.appendChild(this._panel);
 
-        // Bind internal events
         this._bindInternalEvents();
+        this._bindTabEvents('profil');
+        this._bindFooterEvents();
     }
 
     _renderPanel() {
@@ -74,198 +75,354 @@ class SettingsPanel {
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
                 </button>
-                <h2 class="settings-panel-title" id="settingsPanelTitle">Personnaliser</h2>
+                <h2 class="settings-panel-title">Réglages</h2>
                 <div class="settings-panel-header-spacer"></div>
             </div>
 
+            <div class="settings-panel-tabs">
+                <button class="settings-tab active" data-tab="profil" aria-label="Profil">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Profil
+                </button>
+                <button class="settings-tab" data-tab="apparence" aria-label="Apparence">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                    Apparence
+                </button>
+                <button class="settings-tab" data-tab="general" aria-label="Général">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                    Général
+                </button>
+                <button class="settings-tab" data-tab="synchro" aria-label="Synchronisation">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                    Synchro
+                </button>
+                <button class="settings-tab" data-tab="aide" aria-label="Aide">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>
+                    Aide
+                </button>
+            </div>
+
             <div class="settings-panel-body">
-                <div class="settings-section">
-                    ${this._renderCustomizeSection()}
+                <div id="settingsTabContent">
+                    ${this._renderTabContent('profil')}
                 </div>
+            </div>
+
+            <div class="settings-panel-footer">
+                <button class="btn btn-ghost" id="settingsCancelBtn">Annuler</button>
+                <button class="btn btn-primary" id="settingsSaveBtn">Enregistrer</button>
             </div>
         `;
     }
 
-    _renderCustomizeSection() {
-        return `
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    <h3>Identité</h3>
-                </div>
-                <div class="settings-identity-fields">
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsUserName">Utilisateur</label>
-                        <input type="text" class="settings-field-input" id="settingsUserName" placeholder="Jean Dupont" value="${this._getCustomization('userName') || ''}">
-                    </div>
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsName">Nom du projet / entreprise</label>
-                        <input type="text" class="settings-field-input" id="settingsName" placeholder="Mon entreprise" value="${this._getCustomization('brandName') || ''}">
-                    </div>
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsLogo">Logo (URL)</label>
-                        <input type="url" class="settings-field-input" id="settingsLogo" placeholder="https://example.com/logo.png" value="${this._getCustomization('logoUrl') || ''}">
-                    </div>
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsFavicon">Favicon (URL)</label>
-                        <input type="url" class="settings-field-input" id="settingsFavicon" placeholder="https://example.com/favicon.ico" value="${this._getCustomization('faviconUrl') || ''}">
-                    </div>
-                </div>
-            </div>
+    /* ---- Tab rendering ---- */
 
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="6" x2="12" y2="18"/>
-                        <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/>
-                        <circle cx="12" cy="16" r=".5"/>
-                    </svg>
-                    <h3>Devise</h3>
-                </div>
-                <div class="settings-identity-fields">
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
-                        <select class="settings-field-input" id="settingsCurrency">
-                            ${Object.entries(CURRENCIES).map(([code, c]) =>
-                                `<option value="${code}" ${(this._getCustomization('currency') || 'EUR') === code ? 'selected' : ''}>${c.symbol} – ${code}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <h3>Affichage</h3>
-                </div>
-                <div class="settings-identity-fields">
-                    <div class="settings-field settings-field-toggle">
-                        <label class="settings-field-label" for="settingsShowLinks">Afficher les liens (dépendances)</label>
-                        <label class="settings-toggle">
-                            <input type="checkbox" id="settingsShowLinks" ${this._getCustomization('showLinks') !== false ? 'checked' : ''}>
-                            <span class="settings-toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
-                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l11.752 23.8z" fill="#ea4335"/>
-                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
-                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
-                        <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
-                    </svg>
-                    <h3>Google Drive</h3>
-                </div>
-                <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Google Drive.</p>
-                <button class="btn btn-primary" id="settingsGDriveBtn" style="width: 100%; margin-top: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
-                    </svg>
-                    Gérer les sauvegardes Google Drive
-                </button>
-            </div>
-
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M10.813 0H0v10.813h10.813z" fill="#f25022"/>
-                        <path d="M22.957 0H12.144v10.813h10.813z" fill="#7fba00"/>
-                        <path d="M10.813 12.187H0V23h10.813z" fill="#00a4ef"/>
-                        <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
-                    </svg>
-                    <h3>OneDrive</h3>
-                </div>
-                <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Microsoft OneDrive.</p>
-                <button class="btn btn-primary" id="settingsOneDriveBtn" style="width: 100%; margin-top: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
-                    </svg>
-                    Gérer les sauvegardes OneDrive
-                </button>
-            </div>
-
-            ${this._renderCouleursGroup()}
-            ${this._renderTypographieGroup()}
-        `;
+    _renderTabContent(tabName) {
+        switch (tabName) {
+            case 'profil':    return this._renderProfilTab();
+            case 'apparence': return this._renderApparenceTab();
+            case 'general':   return this._renderGeneralTab();
+            case 'synchro':   return this._renderSynchroTab();
+            case 'aide':      return this._renderAideTab();
+            default:          return '';
+        }
     }
 
-    _renderCouleursGroup() {
-        const savedColor = this._getCustomization('accentColor') || '#6366F1';
-        return `
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-                    </svg>
-                    <h3>Couleurs</h3>
-                </div>
-                <p class="settings-group-description">Personnalisez la couleur d'accentuation aux couleurs de votre société.</p>
-                <div class="color-presets">
-                    ${COLOR_PRESETS.map(p => `
-                        <button class="color-swatch${savedColor === p.primary ? ' active' : ''}"
-                                data-primary="${p.primary}"
-                                data-hover="${p.hover}"
-                                data-light="${p.light}"
-                                data-dark="${p.dark}"
-                                title="${p.name}"
-                                style="background:${p.primary}">
-                        </button>
-                    `).join('')}
-                </div>
-                <div class="custom-color-field">
-                    <label class="settings-field-label">Couleur personnalisée</label>
-                    <div class="custom-color-wrap">
-                        <input type="color" id="settingsAccentColor" value="${savedColor}">
-                        <span class="custom-color-hex" id="settingsAccentColorHex">${savedColor}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
+    _renderProfilTab() {
+        const userName    = this._getCustomization('userName')    || '';
+        const brandName   = this._getCustomization('brandName')   || '';
+        const logoUrl     = this._getCustomization('logoUrl')     || '';
+        const faviconUrl  = this._getCustomization('faviconUrl')  || '';
+        const avatarPhoto = this._getCustomization('avatarPhoto') || '';
+        const savedInitials = this._getCustomization('initials')  || '';
+        const autoInitials  = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+        const initials      = savedInitials || autoInitials;
 
-    _renderTypographieGroup() {
-        const savedFont = this._getCustomization('fontFamily') || 'Inter';
-        const savedSize = this._getCustomization('fontSize') || 'normal';
         return `
-            <div class="settings-group">
-                <div class="settings-group-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="4 7 4 4 20 4 20 7"/>
-                        <line x1="9" y1="20" x2="15" y2="20"/>
-                        <line x1="12" y1="4" x2="12" y2="20"/>
-                    </svg>
-                    <h3>Typographie</h3>
-                </div>
-                <div class="settings-identity-fields">
-                    <div class="settings-field">
-                        <label class="settings-field-label" for="settingsFontFamily">Police</label>
-                        <select class="settings-field-input" id="settingsFontFamily">
-                            ${Object.keys(FONT_PRESETS).map(name => `
-                                <option value="${name}" ${savedFont === name ? 'selected' : ''}>${name}${name === 'Inter' ? ' (défaut)' : ''}</option>
-                            `).join('')}
-                        </select>
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <h3>Identité</h3>
                     </div>
-                    <div class="settings-field">
-                        <label class="settings-field-label">Taille de texte</label>
-                        <div class="font-size-toggle">
-                            ${Object.entries(FONT_SIZES).map(([key, { label }]) => `
-                                <button class="font-size-btn${savedSize === key ? ' active' : ''}" data-size="${key}">${label}</button>
-                            `).join('')}
+
+                    <!-- Avatar upload -->
+                    <div class="avatar-upload-wrap">
+                        <div class="avatar-upload-preview" id="settingsAvatarPreview"
+                             style="${avatarPhoto ? `background-image:url(${avatarPhoto});background-size:cover;background-position:center;` : ''}">
+                            ${avatarPhoto ? '' : `<span>${initials}</span>`}
+                        </div>
+                        <div class="avatar-upload-info">
+                            <p class="avatar-upload-hint">JPG, PNG ou GIF · Max 2 Mo</p>
+                            <div class="avatar-upload-actions">
+                                <button class="btn btn-secondary" id="settingsAvatarUploadBtn">Choisir une photo</button>
+                                ${avatarPhoto ? `<button class="btn btn-ghost" id="settingsAvatarRemoveBtn">Supprimer</button>` : ''}
+                            </div>
+                        </div>
+                        <input type="file" id="settingsAvatarInput" accept="image/*" style="display:none">
+                    </div>
+
+                    <div class="settings-identity-fields">
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsUserName">Prénom Nom</label>
+                            <input type="text" class="settings-field-input" id="settingsUserName" placeholder="Jean Dupont" value="${userName}">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsInitials">Initiales <span style="font-weight:400;color:var(--text-muted)">(2 caractères max)</span></label>
+                            <input type="text" class="settings-field-input" id="settingsInitials" placeholder="${autoInitials || 'JD'}" value="${savedInitials}" maxlength="2" style="text-transform:uppercase;width:80px;">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsName">Nom de l'entreprise</label>
+                            <input type="text" class="settings-field-input" id="settingsName" placeholder="Mon entreprise" value="${brandName}">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsLogo">Logo (URL)</label>
+                            <input type="url" class="settings-field-input" id="settingsLogo" placeholder="https://example.com/logo.png" value="${logoUrl}">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsFavicon">Favicon (URL)</label>
+                            <input type="url" class="settings-field-input" id="settingsFavicon" placeholder="https://example.com/favicon.ico" value="${faviconUrl}">
                         </div>
                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    _renderApparenceTab() {
+        const savedColor = this._getCustomization('accentColor') || '#6366F1';
+        const savedFont  = this._getCustomization('fontFamily')  || 'Inter';
+        const savedSize  = this._getCustomization('fontSize')    || 'normal';
+
+        return `
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        <h3>Couleurs</h3>
+                    </div>
+                    <p class="settings-group-description">Couleur d'accentuation aux couleurs de votre société.</p>
+                    <div class="color-presets">
+                        ${COLOR_PRESETS.map(p => `
+                            <button class="color-swatch${savedColor === p.primary ? ' active' : ''}"
+                                    data-primary="${p.primary}" data-hover="${p.hover}"
+                                    data-light="${p.light}" data-dark="${p.dark}"
+                                    title="${p.name}" style="background:${p.primary}">
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="custom-color-field">
+                        <label class="settings-field-label">Couleur personnalisée</label>
+                        <div class="custom-color-wrap">
+                            <input type="color" id="settingsAccentColor" value="${savedColor}">
+                            <span class="custom-color-hex" id="settingsAccentColorHex">${savedColor}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                        <h3>Typographie</h3>
+                    </div>
+                    <div class="settings-identity-fields">
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsFontFamily">Police</label>
+                            <select class="settings-field-input" id="settingsFontFamily">
+                                ${Object.keys(FONT_PRESETS).map(name => `
+                                    <option value="${name}" ${savedFont === name ? 'selected' : ''}>${name}${name === 'Inter' ? ' (défaut)' : ''}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label">Taille de texte</label>
+                            <div class="font-size-toggle">
+                                ${Object.entries(FONT_SIZES).map(([key, { label }]) => `
+                                    <button class="font-size-btn${savedSize === key ? ' active' : ''}" data-size="${key}">${label}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    _renderGeneralTab() {
+        const currency  = this._getCustomization('currency')  || 'EUR';
+        const showLinks = this._getCustomization('showLinks') !== false;
+
+        return `
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16" r=".5"/></svg>
+                        <h3>Devise</h3>
+                    </div>
+                    <div class="settings-identity-fields">
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
+                            <select class="settings-field-input" id="settingsCurrency">
+                                ${Object.entries(CURRENCIES).map(([code, c]) =>
+                                    `<option value="${code}" ${currency === code ? 'selected' : ''}>${c.symbol} – ${code}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <h3>Affichage</h3>
+                    </div>
+                    <div class="settings-identity-fields">
+                        <div class="settings-field settings-field-toggle">
+                            <label class="settings-field-label" for="settingsShowLinks">Afficher les liens (dépendances)</label>
+                            <label class="settings-toggle">
+                                <input type="checkbox" id="settingsShowLinks" ${showLinks ? 'checked' : ''}>
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    _renderSynchroTab() {
+        return `
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l11.752 23.8z" fill="#ea4335"/>
+                            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                            <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                        </svg>
+                        <h3>Google Drive</h3>
+                    </div>
+                    <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Google Drive.</p>
+                    <button class="btn btn-primary" id="settingsGDriveBtn" style="width:100%;margin-top:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                        Gérer les sauvegardes Google Drive
+                    </button>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10.813 0H0v10.813h10.813z" fill="#f25022"/>
+                            <path d="M22.957 0H12.144v10.813h10.813z" fill="#7fba00"/>
+                            <path d="M10.813 12.187H0V23h10.813z" fill="#00a4ef"/>
+                            <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
+                        </svg>
+                        <h3>OneDrive</h3>
+                    </div>
+                    <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Microsoft OneDrive.</p>
+                    <button class="btn btn-primary" id="settingsOneDriveBtn" style="width:100%;margin-top:8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                        Gérer les sauvegardes OneDrive
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    _renderAideTab() {
+        const changelog = [
+            { version: '3.0', date: '2026-03-27', label: 'Majeur', entries: [
+                'Panneau Réglages réorganisé en 5 onglets',
+                'Upload de photo de profil',
+                'Aide intégrée dans le panneau Réglages',
+            ]},
+            { version: '2.9', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Tri par colonne dans les tableaux Dashboard',
+                'Typographie unifiée dans les tableaux',
+            ]},
+            { version: '2.8', date: '2026-03-27', label: 'Correctif', entries: [
+                'Palette de couleurs dans le modal de tâche restaurée en ronds',
+            ]},
+            { version: '2.7', date: '2026-03-27', label: 'Amélioration', entries: [
+                'Formatage K / M / G pour tous les montants',
+            ]},
+            { version: '2.6', date: '2026-03-27', label: 'Fonctionnalité', entries: [
+                'Personnalisation couleurs d\'accentuation et typographie',
+            ]},
+            { version: '2.5', date: '2026-03-26', label: 'Correctif', entries: [
+                'Liens de dépendances masqués correctement avec tous les filtres',
+            ]},
+            { version: '2.4', date: '2026-03-26', label: 'Correctif', entries: [
+                'Filtre Phase recharge les phases du projet actif',
+            ]},
+            { version: '2.3', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Toggle Franchi / Non-franchi pour les jalons',
+            ]},
+            { version: '2.2', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Infobulles au survol des tâches et jalons',
+            ]},
+            { version: '2.1', date: '2026-03-26', label: 'Fonctionnalité', entries: [
+                'Champ de recherche dans le sélecteur "Assigné à"',
+            ]},
+        ];
+        const labelColors = { 'Majeur': '#6366F1', 'Fonctionnalité': '#10B981', 'Amélioration': '#3B82F6', 'Correctif': '#F59E0B' };
+        const changelogHTML = changelog.map(v => `
+            <div class="changelog-entry">
+                <div class="changelog-version-row">
+                    <span class="changelog-version">v${v.version}</span>
+                    <span class="changelog-label" style="background:${labelColors[v.label] || '#64748B'}18;color:${labelColors[v.label] || '#64748B'};border:1px solid ${labelColors[v.label] || '#64748B'}35;">${v.label}</span>
+                    <span class="changelog-date">${v.date}</span>
+                </div>
+                <ul class="changelog-list">
+                    ${v.entries.map(e => `<li>${e}</li>`).join('')}
+                </ul>
+            </div>
+        `).join('');
+
+        return `
+            <div class="settings-section">
+                <div class="settings-group" style="border-top:none;padding-top:0;">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                        <h3>Actions</h3>
+                    </div>
+                    <div class="aide-actions">
+                        <button class="aide-action-btn" id="aideGuide">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                            <div>
+                                <div class="aide-action-label">Guide de démarrage</div>
+                                <div class="aide-action-desc">Relancer le tutoriel interactif</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <button class="aide-action-btn" id="aideShortcuts">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
+                            <div>
+                                <div class="aide-action-label">Raccourcis clavier</div>
+                                <div class="aide-action-desc">Voir tous les raccourcis disponibles</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <button class="aide-action-btn" id="aideContact">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            <div>
+                                <div class="aide-action-label">Contact / Signaler un bug</div>
+                                <div class="aide-action-desc">Envoyer un message à l'équipe</div>
+                            </div>
+                            <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <h3>Nouveautés</h3>
+                    </div>
+                    <div class="changelog-scroll">${changelogHTML}</div>
                 </div>
             </div>
         `;
@@ -291,32 +448,109 @@ class SettingsPanel {
         const btn = document.getElementById('settingsBtn');
         if (btn) {
             btn.addEventListener('click', () => this.toggle());
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.toggle(); }
+            });
         }
     }
 
     _bindKeyboard() {
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isOpen) {
-                this.close();
-            }
+            if (e.key === 'Escape' && this._isOpen) this._cancel();
         });
     }
 
     _bindInternalEvents() {
-        // Close button
+        // Close button → cancel (revert changes)
         this._panel.querySelector('#settingsPanelClose')
-            .addEventListener('click', () => this.close());
+            .addEventListener('click', () => this._cancel());
 
-        // Identity fields (debounced save)
-        const userNameInput = this._panel.querySelector('#settingsUserName');
-        const nameInput = this._panel.querySelector('#settingsName');
-        const logoInput = this._panel.querySelector('#settingsLogo');
-        const faviconInput = this._panel.querySelector('#settingsFavicon');
+        // Tab switching
+        this._panel.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.addEventListener('click', () => this._switchTab(tab.dataset.tab));
+        });
+    }
+
+    _switchTab(tabName) {
+        this._activeTab = tabName;
+        this._panel.querySelectorAll('.settings-tab').forEach(tab =>
+            tab.classList.toggle('active', tab.dataset.tab === tabName)
+        );
+        const content = this._panel.querySelector('#settingsTabContent');
+        if (content) content.innerHTML = this._renderTabContent(tabName);
+        this._bindTabEvents(tabName);
+    }
+
+    _bindTabEvents(tabName) {
+        switch (tabName) {
+            case 'profil':    this._bindProfilEvents();    break;
+            case 'apparence': this._bindApparenceEvents(); break;
+            case 'general':   this._bindGeneralEvents();   break;
+            case 'synchro':   this._bindSynchroEvents();   break;
+            case 'aide':      this._bindAideEvents();      break;
+        }
+    }
+
+    _bindProfilEvents() {
+        const uploadBtn  = this._panel.querySelector('#settingsAvatarUploadBtn');
+        const fileInput  = this._panel.querySelector('#settingsAvatarInput');
+        const removeBtn  = this._panel.querySelector('#settingsAvatarRemoveBtn');
+
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file || file.size > 2 * 1024 * 1024) return; // 2 Mo max
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    this._saveCustomization('avatarPhoto', ev.target.result);
+                    this._applyAvatarPhoto(ev.target.result);
+                    this._switchTab('profil'); // re-render to show photo + remove btn
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                this._saveCustomization('avatarPhoto', '');
+                this._applyAvatarPhoto('');
+                this._switchTab('profil');
+            });
+        }
+
+        const userNameInput  = this._panel.querySelector('#settingsUserName');
+        const initialsInput  = this._panel.querySelector('#settingsInitials');
+        const nameInput      = this._panel.querySelector('#settingsName');
+        const logoInput      = this._panel.querySelector('#settingsLogo');
+        const faviconInput   = this._panel.querySelector('#settingsFavicon');
+
+        if (initialsInput) {
+            initialsInput.addEventListener('input', this._debounce(() => {
+                const val = initialsInput.value.toUpperCase();
+                initialsInput.value = val;
+                this._saveCustomization('initials', val);
+                if (!this._getCustomization('avatarPhoto')) {
+                    this._applyUserInitials(this._getCustomization('userName') || '');
+                    const preview = this._panel.querySelector('#settingsAvatarPreview span');
+                    if (preview) preview.textContent = val || (this._getCustomization('userName') || '?').trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+                }
+            }, 300));
+        }
 
         if (userNameInput) {
             userNameInput.addEventListener('input', this._debounce(() => {
                 this._saveCustomization('userName', userNameInput.value);
-                this._applyUserInitials(userNameInput.value);
+                // Only auto-update initials if user hasn't set custom ones
+                if (!this._getCustomization('initials')) {
+                    this._applyUserInitials(userNameInput.value);
+                    if (!this._getCustomization('avatarPhoto')) {
+                        const preview = this._panel.querySelector('#settingsAvatarPreview span');
+                        if (preview) {
+                            preview.textContent = userNameInput.value.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || '?';
+                        }
+                    }
+                }
             }, 500));
         }
         if (nameInput) {
@@ -336,44 +570,9 @@ class SettingsPanel {
                 this._applyFavicon(faviconInput.value);
             }, 500));
         }
+    }
 
-        // Show links toggle
-        const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
-        if (showLinksCheckbox) {
-            showLinksCheckbox.addEventListener('change', () => {
-                this._saveCustomization('showLinks', showLinksCheckbox.checked);
-                document.dispatchEvent(new CustomEvent('links-visibility-changed'));
-            });
-        }
-
-        // Google Drive button
-        const gdriveBtn = this._panel.querySelector('#settingsGDriveBtn');
-        if (gdriveBtn) {
-            gdriveBtn.addEventListener('click', () => {
-                this.close();
-                document.dispatchEvent(new CustomEvent('open-cloud-backup'));
-            });
-        }
-
-        // OneDrive button
-        const onedriveBtn = this._panel.querySelector('#settingsOneDriveBtn');
-        if (onedriveBtn) {
-            onedriveBtn.addEventListener('click', () => {
-                this.close();
-                document.dispatchEvent(new CustomEvent('open-onedrive-backup'));
-            });
-        }
-
-        // Currency selector
-        const currencySelect = this._panel.querySelector('#settingsCurrency');
-        if (currencySelect) {
-            currencySelect.addEventListener('change', () => {
-                this._saveCustomization('currency', currencySelect.value);
-                document.dispatchEvent(new CustomEvent('currency-changed'));
-            });
-        }
-
-        // Color swatches
+    _bindApparenceEvents() {
         this._panel.querySelectorAll('.color-swatch').forEach(swatch => {
             swatch.addEventListener('click', () => {
                 const { primary, hover, light, dark } = swatch.dataset;
@@ -391,7 +590,6 @@ class SettingsPanel {
             });
         });
 
-        // Custom color picker
         const colorPicker = this._panel.querySelector('#settingsAccentColor');
         if (colorPicker) {
             colorPicker.addEventListener('input', this._debounce(() => {
@@ -408,7 +606,6 @@ class SettingsPanel {
             }, 80));
         }
 
-        // Font family
         const fontSelect = this._panel.querySelector('#settingsFontFamily');
         if (fontSelect) {
             fontSelect.addEventListener('change', () => {
@@ -417,7 +614,6 @@ class SettingsPanel {
             });
         }
 
-        // Font size buttons
         this._panel.querySelectorAll('.font-size-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const size = btn.dataset.size;
@@ -427,6 +623,63 @@ class SettingsPanel {
                 btn.classList.add('active');
             });
         });
+    }
+
+    _bindGeneralEvents() {
+        const currencySelect = this._panel.querySelector('#settingsCurrency');
+        if (currencySelect) {
+            currencySelect.addEventListener('change', () => {
+                this._saveCustomization('currency', currencySelect.value);
+                document.dispatchEvent(new CustomEvent('currency-changed'));
+            });
+        }
+        const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
+        if (showLinksCheckbox) {
+            showLinksCheckbox.addEventListener('change', () => {
+                this._saveCustomization('showLinks', showLinksCheckbox.checked);
+                document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+            });
+        }
+    }
+
+    _bindAideEvents() {
+        const guideBtn = this._panel.querySelector('#aideGuide');
+        if (guideBtn) {
+            guideBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('launch-onboarding'));
+            });
+        }
+        const shortcutsBtn = this._panel.querySelector('#aideShortcuts');
+        if (shortcutsBtn) {
+            shortcutsBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('show-keyboard-help'));
+            });
+        }
+        const contactBtn = this._panel.querySelector('#aideContact');
+        if (contactBtn) {
+            contactBtn.addEventListener('click', () => {
+                window.location.href = 'mailto:support@gantt-planner.app';
+            });
+        }
+    }
+
+    _bindSynchroEvents() {
+        const gdriveBtn = this._panel.querySelector('#settingsGDriveBtn');
+        if (gdriveBtn) {
+            gdriveBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('open-cloud-backup'));
+            });
+        }
+        const onedriveBtn = this._panel.querySelector('#settingsOneDriveBtn');
+        if (onedriveBtn) {
+            onedriveBtn.addEventListener('click', () => {
+                this.close();
+                document.dispatchEvent(new CustomEvent('open-onedrive-backup'));
+            });
+        }
     }
 
     _debounce(fn, delay) {
@@ -442,14 +695,18 @@ class SettingsPanel {
     _applyUserInitials(userName) {
         const avatar = document.querySelector('.header-actions .avatar');
         if (!avatar) return;
-        if (userName && userName.trim()) {
+        if (this._getCustomization('avatarPhoto')) return; // photo takes priority
+        const custom = this._getCustomization('initials');
+        if (custom) {
+            avatar.textContent = custom;
+        } else if (userName && userName.trim()) {
             const initials = userName.trim().split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
             avatar.textContent = initials;
-            avatar.setAttribute('aria-label', `Profil utilisateur - ${userName.trim()}`);
         } else {
             avatar.textContent = '?';
-            avatar.setAttribute('aria-label', 'Profil utilisateur');
         }
+        const label = userName && userName.trim() ? `Profil - ${userName.trim()}` : 'Profil utilisateur';
+        avatar.setAttribute('aria-label', label);
     }
 
     _applyBrandName(name) {
@@ -468,6 +725,22 @@ class SettingsPanel {
             document.head.appendChild(link);
         }
         link.href = url;
+    }
+
+    _applyAvatarPhoto(dataUrl) {
+        const avatar = document.querySelector('.header-actions .avatar');
+        if (!avatar) return;
+        if (dataUrl) {
+            avatar.style.backgroundImage = `url(${dataUrl})`;
+            avatar.style.backgroundSize = 'cover';
+            avatar.style.backgroundPosition = 'center';
+            avatar.textContent = '';
+        } else {
+            avatar.style.backgroundImage = '';
+            avatar.style.backgroundSize = '';
+            avatar.style.backgroundPosition = '';
+            this._applyUserInitials(this._getCustomization('userName') || '');
+        }
     }
 
     _applyAccentColor(primary, hover, light, dark) {
@@ -541,18 +814,67 @@ class SettingsPanel {
         document.documentElement.style.setProperty('--font-size-base', preset.base);
     }
 
+    /* ---- Footer ---- */
+
+    _bindFooterEvents() {
+        const saveBtn   = this._panel.querySelector('#settingsSaveBtn');
+        const cancelBtn = this._panel.querySelector('#settingsCancelBtn');
+        if (saveBtn)   saveBtn.addEventListener('click',   () => this._save());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this._cancel());
+    }
+
+    _save() {
+        this._snapshot = null;
+        this.close();
+        document.dispatchEvent(new CustomEvent('settings-saved'));
+    }
+
+    _cancel() {
+        if (this._snapshot) {
+            this._revertToSnapshot();
+        }
+        this._snapshot = null;
+        this.close();
+    }
+
+    _revertToSnapshot() {
+        const snap = this._snapshot;
+        store.updateSettings({ customization: snap });
+        // Revert visual state
+        if (snap.avatarPhoto) {
+            this._applyAvatarPhoto(snap.avatarPhoto);
+        } else {
+            this._applyAvatarPhoto('');
+            this._applyUserInitials(snap.userName || '');
+        }
+        if (snap.brandName)  this._applyBrandName(snap.brandName);
+        if (snap.faviconUrl) this._applyFavicon(snap.faviconUrl);
+        const accent = snap.accentColor;
+        if (accent) {
+            const h = snap.accentColorHover, l = snap.accentColorLight, d = snap.accentColorDark;
+            if (h && l && d) this._applyAccentColor(accent, h, l, d);
+            else { const p = this._computeColorPalette(accent); this._applyAccentColor(p.primary, p.hover, p.light, p.dark); }
+        } else {
+            this._applyAccentColor('#6366F1', '#4F46E5', '#EEF2FF', '#4338CA');
+        }
+        this._applyFontFamily(snap.fontFamily || 'Inter');
+        this._applyFontSize(snap.fontSize || 'normal');
+        document.dispatchEvent(new CustomEvent('currency-changed'));
+        document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+    }
+
     /* ---- Open / Close ---- */
 
     open() {
+        // Snapshot current state before any changes
+        const settings = store.getSettings();
+        this._snapshot = { ...(settings.customization || {}) };
         this._isOpen = true;
         this._overlay.classList.add('active');
         this._panel.classList.add('open');
         document.body.style.overflow = 'hidden';
-
-        // Refresh values from store
-        this._refreshValues();
-
-        // Focus trap: focus the close button
+        // Re-render active tab to get fresh store values
+        this._switchTab(this._activeTab);
         const closeBtn = this._panel.querySelector('#settingsPanelClose');
         if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
     }
@@ -562,69 +884,29 @@ class SettingsPanel {
         this._overlay.classList.remove('active');
         this._panel.classList.remove('open');
         document.body.style.overflow = '';
-
-        // Return focus to settings button
         const btn = document.getElementById('settingsBtn');
         if (btn) btn.focus();
     }
 
     toggle() {
-        if (this._isOpen) {
-            this.close();
-        } else {
-            this.open();
-        }
+        if (this._isOpen) this.close(); else this.open();
     }
 
-    _refreshValues() {
-        // Identity fields
-        const userNameInput = this._panel.querySelector('#settingsUserName');
-        const nameInput = this._panel.querySelector('#settingsName');
-        const logoInput = this._panel.querySelector('#settingsLogo');
-        const faviconInput = this._panel.querySelector('#settingsFavicon');
-        if (userNameInput) userNameInput.value = this._getCustomization('userName') || '';
-        if (nameInput) nameInput.value = this._getCustomization('brandName') || '';
-        if (logoInput) logoInput.value = this._getCustomization('logoUrl') || '';
-        if (faviconInput) faviconInput.value = this._getCustomization('faviconUrl') || '';
-
-        const currencySelect = this._panel.querySelector('#settingsCurrency');
-        if (currencySelect) currencySelect.value = this._getCustomization('currency') || 'EUR';
-
-        const showLinksCheckbox = this._panel.querySelector('#settingsShowLinks');
-        if (showLinksCheckbox) showLinksCheckbox.checked = this._getCustomization('showLinks') !== false;
-
-        // Color: sync swatch active state and picker value
-        const savedColor = this._getCustomization('accentColor');
-        if (savedColor) {
-            this._panel.querySelectorAll('.color-swatch').forEach(s =>
-                s.classList.toggle('active', s.dataset.primary === savedColor)
-            );
-            const picker = this._panel.querySelector('#settingsAccentColor');
-            if (picker) picker.value = savedColor;
-            const hexLabel = this._panel.querySelector('#settingsAccentColorHex');
-            if (hexLabel) hexLabel.textContent = savedColor;
-        }
-
-        // Font family
-        const savedFont = this._getCustomization('fontFamily');
-        const fontSelect = this._panel.querySelector('#settingsFontFamily');
-        if (fontSelect && savedFont) fontSelect.value = savedFont;
-
-        // Font size
-        const savedSize = this._getCustomization('fontSize') || 'normal';
-        this._panel.querySelectorAll('.font-size-btn').forEach(btn =>
-            btn.classList.toggle('active', btn.dataset.size === savedSize)
-        );
-    }
-
-    /* Apply stored customizations on init */
+    /* ---- Apply stored customizations on init ---- */
     applyStoredCustomizations() {
-        const userName = this._getCustomization('userName');
-        const brandName = this._getCustomization('brandName');
-        if (userName) this._applyUserInitials(userName);
-        if (brandName) this._applyBrandName(brandName);
+        const userName    = this._getCustomization('userName');
+        const brandName   = this._getCustomization('brandName');
+        const avatarPhoto = this._getCustomization('avatarPhoto');
+        const faviconUrl  = this._getCustomization('faviconUrl');
 
-        // Accent color
+        if (avatarPhoto) {
+            this._applyAvatarPhoto(avatarPhoto);
+        } else {
+            this._applyUserInitials(userName || '');
+        }
+        if (brandName)  this._applyBrandName(brandName);
+        if (faviconUrl) this._applyFavicon(faviconUrl);
+
         const accentColor = this._getCustomization('accentColor');
         if (accentColor) {
             const hover = this._getCustomization('accentColorHover');
@@ -638,11 +920,9 @@ class SettingsPanel {
             }
         }
 
-        // Font family
         const fontFamily = this._getCustomization('fontFamily');
         if (fontFamily) this._applyFontFamily(fontFamily);
 
-        // Font size
         const fontSize = this._getCustomization('fontSize');
         if (fontSize) this._applyFontSize(fontSize);
     }

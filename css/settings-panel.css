@@ -92,18 +92,27 @@
     display: flex;
     border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
-    padding: 0 var(--space-5);
-    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.settings-panel-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .settings-tab {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2) var(--space-2);
     font-family: var(--font-sans);
     font-weight: var(--font-weight-medium);
-    font-size: var(--font-size-sm);
+    font-size: 11px;
     color: var(--text-secondary);
     cursor: pointer;
     border: none;
@@ -132,6 +141,7 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--space-5);
+    padding-bottom: var(--space-2);
 }
 
 /* ---- Group ---- */
@@ -440,6 +450,133 @@
     background: var(--color-primary);
     color: #fff;
     font-weight: var(--font-weight-semibold);
+}
+
+/* ---- Avatar Upload ---- */
+.avatar-upload-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background: var(--bg-subtle);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-default);
+}
+
+.avatar-upload-preview {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 2px solid var(--border-default);
+}
+
+.avatar-upload-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.avatar-upload-hint {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.avatar-upload-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.avatar-upload-actions .btn {
+    font-size: var(--font-size-xs);
+    padding: 5px 12px;
+}
+
+/* ---- Aide Tab ---- */
+.aide-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.aide-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    color: var(--text-primary);
+}
+
+.aide-action-btn:hover {
+    background: var(--bg-muted);
+    border-color: var(--color-primary);
+}
+
+.aide-action-btn > svg:first-child {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.aide-action-btn > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.aide-action-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.aide-action-desc {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.aide-action-arrow {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* ---- Changelog Scroll ---- */
+.changelog-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-right: var(--space-1);
+}
+
+/* ---- Footer ---- */
+.settings-panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-default);
+    flex-shrink: 0;
+    background: var(--bg-base);
 }
 
 /* ---- Coming Soon ---- */

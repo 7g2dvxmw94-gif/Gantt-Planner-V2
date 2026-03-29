@@ -1136,10 +1136,10 @@ class App {
             });
         }
 
-        const helpBtn = $('#helpBtn');
-        if (helpBtn) {
-            helpBtn.addEventListener('click', () => this._showKeyboardHelp());
-        }
+        // Settings panel events dispatched from Aide tab
+        document.addEventListener('show-keyboard-help', () => this._showKeyboardHelp());
+        document.addEventListener('launch-onboarding', () => onboarding.start());
+        document.addEventListener('settings-saved', () => this._showToast('Réglages enregistrés', 'success'));
 
     }
 
