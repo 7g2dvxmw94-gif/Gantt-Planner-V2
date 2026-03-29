@@ -136,6 +136,12 @@ class GanttRenderer {
         if (tree.length === 0) {
             body.appendChild(this._renderEmpty());
             this._virtualActive = false;
+            // Don't stretch the container to the full timeline width when empty —
+            // the empty state would be hidden behind the scroll offset.
+            this._container.style.minWidth = '';
+            this._container.appendChild(body);
+            if (this._scrollWrapper) this._scrollWrapper.scrollLeft = 0;
+            return;
         } else if (this._flatNodes.length > VIRTUAL_THRESHOLD) {
             // Virtual scrolling mode
             this._virtualActive = true;

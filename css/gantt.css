@@ -587,6 +587,8 @@ tr.critical-path:hover {
     justify-content: center;
     padding: var(--space-8);
     text-align: center;
+    min-height: 300px;
+    width: 100%;
 }
 
 .gantt-empty-icon {
