@@ -1140,6 +1140,7 @@ class App {
         document.addEventListener('show-keyboard-help', () => this._showKeyboardHelp());
         document.addEventListener('launch-onboarding', () => onboarding.start());
         document.addEventListener('settings-saved', () => this._showToast('Réglages enregistrés', 'success'));
+        document.addEventListener('gantt:addTask', () => this._showAddTaskDialog());
 
     }
 
