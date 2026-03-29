@@ -190,6 +190,57 @@
     letter-spacing: 0.5px;
 }
 
+/* ---- Tooltip ---- */
+.settings-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-1);
+}
+
+.settings-tooltip-icon {
+    color: var(--text-muted);
+    cursor: default;
+    flex-shrink: 0;
+}
+
+.settings-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-inverted, #1e293b);
+    color: var(--text-inverted, #f8fafc);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.5;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    white-space: normal;
+    width: 220px;
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: var(--shadow-lg);
+}
+
+.settings-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--bg-inverted, #1e293b);
+}
+
+.settings-tooltip-wrap:hover .settings-tooltip {
+    display: block;
+}
+
 /* ---- Segmented Control ---- */
 .settings-segmented-control {
     display: flex;

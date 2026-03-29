@@ -206,6 +206,10 @@ class SettingsPanel {
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                         <h3>Favicon</h3>
+                        <span class="settings-tooltip-wrap">
+                            <svg class="settings-tooltip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor" stroke="none"/></svg>
+                            <span class="settings-tooltip">La petite icône affichée dans l'onglet de votre navigateur, à gauche du titre de la page.</span>
+                        </span>
                     </div>
                     <div class="asset-upload-wrap">
                         <div class="asset-upload-preview asset-upload-preview--sm" id="settingsFaviconPreview">
