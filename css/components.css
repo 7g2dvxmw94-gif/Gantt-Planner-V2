@@ -2129,11 +2129,11 @@ textarea.input {
 .baseline-popover {
     position: fixed;
     z-index: 10000;
-    background: var(--surface-primary);
+    background: var(--bg-elevated);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
     width: 310px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
     overflow: hidden;
 }
 
@@ -2143,6 +2143,7 @@ textarea.input {
     justify-content: space-between;
     padding: 12px 14px;
     border-bottom: 1px solid var(--border-default);
+    background: var(--bg-elevated);
 }
 
 .bl-pop-title {
@@ -2155,7 +2156,7 @@ textarea.input {
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--color-primary);
-    background: var(--surface-secondary);
+    background: var(--bg-muted);
     padding: 2px 7px;
     border-radius: 99px;
 }
@@ -2164,6 +2165,7 @@ textarea.input {
     padding: 6px;
     max-height: 230px;
     overflow-y: auto;
+    background: var(--bg-elevated);
 }
 
 .bl-pop-empty {
@@ -2184,11 +2186,11 @@ textarea.input {
 }
 
 .bl-pop-item:hover {
-    background: var(--surface-secondary);
+    background: var(--bg-muted);
 }
 
 .bl-pop-item--active {
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    background: var(--color-primary-light);
 }
 
 .bl-radio {
@@ -2238,7 +2240,7 @@ textarea.input {
     border-radius: 5px;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
-    background: var(--surface-primary);
+    background: var(--bg-elevated);
     outline: none;
     box-shadow: 0 0 0 2px rgba(99,102,241,.15);
 }
@@ -2265,7 +2267,7 @@ textarea.input {
 }
 
 .bl-icon-btn:hover {
-    background: var(--border-default);
+    background: var(--bg-muted);
     color: var(--text-primary);
 }
 
@@ -2280,6 +2282,7 @@ textarea.input {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    background: var(--bg-elevated);
 }
 
 .bl-create-row {
@@ -2294,7 +2297,7 @@ textarea.input {
     border-radius: 7px;
     font-size: var(--font-size-sm);
     color: var(--text-primary);
-    background: var(--surface-primary);
+    background: var(--bg-elevated);
     outline: none;
 }
 
@@ -2353,7 +2356,7 @@ textarea.input {
 }
 
 thead .table-bl-col {
-    background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+    background: var(--color-primary-light);
 }
 
 .bl-variance-late {
