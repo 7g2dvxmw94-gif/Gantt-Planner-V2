@@ -2276,6 +2276,11 @@ textarea.input {
     color: #DC2626;
 }
 
+.bl-icon-btn--ok:hover {
+    background: #D1FAE5;
+    color: #059669;
+}
+
 .bl-pop-footer {
     padding: 10px 10px;
     border-top: 1px solid var(--border-default);

@@ -1335,18 +1335,43 @@ class App {
                     input.className = 'bl-rename-input';
                     input.value = bl.name;
                     input.addEventListener('click', e => e.stopPropagation());
+
+                    const confirmRename = () => {
+                        if (input.value.trim()) store.renameBaseline(bl.id, input.value.trim());
+                        this._baselineRenaming = null;
+                        this._renderBaselinePopover();
+                    };
+                    const cancelRename = () => {
+                        this._baselineRenaming = null;
+                        this._renderBaselinePopover();
+                    };
+
                     input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            if (input.value.trim()) store.renameBaseline(bl.id, input.value.trim());
-                            this._baselineRenaming = null;
-                            this._renderBaselinePopover();
-                        } else if (e.key === 'Escape') {
-                            this._baselineRenaming = null;
-                            this._renderBaselinePopover();
-                        }
+                        if (e.key === 'Enter') confirmRename();
+                        else if (e.key === 'Escape') cancelRename();
                     });
                     item.appendChild(input);
-                    requestAnimationFrame(() => input.focus());
+                    requestAnimationFrame(() => { input.focus(); input.select(); });
+
+                    // OK / Cancel buttons replace the normal actions
+                    const renameActions = document.createElement('div');
+                    renameActions.className = 'bl-actions';
+
+                    const okBtn = document.createElement('button');
+                    okBtn.className = 'bl-icon-btn bl-icon-btn--ok';
+                    okBtn.title = 'Valider';
+                    okBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                    okBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmRename(); });
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'bl-icon-btn';
+                    cancelBtn.title = 'Annuler';
+                    cancelBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+                    cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelRename(); });
+
+                    renameActions.appendChild(okBtn);
+                    renameActions.appendChild(cancelBtn);
+                    item.appendChild(renameActions);
                 } else {
                     const nameWrap = document.createElement('div');
                     nameWrap.className = 'bl-name-wrap';
