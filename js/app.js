@@ -960,7 +960,7 @@ class App {
             const header = document.createElement('div');
             header.className = 'resource-card-header';
             const avatar = document.createElement('div');
-            avatar.className = 'avatar';
+            avatar.className = 'avatar resource-card-avatar';
             avatar.style.background = `linear-gradient(135deg, ${resource.color}, ${resource.color}dd)`;
             avatar.textContent = resource.avatar;
             header.appendChild(avatar);

@@ -1026,6 +1026,10 @@ tr.critical-path:hover {
     box-shadow: var(--shadow-md);
 }
 
+.resource-card-avatar {
+    cursor: default;
+}
+
 .resource-card-header {
     display: flex;
     align-items: center;
