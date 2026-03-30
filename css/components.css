@@ -2127,10 +2127,8 @@ textarea.input {
 }
 
 .baseline-popover {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 200;
+    position: fixed;
+    z-index: 10000;
     background: var(--surface-primary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);

@@ -1251,6 +1251,10 @@ class App {
         if (!popover || !btn) return;
         this._renderBaselinePopover();
         popover.style.display = 'block';
+        // Position below the button (fixed, like the export dropdown)
+        const rect = btn.getBoundingClientRect();
+        popover.style.top = (rect.bottom + 4) + 'px';
+        popover.style.right = (window.innerWidth - rect.right) + 'px';
         btn.setAttribute('aria-expanded', 'true');
         btn.classList.add('active');
     }
