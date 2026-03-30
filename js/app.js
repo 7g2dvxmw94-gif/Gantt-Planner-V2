@@ -363,15 +363,15 @@ class App {
         });
         headerRow.appendChild(thType);
 
+        // Columns: BL columns appear whenever a baseline is active (regardless of showBaseline toggle)
         const activeBaseline = store.getActiveBaseline();
-        const showBaseline = store.getSettings().showBaseline && !!activeBaseline;
 
         const columns = [
             { key: 'name', label: 'Tâche' },
             { key: 'phase', label: 'Phase' },
             { key: 'startDate', label: 'Début' },
             { key: 'endDate', label: 'Fin' },
-            ...(showBaseline ? [
+            ...(activeBaseline ? [
                 { key: '_blStart', label: 'Début BL', baseline: true },
                 { key: '_blEnd', label: 'Fin BL', baseline: true },
                 { key: '_blVariance', label: 'Écart', baseline: true },
@@ -513,7 +513,7 @@ class App {
             row.appendChild(tdEnd);
 
             // Baseline columns
-            if (showBaseline) {
+            if (activeBaseline) {
                 const blTask = activeBaseline.tasks.find(t => t.id === task.id);
 
                 const tdBlStart = document.createElement('td');
