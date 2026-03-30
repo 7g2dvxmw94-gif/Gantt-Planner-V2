@@ -748,7 +748,7 @@ class SettingsPanel {
         const contactBtn = this._panel.querySelector('#aideContact');
         if (contactBtn) {
             contactBtn.addEventListener('click', () => {
-                window.location.href = 'mailto:support@gantt-planner.app';
+                window.location.href = 'mailto:ganttprohelp2025@gmail.com';
             });
         }
     }
