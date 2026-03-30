@@ -166,6 +166,19 @@
                     <span>Chemin critique</span>
                 </button>
 
+                <!-- Baseline -->
+                <div class="baseline-wrap" id="baselineWrap">
+                    <button class="btn btn-secondary" id="baselineBtn" aria-label="Baselines" title="Gérer les baselines" aria-haspopup="true" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        <span>Baseline</span>
+                    </button>
+                    <div class="baseline-popover" id="baselinePopover" role="dialog" aria-label="Gestion des baselines" style="display:none;"></div>
+                </div>
+
                 <!-- Zoom Controls -->
                 <div class="zoom-controls" role="group" aria-label="Niveau de zoom">
                     <button class="zoom-btn" data-zoom="day" aria-label="Zoom jour" title="Vue par jour">J</button>

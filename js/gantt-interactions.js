@@ -448,6 +448,31 @@ class GanttInteractions {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udc64</span><span>${assigneeNames.join(', ')}</span></div>`;
         }
 
+        // Baseline section
+        const settings = store.getSettings();
+        if (settings.showBaseline) {
+            const baseline = store.getActiveBaseline();
+            if (baseline) {
+                const blTask = baseline.tasks.find(t => t.id === task.id);
+                if (blTask) {
+                    const variance = task.isMilestone
+                        ? Math.round((new Date(task.startDate) - new Date(blTask.startDate)) / 86400000)
+                        : Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+                    const varColor = variance > 0 ? '#FCA5A5' : variance < 0 ? '#6EE7B7' : '#94A3B8';
+                    const varBg = variance > 0 ? 'rgba(239,68,68,.15)' : variance < 0 ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.1)';
+                    const varLabel = variance > 0 ? `▲ +${variance}j de retard` : variance < 0 ? `▼ ${variance}j d'avance` : '✓ Dans les délais';
+                    html += `<div class="gtt-sep"></div>`;
+                    html += `<div class="gtt-bl-title">${baseline.name}</div>`;
+                    if (task.isMilestone) {
+                        html += `<div class="gtt-row"><span class="gtt-icon">◈</span><span style="color:#94A3B8">${fmt(blTask.startDate)}</span></div>`;
+                    } else {
+                        html += `<div class="gtt-row"><span class="gtt-icon">◈</span><span style="color:#94A3B8">${fmt(blTask.startDate)} → ${fmt(blTask.endDate)}</span></div>`;
+                    }
+                    html += `<div class="gtt-row"><span class="gtt-bl-variance" style="background:${varBg};color:${varColor}">${varLabel}</span></div>`;
+                }
+            }
+        }
+
         html += `</div>`;
         return html;
     }

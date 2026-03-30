@@ -1030,6 +1030,81 @@ tr.critical-path:hover {
     cursor: default;
 }
 
+/* ---- Baseline ---- */
+
+.gantt-baseline-bar {
+    position: absolute;
+    height: 7px;
+    bottom: 5px;
+    border-radius: 3px;
+    background: rgba(148, 163, 184, 0.18);
+    border: 1.5px dashed #94A3B8;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.gantt-baseline-milestone {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    bottom: 5px;
+    border: 2px dashed #94A3B8;
+    transform: rotate(45deg);
+    border-radius: 2px;
+    background: transparent;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.gantt-variance-tag {
+    position: absolute;
+    bottom: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+    line-height: 1.4;
+}
+
+.gantt-variance-late {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.gantt-variance-early {
+    background: #D1FAE5;
+    color: #059669;
+}
+
+/* ---- Gantt tooltip baseline section ---- */
+
+.gtt-sep {
+    height: 1px;
+    background: rgba(255,255,255,.08);
+    margin: 8px 0;
+}
+
+.gtt-bl-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #818CF8;
+    margin-bottom: 6px;
+}
+
+.gtt-bl-variance {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
 .resource-card-header {
     display: flex;
     align-items: center;
