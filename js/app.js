@@ -301,6 +301,10 @@ class App {
                     va = po[a.priority] ?? 1; vb = po[b.priority] ?? 1; break;
                 }
                 case 'progress': va = a.progress; vb = b.progress; break;
+                case 'type': {
+                    const typeOrder = t => t.isPhase ? 0 : t.isMilestone ? 1 : t.isPermit ? 2 : 3;
+                    va = typeOrder(a); vb = typeOrder(b); break;
+                }
                 case 'assignees': {
                     const na = (a.assignees || []).map(id => store.getResource(id)?.name || '').join(',');
                     const nb = (b.assignees || []).map(id => store.getResource(id)?.name || '').join(',');
@@ -341,10 +345,22 @@ class App {
         thCb.appendChild(selectAllCb);
         headerRow.appendChild(thCb);
 
-        // Type column header (non-sortable icon column)
+        // Type column header (sortable)
         const thType = document.createElement('th');
-        thType.className = 'table-type-col';
+        thType.className = 'table-type-col sortable';
         thType.textContent = 'Type';
+        if (this._tableSortKey === 'type') {
+            thType.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+        thType.addEventListener('click', () => {
+            if (this._tableSortKey === 'type') {
+                this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this._tableSortKey = 'type';
+                this._tableSortDir = 'asc';
+            }
+            this._renderBoardView();
+        });
         headerRow.appendChild(thType);
 
         const columns = [
