@@ -376,10 +376,55 @@ class SettingsPanel {
 
     _renderAideTab() {
         const changelog = [
+            { version: '4.4', date: '2026-03-30', label: 'Correctif', entries: [
+                'Curseur non-cliquable sur les initiales des cartes Ressources',
+            ]},
+            { version: '4.3', date: '2026-03-30', label: 'Correctif', entries: [
+                'Adresse de contact mise à jour : ganttprohelp2025@gmail.com',
+            ]},
+            { version: '4.2', date: '2026-03-30', label: 'Amélioration', entries: [
+                'Tri par colonne "Type" dans l\'onglet Tableau',
+            ]},
+            { version: '4.1', date: '2026-03-30', label: 'Amélioration', entries: [
+                'État Franchi / Non franchi dans l\'infobulle des jalons',
+            ]},
+            { version: '4.0', date: '2026-03-30', label: 'Fonctionnalité', entries: [
+                'Barre de recherche dans le sélecteur de projets (dès 6 projets)',
+            ]},
+            { version: '3.9', date: '2026-03-30', label: 'Correctif', entries: [
+                'Logo uploadé affiché dans le header',
+            ]},
+            { version: '3.8', date: '2026-03-30', label: 'Correctif', entries: [
+                'Flèche de fermeture du panneau Réglages orientée vers la droite',
+            ]},
+            { version: '3.7', date: '2026-03-30', label: 'Amélioration', entries: [
+                'Infobulle explicative sur le champ Favicon',
+            ]},
+            { version: '3.6', date: '2026-03-30', label: 'Fonctionnalité', entries: [
+                'Upload Logo et Favicon en dur dans l\'onglet Profil',
+            ]},
+            { version: '3.5', date: '2026-03-30', label: 'Correctif', entries: [
+                'État vide du Gantt centré, sans scroll horizontal',
+                'Bouton "Nouvelle tâche" du Gantt vide fonctionnel',
+            ]},
+            { version: '3.4', date: '2026-03-30', label: 'Correctif', entries: [
+                'Bouton "Nouvelle tâche" du Gantt vide ouvre le modal',
+            ]},
+            { version: '3.3', date: '2026-03-30', label: 'Fonctionnalité', entries: [
+                'Footer Enregistrer / Annuler dans le panneau Réglages',
+                'Snapshot à l\'ouverture — Annuler restaure l\'état précédent',
+            ]},
+            { version: '3.2', date: '2026-03-30', label: 'Fonctionnalité', entries: [
+                'Champ Initiales dans l\'onglet Profil des Réglages',
+            ]},
+            { version: '3.1', date: '2026-03-30', label: 'Correctif', entries: [
+                '5 onglets tous visibles dans le panneau Réglages (onglet Aide)',
+            ]},
             { version: '3.0', date: '2026-03-27', label: 'Majeur', entries: [
-                'Panneau Réglages réorganisé en 5 onglets',
-                'Upload de photo de profil',
-                'Aide intégrée dans le panneau Réglages',
+                'Panneau Réglages réorganisé en 5 onglets : Profil, Apparence, Général, Synchro, Aide',
+                'Avatar comme unique point d\'entrée des réglages',
+                'Upload de photo de profil avec fallback sur les initiales',
+                'Fonctionnalités Aide intégrées dans l\'onglet dédié',
             ]},
             { version: '2.9', date: '2026-03-27', label: 'Amélioration', entries: [
                 'Tri par colonne dans les tableaux Dashboard',
