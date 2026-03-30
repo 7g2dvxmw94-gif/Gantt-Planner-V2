@@ -1,6 +1,6 @@
 # Manuel Utilisateur — Gantt Planner Pro
 
-**Version** : 2.0
+**Version** : 4.5
 **Date** : Mars 2026
 
 ---
@@ -14,6 +14,8 @@
 
 ### 2. Interface générale
    - 2.1. En-tête et barre de navigation
+      - 2.1.1. Logo et nom du projet
+      - 2.1.2. Accès aux Réglages via l'avatar utilisateur
    - 2.2. Barre d'outils principale
    - 2.3. Barre de filtres
    - 2.4. Barre de statistiques (pied de page)
@@ -23,6 +25,7 @@
 ### 3. Gestion des projets
    - 3.1. Créer un nouveau projet
    - 3.2. Sélectionner et basculer entre les projets
+      - 3.2.1. Barre de recherche dans le sélecteur de projets
    - 3.3. Renommer un projet
    - 3.4. Dupliquer un projet
    - 3.5. Supprimer un projet
@@ -50,8 +53,9 @@
       - 5.1.3. Lignes de dépendances
       - 5.1.4. Ligne du jour (marqueur "Aujourd'hui")
       - 5.1.5. Indicateurs de week-end
-   - 5.2. Vue Tableau (Kanban / liste)
-      - 5.2.1. Tri des colonnes
+      - 5.1.6. Bouton "Nouvelle tâche" sur Gantt vide
+   - 5.2. Vue Tableau (liste triable)
+      - 5.2.1. Tri des colonnes (Nom, Type, Statut, Priorité, Dates, Durée, Progression)
       - 5.2.2. Sélection et actions par lot
    - 5.3. Vue Ressources
       - 5.3.1. Cartes des ressources
@@ -70,6 +74,8 @@
    - 6.4. Pinch-to-zoom (zoom gestuel)
    - 6.5. Défilement automatique (auto-scroll)
    - 6.6. Infobulle au survol
+      - 6.6.1. Informations affichées pour les tâches et phases
+      - 6.6.2. Statut des jalons dans l'infobulle (Franchi / Non franchi)
 
 ### 7. Zoom et navigation temporelle
    - 7.1. Niveaux de zoom : Jour, Semaine, Mois, Trimestre
@@ -114,15 +120,31 @@
    - 12.2. Sauvegarde manuelle
    - 12.3. Restauration depuis Google Drive
 
-### 13. Personnalisation de l'apparence (Branding)
-   - 13.1. Ouvrir le panneau de personnalisation
-   - 13.2. Identité (nom, logo, favicon)
-   - 13.3. Couleurs (principale, survol, claire, foncée, accent)
-   - 13.4. Typographie (choix de la police)
-   - 13.5. Utilisateur (nom, initiales)
-   - 13.6. Pied de page personnalisé
-   - 13.7. Importer / Exporter la configuration de branding
-   - 13.8. Réinitialiser les paramètres par défaut
+### 13. Réglages
+   - 13.1. Ouvrir le panneau de Réglages (via l'avatar)
+   - 13.2. Onglet Profil
+      - 13.2.1. Nom d'utilisateur et initiales
+      - 13.2.2. Photo de profil (avatar)
+      - 13.2.3. Logo de l'organisation (import de fichier)
+      - 13.2.4. Favicon personnalisé (import de fichier)
+   - 13.3. Onglet Apparence
+      - 13.3.1. Couleurs (principale, survol, claire, foncée, accent)
+      - 13.3.2. Typographie (choix de la police)
+      - 13.3.3. Thème sombre / clair
+   - 13.4. Onglet Général
+      - 13.4.1. Nom de l'application
+      - 13.4.2. Pied de page personnalisé
+      - 13.4.3. Devise et format de nombres
+   - 13.5. Onglet Synchro
+      - 13.5.1. Connexion Google Drive
+      - 13.5.2. Importer / Exporter la configuration
+      - 13.5.3. Réinitialiser les paramètres par défaut
+   - 13.6. Onglet Aide
+      - 13.6.1. Lancer le guide de démarrage
+      - 13.6.2. Afficher les raccourcis clavier
+      - 13.6.3. Contacter le support (ganttprohelp2025@gmail.com)
+      - 13.6.4. Nouveautés et journal des modifications
+   - 13.7. Boutons Enregistrer et Annuler (pied du panneau)
 
 ### 14. Thème sombre / clair
    - 14.1. Basculer entre les modes (Ctrl+D)
@@ -145,6 +167,8 @@
    - 18.1. Stockage local (localStorage)
    - 18.2. Persistance automatique
    - 18.3. Sauvegarde et restauration
+
+---
 
 ### Annexe A — Raccourcis clavier (référence rapide)
 
@@ -192,3 +216,26 @@
 | CSV       | `.csv`    | Excel, Google Sheets, MS Project       |
 | XML       | `.xml`    | Microsoft Project                      |
 | PDF       | —         | Impression / partage (via navigateur)  |
+
+### Annexe E — Journal des modifications
+
+| Version | Date       | Modifications principales                                                   |
+|---------|------------|-----------------------------------------------------------------------------|
+| 4.5     | Mars 2026  | Mise à jour du manuel                                                       |
+| 4.4     | Mars 2026  | Curseur corrigé sur initiales de ressource ; journal des modifications      |
+| 4.3     | Mars 2026  | Adresse de contact mise à jour (ganttprohelp2025@gmail.com)                 |
+| 4.2     | Mars 2026  | Tri de la colonne Type dans la vue Tableau                                  |
+| 4.1     | Mars 2026  | Statut Franchi/Non franchi dans l'infobulle des jalons                      |
+| 4.0     | Mars 2026  | Barre de recherche dans le sélecteur de projets                             |
+| 3.9     | Mars 2026  | Correction affichage du logo dans l'en-tête                                 |
+| 3.8     | Mars 2026  | Flèche de fermeture du panneau Réglages corrigée                            |
+| 3.7     | Mars 2026  | Import de fichier pour Logo et Favicon ; infobulle Favicon                  |
+| 3.6     | Mars 2026  | Boutons Enregistrer / Annuler dans le panneau Réglages                      |
+| 3.5     | Mars 2026  | Correction décalage du Gantt vide (centrage sur la date du jour)            |
+| 3.4     | Mars 2026  | Activation du bouton "Nouvelle tâche" dans le Gantt vide                    |
+| 3.3     | Mars 2026  | Champ Initiales ajouté dans l'onglet Profil des Réglages                    |
+| 3.2     | Mars 2026  | Intégration du panneau Réglages 5 onglets dans la branche principale        |
+| 3.1     | Mars 2026  | Correction affichage du 5e onglet (Aide) dans le panneau Réglages           |
+| 3.0     | Mars 2026  | Refonte du panneau Réglages : 5 onglets, avatar comme point d'entrée        |
+| 2.1     | Mars 2026  | Corrections diverses et améliorations de performance                        |
+| 2.0     | Mars 2026  | Version initiale du manuel utilisateur                                      |
