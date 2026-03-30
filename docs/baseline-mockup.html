@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maquette — Baseline | Gantt Planner Pro</title>
+<style>
+  :root {
+    --primary: #6366F1;
+    --primary-hover: #4F46E5;
+    --bg: #F8F9FC;
+    --surface: #FFFFFF;
+    --border: #E2E8F0;
+    --text: #1E293B;
+    --text-muted: #64748B;
+    --green: #10B981;
+    --red: #EF4444;
+    --amber: #F59E0B;
+    --baseline-color: #94A3B8;
+    --baseline-bg: rgba(148,163,184,0.25);
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* ─── Layout ─────────────────────────────── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: var(--text-muted); margin-bottom: 32px; font-size: 13px; }
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  /* ─── Toolbar mock ───────────────────────── */
+  .toolbar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
+  .toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all .15s; white-space: nowrap; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--bg); color: var(--text); }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-baseline { background: #EEF2FF; color: var(--primary); border-color: #C7D2FE; }
+  .btn-baseline:hover { background: #E0E7FF; }
+  .btn-baseline.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: #CBD5E1; border-radius: 20px; cursor: pointer; transition: .2s; }
+  .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .toggle input:checked + .toggle-slider { background: var(--primary); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  /* ─── Baseline popover ───────────────────── */
+  .popover-container { position: relative; display: inline-block; }
+  .popover { position: absolute; top: calc(100% + 8px); left: 0; z-index: 100; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 0; overflow: hidden; }
+  .popover-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .popover-title { font-weight: 600; font-size: 14px; }
+  .baseline-list { padding: 8px; }
+  .baseline-item { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 8px; cursor: pointer; transition: background .12s; }
+  .baseline-item:hover { background: var(--bg); }
+  .baseline-item.active-bl { background: #EEF2FF; }
+  .bl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--baseline-color); flex-shrink: 0; }
+  .bl-dot.bl-1 { background: #6366F1; }
+  .bl-dot.bl-2 { background: #10B981; }
+  .bl-dot.bl-3 { background: #F59E0B; }
+  .bl-info { flex: 1; }
+  .bl-name { font-weight: 500; font-size: 13px; }
+  .bl-date { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .bl-actions { display: flex; gap: 4px; }
+  .icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: background .12s; }
+  .icon-btn:hover { background: var(--border); color: var(--text); }
+  .popover-footer { padding: 10px 12px; border-top: 1px solid var(--border); }
+  .new-bl-row { display: flex; gap: 8px; }
+  .input-sm { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; color: var(--text); outline: none; }
+  .input-sm:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+
+  /* ─── Gantt mock ─────────────────────────── */
+  .gantt-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .gantt-header { display: grid; grid-template-columns: 220px 1fr; border-bottom: 1px solid var(--border); }
+  .gantt-header-label { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); background: #F8FAFC; border-right: 1px solid var(--border); }
+  .gantt-months { display: flex; background: #F8FAFC; }
+  .gantt-month { flex: 1; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: center; border-right: 1px solid var(--border); }
+  .gantt-row { display: grid; grid-template-columns: 220px 1fr; border-bottom: 1px solid var(--border); align-items: stretch; }
+  .gantt-row:last-child { border-bottom: none; }
+  .gantt-row-label { padding: 0 16px; display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--border); background: #FAFBFC; }
+  .gantt-row-label:hover { background: #F1F5F9; }
+  .row-icon { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .row-name { font-size: 13px; }
+  .gantt-timeline { position: relative; height: 56px; }
+  .today-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #EF4444; opacity: .5; left: 38%; }
+
+  /* Task bars */
+  .bar-wrap { position: absolute; top: 10px; height: 36px; }
+  .bar-actual { position: absolute; top: 0; height: 22px; border-radius: 5px; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; }
+  .bar-baseline { position: absolute; bottom: 0; height: 8px; border-radius: 3px; background: var(--baseline-bg); border: 1px solid var(--baseline-color); }
+  .variance-tag { position: absolute; top: 2px; right: -36px; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
+  .variance-late { background: #FEE2E2; color: #DC2626; }
+  .variance-early { background: #D1FAE5; color: #059669; }
+  .variance-ok { background: #F1F5F9; color: var(--text-muted); }
+
+  /* milestone */
+  .milestone-wrap { position: absolute; top: 10px; }
+  .diamond { width: 20px; height: 20px; background: #6366F1; transform: rotate(45deg); border-radius: 3px; }
+  .diamond-bl { width: 14px; height: 14px; background: transparent; border: 2px solid var(--baseline-color); transform: rotate(45deg); border-radius: 2px; position: absolute; top: 21px; left: 3px; }
+
+  /* ─── Tableau view ───────────────────────── */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #F8FAFC; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  thead th.bl-col { color: #6366F1; background: #F0F1FF; }
+  tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #F8F9FC; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-late { background: #FEE2E2; color: #DC2626; }
+  .badge-early { background: #D1FAE5; color: #059669; }
+  .badge-ok { background: #F1F5F9; color: var(--text-muted); }
+
+  /* ─── Tooltip ────────────────────────────── */
+  .tooltip-demo { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .tooltip-card { background: #1E293B; color: #E2E8F0; border-radius: 10px; padding: 14px 16px; min-width: 240px; font-size: 12px; line-height: 1.6; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+  .tooltip-task-name { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 10px; }
+  .tt-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+  .tt-label { color: #94A3B8; width: 90px; flex-shrink: 0; }
+  .tt-value { color: #F1F5F9; }
+  .tt-sep { height: 1px; background: rgba(255,255,255,.08); margin: 10px 0; }
+  .tt-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #6366F1; margin-bottom: 8px; }
+  .tt-variance { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .tt-var-late { background: rgba(239,68,68,.15); color: #FCA5A5; }
+  .tt-var-ok { background: rgba(16,185,129,.15); color: #6EE7B7; }
+
+  /* ─── Legend ─────────────────────────────── */
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); }
+  .leg-bar { height: 12px; width: 36px; border-radius: 3px; }
+  .leg-bl { height: 6px; width: 36px; border-radius: 3px; background: var(--baseline-bg); border: 1px solid var(--baseline-color); }
+
+  /* ─── Notes ──────────────────────────────── */
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .note-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .note-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+  .note-card ul { padding-left: 16px; font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .chip-blue { background: #EEF2FF; color: var(--primary); }
+  .chip-green { background: #D1FAE5; color: #059669; }
+  .chip-amber { background: #FEF3C7; color: #D97706; }
+
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>📐 Maquette — Fonctionnalité Baseline</h1>
+  <p class="subtitle">Gantt Planner Pro · Branche <code>claude/baseline-feature</code></p>
+
+  <!-- ══════════════════════════════════════════════════
+       1. BARRE D'OUTILS — nouveau bouton Baseline
+  ══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">1 · Barre d'outils — bouton Baseline</div>
+    <div class="toolbar">
+      <button class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Nouvelle tâche
+      </button>
+      <div class="toolbar-sep"></div>
+      <button class="btn btn-ghost">Jour</button>
+      <button class="btn btn-ghost">Semaine</button>
+      <button class="btn btn-primary">Mois</button>
+      <button class="btn btn-ghost">Trimestre</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- NOUVEAU : Bouton Baseline avec popover -->
+      <div class="popover-container">
+        <button class="btn btn-baseline active" onclick="togglePopover()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Baseline
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        <div class="popover" id="popover">
+          <div class="popover-header">
+            <span class="popover-title">Baselines du projet</span>
+            <span style="font-size:11px;color:#6366F1;font-weight:600;">1 active</span>
+          </div>
+          <div class="baseline-list">
+            <div class="baseline-item active-bl">
+              <div class="bl-dot bl-1"></div>
+              <div class="bl-info">
+                <div class="bl-name">Baseline initiale</div>
+                <div class="bl-date">Créée le 3 mars 2026 · Active</div>
+              </div>
+              <div class="bl-actions">
+                <button class="icon-btn" title="Renommer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="icon-btn" title="Supprimer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="baseline-item">
+              <div class="bl-dot bl-2"></div>
+              <div class="bl-info">
+                <div class="bl-name">Après révision client</div>
+                <div class="bl-date">Créée le 18 mars 2026</div>
+              </div>
+              <div class="bl-actions">
+                <button class="icon-btn" title="Activer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+                <button class="icon-btn" title="Renommer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="icon-btn" title="Supprimer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="popover-footer">
+            <div class="new-bl-row">
+              <input class="input-sm" type="text" placeholder="Nom de la nouvelle baseline…" value="Après signature MOE">
+              <button class="btn btn-primary" style="padding:7px 12px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Créer
+              </button>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                Afficher sur le Gantt
+              </div>
+              <span style="font-size:11px;color:#94A3B8;">2 / 5 baselines</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar-sep"></div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+        Chemin critique
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       2. DIAGRAMME DE GANTT avec barres baseline
+  ══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">2 · Diagramme de Gantt — barres de référence (baseline)</div>
+    <div style="margin-bottom:12px;">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="leg-bar" style="background:#6366F1;"></div>
+          Barre actuelle
+        </div>
+        <div class="legend-item">
+          <div class="leg-bl"></div>
+          Baseline (réf.)
+        </div>
+        <div class="legend-item">
+          <div class="chip chip-blue">+Nd</div>
+          Retard (vs baseline)
+        </div>
+        <div class="legend-item">
+          <div class="chip chip-green">-Nd</div>
+          Avance (vs baseline)
+        </div>
+      </div>
+    </div>
+
+    <div class="gantt-wrap">
+      <div class="gantt-header">
+        <div class="gantt-header-label">Tâche</div>
+        <div class="gantt-months">
+          <div class="gantt-month">Fév</div>
+          <div class="gantt-month">Mars</div>
+          <div class="gantt-month">Avril</div>
+          <div class="gantt-month">Mai</div>
+        </div>
+      </div>
+
+      <!-- Tâche 1 : à l'heure -->
+      <div class="gantt-row">
+        <div class="gantt-row-label" style="height:56px;">
+          <div class="row-icon" style="background:#6366F1;"></div>
+          <div class="row-name">Études de faisabilité</div>
+        </div>
+        <div class="gantt-timeline">
+          <div class="today-line"></div>
+          <div class="bar-wrap" style="left:2%;width:28%;">
+            <div class="bar-actual" style="background:#6366F1;width:100%;">Études de faisabilité</div>
+            <!-- baseline quasiment identique = pas d'écart -->
+            <div class="bar-baseline" style="width:98%;left:0%;"></div>
+            <span class="variance-tag variance-ok" style="right:-30px;">≈ 0j</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tâche 2 : retard -->
+      <div class="gantt-row">
+        <div class="gantt-row-label" style="height:56px;">
+          <div class="row-icon" style="background:#F59E0B;"></div>
+          <div class="row-name">Dépôt permis de construire</div>
+        </div>
+        <div class="gantt-timeline">
+          <div class="today-line"></div>
+          <!-- Barre actuelle décalée à droite de ~15% -->
+          <div class="bar-wrap" style="left:30%;width:25%;">
+            <div class="bar-actual" style="background:#F59E0B;width:100%;">Permis PC</div>
+            <!-- Baseline était plus à gauche et plus courte -->
+            <div class="bar-baseline" style="width:80%;left:-15%;"></div>
+            <span class="variance-tag variance-late">+12j</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tâche 3 : avance -->
+      <div class="gantt-row">
+        <div class="gantt-row-label" style="height:56px;">
+          <div class="row-icon" style="background:#10B981;"></div>
+          <div class="row-name">Consultation entreprises</div>
+        </div>
+        <div class="gantt-timeline">
+          <div class="today-line"></div>
+          <!-- Barre actuelle plus à gauche que baseline -->
+          <div class="bar-wrap" style="left:40%;width:22%;">
+            <div class="bar-actual" style="background:#10B981;width:100%;">Consultation</div>
+            <!-- Baseline était plus à droite -->
+            <div class="bar-baseline" style="width:100%;left:12%;"></div>
+            <span class="variance-tag variance-early">-7j</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jalon : en retard -->
+      <div class="gantt-row">
+        <div class="gantt-row-label" style="height:56px;">
+          <div class="row-icon" style="background:#8B5CF6;border-radius:50%;"></div>
+          <div class="row-name">✦ Jalon : Validation MOA</div>
+        </div>
+        <div class="gantt-timeline">
+          <div class="today-line"></div>
+          <!-- Jalon actuel -->
+          <div class="milestone-wrap" style="left:64%;">
+            <div class="diamond"></div>
+            <!-- Baseline diamond (référence) -->
+            <div class="diamond-bl"></div>
+            <span class="variance-tag variance-late" style="top:3px;right:-38px;">+12j</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       3. VUE TABLEAU — colonnes baseline
+  ══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">3 · Vue Tableau — colonnes de variance baseline</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tâche</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th class="bl-col">Début BL ↕</th>
+            <th class="bl-col">Fin BL ↕</th>
+            <th class="bl-col">Écart ↕</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Études de faisabilité</td>
+            <td>01/02/2026</td>
+            <td>28/02/2026</td>
+            <td style="color:#6366F1;">01/02/2026</td>
+            <td style="color:#6366F1;">27/02/2026</td>
+            <td><span class="badge badge-ok">+1j</span></td>
+            <td><span class="badge" style="background:#D1FAE5;color:#059669;">Terminé</span></td>
+          </tr>
+          <tr>
+            <td>Dépôt permis de construire</td>
+            <td>14/03/2026</td>
+            <td>12/05/2026</td>
+            <td style="color:#6366F1;">03/03/2026</td>
+            <td style="color:#6366F1;">30/04/2026</td>
+            <td><span class="badge badge-late">+12j</span></td>
+            <td><span class="badge" style="background:#FEF3C7;color:#D97706;">En cours</span></td>
+          </tr>
+          <tr>
+            <td>Consultation entreprises</td>
+            <td>22/04/2026</td>
+            <td>10/05/2026</td>
+            <td style="color:#6366F1;">29/04/2026</td>
+            <td style="color:#6366F1;">17/05/2026</td>
+            <td><span class="badge badge-early">-7j</span></td>
+            <td><span class="badge" style="background:#EEF2FF;color:#6366F1;">Planifié</span></td>
+          </tr>
+          <tr>
+            <td>✦ Validation MOA</td>
+            <td>22/05/2026</td>
+            <td>22/05/2026</td>
+            <td style="color:#6366F1;">10/05/2026</td>
+            <td style="color:#6366F1;">10/05/2026</td>
+            <td><span class="badge badge-late">+12j</span></td>
+            <td><span class="badge" style="background:#F1F5F9;color:#64748B;">Non franchi</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       4. INFOBULLE enrichie
+  ══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">4 · Infobulle au survol — section Baseline</div>
+    <div class="tooltip-demo">
+
+      <div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tâche en retard</p>
+        <div class="tooltip-card">
+          <div class="tooltip-task-name">Dépôt permis de construire</div>
+          <div class="tt-row"><span class="tt-label">Début</span><span class="tt-value">14 mars 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Fin</span><span class="tt-value">12 mai 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Durée</span><span class="tt-value">59 jours</span></div>
+          <div class="tt-row"><span class="tt-label">Avancement</span><span class="tt-value">30 %</span></div>
+          <div class="tt-sep"></div>
+          <div class="tt-section-title">⬛ Baseline initiale</div>
+          <div class="tt-row"><span class="tt-label">Début BL</span><span class="tt-value" style="color:#94A3B8;">3 mars 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Fin BL</span><span class="tt-value" style="color:#94A3B8;">30 avril 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Écart</span>
+            <span class="tt-variance tt-var-late">▲ +12 jours de retard</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tâche en avance</p>
+        <div class="tooltip-card">
+          <div class="tooltip-task-name">Consultation entreprises</div>
+          <div class="tt-row"><span class="tt-label">Début</span><span class="tt-value">22 avril 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Fin</span><span class="tt-value">10 mai 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Durée</span><span class="tt-value">18 jours</span></div>
+          <div class="tt-row"><span class="tt-label">Avancement</span><span class="tt-value">0 %</span></div>
+          <div class="tt-sep"></div>
+          <div class="tt-section-title">⬛ Baseline initiale</div>
+          <div class="tt-row"><span class="tt-label">Début BL</span><span class="tt-value" style="color:#94A3B8;">29 avril 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Fin BL</span><span class="tt-value" style="color:#94A3B8;">17 mai 2026</span></div>
+          <div class="tt-row"><span class="tt-label">Écart</span>
+            <span class="tt-variance tt-var-ok">▼ −7 jours d'avance</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       5. NOTES TECHNIQUES
+  ══════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">5 · Notes techniques d'implémentation</div>
+    <div class="notes">
+      <div class="note-card">
+        <h3><span class="chip chip-blue">Store</span> Structure de données</h3>
+        <ul>
+          <li>Chaque projet reçoit un tableau <code>baselines[]</code></li>
+          <li>Chaque baseline : <code>{ id, name, createdAt, tasks: [{id, start, end, duration, progress}] }</code></li>
+          <li><code>activeBaselineId</code> par projet</li>
+          <li>Sauvegarde dans localStorage (déjà existant)</li>
+        </ul>
+      </div>
+      <div class="note-card">
+        <h3><span class="chip chip-green">Renderer</span> Affichage</h3>
+        <ul>
+          <li>Barre baseline rendue sous la barre actuelle</li>
+          <li>Hauteur de ligne augmentée : 56px → 64px</li>
+          <li>Tag variance positionné en absolut</li>
+          <li>Toggle On/Off sans re-render complet</li>
+        </ul>
+      </div>
+      <div class="note-card">
+        <h3><span class="chip chip-amber">UX</span> Interactions</h3>
+        <ul>
+          <li>Max 5 baselines par projet</li>
+          <li>Création instantanée (snapshot du store)</li>
+          <li>Activation d'une baseline = re-render Gantt</li>
+          <li>Colonnes BL dans Tableau : affichage conditionnel</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePopover() {
+  const p = document.getElementById('popover');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+// Show by default for demo
+document.getElementById('popover').style.display = 'block';
+</script>
+</body>
+</html>
