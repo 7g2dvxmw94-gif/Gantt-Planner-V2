@@ -2359,6 +2359,12 @@ thead .table-bl-col {
     background: var(--color-primary-light);
 }
 
+thead .table-bl-col--header {
+    cursor: help;
+    text-decoration: underline dotted var(--color-primary);
+    text-underline-offset: 3px;
+}
+
 .bl-variance-late {
     display: inline-flex;
     align-items: center;
