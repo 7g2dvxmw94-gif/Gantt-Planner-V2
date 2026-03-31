@@ -363,11 +363,19 @@ class App {
         });
         headerRow.appendChild(thType);
 
+        // Columns: BL columns appear whenever a baseline is active (regardless of showBaseline toggle)
+        const activeBaseline = store.getActiveBaseline();
+
         const columns = [
             { key: 'name', label: 'Tâche' },
             { key: 'phase', label: 'Phase' },
             { key: 'startDate', label: 'Début' },
             { key: 'endDate', label: 'Fin' },
+            ...(activeBaseline ? [
+                { key: '_blStart', label: 'Début BL', baseline: true, tooltip: `Date de début planifiée dans la baseline "${activeBaseline.name}"` },
+                { key: '_blEnd',   label: 'Fin BL',   baseline: true, tooltip: `Date de fin planifiée dans la baseline "${activeBaseline.name}"` },
+                { key: '_blVariance', label: 'Écart', baseline: true, tooltip: `Écart entre la date de fin actuelle et la baseline "${activeBaseline.name}" (+Nj = retard, −Nj = avance)` },
+            ] : []),
             { key: 'assignees', label: 'Assigné(s)' },
             { key: 'status', label: 'Statut' },
             { key: 'priority', label: 'Priorité' },
@@ -377,19 +385,24 @@ class App {
         columns.forEach(col => {
             const th = document.createElement('th');
             th.textContent = col.label;
-            th.className = 'sortable';
-            if (this._tableSortKey === col.key) {
-                th.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-            }
-            th.addEventListener('click', () => {
+            if (col.baseline) {
+                th.className = 'table-bl-col table-bl-col--header';
+                if (col.tooltip) th.title = col.tooltip;
+            } else {
+                th.className = 'sortable';
                 if (this._tableSortKey === col.key) {
-                    this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
-                } else {
-                    this._tableSortKey = col.key;
-                    this._tableSortDir = 'asc';
+                    th.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
                 }
-                this._renderBoardView();
-            });
+                th.addEventListener('click', () => {
+                    if (this._tableSortKey === col.key) {
+                        this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this._tableSortKey = col.key;
+                        this._tableSortDir = 'asc';
+                    }
+                    this._renderBoardView();
+                });
+            }
             headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
@@ -499,6 +512,42 @@ class App {
             const tdEnd = document.createElement('td');
             tdEnd.textContent = formatDateDisplay(task.endDate);
             row.appendChild(tdEnd);
+
+            // Baseline columns
+            if (activeBaseline) {
+                const blTask = activeBaseline.tasks.find(t => t.id === task.id);
+
+                const tdBlStart = document.createElement('td');
+                tdBlStart.className = 'table-bl-col';
+                tdBlStart.textContent = blTask ? formatDateDisplay(blTask.startDate) : '—';
+                row.appendChild(tdBlStart);
+
+                const tdBlEnd = document.createElement('td');
+                tdBlEnd.className = 'table-bl-col';
+                tdBlEnd.textContent = blTask ? formatDateDisplay(blTask.endDate) : '—';
+                row.appendChild(tdBlEnd);
+
+                const tdVariance = document.createElement('td');
+                tdVariance.className = 'table-bl-col';
+                if (blTask) {
+                    const variance = Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+                    const badge = document.createElement('span');
+                    if (variance > 0) {
+                        badge.className = 'bl-variance-late';
+                        badge.textContent = `+${variance}j`;
+                    } else if (variance < 0) {
+                        badge.className = 'bl-variance-early';
+                        badge.textContent = `${variance}j`;
+                    } else {
+                        badge.className = 'bl-variance-ok';
+                        badge.textContent = '±0j';
+                    }
+                    tdVariance.appendChild(badge);
+                } else {
+                    tdVariance.textContent = '—';
+                }
+                row.appendChild(tdVariance);
+            }
 
             // Assignees
             const tdAssignees = document.createElement('td');
@@ -1158,6 +1207,275 @@ class App {
         document.addEventListener('settings-saved', () => this._showToast('Réglages enregistrés', 'success'));
         document.addEventListener('gantt:addTask', () => this._showAddTaskDialog());
 
+        // Baseline
+        this._bindBaseline();
+    }
+
+    /* ---- Baseline ---- */
+
+    _bindBaseline() {
+        const btn = document.getElementById('baselineBtn');
+        const popover = document.getElementById('baselinePopover');
+        if (!btn || !popover) return;
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = popover.style.display !== 'none';
+            if (isOpen) {
+                this._closeBaselinePopover();
+            } else {
+                this._openBaselinePopover();
+            }
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('baselineWrap')?.contains(e.target)) {
+                this._closeBaselinePopover();
+            }
+        });
+
+        // Re-render popover when project changes
+        store.on('project:change', () => this._renderBaselinePopover());
+        store.on('baseline:create', () => { this._renderBaselinePopover(); ganttRenderer.render(); this._renderBoardView(); });
+        store.on('baseline:delete', () => { this._renderBaselinePopover(); ganttRenderer.render(); this._renderBoardView(); });
+        store.on('baseline:update', () => this._renderBaselinePopover());
+        store.on('baseline:activate', () => { this._renderBaselinePopover(); ganttRenderer.render(); this._renderBoardView(); });
+        store.on('baseline:toggle', () => { this._renderBaselinePopover(); ganttRenderer.render(); });
+
+        this._updateBaselineBtnState();
+    }
+
+    _openBaselinePopover() {
+        const popover = document.getElementById('baselinePopover');
+        const btn = document.getElementById('baselineBtn');
+        if (!popover || !btn) return;
+        this._renderBaselinePopover();
+        popover.style.display = 'block';
+        // Position below the button (fixed, like the export dropdown)
+        const rect = btn.getBoundingClientRect();
+        popover.style.top = (rect.bottom + 4) + 'px';
+        popover.style.right = (window.innerWidth - rect.right) + 'px';
+        btn.setAttribute('aria-expanded', 'true');
+        btn.classList.add('active');
+    }
+
+    _closeBaselinePopover() {
+        const popover = document.getElementById('baselinePopover');
+        const btn = document.getElementById('baselineBtn');
+        if (!popover) return;
+        popover.style.display = 'none';
+        if (btn) {
+            btn.setAttribute('aria-expanded', 'false');
+            btn.classList.remove('active');
+        }
+        // Clear rename mode
+        this._baselineRenaming = null;
+    }
+
+    _updateBaselineBtnState() {
+        const btn = document.getElementById('baselineBtn');
+        if (!btn) return;
+        const active = store.getActiveBaseline();
+        const show = store.getSettings().showBaseline;
+        btn.classList.toggle('baseline-has-active', !!active && show);
+    }
+
+    _renderBaselinePopover() {
+        const popover = document.getElementById('baselinePopover');
+        if (!popover) return;
+
+        const baselines = store.getBaselines();
+        const active = store.getActiveBaseline();
+        const settings = store.getSettings();
+        const MAX = 5;
+
+        popover.innerHTML = '';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'bl-pop-header';
+        header.innerHTML = `<span class="bl-pop-title">Baselines</span>` +
+            `<span class="bl-pop-count">${baselines.length}/${MAX}</span>`;
+        popover.appendChild(header);
+
+        // List
+        const list = document.createElement('div');
+        list.className = 'bl-pop-list';
+
+        if (baselines.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'bl-pop-empty';
+            empty.textContent = 'Aucune baseline. Créez-en une ci-dessous.';
+            list.appendChild(empty);
+        } else {
+            baselines.forEach(bl => {
+                const isActive = active && active.id === bl.id;
+                const item = document.createElement('div');
+                item.className = 'bl-pop-item' + (isActive ? ' bl-pop-item--active' : '');
+                item.dataset.blId = bl.id;
+                // Clicking anywhere on the row activates/deactivates this baseline
+                item.addEventListener('click', (e) => {
+                    store.setActiveBaseline(isActive ? null : bl.id);
+                    this._updateBaselineBtnState();
+                });
+
+                // Radio-style activate button
+                const radio = document.createElement('button');
+                radio.className = 'bl-radio' + (isActive ? ' bl-radio--on' : '');
+                radio.title = isActive ? 'Baseline active' : 'Activer';
+                radio.tabIndex = -1; // item row handles activation
+                radio.innerHTML = isActive
+                    ? `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>`
+                    : `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`;
+                item.appendChild(radio);
+
+                // Name (or rename input)
+                if (this._baselineRenaming === bl.id) {
+                    const input = document.createElement('input');
+                    input.className = 'bl-rename-input';
+                    input.value = bl.name;
+                    input.addEventListener('click', e => e.stopPropagation());
+
+                    const confirmRename = () => {
+                        if (input.value.trim()) store.renameBaseline(bl.id, input.value.trim());
+                        this._baselineRenaming = null;
+                        this._renderBaselinePopover();
+                    };
+                    const cancelRename = () => {
+                        this._baselineRenaming = null;
+                        this._renderBaselinePopover();
+                    };
+
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') confirmRename();
+                        else if (e.key === 'Escape') cancelRename();
+                    });
+                    item.appendChild(input);
+                    requestAnimationFrame(() => { input.focus(); input.select(); });
+
+                    // OK / Cancel buttons replace the normal actions
+                    const renameActions = document.createElement('div');
+                    renameActions.className = 'bl-actions';
+
+                    const okBtn = document.createElement('button');
+                    okBtn.className = 'bl-icon-btn bl-icon-btn--ok';
+                    okBtn.title = 'Valider';
+                    okBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                    okBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmRename(); });
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'bl-icon-btn';
+                    cancelBtn.title = 'Annuler';
+                    cancelBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+                    cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelRename(); });
+
+                    renameActions.appendChild(okBtn);
+                    renameActions.appendChild(cancelBtn);
+                    item.appendChild(renameActions);
+                } else {
+                    const nameWrap = document.createElement('div');
+                    nameWrap.className = 'bl-name-wrap';
+                    const name = document.createElement('span');
+                    name.className = 'bl-name';
+                    name.textContent = bl.name;
+                    const date = document.createElement('span');
+                    date.className = 'bl-date';
+                    date.textContent = new Date(bl.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                    nameWrap.appendChild(name);
+                    nameWrap.appendChild(date);
+                    item.appendChild(nameWrap);
+                }
+
+                // Actions
+                const actions = document.createElement('div');
+                actions.className = 'bl-actions';
+
+                const renameBtn = document.createElement('button');
+                renameBtn.className = 'bl-icon-btn';
+                renameBtn.title = 'Renommer';
+                renameBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._baselineRenaming = bl.id;
+                    this._renderBaselinePopover();
+                });
+                actions.appendChild(renameBtn);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'bl-icon-btn bl-icon-btn--danger';
+                delBtn.title = 'Supprimer';
+                delBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    store.deleteBaseline(bl.id);
+                    this._updateBaselineBtnState();
+                });
+                actions.appendChild(delBtn);
+
+                item.appendChild(actions);
+                list.appendChild(item);
+            });
+        }
+        popover.appendChild(list);
+
+        // Footer: create new + toggle
+        const footer = document.createElement('div');
+        footer.className = 'bl-pop-footer';
+
+        if (baselines.length < MAX) {
+            const createRow = document.createElement('div');
+            createRow.className = 'bl-create-row';
+            const input = document.createElement('input');
+            input.className = 'bl-create-input';
+            input.type = 'text';
+            input.placeholder = 'Nom de la baseline…';
+            input.addEventListener('click', e => e.stopPropagation());
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') createBtn.click();
+            });
+            const createBtn = document.createElement('button');
+            createBtn.className = 'bl-create-btn';
+            createBtn.title = 'Créer une baseline';
+            createBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Créer`;
+            createBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = input.value.trim() || null;
+                const bl = store.createBaseline(name);
+                if (bl) {
+                    input.value = '';
+                    this._updateBaselineBtnState();
+                    this._showToast(`Baseline "${bl.name}" créée`, 'success');
+                } else {
+                    this._showToast('Maximum 5 baselines par projet', 'error');
+                }
+            });
+            createRow.appendChild(input);
+            createRow.appendChild(createBtn);
+            footer.appendChild(createRow);
+        }
+
+        // Toggle show/hide
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'bl-toggle-row';
+        const toggleLabel = document.createElement('label');
+        toggleLabel.className = 'bl-toggle-label';
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.className = 'bl-toggle-cb';
+        toggleInput.checked = settings.showBaseline;
+        toggleInput.addEventListener('change', (e) => {
+            e.stopPropagation();
+            store.toggleShowBaseline();
+            this._updateBaselineBtnState();
+        });
+        toggleLabel.appendChild(toggleInput);
+        toggleLabel.appendChild(document.createTextNode(' Afficher sur le Gantt'));
+        toggleRow.appendChild(toggleLabel);
+        footer.appendChild(toggleRow);
+
+        popover.appendChild(footer);
+        this._updateBaselineBtnState();
     }
 
     _showAddTaskDialog() {

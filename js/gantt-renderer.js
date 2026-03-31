@@ -101,6 +101,9 @@ class GanttRenderer {
         const tasks = store.getTasks();
         const tree = store.getTaskTree();
         this._timelineRange = store.getTimelineRange(this._zoomLevel);
+        // Cache baseline state for this render pass
+        const settings = store.getSettings();
+        this._activeBaseline = (settings.showBaseline) ? store.getActiveBaseline() : null;
 
         // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
@@ -575,6 +578,12 @@ class GanttRenderer {
         bar.appendChild(createElement('div', { className: 'gantt-bar-handle gantt-bar-handle-right' }));
 
         container.appendChild(bar);
+
+        // Baseline ghost bar
+        if (this._activeBaseline) {
+            const blTask = this._activeBaseline.tasks.find(t => t.id === task.id);
+            if (blTask) this._renderBaselineBar(container, task, blTask);
+        }
     }
 
     /* ---- Phase Bar ---- */
@@ -596,6 +605,12 @@ class GanttRenderer {
         });
 
         container.appendChild(bar);
+
+        // Baseline ghost bar
+        if (this._activeBaseline) {
+            const blTask = this._activeBaseline.tasks.find(t => t.id === task.id);
+            if (blTask) this._renderBaselineBar(container, task, blTask);
+        }
     }
 
     /* ---- Milestone ---- */
@@ -614,6 +629,12 @@ class GanttRenderer {
         });
 
         container.appendChild(milestone);
+
+        // Baseline ghost milestone
+        if (this._activeBaseline) {
+            const blTask = this._activeBaseline.tasks.find(t => t.id === task.id);
+            if (blTask) this._renderBaselineMilestone(container, task, blTask);
+        }
     }
 
     /* ---- Permit Bar ---- */
@@ -686,6 +707,55 @@ class GanttRenderer {
         }
 
         container.appendChild(bar);
+    }
+
+    /* ---- Baseline Rendering ---- */
+
+    _renderBaselineBar(container, task, blTask) {
+        const left = this._dateToPosition(new Date(blTask.startDate));
+        const right = this._dateToPosition(addDays(new Date(blTask.endDate), 1));
+        if (left === null || right === null) return;
+
+        const width = Math.max(right - left, 10);
+        const bar = createElement('div', {
+            className: 'gantt-baseline-bar',
+            style: { left: left + 'px', width: width + 'px' },
+            'aria-hidden': 'true',
+        });
+        container.appendChild(bar);
+
+        // Variance tag
+        const variance = Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+        if (variance !== 0) {
+            const tag = createElement('div', {
+                className: 'gantt-variance-tag ' + (variance > 0 ? 'gantt-variance-late' : 'gantt-variance-early'),
+                style: { left: (left + width + 4) + 'px' },
+                'aria-hidden': 'true',
+            }, (variance > 0 ? '+' : '') + variance + 'j');
+            container.appendChild(tag);
+        }
+    }
+
+    _renderBaselineMilestone(container, task, blTask) {
+        const pos = this._dateToPosition(new Date(blTask.startDate));
+        if (pos === null) return;
+
+        const diamond = createElement('div', {
+            className: 'gantt-baseline-milestone',
+            style: { left: (pos - 7) + 'px' },
+            'aria-hidden': 'true',
+        });
+        container.appendChild(diamond);
+
+        const variance = Math.round((new Date(task.startDate) - new Date(blTask.startDate)) / 86400000);
+        if (variance !== 0) {
+            const tag = createElement('div', {
+                className: 'gantt-variance-tag ' + (variance > 0 ? 'gantt-variance-late' : 'gantt-variance-early'),
+                style: { left: (pos + 14) + 'px' },
+                'aria-hidden': 'true',
+            }, (variance > 0 ? '+' : '') + variance + 'j');
+            container.appendChild(tag);
+        }
     }
 
     /* ---- Date <-> Position ---- */

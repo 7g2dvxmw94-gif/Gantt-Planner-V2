@@ -400,6 +400,14 @@ class Store {
                             t.dependencies = t.dependencies.map(id => ({ taskId: id, type: 'FS' }));
                         }
                     });
+                    // Migrate: add baselines array if missing
+                    if (!parsed.baselines) parsed.baselines = [];
+                    // Migrate: add activeBaselineId to projects
+                    parsed.projects.forEach(p => {
+                        if (!('activeBaselineId' in p)) p.activeBaselineId = null;
+                    });
+                    // Migrate: add showBaseline to settings
+                    if (!('showBaseline' in parsed.settings)) parsed.settings.showBaseline = true;
                     return parsed;
                 }
             }
@@ -419,11 +427,13 @@ class Store {
             projects: [project],
             tasks: tasks,
             resources: resources,
+            baselines: [],
             settings: {
                 activeProjectId: project.id,
                 activeView: 'timeline',
                 zoomLevel: 'week', // 'day', 'week', 'month', 'quarter'
                 theme: null, // null = system preference
+                showBaseline: true,
             },
         };
     }
@@ -587,6 +597,82 @@ class Store {
         this._save();
         this._emit('project:add', newProject);
         return newProject;
+    }
+
+    /* ---- Baselines ---- */
+
+    getBaselines(projectId = null) {
+        const pid = projectId || this._data.settings.activeProjectId;
+        return this._data.baselines.filter(b => b.projectId === pid);
+    }
+
+    getActiveBaseline(projectId = null) {
+        const pid = projectId || this._data.settings.activeProjectId;
+        const proj = this._data.projects.find(p => p.id === pid);
+        if (!proj || !proj.activeBaselineId) return null;
+        return this._data.baselines.find(b => b.id === proj.activeBaselineId) || null;
+    }
+
+    createBaseline(name) {
+        const pid = this._data.settings.activeProjectId;
+        const existing = this._data.baselines.filter(b => b.projectId === pid);
+        if (existing.length >= 5) return null; // max 5 per project
+        const tasks = this.getTasks(pid).map(t => ({
+            id: t.id,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            progress: t.progress,
+        }));
+        const baseline = {
+            id: generateId(),
+            projectId: pid,
+            name: name || `Baseline ${existing.length + 1}`,
+            createdAt: new Date().toISOString(),
+            tasks,
+        };
+        this._data.baselines.push(baseline);
+        // Auto-activate the new baseline
+        const proj = this._data.projects.find(p => p.id === pid);
+        if (proj) proj.activeBaselineId = baseline.id;
+        this._save();
+        this._emit('baseline:create', baseline);
+        return baseline;
+    }
+
+    deleteBaseline(baselineId) {
+        const bl = this._data.baselines.find(b => b.id === baselineId);
+        if (!bl) return;
+        this._data.baselines = this._data.baselines.filter(b => b.id !== baselineId);
+        const proj = this._data.projects.find(p => p.id === bl.projectId);
+        if (proj && proj.activeBaselineId === baselineId) {
+            // Activate the most recent remaining baseline for this project, or null
+            const remaining = this._data.baselines.filter(b => b.projectId === bl.projectId);
+            proj.activeBaselineId = remaining.length > 0 ? remaining[remaining.length - 1].id : null;
+        }
+        this._save();
+        this._emit('baseline:delete', baselineId);
+    }
+
+    renameBaseline(baselineId, newName) {
+        const idx = this._data.baselines.findIndex(b => b.id === baselineId);
+        if (idx === -1) return;
+        this._data.baselines[idx].name = newName;
+        this._save();
+        this._emit('baseline:update', this._data.baselines[idx]);
+    }
+
+    setActiveBaseline(baselineId) {
+        const pid = this._data.settings.activeProjectId;
+        const proj = this._data.projects.find(p => p.id === pid);
+        if (proj) proj.activeBaselineId = baselineId;
+        this._save();
+        this._emit('baseline:activate', { projectId: pid, baselineId });
+    }
+
+    toggleShowBaseline() {
+        this._data.settings.showBaseline = !this._data.settings.showBaseline;
+        this._save();
+        this._emit('baseline:toggle', this._data.settings.showBaseline);
     }
 
     /* ---- Tasks ---- */
