@@ -7236,11 +7236,10 @@ class Store {
     }
 
     /**
-     * Propagate date changes to successors based on link type
-     * FS: successor.start = predecessor.end + 1
-     * SS: successor.start = predecessor.start
-     * FF: successor.end = predecessor.end
-     * SF: successor.end = predecessor.start
+     * Propagate date changes to successors based on link type.
+     * For each successor, the new dates are computed from ALL its predecessors
+     * (taking the latest constraint), not just the one that triggered propagation.
+     * This correctly handles tasks with multiple predecessors (critical path logic).
      */
     propagateDependencies(taskId, visited = new Set()) {
         if (visited.has(taskId)) return; // prevent cycles
@@ -7251,54 +7250,59 @@ class Store {
 
         const successors = this.getSuccessors(taskId);
         successors.forEach(succ => {
-            const link = succ.dependencies.find(d => d.taskId === taskId);
-            if (!link) return;
-
-            const predStart = new Date(task.startDate);
-            const predEnd = new Date(task.endDate);
             const succDuration = daysBetween(succ.startDate, succ.endDate);
-            let changed = false;
 
-            if (link.type === 'FS') {
-                // Successor starts after predecessor finishes
-                const newStart = addDays(predEnd, 1);
-                const ns = formatDateISO(newStart);
-                if (ns !== succ.startDate) {
-                    succ.startDate = ns;
-                    succ.endDate = formatDateISO(addDays(newStart, succDuration));
-                    changed = true;
+            // Compute the tightest constraint from ALL predecessors of this successor
+            let latestStart = null;
+            let latestEnd = null;
+
+            succ.dependencies.forEach(dep => {
+                const pred = this.getTask(dep.taskId);
+                if (!pred) return;
+                const predStart = new Date(pred.startDate);
+                const predEnd = new Date(pred.endDate);
+
+                if (dep.type === 'FS') {
+                    const candidate = addDays(predEnd, 1);
+                    if (!latestStart || candidate > latestStart) latestStart = candidate;
+                } else if (dep.type === 'SS') {
+                    if (!latestStart || predStart > latestStart) latestStart = predStart;
+                } else if (dep.type === 'FF') {
+                    if (!latestEnd || predEnd > latestEnd) latestEnd = predEnd;
+                } else if (dep.type === 'SF') {
+                    if (!latestEnd || predStart > latestEnd) latestEnd = predStart;
                 }
-            } else if (link.type === 'SS') {
-                // Successor starts when predecessor starts
-                const ns = formatDateISO(predStart);
-                if (ns !== succ.startDate) {
-                    succ.startDate = ns;
-                    succ.endDate = formatDateISO(addDays(predStart, succDuration));
-                    changed = true;
-                }
-            } else if (link.type === 'FF') {
-                // Successor finishes when predecessor finishes
-                const ne = formatDateISO(predEnd);
-                if (ne !== succ.endDate) {
-                    succ.endDate = ne;
-                    succ.startDate = formatDateISO(addDays(predEnd, -succDuration));
-                    changed = true;
-                }
-            } else if (link.type === 'SF') {
-                // Successor finishes when predecessor starts
-                const ne = formatDateISO(predStart);
-                if (ne !== succ.endDate) {
-                    succ.endDate = ne;
-                    succ.startDate = formatDateISO(addDays(predStart, -succDuration));
-                    changed = true;
+            });
+
+            // Resolve latestStart / latestEnd into concrete new dates
+            let newStartDate = null;
+            let newEndDate = null;
+
+            if (latestStart) {
+                newStartDate = latestStart;
+                newEndDate = addDays(latestStart, succDuration);
+            }
+            if (latestEnd) {
+                // FF/SF constraint overrides if it pushes the end further out
+                if (!newEndDate || latestEnd > newEndDate) {
+                    newEndDate = latestEnd;
+                    newStartDate = addDays(latestEnd, -succDuration);
                 }
             }
 
-            if (changed) {
-                if (succ.parentId) this._recalculatePhase(succ.parentId);
-                // Recursively propagate
-                this.propagateDependencies(succ.id, visited);
-            }
+            if (!newStartDate) return; // no applicable constraints
+
+            const ns = formatDateISO(newStartDate);
+            const ne = formatDateISO(newEndDate);
+
+            if (ns === succ.startDate && ne === succ.endDate) return; // no change
+
+            succ.startDate = ns;
+            succ.endDate = ne;
+
+            if (succ.parentId) this._recalculatePhase(succ.parentId);
+            // Recursively propagate to this successor's own successors
+            this.propagateDependencies(succ.id, visited);
         });
 
         this._save();
