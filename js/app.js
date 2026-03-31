@@ -1314,19 +1314,20 @@ class App {
                 const item = document.createElement('div');
                 item.className = 'bl-pop-item' + (isActive ? ' bl-pop-item--active' : '');
                 item.dataset.blId = bl.id;
+                // Clicking anywhere on the row activates/deactivates this baseline
+                item.addEventListener('click', (e) => {
+                    store.setActiveBaseline(isActive ? null : bl.id);
+                    this._updateBaselineBtnState();
+                });
 
                 // Radio-style activate button
                 const radio = document.createElement('button');
                 radio.className = 'bl-radio' + (isActive ? ' bl-radio--on' : '');
                 radio.title = isActive ? 'Baseline active' : 'Activer';
+                radio.tabIndex = -1; // item row handles activation
                 radio.innerHTML = isActive
                     ? `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>`
                     : `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`;
-                radio.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    store.setActiveBaseline(isActive ? null : bl.id);
-                    this._updateBaselineBtnState();
-                });
                 item.appendChild(radio);
 
                 // Name (or rename input)
