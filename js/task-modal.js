@@ -40,10 +40,10 @@ class TaskModal {
 
         // Header
         const header = createElement('div', { className: 'modal-header' });
-        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, 'Nouvelle tâche');
+        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, t('task.new.title'));
         const closeBtn = createElement('button', {
             className: 'icon-btn',
-            'aria-label': 'Fermer',
+            'aria-label': t('task.btnCancel'),
             onClick: () => this.close(),
         });
         closeBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -56,13 +56,13 @@ class TaskModal {
 
         // === TYPE SELECTOR (top of modal) ===
         const typeGroup = createElement('div', { className: 'form-group' });
-        typeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type'));
+        typeGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.type.label')));
         const typeSwitcher = createElement('div', { className: 'type-switcher' });
         this._typeButtons = {};
-        [['task', 'Tâche', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
-         ['milestone', 'Jalon', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
-         ['phase', 'Phase', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>'],
-         ['permit', 'Permis', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>']
+        [['task', t('task.type.task'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
+         ['milestone', t('task.type.milestone'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
+         ['phase', t('task.type.phase'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>'],
+         ['permit', t('task.type.permit'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>']
         ].forEach(([val, lbl, icon]) => {
             const btn = createElement('button', {
                 className: 'type-switcher-btn' + (val === 'task' ? ' active' : ''),
@@ -84,7 +84,7 @@ class TaskModal {
         this._phaseCheck = { input: createElement('input', { type: 'checkbox', id: 'taskPhase', style: { display: 'none' } }) };
 
         // Task name
-        this._taskNameGroup = this._createField('Nom de la tâche', 'text', 'taskName', 'Ex: Design de la page d\'accueil');
+        this._taskNameGroup = this._createField(t('task.name.label'), 'text', 'taskName', t('task.name.placeholder'));
         this._taskNameLabel = this._taskNameGroup.querySelector('.form-label');
         body.appendChild(this._taskNameGroup);
 
@@ -92,18 +92,18 @@ class TaskModal {
         const nameParentRow = createElement('div', { className: 'form-row' });
         // Parent phase selector
         const parentGroup = createElement('div', { className: 'form-group' });
-        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, 'Phase parente'));
+        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, t('task.phase.label')));
         this._parentSelect = createElement('select', { className: 'select', id: 'taskParent' });
         parentGroup.appendChild(this._parentSelect);
         nameParentRow.appendChild(parentGroup);
         // Description
         const descGroup = createElement('div', { className: 'form-group' });
-        descGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDesc' }, 'Description'));
+        descGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDesc' }, t('task.description.label')));
         this._descInput = createElement('textarea', {
             className: 'input',
             id: 'taskDesc',
             rows: '2',
-            placeholder: 'Description optionnelle...',
+            placeholder: t('task.description.placeholder'),
             style: { resize: 'vertical', minHeight: '48px' },
         });
         descGroup.appendChild(this._descInput);
@@ -113,17 +113,17 @@ class TaskModal {
         // Dates + Duration row (3 columns)
         this._datesRow = createElement('div', { className: 'form-row form-row-3' });
         const datesRow = this._datesRow;
-        datesRow.appendChild(this._createField('Date de début', 'date', 'taskStart'));
-        datesRow.appendChild(this._createField('Date de fin', 'date', 'taskEnd'));
+        datesRow.appendChild(this._createField(t('task.startDate'), 'date', 'taskStart'));
+        datesRow.appendChild(this._createField(t('task.endDate'), 'date', 'taskEnd'));
         const durationGroup = createElement('div', { className: 'form-group' });
-        durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, 'Durée (jours)'));
+        durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, t('task.duration')));
         this._durationInput = createElement('input', {
             className: 'input',
             type: 'number',
             id: 'taskDuration',
             min: '1',
             value: '7',
-            placeholder: 'Jours',
+            placeholder: t('task.duration'),
         });
         durationGroup.appendChild(this._durationInput);
         datesRow.appendChild(durationGroup);
@@ -135,9 +135,9 @@ class TaskModal {
 
         // Priority
         const priorityGroup = createElement('div', { className: 'form-group' });
-        priorityGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskPriority' }, 'Priorité'));
+        priorityGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskPriority' }, t('task.priority')));
         this._prioritySelect = createElement('select', { className: 'select', id: 'taskPriority' });
-        [['low', 'Basse'], ['medium', 'Moyenne'], ['high', 'Haute']].forEach(([val, lbl]) => {
+        [['low', t('task.priority.low')], ['medium', t('task.priority.medium')], ['high', t('task.priority.high')]].forEach(([val, lbl]) => {
             const opt = createElement('option', { value: val }, lbl);
             if (val === 'medium') opt.selected = true;
             this._prioritySelect.appendChild(opt);
@@ -147,9 +147,9 @@ class TaskModal {
 
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
-        statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, 'Statut'));
+        statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, t('task.status')));
         this._statusSelect = createElement('select', { className: 'select', id: 'taskStatus' });
-        [['todo', 'À faire'], ['in_progress', 'En cours'], ['done', 'Terminé']].forEach(([val, lbl]) => {
+        [['todo', t('task.status.todo')], ['in_progress', t('task.status.inProgress')], ['done', t('task.status.done')]].forEach(([val, lbl]) => {
             this._statusSelect.appendChild(createElement('option', { value: val }, lbl));
         });
         statusGroup.appendChild(this._statusSelect);
@@ -157,7 +157,7 @@ class TaskModal {
 
         // Progress
         const progressGroup = createElement('div', { className: 'form-group' });
-        progressGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskProgress' }, 'Progression'));
+        progressGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskProgress' }, t('task.progress')));
         const progressWrap = createElement('div', { className: 'progress-input-wrap' });
         this._progressInput = createElement('input', {
             className: 'input',
@@ -183,12 +183,12 @@ class TaskModal {
             type: 'button',
             className: 'milestone-status-btn',
             dataset: { value: '0' },
-        }, '○ Non franchi');
+        }, t('task.milestone.pending'));
         this._milestoneBtnDone = createElement('button', {
             type: 'button',
             className: 'milestone-status-btn',
             dataset: { value: '100' },
-        }, '✓ Franchi');
+        }, t('task.milestone.done'));
         this._milestoneBtnPending.classList.add('active');
         [this._milestoneBtnPending, this._milestoneBtnDone].forEach(btn => {
             btn.addEventListener('click', () => {
@@ -211,7 +211,7 @@ class TaskModal {
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
-        colorGroup.appendChild(createElement('label', { className: 'form-label' }, 'Couleur'));
+        colorGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.color')));
         this._colorPicker = createElement('div', { className: 'color-picker' });
         TASK_COLORS.forEach((color, idx) => {
             const swatch = createElement('button', {
@@ -233,11 +233,11 @@ class TaskModal {
 
         // Assignees (multi-select with search)
         const assigneeGroup = createElement('div', { className: 'form-group' });
-        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Assigné à'));
+        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.assignee')));
         this._assigneeSearch = createElement('input', {
             type: 'text',
             className: 'input assignee-search',
-            placeholder: 'Rechercher une ressource…',
+            placeholder: t('task.assigneeSearch'),
         });
         this._assigneeSearch.addEventListener('input', () => this._filterAssignees());
         assigneeGroup.appendChild(this._assigneeSearch);
@@ -249,11 +249,11 @@ class TaskModal {
         // Fixed costs section (multiple named costs)
         const fixedCostsGroup = createElement('div', { className: 'form-group' });
         const fixedCostsHeader = createElement('div', { className: 'fixed-costs-header' });
-        fixedCostsHeader.appendChild(createElement('label', { className: 'form-label' }, 'Coûts fixes (' + getCurrencySymbol() + ')'));
+        fixedCostsHeader.appendChild(createElement('label', { className: 'form-label' }, t('task.fixedCosts.label') + ' (' + getCurrencySymbol() + ')'));
         const addCostBtn = createElement('button', {
             className: 'btn btn-xs btn-outline fixed-costs-add-btn',
             type: 'button',
-        }, '+ Ajouter un coût');
+        }, t('task.fixedCosts.addBtn'));
         addCostBtn.addEventListener('click', () => this._addFixedCostRow());
         fixedCostsHeader.appendChild(addCostBtn);
         fixedCostsGroup.appendChild(fixedCostsHeader);
@@ -263,7 +263,7 @@ class TaskModal {
         fixedCostsGroup.appendChild(this._fixedCostsTotalEl);
         const fixedCostHint = createElement('div', {
             style: { fontSize: '11px', color: 'var(--text-muted, #999)', marginTop: '4px' },
-        }, 'Coûts forfaitaires hors ressources (matériel, sous-traitance, frais...)');
+        }, t('task.fixedCosts.hint'));
         fixedCostsGroup.appendChild(fixedCostHint);
         body.appendChild(fixedCostsGroup);
 
@@ -273,14 +273,14 @@ class TaskModal {
 
         // Predecessors (with link type)
         const predGroup = createElement('div', { className: 'form-group' });
-        predGroup.appendChild(createElement('label', { className: 'form-label' }, 'Précédée par'));
+        predGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.predecessors')));
         this._predList = createElement('div', { className: 'dep-list' });
         predGroup.appendChild(this._predList);
         depRow.appendChild(predGroup);
 
         // Successors (with link type)
         const succGroup = createElement('div', { className: 'form-group' });
-        succGroup.appendChild(createElement('label', { className: 'form-label' }, 'Succédée par'));
+        succGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.successors')));
         this._succList = createElement('div', { className: 'dep-list' });
         succGroup.appendChild(this._succList);
         depRow.appendChild(succGroup);
@@ -290,12 +290,12 @@ class TaskModal {
         this._permitFields = createElement('div', { className: 'permit-fields' });
 
         // Permit section title
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Informations du permis de construire'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.info')));
 
         // Row 1: Permit type + Dossier number
         const permitRow1 = createElement('div', { className: 'form-row' });
         const permitTypeGroup = createElement('div', { className: 'form-group' });
-        permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type de permis'));
+        permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.type.label')));
         this._permitTypeSelect = createElement('select', { className: 'select', id: 'permitType' });
         Object.entries(PERMIT_TYPES).forEach(([key, val]) => {
             this._permitTypeSelect.appendChild(createElement('option', { value: key }, val.label));
@@ -305,7 +305,7 @@ class TaskModal {
         permitRow1.appendChild(permitTypeGroup);
 
         const dossierGroup = createElement('div', { className: 'form-group' });
-        dossierGroup.appendChild(createElement('label', { className: 'form-label' }, 'N° de dossier'));
+        dossierGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.dossier.label')));
         this._permitDossier = createElement('input', { className: 'input', type: 'text', placeholder: 'PC 075 123 45 R0001' });
         dossierGroup.appendChild(this._permitDossier);
         permitRow1.appendChild(dossierGroup);
@@ -314,14 +314,14 @@ class TaskModal {
         // Row 2: Commune + Service instructeur
         const permitRow2 = createElement('div', { className: 'form-row' });
         const communeGroup = createElement('div', { className: 'form-group' });
-        communeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Commune'));
-        this._permitCommune = createElement('input', { className: 'input', type: 'text', placeholder: 'Nom de la commune' });
+        communeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.commune.label')));
+        this._permitCommune = createElement('input', { className: 'input', type: 'text', placeholder: t('permit.commune.placeholder') });
         communeGroup.appendChild(this._permitCommune);
         permitRow2.appendChild(communeGroup);
 
         const serviceGroup = createElement('div', { className: 'form-group' });
-        serviceGroup.appendChild(createElement('label', { className: 'form-label' }, 'Service instructeur'));
-        this._permitService = createElement('input', { className: 'input', type: 'text', placeholder: 'DDT / Mairie...' });
+        serviceGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.service.label')));
+        this._permitService = createElement('input', { className: 'input', type: 'text', placeholder: t('permit.service.placeholder') });
         serviceGroup.appendChild(this._permitService);
         permitRow2.appendChild(serviceGroup);
         this._permitFields.appendChild(permitRow2);
@@ -329,7 +329,7 @@ class TaskModal {
         // Row 3: Permit status + ABF sector
         const permitRow3 = createElement('div', { className: 'form-row' });
         const permitStatusGroup = createElement('div', { className: 'form-group' });
-        permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, 'Statut réglementaire'));
+        permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.status.label')));
         this._permitStatusSelect = createElement('select', { className: 'select', id: 'permitStatus' });
         Object.entries(PERMIT_STATUSES).forEach(([key, val]) => {
             this._permitStatusSelect.appendChild(createElement('option', { value: key }, val.label));
@@ -339,7 +339,7 @@ class TaskModal {
         permitRow3.appendChild(permitStatusGroup);
 
         const abfGroup = createElement('div', { className: 'form-group' });
-        abfGroup.appendChild(createElement('label', { className: 'form-label' }, 'Secteur protégé'));
+        abfGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.abf.label')));
         this._abfCheck = createElement('input', { type: 'checkbox', id: 'permitABF' });
         const abfLabel = createElement('label', { className: 'permit-toggle' });
         abfLabel.appendChild(this._abfCheck);
@@ -350,19 +350,19 @@ class TaskModal {
         this._permitFields.appendChild(permitRow3);
 
         // Section: Dates réglementaires
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Dates réglementaires'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.dates')));
 
         // Row 4: deposit + completeness dates
         const permitRow4 = createElement('div', { className: 'form-row' });
         const depositGroup = createElement('div', { className: 'form-group' });
-        depositGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de dépôt'));
+        depositGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.deposit.label')));
         this._permitDeposit = createElement('input', { className: 'input', type: 'date' });
         this._permitDeposit.addEventListener('change', () => this._updatePermitDeadlines());
         depositGroup.appendChild(this._permitDeposit);
         permitRow4.appendChild(depositGroup);
 
         const completenessGroup = createElement('div', { className: 'form-group' });
-        completenessGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de complétude'));
+        completenessGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.completeness.label')));
         this._permitCompleteness = createElement('input', { className: 'input', type: 'date' });
         this._permitCompleteness.addEventListener('change', () => this._updatePermitDeadlines());
         completenessGroup.appendChild(this._permitCompleteness);
@@ -372,14 +372,14 @@ class TaskModal {
         // Row 5: Additional docs request + response
         const permitRow5 = createElement('div', { className: 'form-row' });
         const addDocsReqGroup = createElement('div', { className: 'form-group' });
-        addDocsReqGroup.appendChild(createElement('label', { className: 'form-label' }, 'Demande pièces complémentaires'));
+        addDocsReqGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.addDocsReq.label')));
         this._permitAddDocsReq = createElement('input', { className: 'input', type: 'date' });
         this._permitAddDocsReq.addEventListener('change', () => this._updatePermitDeadlines());
         addDocsReqGroup.appendChild(this._permitAddDocsReq);
         permitRow5.appendChild(addDocsReqGroup);
 
         const addDocsRespGroup = createElement('div', { className: 'form-group' });
-        addDocsRespGroup.appendChild(createElement('label', { className: 'form-label' }, 'Réponse pièces complémentaires'));
+        addDocsRespGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.addDocsResp.label')));
         this._permitAddDocsResp = createElement('input', { className: 'input', type: 'date' });
         this._permitAddDocsResp.addEventListener('change', () => this._updatePermitDeadlines());
         addDocsRespGroup.appendChild(this._permitAddDocsResp);
@@ -389,14 +389,14 @@ class TaskModal {
         // Row 6: Decision date + Display start
         const permitRow6 = createElement('div', { className: 'form-row' });
         const decisionGroup = createElement('div', { className: 'form-group' });
-        decisionGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de décision'));
+        decisionGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.decision.label')));
         this._permitDecision = createElement('input', { className: 'input', type: 'date' });
         this._permitDecision.addEventListener('change', () => this._updatePermitDeadlines());
         decisionGroup.appendChild(this._permitDecision);
         permitRow6.appendChild(decisionGroup);
 
         const displayGroup = createElement('div', { className: 'form-group' });
-        displayGroup.appendChild(createElement('label', { className: 'form-label' }, "Date début d'affichage"));
+        displayGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.display.label')));
         this._permitDisplay = createElement('input', { className: 'input', type: 'date' });
         this._permitDisplay.addEventListener('change', () => this._updatePermitDeadlines());
         displayGroup.appendChild(this._permitDisplay);
@@ -404,7 +404,7 @@ class TaskModal {
         this._permitFields.appendChild(permitRow6);
 
         // Computed deadlines display
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Délais calculés'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.deadlines')));
         this._permitDeadlinesPanel = createElement('div', { className: 'permit-deadlines' });
         this._permitFields.appendChild(this._permitDeadlinesPanel);
 
@@ -418,16 +418,16 @@ class TaskModal {
             className: 'btn btn-danger',
             style: { marginRight: 'auto', display: 'none' },
             onClick: () => this._handleDelete(),
-        }, 'Supprimer');
+        }, t('task.btnDelete'));
         footer.appendChild(this._deleteBtn);
         footer.appendChild(createElement('button', {
             className: 'btn btn-secondary',
             onClick: () => this.close(),
-        }, 'Annuler'));
+        }, t('task.btnCancel')));
         this._saveBtn = createElement('button', {
             className: 'btn btn-primary',
             onClick: () => this._handleSave(),
-        }, 'Créer');
+        }, t('task.btnCreate'));
         footer.appendChild(this._saveBtn);
         modal.appendChild(footer);
 
@@ -480,7 +480,7 @@ class TaskModal {
 
         // Update task name label based on type
         if (this._taskNameLabel) {
-            this._taskNameLabel.textContent = isPhase ? 'Nom de la phase' : 'Nom de la tâche';
+            this._taskNameLabel.textContent = isPhase ? t('task.phase.name.label') : t('task.name.label');
         }
 
         // Apply milestone-specific logic
@@ -563,8 +563,8 @@ class TaskModal {
     openCreate(parentId = null) {
         this._mode = 'create';
         this._editingTaskId = null;
-        this._titleEl.textContent = 'Nouvelle tâche';
-        this._saveBtn.textContent = 'Créer';
+        this._titleEl.textContent = t('task.new.title');
+        this._saveBtn.textContent = t('task.btnCreate');
         this._deleteBtn.style.display = 'none';
 
         // Defaults
@@ -615,8 +615,8 @@ class TaskModal {
 
         this._mode = 'edit';
         this._editingTaskId = taskId;
-        this._titleEl.textContent = 'Modifier la tâche';
-        this._saveBtn.textContent = 'Enregistrer';
+        this._titleEl.textContent = t('task.edit.title');
+        this._saveBtn.textContent = t('task.btnSave');
         this._deleteBtn.style.display = '';
 
         // Fill fields
@@ -655,7 +655,7 @@ class TaskModal {
 
         // Fixed costs (support legacy fixedCost field)
         const fixedCosts = Array.isArray(task.fixedCosts) ? task.fixedCosts
-            : (task.fixedCost ? [{ name: 'Coût fixe', amount: task.fixedCost }] : []);
+            : (task.fixedCost ? [{ name: t('task.fixedCosts.defaultName'), amount: task.fixedCost }] : []);
         this._populateFixedCosts(fixedCosts);
 
         // Assignees (multi)
@@ -699,7 +699,7 @@ class TaskModal {
             : this._allResources;
 
         if (resources.length === 0) {
-            const empty = createElement('p', { className: 'assignee-empty' }, 'Aucune ressource trouvée');
+            const empty = createElement('p', { className: 'assignee-empty' }, t('task.assignee.noResults'));
             this._assigneeList.appendChild(empty);
             return;
         }
@@ -738,7 +738,7 @@ class TaskModal {
         if (tasks.length === 0) {
             this._predList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
-            }, 'Aucune tâche disponible'));
+            }, t('task.noTasks')));
             return;
         }
         const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
@@ -789,7 +789,7 @@ class TaskModal {
         if (!taskId) {
             this._succList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
-            }, 'Sauvegardez d\'abord pour ajouter des successeurs'));
+            }, t('task.saveFirstForSuccessors')));
             return;
         }
         const successors = store.getSuccessors(taskId);
@@ -882,47 +882,51 @@ class TaskModal {
         const items = [];
         const typeInfo = PERMIT_TYPES[permitData.permitType];
         if (typeInfo) {
-            let instrLabel = `${deadlines.instructionDays || typeInfo.instructionDays} jours`;
-            if (permitData.abfSector) instrLabel += ' (ABF +30j)';
-            items.push({ label: "Délai d'instruction", value: instrLabel });
+            const days = deadlines.instructionDays || typeInfo.instructionDays;
+            const instrLabel = permitData.abfSector
+                ? t('permit.deadline.instructionDaysABF', { days })
+                : t('permit.deadline.instructionDays', { days });
+            items.push({ label: t('permit.deadline.instruction'), value: instrLabel });
         }
 
         if (deadlines.completenessDeadline) {
-            items.push({ label: 'Limite complétude', value: formatDateDisplay(deadlines.completenessDeadline) });
+            items.push({ label: t('permit.deadline.completenessLimit'), value: formatDateDisplay(deadlines.completenessDeadline) });
         }
 
         if (deadlines.suspended) {
-            items.push({ label: 'Décision prévisionnelle', value: 'Suspendue', cls: 'warning' });
+            items.push({ label: t('permit.deadline.provisional'), value: t('permit.deadline.suspended'), cls: 'warning' });
         } else if (deadlines.decisionDeadline) {
             const dl = new Date(deadlines.decisionDeadline);
             const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
             let cls = '';
             if (daysLeft <= 7 && daysLeft >= 0) cls = 'urgent';
             else if (daysLeft <= 15 && daysLeft >= 0) cls = 'warning';
-            const suffix = daysLeft >= 0 ? ` (J-${daysLeft})` : ` (dépassé de ${Math.abs(daysLeft)}j)`;
-            items.push({ label: 'Décision prévisionnelle', value: formatDateDisplay(deadlines.decisionDeadline) + suffix, cls });
+            const suffix = daysLeft >= 0
+                ? ' ' + t('permit.deadline.daysLeft', { days: daysLeft })
+                : ' ' + t('permit.deadline.daysExceeded', { days: Math.abs(daysLeft) });
+            items.push({ label: t('permit.deadline.provisional'), value: formatDateDisplay(deadlines.decisionDeadline) + suffix, cls });
         }
 
         if (deadlines.tacitApprovalDate && !deadlines.suspended) {
-            items.push({ label: 'Approbation tacite', value: formatDateDisplay(deadlines.tacitApprovalDate) });
+            items.push({ label: t('permit.deadline.tacitApproval'), value: formatDateDisplay(deadlines.tacitApprovalDate) });
         }
 
         if (deadlines.appealEndDate) {
             const appeal = new Date(deadlines.appealEndDate);
             const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
             let cls = daysLeft < 0 ? '' : (daysLeft <= 7 ? 'urgent' : '');
-            const label = daysLeft < 0 ? 'Recours purgé' : `Fin recours tiers (J-${daysLeft})`;
+            const label = daysLeft < 0 ? t('permit.deadline.appealPurged') : t('permit.deadline.appealEnd', { days: daysLeft });
             items.push({ label, value: formatDateDisplay(deadlines.appealEndDate), cls });
         }
 
         if (deadlines.expiryDate) {
-            items.push({ label: 'Péremption permis', value: formatDateDisplay(deadlines.expiryDate) });
+            items.push({ label: t('permit.deadline.expiry'), value: formatDateDisplay(deadlines.expiryDate) });
         }
 
         if (items.length === 0) {
             this._permitDeadlinesPanel.appendChild(
                 createElement('div', { style: { gridColumn: '1 / -1', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' } },
-                    'Renseignez la date de dépôt pour calculer les délais')
+                    t('permit.deadlines.noDate'))
             );
             return;
         }
@@ -990,7 +994,7 @@ class TaskModal {
 
     _populateParents(selectedParentId) {
         this._parentSelect.innerHTML = '';
-        this._parentSelect.appendChild(createElement('option', { value: '' }, '— Aucune (racine) —'));
+        this._parentSelect.appendChild(createElement('option', { value: '' }, t('task.parent.none')));
         const phases = store.getTasks().filter(t => t.isPhase);
         phases.forEach(phase => {
             // Don't allow a task to be its own parent
@@ -1102,7 +1106,7 @@ class TaskModal {
         const nameInput = createElement('input', {
             className: 'input fixed-cost-name',
             type: 'text',
-            placeholder: 'Libellé (ex: Matériel)',
+            placeholder: t('task.fixedCosts.namePlaceholder'),
             value: name,
         });
 
@@ -1119,7 +1123,7 @@ class TaskModal {
         const removeBtn = createElement('button', {
             className: 'btn btn-xs btn-icon fixed-cost-remove',
             type: 'button',
-            title: 'Supprimer ce coût',
+            title: t('task.fixedCosts.removeTitle'),
         }, '×');
         removeBtn.addEventListener('click', () => {
             row.remove();
@@ -1141,7 +1145,7 @@ class TaskModal {
         const total = costs.reduce((s, fc) => s + fc.amount, 0);
         const symbol = getCurrencySymbol();
         if (total > 0) {
-            this._fixedCostsTotalEl.textContent = `Total coûts fixes : ${total.toLocaleString('fr-FR')} ${symbol}`;
+            this._fixedCostsTotalEl.textContent = t('task.fixedCosts.total', { total: total.toLocaleString('fr-FR'), symbol });
             this._fixedCostsTotalEl.style.display = '';
         } else {
             this._fixedCostsTotalEl.style.display = 'none';
@@ -1155,7 +1159,7 @@ class TaskModal {
             const name = row.querySelector('.fixed-cost-name').value.trim();
             const amount = parseFloat(row.querySelector('.fixed-cost-amount').value) || 0;
             if (amount > 0) {
-                costs.push({ name: name || 'Coût fixe', amount });
+                costs.push({ name: name || t('task.fixedCosts.defaultName'), amount });
             }
         });
         return costs;
@@ -1170,8 +1174,8 @@ class TaskModal {
 
         const hasChildren = store.getChildTasks ? store.getChildTasks(this._editingTaskId).length > 0 : false;
         const msg = hasChildren
-            ? `Supprimer "${task.name}" et toutes ses sous-tâches ?`
-            : `Supprimer "${task.name}" ?`;
+            ? t('confirm.deleteTaskWithChildren', { name: task.name })
+            : t('confirm.deleteTask', { name: task.name });
 
         if (confirm(msg)) {
             store.deleteTask(this._editingTaskId);
