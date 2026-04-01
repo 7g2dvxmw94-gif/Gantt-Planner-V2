@@ -6771,6 +6771,18 @@ const I18N = {
         'resource.tasks.late': 'En retard',
         'resource.tasks.count': '{count} tâche{plural}',
         'resource.create.btn': 'Créer la ressource',
+        'resource.addBtn': 'Ajouter une ressource',
+
+        // Gantt left column meta
+        'task.meta.person': '{n} personne',
+        'task.meta.persons': '{n} personnes',
+        'task.meta.day': '{n} jour',
+        'task.meta.days': '{n} jours',
+        'task.meta.task': '{n} tâche',
+        'task.meta.tasks': '{n} tâches',
+        'task.meta.milestone': 'Jalon · {date}',
+        'task.meta.barAria': '{name} : {progress}% complété, du {start} au {end}',
+        'task.meta.permitAria': 'Permis : {name} - {status}',
         'task.badge.critical': 'Critique',
         'board.type': 'Type',
         'baseline.active': 'Baseline active',
@@ -6995,6 +7007,10 @@ const I18N = {
         'filter.phase': 'Phase',
         'filter.priority': 'Priorité',
         'filter.period': 'Période',
+        'filter.reset': 'Réinitialiser',
+        'filter.resetTooltip': 'Réinitialiser tous les filtres',
+        'filter.dateStartTooltip': 'Les tâches terminées avant cette date seront masquées',
+        'filter.dateEndTooltip': 'Les tâches commençant après cette date seront masquées',
 
         // Project selector
         'project.noResult': 'Aucun projet trouvé',
@@ -7323,6 +7339,18 @@ const I18N = {
         'resource.tasks.late': 'Late',
         'resource.tasks.count': '{count} task{plural}',
         'resource.create.btn': 'Create resource',
+        'resource.addBtn': 'Add a resource',
+
+        // Gantt left column meta
+        'task.meta.person': '{n} person',
+        'task.meta.persons': '{n} people',
+        'task.meta.day': '{n} day',
+        'task.meta.days': '{n} days',
+        'task.meta.task': '{n} task',
+        'task.meta.tasks': '{n} tasks',
+        'task.meta.milestone': 'Milestone · {date}',
+        'task.meta.barAria': '{name}: {progress}% complete, from {start} to {end}',
+        'task.meta.permitAria': 'Permit: {name} - {status}',
         'task.badge.critical': 'Critical',
         'board.type': 'Type',
         'baseline.active': 'Active baseline',
@@ -7547,6 +7575,10 @@ const I18N = {
         'filter.phase': 'Phase',
         'filter.priority': 'Priority',
         'filter.period': 'Period',
+        'filter.reset': 'Reset',
+        'filter.resetTooltip': 'Reset all filters',
+        'filter.dateStartTooltip': 'Tasks ending before this date will be hidden',
+        'filter.dateEndTooltip': 'Tasks starting after this date will be hidden',
 
         // Project selector
         'project.noResult': 'No project found',
@@ -7697,6 +7729,11 @@ function generateId() {
 
 /* ---- Date Utilities ---- */
 
+const _LANG_LOCALE = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' };
+function _getLocale() {
+    return _LANG_LOCALE[localStorage.getItem('gantt_lang')] || 'fr-FR';
+}
+
 /**
  * Format a date as YYYY-MM-DD
  */
@@ -7713,7 +7750,7 @@ function formatDateISO(date) {
  */
 function formatDateDisplay(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
@@ -7725,7 +7762,7 @@ function formatDateDisplay(date) {
  */
 function formatDateShort(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short'
     });
@@ -7861,11 +7898,11 @@ function getWeekNumber(date) {
 }
 
 /**
- * Get month name in French
+ * Get month name in the current UI language
  */
 function getMonthName(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', { month: 'long' });
+    return d.toLocaleDateString(_getLocale(), { month: 'long' });
 }
 
 /**
@@ -11576,20 +11613,20 @@ class GanttRenderer {
         if (assignees.length === 1) {
             metaParts.push(`@${assignees[0].name.split(' ')[0]}`);
         } else if (assignees.length > 1) {
-            metaParts.push(`${assignees.length} personnes`);
+            metaParts.push(t(assignees.length > 1 ? 'task.meta.persons' : 'task.meta.person', { n: assignees.length }));
         }
         if (isPermit) {
             const statusInfo = PERMIT_STATUSES[task.permitStatus];
             if (statusInfo) metaParts.push(statusInfo.label);
             if (task.permitDossier) metaParts.push(task.permitDossier);
         } else if (isMilestone) {
-            metaParts.push(`Jalon \u00b7 ${formatDateShort(task.startDate)}`);
+            metaParts.push(t('task.meta.milestone', { date: formatDateShort(task.startDate) }));
         } else if (isPhase) {
             const childCount = task.children ? task.children.length : 0;
-            metaParts.push(`${childCount} tâche${childCount > 1 ? 's' : ''}`);
+            metaParts.push(t(childCount > 1 ? 'task.meta.tasks' : 'task.meta.task', { n: childCount }));
         } else {
             const duration = daysBetween(task.startDate, task.endDate) + 1;
-            metaParts.push(`${duration} jour${duration > 1 ? 's' : ''}`);
+            metaParts.push(t(duration > 1 ? 'task.meta.days' : 'task.meta.day', { n: duration }));
         }
 
         if (metaParts.length > 0) {
@@ -11688,7 +11725,7 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: gradient },
             role: 'button',
             tabindex: '0',
-            'aria-label': `${task.name}: ${task.progress}% complété, du ${formatDateShort(task.startDate)} au ${formatDateShort(task.endDate)}`,
+            'aria-label': t('task.meta.barAria', { name: task.name, progress: task.progress, start: formatDateShort(task.startDate), end: formatDateShort(task.endDate) }),
             dataset: { taskId: task.id },
         });
 
@@ -11783,7 +11820,7 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: `linear-gradient(135deg, ${color}, ${color}dd)` },
             role: 'button',
             tabindex: '0',
-            'aria-label': `Permis: ${task.name} - ${statusInfo.label}`,
+            'aria-label': t('task.meta.permitAria', { name: task.name, status: statusInfo.label }),
             title: `${task.name}\n${statusInfo.label}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
             dataset: { taskId: task.id },
         });
@@ -15867,7 +15904,7 @@ class App {
         header.className = 'resource-view-header';
         const addBtn = document.createElement('button');
         addBtn.className = 'resource-add-btn';
-        addBtn.innerHTML = '<span>+</span> Ajouter une ressource';
+        addBtn.innerHTML = `<span>+</span> ${t('resource.addBtn')}`;
         addBtn.addEventListener('click', () => this._showResourceModal());
         header.appendChild(addBtn);
         container.appendChild(header);
@@ -19601,7 +19638,7 @@ tr:nth-child(even){background:#fafbfc}
         dateStart.type = 'date';
         dateStart.className = 'filter-date';
         dateStart.id = 'filterDateStart';
-        dateStart.title = 'Les tâches terminées avant cette date seront masquées';
+        dateStart.title = t('filter.dateStartTooltip');
         dateStart.addEventListener('change', () => this._applyFilters());
 
         const dateSep = document.createElement('span');
@@ -19612,7 +19649,7 @@ tr:nth-child(even){background:#fafbfc}
         dateEnd.type = 'date';
         dateEnd.className = 'filter-date';
         dateEnd.id = 'filterDateEnd';
-        dateEnd.title = 'Les tâches commençant après cette date seront masquées';
+        dateEnd.title = t('filter.dateEndTooltip');
         dateEnd.addEventListener('change', () => this._applyFilters());
 
         dateInputs.appendChild(dateStart);
@@ -19629,8 +19666,8 @@ tr:nth-child(even){background:#fafbfc}
         // Reset button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'filter-reset-btn';
-        resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Réinitialiser';
-        resetBtn.title = 'Réinitialiser tous les filtres';
+        resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> ${t('filter.reset')}`;
+        resetBtn.title = t('filter.resetTooltip');
         resetBtn.addEventListener('click', () => this._resetFilters());
         filterBar.appendChild(resetBtn);
 

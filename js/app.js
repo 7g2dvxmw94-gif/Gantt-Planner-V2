@@ -985,7 +985,7 @@ class App {
         header.className = 'resource-view-header';
         const addBtn = document.createElement('button');
         addBtn.className = 'resource-add-btn';
-        addBtn.innerHTML = '<span>+</span> Ajouter une ressource';
+        addBtn.innerHTML = `<span>+</span> ${t('resource.addBtn')}`;
         addBtn.addEventListener('click', () => this._showResourceModal());
         header.appendChild(addBtn);
         container.appendChild(header);
@@ -4719,7 +4719,7 @@ tr:nth-child(even){background:#fafbfc}
         dateStart.type = 'date';
         dateStart.className = 'filter-date';
         dateStart.id = 'filterDateStart';
-        dateStart.title = 'Les tâches terminées avant cette date seront masquées';
+        dateStart.title = t('filter.dateStartTooltip');
         dateStart.addEventListener('change', () => this._applyFilters());
 
         const dateSep = document.createElement('span');
@@ -4730,7 +4730,7 @@ tr:nth-child(even){background:#fafbfc}
         dateEnd.type = 'date';
         dateEnd.className = 'filter-date';
         dateEnd.id = 'filterDateEnd';
-        dateEnd.title = 'Les tâches commençant après cette date seront masquées';
+        dateEnd.title = t('filter.dateEndTooltip');
         dateEnd.addEventListener('change', () => this._applyFilters());
 
         dateInputs.appendChild(dateStart);
@@ -4747,8 +4747,8 @@ tr:nth-child(even){background:#fafbfc}
         // Reset button
         const resetBtn = document.createElement('button');
         resetBtn.className = 'filter-reset-btn';
-        resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Réinitialiser';
-        resetBtn.title = 'Réinitialiser tous les filtres';
+        resetBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> ${t('filter.reset')}`;
+        resetBtn.title = t('filter.resetTooltip');
         resetBtn.addEventListener('click', () => this._resetFilters());
         filterBar.appendChild(resetBtn);
 

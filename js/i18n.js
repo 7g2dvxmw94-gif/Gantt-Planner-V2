@@ -242,6 +242,18 @@ const I18N = {
         'resource.tasks.late': 'En retard',
         'resource.tasks.count': '{count} tâche{plural}',
         'resource.create.btn': 'Créer la ressource',
+        'resource.addBtn': 'Ajouter une ressource',
+
+        // Gantt left column meta
+        'task.meta.person': '{n} personne',
+        'task.meta.persons': '{n} personnes',
+        'task.meta.day': '{n} jour',
+        'task.meta.days': '{n} jours',
+        'task.meta.task': '{n} tâche',
+        'task.meta.tasks': '{n} tâches',
+        'task.meta.milestone': 'Jalon · {date}',
+        'task.meta.barAria': '{name} : {progress}% complété, du {start} au {end}',
+        'task.meta.permitAria': 'Permis : {name} - {status}',
         'task.badge.critical': 'Critique',
         'board.type': 'Type',
         'baseline.active': 'Baseline active',
@@ -466,6 +478,10 @@ const I18N = {
         'filter.phase': 'Phase',
         'filter.priority': 'Priorité',
         'filter.period': 'Période',
+        'filter.reset': 'Réinitialiser',
+        'filter.resetTooltip': 'Réinitialiser tous les filtres',
+        'filter.dateStartTooltip': 'Les tâches terminées avant cette date seront masquées',
+        'filter.dateEndTooltip': 'Les tâches commençant après cette date seront masquées',
 
         // Project selector
         'project.noResult': 'Aucun projet trouvé',
@@ -794,6 +810,18 @@ const I18N = {
         'resource.tasks.late': 'Late',
         'resource.tasks.count': '{count} task{plural}',
         'resource.create.btn': 'Create resource',
+        'resource.addBtn': 'Add a resource',
+
+        // Gantt left column meta
+        'task.meta.person': '{n} person',
+        'task.meta.persons': '{n} people',
+        'task.meta.day': '{n} day',
+        'task.meta.days': '{n} days',
+        'task.meta.task': '{n} task',
+        'task.meta.tasks': '{n} tasks',
+        'task.meta.milestone': 'Milestone · {date}',
+        'task.meta.barAria': '{name}: {progress}% complete, from {start} to {end}',
+        'task.meta.permitAria': 'Permit: {name} - {status}',
         'task.badge.critical': 'Critical',
         'board.type': 'Type',
         'baseline.active': 'Active baseline',
@@ -1018,6 +1046,10 @@ const I18N = {
         'filter.phase': 'Phase',
         'filter.priority': 'Priority',
         'filter.period': 'Period',
+        'filter.reset': 'Reset',
+        'filter.resetTooltip': 'Reset all filters',
+        'filter.dateStartTooltip': 'Tasks ending before this date will be hidden',
+        'filter.dateEndTooltip': 'Tasks starting after this date will be hidden',
 
         // Project selector
         'project.noResult': 'No project found',

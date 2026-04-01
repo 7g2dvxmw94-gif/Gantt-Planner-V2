@@ -11,6 +11,11 @@ export function generateId() {
 
 /* ---- Date Utilities ---- */
 
+const _LANG_LOCALE = { fr: 'fr-FR', en: 'en-US', es: 'es-ES' };
+function _getLocale() {
+    return _LANG_LOCALE[localStorage.getItem('gantt_lang')] || 'fr-FR';
+}
+
 /**
  * Format a date as YYYY-MM-DD
  */
@@ -27,7 +32,7 @@ export function formatDateISO(date) {
  */
 export function formatDateDisplay(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
@@ -39,7 +44,7 @@ export function formatDateDisplay(date) {
  */
 export function formatDateShort(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short'
     });
@@ -175,11 +180,11 @@ export function getWeekNumber(date) {
 }
 
 /**
- * Get month name in French
+ * Get month name in the current UI language
  */
 export function getMonthName(date) {
     const d = new Date(date);
-    return d.toLocaleDateString('fr-FR', { month: 'long' });
+    return d.toLocaleDateString(_getLocale(), { month: 'long' });
 }
 
 /**

@@ -446,20 +446,20 @@ class GanttRenderer {
         if (assignees.length === 1) {
             metaParts.push(`@${assignees[0].name.split(' ')[0]}`);
         } else if (assignees.length > 1) {
-            metaParts.push(`${assignees.length} personnes`);
+            metaParts.push(t(assignees.length > 1 ? 'task.meta.persons' : 'task.meta.person', { n: assignees.length }));
         }
         if (isPermit) {
             const statusInfo = PERMIT_STATUSES[task.permitStatus];
             if (statusInfo) metaParts.push(statusInfo.label);
             if (task.permitDossier) metaParts.push(task.permitDossier);
         } else if (isMilestone) {
-            metaParts.push(`Jalon \u00b7 ${formatDateShort(task.startDate)}`);
+            metaParts.push(t('task.meta.milestone', { date: formatDateShort(task.startDate) }));
         } else if (isPhase) {
             const childCount = task.children ? task.children.length : 0;
-            metaParts.push(`${childCount} tâche${childCount > 1 ? 's' : ''}`);
+            metaParts.push(t(childCount > 1 ? 'task.meta.tasks' : 'task.meta.task', { n: childCount }));
         } else {
             const duration = daysBetween(task.startDate, task.endDate) + 1;
-            metaParts.push(`${duration} jour${duration > 1 ? 's' : ''}`);
+            metaParts.push(t(duration > 1 ? 'task.meta.days' : 'task.meta.day', { n: duration }));
         }
 
         if (metaParts.length > 0) {
@@ -558,7 +558,7 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: gradient },
             role: 'button',
             tabindex: '0',
-            'aria-label': `${task.name}: ${task.progress}% complété, du ${formatDateShort(task.startDate)} au ${formatDateShort(task.endDate)}`,
+            'aria-label': t('task.meta.barAria', { name: task.name, progress: task.progress, start: formatDateShort(task.startDate), end: formatDateShort(task.endDate) }),
             dataset: { taskId: task.id },
         });
 
@@ -653,7 +653,7 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: `linear-gradient(135deg, ${color}, ${color}dd)` },
             role: 'button',
             tabindex: '0',
-            'aria-label': `Permis: ${task.name} - ${statusInfo.label}`,
+            'aria-label': t('task.meta.permitAria', { name: task.name, status: statusInfo.label }),
             title: `${task.name}\n${statusInfo.label}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
             dataset: { taskId: task.id },
         });
