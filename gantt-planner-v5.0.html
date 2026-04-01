@@ -6579,6 +6579,8 @@ const I18N = {
         'project.select': 'Sélectionner un projet',
         'main.ariaLabel': 'Contenu principal',
         'skip.link': 'Aller au contenu principal',
+        'misc.yes': 'Oui',
+        'misc.no': 'Non',
 
         // Zoom
         'zoom.day': 'Jour',
@@ -7166,6 +7168,8 @@ const I18N = {
         'project.select': 'Select a project',
         'main.ariaLabel': 'Main content',
         'skip.link': 'Skip to main content',
+        'misc.yes': 'Yes',
+        'misc.no': 'No',
 
         // Zoom
         'zoom.day': 'Day',
@@ -11829,7 +11833,7 @@ class GanttRenderer {
             style: { left: (pos - 8) + 'px', background: task.color },
             role: 'button',
             tabindex: '0',
-            'aria-label': `Jalon: ${task.name} - ${formatDateShort(task.startDate)}`,
+            'aria-label': t('task.meta.milestone', { date: formatDateShort(task.startDate) }) + ` - ${task.name}`,
             dataset: { taskId: task.id },
         });
 
@@ -12629,11 +12633,7 @@ class GanttInteractions {
             .filter(Boolean)
             .map(r => r.name);
 
-        const fmt = (iso) => {
-            if (!iso) return '\u2014';
-            const d = new Date(iso);
-            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-        };
+        const fmt = (iso) => iso ? formatDateDisplay(iso) : '\u2014';
 
         const dot = `<span class="gtt-dot" style="background:${task.color || '#6366F1'}"></span>`;
         let html = `<div class="gtt-header">${dot}<span class="gtt-title">${task.name}</span></div>`;
@@ -12648,14 +12648,14 @@ class GanttInteractions {
             html += `<div class="gtt-row"><span class="gtt-icon" style="color:${statusColor};font-weight:700;">${statusIcon}</span><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></div>`;
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
-            if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${task.permitStatus}</span></div>`;
+            if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${t(`permit.status.${task.permitStatus}`)}</span></div>`;
             if (task.permitDossier) html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udccb</span><span>N\u00b0 ${task.permitDossier}</span></div>`;
         } else {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)} \u2192 ${fmt(task.endDate)}</span></div>`;
             const dur = (task.startDate && task.endDate)
                 ? Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1
                 : null;
-            if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${dur} jour${dur > 1 ? 's' : ''}</span></div>`;
+            if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${t(dur > 1 ? 'task.meta.days' : 'task.meta.day', { n: dur })}</span></div>`;
             if (typeof task.progress === 'number') {
                 const pct = task.progress;
                 const bar = `<span class="gtt-progress-bar"><span class="gtt-progress-fill" style="width:${pct}%"></span></span>`;
@@ -12677,7 +12677,7 @@ class GanttInteractions {
                     : Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
                 const varColor = variance > 0 ? '#FCA5A5' : variance < 0 ? '#6EE7B7' : '#94A3B8';
                 const varBg = variance > 0 ? 'rgba(239,68,68,.15)' : variance < 0 ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.1)';
-                const varLabel = variance > 0 ? `▲ +${variance}j de retard` : variance < 0 ? `▼ ${variance}j d'avance` : '✓ Dans les délais';
+                const varLabel = variance > 0 ? t('baseline.late', { variance }) : variance < 0 ? t('baseline.early', { variance: Math.abs(variance) }) : t('baseline.onTime');
                 html += `<div class="gtt-sep"></div>`;
                 html += `<div class="gtt-bl-title">${baseline.name}</div>`;
                 if (task.isMilestone) {
@@ -18370,11 +18370,11 @@ thead{display:table-header-group}
                 const dl = new Date(deadlines.decisionDeadline);
                 const daysLeft = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
                 const color = daysLeft <= 3 ? '#EF4444' : daysLeft <= 14 ? '#F59E0B' : 'var(--text-secondary)';
-                nextDeadline = `<span style="color:${color};">${t('dashboard.permit.decisionLabel')}: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` ${t('dashboard.permit.daysLeft', { days: daysLeft })}` : ` ${t('dashboard.permit.overdue')}`}</span>`;
+                nextDeadline = `<span style="color:${color};">${t('dashboard.permit.decisionLabel')}: ${formatDateDisplay(deadlines.decisionDeadline)}${daysLeft >= 0 ? ` ${t('dashboard.permit.daysLeft', { days: daysLeft })}` : ` ${t('dashboard.permit.overdue')}`}</span>`;
             } else if (deadlines.appealEndDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
-                nextDeadline = `${t('dashboard.permit.appealLabel')}: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.appealLabel')}: ${formatDateDisplay(deadlines.appealEndDate)}`;
             } else if (deadlines.expiryDate && permit.permitStatus === 'appeal_cleared') {
-                nextDeadline = `${t('dashboard.permit.expiryLabel')}: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.expiryLabel')}: ${formatDateDisplay(deadlines.expiryDate)}`;
             }
 
             return `<tr class="dashboard-permit-row">
@@ -18382,7 +18382,7 @@ thead{display:table-header-group}
                 <td style="color:var(--text-secondary);">${permit.projectName}</td>
                 <td>${typeLabel}</td>
                 <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusLabel}</span></td>
-                <td style="color:var(--text-secondary);">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td style="color:var(--text-secondary);">${permit.depositDate ? formatDateDisplay(permit.depositDate) : '-'}</td>
                 <td style="font-size:11px;">${nextDeadline || '-'}</td>
             </tr>`;
         }).join('');
@@ -18489,7 +18489,7 @@ tr:nth-child(even){background:#fafbfc}
             if (deadlines.suspended) {
                 decisionCol = '<span style="color:#F59E0B;">Suspendu</span>';
             } else if (deadlines.decisionDeadline) {
-                decisionCol = new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR');
+                decisionCol = formatDateDisplay(deadlines.decisionDeadline);
             }
 
             html += `<tr>
@@ -18497,10 +18497,10 @@ tr:nth-child(even){background:#fafbfc}
                 <td>${permit.projectName}</td>
                 <td>${typeLabel}</td>
                 <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></td>
-                <td>${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${permit.depositDate ? formatDateDisplay(permit.depositDate) : '-'}</td>
                 <td>${decisionCol}</td>
-                <td>${deadlines.appealEndDate ? new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR') : '-'}</td>
-                <td>${deadlines.expiryDate ? new Date(deadlines.expiryDate).toLocaleDateString('fr-FR') : '-'}</td>
+                <td>${deadlines.appealEndDate ? formatDateDisplay(deadlines.appealEndDate) : '-'}</td>
+                <td>${deadlines.expiryDate ? formatDateDisplay(deadlines.expiryDate) : '-'}</td>
             </tr>`;
         });
 
@@ -18518,19 +18518,19 @@ tr:nth-child(even){background:#fafbfc}
                 <div class="section-title" style="color:${statusInfo.color};">${permit.name} — ${typeInfo.label}</div>
                 <div class="detail-grid">
                     <div class="detail-label">Projet</div><div class="detail-value">${permit.projectName}</div>
-                    <div class="detail-label">Type de permis</div><div class="detail-value">${typeInfo.label}</div>
-                    <div class="detail-label">Statut</div><div class="detail-value"><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusInfo.label}</span></div>
-                    <div class="detail-label">Secteur ABF</div><div class="detail-value">${permit.abfSector ? 'Oui (+30 jours)' : 'Non'}</div>
-                    <div class="detail-label">Date de dépôt</div><div class="detail-value">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</div>
-                    <div class="detail-label">Complétude</div><div class="detail-value">${permit.completenessDate ? new Date(permit.completenessDate).toLocaleDateString('fr-FR') : '-'}</div>
-                    ${permit.additionalDocsRequestDate ? `<div class="detail-label">Pièces demandées</div><div class="detail-value">${new Date(permit.additionalDocsRequestDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                    ${permit.additionalDocsResponseDate ? `<div class="detail-label">Pièces fournies</div><div class="detail-value">${new Date(permit.additionalDocsResponseDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                    <div class="detail-label">Délai d'instruction</div><div class="detail-value">${deadlines.instructionDays ? deadlines.instructionDays + ' jours' : '-'}</div>
-                    <div class="detail-label">Date décision prévue</div><div class="detail-value">${deadlines.suspended ? '<span style="color:#F59E0B;">Suspendu — pièces complémentaires attendues</span>' : deadlines.decisionDeadline ? new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR') : '-'}</div>
-                    ${permit.decisionDate ? `<div class="detail-label">Date décision effective</div><div class="detail-value">${new Date(permit.decisionDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                    ${permit.displayStartDate ? `<div class="detail-label">Affichage panneau</div><div class="detail-value">${new Date(permit.displayStartDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                    ${deadlines.appealEndDate ? `<div class="detail-label">Fin recours tiers</div><div class="detail-value">${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}</div>` : ''}
-                    ${deadlines.expiryDate ? `<div class="detail-label">Péremption</div><div class="detail-value">${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}</div>` : ''}
+                    <div class="detail-label">${t('permit.type.label')}</div><div class="detail-value">${typeLabel}</div>
+                    <div class="detail-label">${t('permit.status.label')}</div><div class="detail-value"><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></div>
+                    <div class="detail-label">${t('permit.abf.label')}</div><div class="detail-value">${permit.abfSector ? t('misc.yes') : t('misc.no')}</div>
+                    <div class="detail-label">${t('permit.deposit.label')}</div><div class="detail-value">${permit.depositDate ? formatDateDisplay(permit.depositDate) : '-'}</div>
+                    <div class="detail-label">${t('permit.completeness.label')}</div><div class="detail-value">${permit.completenessDate ? formatDateDisplay(permit.completenessDate) : '-'}</div>
+                    ${permit.additionalDocsRequestDate ? `<div class="detail-label">${t('permit.addDocsReq.label')}</div><div class="detail-value">${formatDateDisplay(permit.additionalDocsRequestDate)}</div>` : ''}
+                    ${permit.additionalDocsResponseDate ? `<div class="detail-label">${t('permit.addDocsResp.label')}</div><div class="detail-value">${formatDateDisplay(permit.additionalDocsResponseDate)}</div>` : ''}
+                    <div class="detail-label">${t('permit.deadline.instruction')}</div><div class="detail-value">${deadlines.instructionDays ? t('permit.deadline.instructionDays', { days: deadlines.instructionDays }) : '-'}</div>
+                    <div class="detail-label">${t('permit.deadline.provisional')}</div><div class="detail-value">${deadlines.suspended ? `<span style="color:#F59E0B;">${t('permit.deadline.suspended')}</span>` : deadlines.decisionDeadline ? formatDateDisplay(deadlines.decisionDeadline) : '-'}</div>
+                    ${permit.decisionDate ? `<div class="detail-label">${t('permit.decision.label')}</div><div class="detail-value">${formatDateDisplay(permit.decisionDate)}</div>` : ''}
+                    ${permit.displayStartDate ? `<div class="detail-label">${t('permit.display.label')}</div><div class="detail-value">${formatDateDisplay(permit.displayStartDate)}</div>` : ''}
+                    ${deadlines.appealEndDate ? `<div class="detail-label">${t('permit.deadline.appealPurged')}</div><div class="detail-value">${formatDateDisplay(deadlines.appealEndDate)}</div>` : ''}
+                    ${deadlines.expiryDate ? `<div class="detail-label">${t('permit.deadline.expiry')}</div><div class="detail-value">${formatDateDisplay(deadlines.expiryDate)}</div>` : ''}
                 </div>
             </div>`;
         });
@@ -18980,7 +18980,7 @@ tr:nth-child(even){background:#fafbfc}
                     saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
-                    const date = new Date().toLocaleDateString('fr-FR');
+                    const date = formatDateDisplay(new Date());
                     await cloudBackup.saveBackup(`Backup complet - ${date}`, data);
                     this._showToast(t('toast.cloudSaveSuccess', { service: 'Google Drive' }), 'success');
                     this._refreshBackupList(modal);
@@ -19354,7 +19354,7 @@ tr:nth-child(even){background:#fafbfc}
                     saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
-                    const date = new Date().toLocaleDateString('fr-FR');
+                    const date = formatDateDisplay(new Date());
                     await oneDriveBackup.saveBackup(`Backup complet - ${date}`, data);
                     this._showToast(t('toast.cloudSaveSuccess', { service: 'OneDrive' }), 'success');
                     this._refreshOneDriveBackupList(modal);

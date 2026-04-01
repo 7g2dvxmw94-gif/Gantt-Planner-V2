@@ -624,7 +624,7 @@ class GanttRenderer {
             style: { left: (pos - 8) + 'px', background: task.color },
             role: 'button',
             tabindex: '0',
-            'aria-label': `Jalon: ${task.name} - ${formatDateShort(task.startDate)}`,
+            'aria-label': t('task.meta.milestone', { date: formatDateShort(task.startDate) }) + ` - ${task.name}`,
             dataset: { taskId: task.id },
         });
 

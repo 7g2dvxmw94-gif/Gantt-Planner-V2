@@ -4,7 +4,7 @@
    ======================================== */
 
 import { store } from './store.js';
-import { formatDateISO, addDays, daysBetween } from './utils.js';
+import { formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -410,11 +410,7 @@ class GanttInteractions {
             .filter(Boolean)
             .map(r => r.name);
 
-        const fmt = (iso) => {
-            if (!iso) return '\u2014';
-            const d = new Date(iso);
-            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-        };
+        const fmt = (iso) => iso ? formatDateDisplay(iso) : '\u2014';
 
         const dot = `<span class="gtt-dot" style="background:${task.color || '#6366F1'}"></span>`;
         let html = `<div class="gtt-header">${dot}<span class="gtt-title">${task.name}</span></div>`;
@@ -429,14 +425,14 @@ class GanttInteractions {
             html += `<div class="gtt-row"><span class="gtt-icon" style="color:${statusColor};font-weight:700;">${statusIcon}</span><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></div>`;
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
-            if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${task.permitStatus}</span></div>`;
+            if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${t(`permit.status.${task.permitStatus}`)}</span></div>`;
             if (task.permitDossier) html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udccb</span><span>N\u00b0 ${task.permitDossier}</span></div>`;
         } else {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)} \u2192 ${fmt(task.endDate)}</span></div>`;
             const dur = (task.startDate && task.endDate)
                 ? Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1
                 : null;
-            if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${dur} jour${dur > 1 ? 's' : ''}</span></div>`;
+            if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${t(dur > 1 ? 'task.meta.days' : 'task.meta.day', { n: dur })}</span></div>`;
             if (typeof task.progress === 'number') {
                 const pct = task.progress;
                 const bar = `<span class="gtt-progress-bar"><span class="gtt-progress-fill" style="width:${pct}%"></span></span>`;
@@ -458,7 +454,7 @@ class GanttInteractions {
                     : Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
                 const varColor = variance > 0 ? '#FCA5A5' : variance < 0 ? '#6EE7B7' : '#94A3B8';
                 const varBg = variance > 0 ? 'rgba(239,68,68,.15)' : variance < 0 ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.1)';
-                const varLabel = variance > 0 ? `▲ +${variance}j de retard` : variance < 0 ? `▼ ${variance}j d'avance` : '✓ Dans les délais';
+                const varLabel = variance > 0 ? t('baseline.late', { variance }) : variance < 0 ? t('baseline.early', { variance: Math.abs(variance) }) : t('baseline.onTime');
                 html += `<div class="gtt-sep"></div>`;
                 html += `<div class="gtt-bl-title">${baseline.name}</div>`;
                 if (task.isMilestone) {

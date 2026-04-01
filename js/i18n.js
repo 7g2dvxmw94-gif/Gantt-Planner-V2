@@ -50,6 +50,8 @@ const I18N = {
         'project.select': 'Sélectionner un projet',
         'main.ariaLabel': 'Contenu principal',
         'skip.link': 'Aller au contenu principal',
+        'misc.yes': 'Oui',
+        'misc.no': 'Non',
 
         // Zoom
         'zoom.day': 'Jour',
@@ -637,6 +639,8 @@ const I18N = {
         'project.select': 'Select a project',
         'main.ariaLabel': 'Main content',
         'skip.link': 'Skip to main content',
+        'misc.yes': 'Yes',
+        'misc.no': 'No',
 
         // Zoom
         'zoom.day': 'Day',
