@@ -30,6 +30,9 @@ class App {
         // Initialize theme
         themeManager.init();
 
+        // Apply i18n to static HTML
+        applyI18n();
+
         // Initialize settings panel
         settingsPanel.init();
         settingsPanel.applyStoredCustomizations();

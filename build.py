@@ -17,6 +17,7 @@ CSS_FILES = [
 ]
 
 JS_FILES = [
+    'js/i18n.js',
     'js/utils.js',
     'js/store.js',
     'js/theme.js',

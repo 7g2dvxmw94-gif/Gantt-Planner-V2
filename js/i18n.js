@@ -1,0 +1,447 @@
+/* ========================================
+   INTERNATIONALIZATION (i18n)
+   FR (Français) + EN (English) + ES (Español - coming soon)
+   ======================================== */
+
+const I18N_LANGUAGES = {
+    fr: { name: 'Français', nativeName: 'Français' },
+    en: { name: 'English', nativeName: 'English' },
+    es: { name: 'Español', nativeName: 'Español', comingSoon: true },
+};
+
+const I18N = {
+    fr: {
+        // Navigation & Header
+        'header.search': 'Rechercher... (Ctrl/⌘+F)',
+        'header.settings': 'Réglages et profil utilisateur',
+        'header.theme': 'Mode sombre/clair (Ctrl/⌘+D)',
+
+        // Tabs
+        'tab.timeline': 'Timeline',
+        'tab.board': 'Tableau',
+        'tab.resources': 'Ressources',
+        'tab.dashboard': 'Dashboard',
+        'tab.costs': 'Coûts',
+
+        // Toolbar
+        'toolbar.undo': 'Annuler (Ctrl/⌘+Z)',
+        'toolbar.redo': 'Rétablir (Ctrl/⌘+Y)',
+        'toolbar.criticalPath': 'Chemin critique',
+        'toolbar.criticalPathTooltip': 'Afficher/masquer le chemin critique',
+        'toolbar.baseline': 'Baseline',
+        'toolbar.baselineTooltip': 'Gérer les baselines',
+        'toolbar.import': 'Importer',
+        'toolbar.importTooltip': 'Importer (JSON, XML MS Project, Excel)',
+        'toolbar.export': 'Exporter',
+        'toolbar.notifications': 'Notifications',
+        'toolbar.addTask': 'Nouvelle tâche',
+        'toolbar.addTaskTooltip': 'Ajouter une nouvelle tâche',
+
+        // Zoom
+        'zoom.day': 'Jour',
+        'zoom.week': 'Semaine',
+        'zoom.month': 'Mois',
+        'zoom.quarter': 'Trimestre',
+        'zoom.dayLabel': 'Vue par jour',
+        'zoom.weekLabel': 'Vue par semaine',
+        'zoom.monthLabel': 'Vue par mois',
+        'zoom.quarterLabel': 'Vue par trimestre',
+
+        // Settings Panel - Tabs
+        'settings.title': 'Réglages',
+        'settings.tab.profile': 'Profil',
+        'settings.tab.appearance': 'Apparence',
+        'settings.tab.general': 'Général',
+        'settings.tab.sync': 'Synchro',
+        'settings.tab.help': 'Aide',
+        'settings.btnCancel': 'Annuler',
+        'settings.btnSave': 'Enregistrer',
+        'settings.btnClose': 'Fermer les réglages',
+
+        // Settings - General
+        'settings.lang.title': 'Langue',
+        'settings.lang.select': 'Sélectionner une langue',
+        'settings.currency.title': 'Devise',
+        'settings.currency.label': 'Devise affichée',
+        'settings.display.title': 'Affichage',
+        'settings.display.showLinks': 'Afficher les liens (dépendances)',
+
+        // Settings - Profile
+        'settings.identity': 'Identité',
+        'settings.avatar.hint': 'JPG, PNG ou GIF · Max 2 Mo',
+        'settings.avatar.upload': 'Choisir une photo',
+        'settings.avatar.remove': 'Supprimer',
+        'settings.name.label': 'Prénom Nom',
+        'settings.name.placeholder': 'Jean Dupont',
+        'settings.initials.label': 'Initiales',
+        'settings.initials.hint': '(2 caractères max)',
+        'settings.company.label': 'Nom de l\'entreprise',
+        'settings.company.placeholder': 'Mon entreprise',
+        'settings.logo': 'Logo',
+        'settings.logo.hint': 'PNG, SVG ou JPG · Max 2 Mo',
+        'settings.logo.upload': 'Choisir un logo',
+        'settings.favicon': 'Favicon',
+        'settings.favicon.hint': 'ICO, PNG ou SVG · Max 512 Ko',
+        'settings.favicon.upload': 'Choisir un favicon',
+        'settings.favicon.description': 'La petite icône affichée dans l\'onglet de votre navigateur, à gauche du titre de la page.',
+
+        // Settings - Appearance
+        'settings.colors': 'Couleurs',
+        'settings.colors.description': 'Couleur d\'accentuation aux couleurs de votre société.',
+        'settings.color.custom': 'Couleur personnalisée',
+        'settings.typography': 'Typographie',
+        'settings.font.label': 'Police',
+        'settings.font.default': '(défaut)',
+        'settings.fontSize.label': 'Taille de texte',
+
+        // Task Modal
+        'task.type.task': 'Tâche',
+        'task.type.milestone': 'Jalon',
+        'task.type.phase': 'Phase',
+        'task.type.permit': 'Permis',
+        'task.name.label': 'Nom de la tâche',
+        'task.name.placeholder': 'Ex: Design de la page d\'accueil',
+        'task.phase.label': 'Phase parente',
+        'task.description.label': 'Description',
+        'task.description.placeholder': 'Description optionnelle...',
+        'task.startDate': 'Date de début',
+        'task.endDate': 'Date de fin',
+        'task.duration': 'Durée (jours)',
+        'task.priority': 'Priorité',
+        'task.priority.low': 'Basse',
+        'task.priority.medium': 'Moyenne',
+        'task.priority.high': 'Haute',
+        'task.status': 'Statut',
+        'task.status.todo': 'À faire',
+        'task.status.inProgress': 'En cours',
+        'task.status.done': 'Terminé',
+        'task.progress': 'Progression',
+        'task.progress.unit': '%',
+        'task.assignee': 'Assigné à',
+        'task.assigneeSearch': 'Rechercher une ressource…',
+        'task.color': 'Couleur',
+        'task.btnDelete': 'Supprimer',
+        'task.btnCancel': 'Annuler',
+        'task.btnCreate': 'Créer',
+        'task.btnSave': 'Enregistrer',
+
+        // Board/Table View
+        'board.taskName': 'Tâche',
+        'board.phase': 'Phase',
+        'board.start': 'Début',
+        'board.end': 'Fin',
+        'board.blStart': 'Début BL',
+        'board.blEnd': 'Fin BL',
+        'board.blVariance': 'Écart',
+        'board.assignees': 'Assigné(s)',
+        'board.status': 'Statut',
+        'board.priority': 'Priorité',
+        'board.progress': 'Progression',
+        'board.empty': 'Aucune tâche ne correspond aux filtres sélectionnés.',
+        'board.selectAll': 'Tout sélectionner (Ctrl/⌘+A)',
+
+        // Baseline
+        'baseline.empty': 'Aucune baseline. Créez-en une ci-dessous.',
+        'baseline.create': 'Créer',
+        'baseline.title': 'Baselines',
+        'baseline.rename': 'Renommer',
+        'baseline.delete': 'Supprimer',
+        'baseline.startTooltip': 'Date de début planifiée dans la baseline "{name}"',
+        'baseline.endTooltip': 'Date de fin planifiée dans la baseline "{name}"',
+        'baseline.varianceTooltip': 'Écart entre la date de fin actuelle et la baseline "{name}" (+Nj = retard, −Nj = avance)',
+        'baseline.onTime': '✓ Dans les délais',
+        'baseline.late': '▲ +{variance}j de retard',
+        'baseline.early': '▼ {variance}j d\'avance',
+
+        // Toasts
+        'toast.taskUpdated': 'Tâche mise à jour',
+        'toast.actionUndone': 'Action annulée',
+        'toast.actionRedone': 'Action rétablie',
+        'toast.settingsSaved': 'Réglages enregistrés',
+        'toast.baselineCreated': 'Baseline "{name}" créée',
+        'toast.baselineMaxReached': 'Maximum 5 baselines par projet',
+        'toast.projectExportedJSON': 'Projet exporté en JSON',
+        'toast.projectExportedCSV': 'Projet exporté en CSV (compatible MS Project)',
+        'toast.projectExportedXML': 'Projet exporté en XML MS Project',
+        'toast.pdfPrintReady': 'Impression PDF prête',
+        'toast.selectAtLeastOneView': 'Sélectionnez au moins une vue',
+        'toast.permitExportPdfReady': 'Export PDF des permis prêt',
+        'toast.projectRenamed': 'Projet renommé',
+        'toast.projectCreated': 'Projet "{name}" créé',
+        'toast.taskDeleted': 'Tâche supprimée',
+        'toast.taskDuplicated': 'Tâche dupliquée',
+        'toast.taskCompleted': 'Tâche terminée',
+        'toast.projectDuplicated': 'Projet dupliqué : "{name}"',
+        'toast.projectDeleted': 'Projet supprimé',
+        'toast.resourceCreated': 'Ressource créée',
+        'toast.resourceUpdated': 'Ressource modifiée',
+        'toast.resourceDeleted': 'Ressource supprimée',
+        'toast.resourceNameRequired': 'Le nom est obligatoire',
+        'toast.tasksStatusChanged': '{count} tâche{plural} → {status}',
+        'toast.tasksDeleted': '{count} tâche{plural} supprimée{plural}',
+        'toast.criticalPathShown': 'Chemin critique : {count} tâches sur {total}',
+        'toast.criticalPathHidden': 'Chemin critique masqué',
+        'toast.noPermitsToExport': 'Aucun permis à exporter',
+
+        // Confirmations
+        'confirm.deleteResource': 'Supprimer la ressource "{name}" ?\nElle sera désassignée de toutes les tâches.',
+        'confirm.deleteBackup': 'Supprimer cette sauvegarde ?',
+        'confirm.deleteTask': 'Supprimer "{name}" ?',
+        'confirm.deleteProject': 'Supprimer le projet "{name}" ?',
+        'confirm.deleteTasks': 'Supprimer {count} tâche{plural} ?',
+
+        // Onboarding
+        'onboarding.step1Title': 'Vos projets',
+        'onboarding.step1Text': 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.',
+        'onboarding.step2Title': 'Vues du projet',
+        'onboarding.step2Text': 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
+        'onboarding.step3Title': 'Ajouter une tâche',
+        'onboarding.step3Text': 'Créez une tâche, un jalon ou une phase.',
+        'onboarding.step4Title': 'Diagramme de Gantt',
+        'onboarding.step4Text': 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.',
+        'onboarding.step5Title': 'Niveau de zoom',
+        'onboarding.step5Text': 'Passez de la vue Jour à Trimestre pour ajuster la granularité.',
+        'onboarding.step6Title': 'Import / Export',
+        'onboarding.step6Text': 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
+        'onboarding.counter': '{current} / {total}',
+        'onboarding.skip': 'Passer',
+        'onboarding.next': 'Suivant',
+        'onboarding.finish': 'Terminer',
+    },
+    en: {
+        // Navigation & Header
+        'header.search': 'Search... (Ctrl/⌘+F)',
+        'header.settings': 'Settings and user profile',
+        'header.theme': 'Dark/Light mode (Ctrl/⌘+D)',
+
+        // Tabs
+        'tab.timeline': 'Timeline',
+        'tab.board': 'Table',
+        'tab.resources': 'Resources',
+        'tab.dashboard': 'Dashboard',
+        'tab.costs': 'Costs',
+
+        // Toolbar
+        'toolbar.undo': 'Undo (Ctrl/⌘+Z)',
+        'toolbar.redo': 'Redo (Ctrl/⌘+Y)',
+        'toolbar.criticalPath': 'Critical Path',
+        'toolbar.criticalPathTooltip': 'Show/hide critical path',
+        'toolbar.baseline': 'Baseline',
+        'toolbar.baselineTooltip': 'Manage baselines',
+        'toolbar.import': 'Import',
+        'toolbar.importTooltip': 'Import (JSON, MS Project XML, Excel)',
+        'toolbar.export': 'Export',
+        'toolbar.notifications': 'Notifications',
+        'toolbar.addTask': 'New Task',
+        'toolbar.addTaskTooltip': 'Add a new task',
+
+        // Zoom
+        'zoom.day': 'Day',
+        'zoom.week': 'Week',
+        'zoom.month': 'Month',
+        'zoom.quarter': 'Quarter',
+        'zoom.dayLabel': 'Day view',
+        'zoom.weekLabel': 'Week view',
+        'zoom.monthLabel': 'Month view',
+        'zoom.quarterLabel': 'Quarter view',
+
+        // Settings Panel - Tabs
+        'settings.title': 'Settings',
+        'settings.tab.profile': 'Profile',
+        'settings.tab.appearance': 'Appearance',
+        'settings.tab.general': 'General',
+        'settings.tab.sync': 'Sync',
+        'settings.tab.help': 'Help',
+        'settings.btnCancel': 'Cancel',
+        'settings.btnSave': 'Save',
+        'settings.btnClose': 'Close settings',
+
+        // Settings - General
+        'settings.lang.title': 'Language',
+        'settings.lang.select': 'Select a language',
+        'settings.currency.title': 'Currency',
+        'settings.currency.label': 'Display currency',
+        'settings.display.title': 'Display',
+        'settings.display.showLinks': 'Show links (dependencies)',
+
+        // Settings - Profile
+        'settings.identity': 'Identity',
+        'settings.avatar.hint': 'JPG, PNG or GIF · Max 2 MB',
+        'settings.avatar.upload': 'Choose a photo',
+        'settings.avatar.remove': 'Remove',
+        'settings.name.label': 'Full Name',
+        'settings.name.placeholder': 'John Doe',
+        'settings.initials.label': 'Initials',
+        'settings.initials.hint': '(2 characters max)',
+        'settings.company.label': 'Company Name',
+        'settings.company.placeholder': 'My Company',
+        'settings.logo': 'Logo',
+        'settings.logo.hint': 'PNG, SVG or JPG · Max 2 MB',
+        'settings.logo.upload': 'Choose a logo',
+        'settings.favicon': 'Favicon',
+        'settings.favicon.hint': 'ICO, PNG or SVG · Max 512 KB',
+        'settings.favicon.upload': 'Choose a favicon',
+        'settings.favicon.description': 'The small icon displayed in your browser tab, to the left of the page title.',
+
+        // Settings - Appearance
+        'settings.colors': 'Colors',
+        'settings.colors.description': 'Accent color matching your company colors.',
+        'settings.color.custom': 'Custom Color',
+        'settings.typography': 'Typography',
+        'settings.font.label': 'Font',
+        'settings.font.default': '(default)',
+        'settings.fontSize.label': 'Text Size',
+
+        // Task Modal
+        'task.type.task': 'Task',
+        'task.type.milestone': 'Milestone',
+        'task.type.phase': 'Phase',
+        'task.type.permit': 'Permit',
+        'task.name.label': 'Task Name',
+        'task.name.placeholder': 'Ex: Homepage design',
+        'task.phase.label': 'Parent Phase',
+        'task.description.label': 'Description',
+        'task.description.placeholder': 'Optional description...',
+        'task.startDate': 'Start Date',
+        'task.endDate': 'End Date',
+        'task.duration': 'Duration (days)',
+        'task.priority': 'Priority',
+        'task.priority.low': 'Low',
+        'task.priority.medium': 'Medium',
+        'task.priority.high': 'High',
+        'task.status': 'Status',
+        'task.status.todo': 'To do',
+        'task.status.inProgress': 'In progress',
+        'task.status.done': 'Done',
+        'task.progress': 'Progress',
+        'task.progress.unit': '%',
+        'task.assignee': 'Assignee',
+        'task.assigneeSearch': 'Search a resource…',
+        'task.color': 'Color',
+        'task.btnDelete': 'Delete',
+        'task.btnCancel': 'Cancel',
+        'task.btnCreate': 'Create',
+        'task.btnSave': 'Save',
+
+        // Board/Table View
+        'board.taskName': 'Task',
+        'board.phase': 'Phase',
+        'board.start': 'Start',
+        'board.end': 'End',
+        'board.blStart': 'BL Start',
+        'board.blEnd': 'BL End',
+        'board.blVariance': 'Variance',
+        'board.assignees': 'Assignee(s)',
+        'board.status': 'Status',
+        'board.priority': 'Priority',
+        'board.progress': 'Progress',
+        'board.empty': 'No tasks match the selected filters.',
+        'board.selectAll': 'Select all (Ctrl/⌘+A)',
+
+        // Baseline
+        'baseline.empty': 'No baselines. Create one below.',
+        'baseline.create': 'Create',
+        'baseline.title': 'Baselines',
+        'baseline.rename': 'Rename',
+        'baseline.delete': 'Delete',
+        'baseline.startTooltip': 'Planned start date in the baseline "{name}"',
+        'baseline.endTooltip': 'Planned end date in the baseline "{name}"',
+        'baseline.varianceTooltip': 'Variance between current end date and baseline "{name}" (+Nj = late, −Nj = early)',
+        'baseline.onTime': '✓ On time',
+        'baseline.late': '▲ +{variance}d late',
+        'baseline.early': '▼ {variance}d early',
+
+        // Toasts
+        'toast.taskUpdated': 'Task updated',
+        'toast.actionUndone': 'Action undone',
+        'toast.actionRedone': 'Action redone',
+        'toast.settingsSaved': 'Settings saved',
+        'toast.baselineCreated': 'Baseline "{name}" created',
+        'toast.baselineMaxReached': 'Maximum 5 baselines per project',
+        'toast.projectExportedJSON': 'Project exported as JSON',
+        'toast.projectExportedCSV': 'Project exported as CSV (MS Project compatible)',
+        'toast.projectExportedXML': 'Project exported as MS Project XML',
+        'toast.pdfPrintReady': 'PDF print ready',
+        'toast.selectAtLeastOneView': 'Select at least one view',
+        'toast.permitExportPdfReady': 'Permit PDF export ready',
+        'toast.projectRenamed': 'Project renamed',
+        'toast.projectCreated': 'Project "{name}" created',
+        'toast.taskDeleted': 'Task deleted',
+        'toast.taskDuplicated': 'Task duplicated',
+        'toast.taskCompleted': 'Task completed',
+        'toast.projectDuplicated': 'Project duplicated: "{name}"',
+        'toast.projectDeleted': 'Project deleted',
+        'toast.resourceCreated': 'Resource created',
+        'toast.resourceUpdated': 'Resource updated',
+        'toast.resourceDeleted': 'Resource deleted',
+        'toast.resourceNameRequired': 'Name is required',
+        'toast.tasksStatusChanged': '{count} task{plural} → {status}',
+        'toast.tasksDeleted': '{count} task{plural} deleted',
+        'toast.criticalPathShown': 'Critical path: {count} tasks out of {total}',
+        'toast.criticalPathHidden': 'Critical path hidden',
+        'toast.noPermitsToExport': 'No permits to export',
+
+        // Confirmations
+        'confirm.deleteResource': 'Delete resource "{name}" ?\nIt will be unassigned from all tasks.',
+        'confirm.deleteBackup': 'Delete this backup?',
+        'confirm.deleteTask': 'Delete "{name}" ?',
+        'confirm.deleteProject': 'Delete project "{name}" ?',
+        'confirm.deleteTasks': 'Delete {count} task{plural} ?',
+
+        // Onboarding
+        'onboarding.step1Title': 'Your Projects',
+        'onboarding.step1Text': 'Click here to switch between projects, create, duplicate or delete them.',
+        'onboarding.step2Title': 'Project Views',
+        'onboarding.step2Text': 'Timeline, Kanban Table, Resources, Dashboard and Costs: navigate between different views.',
+        'onboarding.step3Title': 'Add a Task',
+        'onboarding.step3Text': 'Create a task, milestone or phase.',
+        'onboarding.step4Title': 'Gantt Diagram',
+        'onboarding.step4Text': 'Drag bars to move tasks, stretch edges to change dates. On mobile, pinch to zoom.',
+        'onboarding.step5Title': 'Zoom Level',
+        'onboarding.step5Text': 'Switch from Day to Quarter view to adjust granularity.',
+        'onboarding.step6Title': 'Import / Export',
+        'onboarding.step6Text': 'Export as JSON, CSV, MS Project XML or Excel. Import from the same formats.',
+        'onboarding.counter': '{current} / {total}',
+        'onboarding.skip': 'Skip',
+        'onboarding.next': 'Next',
+        'onboarding.finish': 'Finish',
+    },
+};
+
+function t(key, replacements = {}) {
+    const lang = localStorage.getItem('gantt_lang') || 'fr';
+    const dict = I18N[lang] || I18N.fr;
+    let str = (dict && dict[key]) ? dict[key] : (I18N.fr[key] || key);
+
+    Object.entries(replacements).forEach(([k, v]) => {
+        str = str.split('{' + k + '}').join(String(v));
+    });
+
+    return str;
+}
+
+function setLanguage(lang) {
+    if (!I18N_LANGUAGES[lang] || I18N_LANGUAGES[lang].comingSoon) return false;
+    localStorage.setItem('gantt_lang', lang);
+    window.location.reload();
+    return true;
+}
+
+function getCurrentLang() {
+    return localStorage.getItem('gantt_lang') || 'fr';
+}
+
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
+    });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+        el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+    });
+}

@@ -39,7 +39,7 @@
             <span>Gantt Planner</span>
         </div>
 
-        <button class="project-selector" tabindex="0" role="button" aria-haspopup="listbox" aria-label="Sélectionner un projet">
+        <button class="project-selector" tabindex="0" role="button" aria-haspopup="listbox" data-i18n-aria-label="Sélectionner un projet">
             <span class="project-name" id="projectName">Projet Alpha</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M6 9l6 6 6-6"/>
@@ -54,7 +54,7 @@
                 <circle cx="11" cy="11" r="8"/>
                 <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <input type="search" id="searchInput" placeholder="Rechercher... (Ctrl/⌘+F)" aria-label="Rechercher dans le projet">
+            <input type="search" id="searchInput" data-i18n-placeholder="header.search" placeholder="Rechercher... (Ctrl/⌘+F)" aria-label="Rechercher dans le projet">
         </div>
 
         <!-- Header Actions -->
@@ -98,7 +98,7 @@
                         <line x1="20" y1="21" x2="20" y2="16"/>
                         <line x1="20" y1="12" x2="20" y2="3"/>
                     </svg>
-                    <span>Timeline</span>
+                    <span data-i18n="tab.timeline">Timeline</span>
                 </button>
                 <!-- Board Tab -->
                 <button class="tab" role="tab" aria-selected="false" data-view="board" tabindex="-1" id="tabBoard" aria-controls="mainContent">
@@ -108,7 +108,7 @@
                         <rect x="14" y="14" width="7" height="7"/>
                         <rect x="3" y="14" width="7" height="7"/>
                     </svg>
-                    <span>Tableau</span>
+                    <span data-i18n="tab.board">Tableau</span>
                 </button>
                 <!-- Resources Tab -->
                 <button class="tab" role="tab" aria-selected="false" data-view="resources" tabindex="-1" id="tabResources" aria-controls="mainContent">
@@ -118,7 +118,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
-                    <span>Ressources</span>
+                    <span data-i18n="tab.resources">Ressources</span>
                 </button>
                 <!-- Dashboard Tab -->
                 <button class="tab" role="tab" aria-selected="false" data-view="dashboard" tabindex="-1" id="tabDashboard" aria-controls="mainContent">
@@ -128,7 +128,7 @@
                         <rect x="14" y="12" width="7" height="9"/>
                         <rect x="3" y="16" width="7" height="5"/>
                     </svg>
-                    <span>Dashboard</span>
+                    <span data-i18n="tab.dashboard">Dashboard</span>
                 </button>
                 <!-- Costs Tab -->
                 <button class="tab" role="tab" aria-selected="false" data-view="costs" tabindex="-1" id="tabCosts" aria-controls="mainContent">
@@ -137,7 +137,7 @@
                         <rect x="10" y="9" width="4" height="12" rx="1"/>
                         <rect x="18" y="4" width="4" height="17" rx="1"/>
                     </svg>
-                    <span>Co&ucirc;ts</span>
+                    <span data-i18n="tab.costs">Co&ucirc;ts</span>
                 </button>
             </div>
 
