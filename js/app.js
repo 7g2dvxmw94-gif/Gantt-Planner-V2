@@ -56,7 +56,7 @@ class App {
             ganttRenderer.render();
             this._renderStats();
             this._refreshCurrentView();
-            this._showToast('Tâche mise à jour', 'success');
+            this._showToast(t('toast.taskUpdated'), 'success');
         });
 
         // Initialize Gantt interactions (drag, resize, click)
@@ -99,7 +99,7 @@ class App {
         });
 
         // Announce to screen readers
-        this._announceToSR('Gantt Planner Pro chargé');
+        this._announceToSR('Gantt Planner Pro');
 
         // Onboarding for new users
         onboarding.tryAutoStart();
@@ -339,7 +339,7 @@ class App {
         selectAllCb.type = 'checkbox';
         selectAllCb.id = 'tableSelectAll';
         const _isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
-        selectAllCb.title = `Tout sélectionner (${_isMac ? '⌘' : 'Ctrl'}+A)`;
+        selectAllCb.title = t('board.selectAll');
         selectAllCb.addEventListener('change', (e) => {
             e.stopPropagation();
             if (selectAllCb.checked) this._selectAllTasks();
@@ -351,7 +351,7 @@ class App {
         // Type column header (sortable)
         const thType = document.createElement('th');
         thType.className = 'table-type-col sortable';
-        thType.textContent = 'Type';
+        thType.textContent = t('board.type');
         if (this._tableSortKey === 'type') {
             thType.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
         }
@@ -370,19 +370,19 @@ class App {
         const activeBaseline = store.getActiveBaseline();
 
         const columns = [
-            { key: 'name', label: 'Tâche' },
-            { key: 'phase', label: 'Phase' },
-            { key: 'startDate', label: 'Début' },
-            { key: 'endDate', label: 'Fin' },
+            { key: 'name', label: t('board.taskName') },
+            { key: 'phase', label: t('board.phase') },
+            { key: 'startDate', label: t('board.start') },
+            { key: 'endDate', label: t('board.end') },
             ...(activeBaseline ? [
-                { key: '_blStart', label: 'Début BL', baseline: true, tooltip: `Date de début planifiée dans la baseline "${activeBaseline.name}"` },
-                { key: '_blEnd',   label: 'Fin BL',   baseline: true, tooltip: `Date de fin planifiée dans la baseline "${activeBaseline.name}"` },
-                { key: '_blVariance', label: 'Écart', baseline: true, tooltip: `Écart entre la date de fin actuelle et la baseline "${activeBaseline.name}" (+Nj = retard, −Nj = avance)` },
+                { key: '_blStart', label: t('board.blStart'), baseline: true, tooltip: t('baseline.startTooltip', { name: activeBaseline.name }) },
+                { key: '_blEnd',   label: t('board.blEnd'),   baseline: true, tooltip: t('baseline.endTooltip', { name: activeBaseline.name }) },
+                { key: '_blVariance', label: t('board.blVariance'), baseline: true, tooltip: t('baseline.varianceTooltip', { name: activeBaseline.name }) },
             ] : []),
-            { key: 'assignees', label: 'Assigné(s)' },
-            { key: 'status', label: 'Statut' },
-            { key: 'priority', label: 'Priorité' },
-            { key: 'progress', label: 'Progression' },
+            { key: 'assignees', label: t('board.assignees') },
+            { key: 'status', label: t('board.status') },
+            { key: 'priority', label: t('board.priority') },
+            { key: 'progress', label: t('board.progress') },
         ];
 
         columns.forEach(col => {
@@ -412,8 +412,8 @@ class App {
         table.appendChild(thead);
 
         // Body
-        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const statusLabels = { todo: t('task.status.todo'), in_progress: t('task.status.inProgress'), done: t('task.status.done') };
+        const priorityLabels = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
         const criticalIds = this._showCriticalPath ? store.getCriticalPath() : [];
         const tbody = document.createElement('tbody');
 
@@ -454,13 +454,13 @@ class App {
             let typeIcon, typeTitle;
             if (task.isMilestone) {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-                typeTitle = 'Jalon';
+                typeTitle = t('task.type.milestone');
             } else if (task.isPermit) {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>';
-                typeTitle = 'Permis';
+                typeTitle = t('task.type.permit');
             } else {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>';
-                typeTitle = 'Tâche';
+                typeTitle = t('task.type.task');
             }
             const typeSpan = document.createElement('span');
             typeSpan.className = 'table-type-icon';
@@ -584,7 +584,7 @@ class App {
             if (isCritical) {
                 const critBadge = document.createElement('span');
                 critBadge.className = 'badge-critical';
-                critBadge.textContent = 'Critique';
+                critBadge.textContent = t('task.badge.critical');
                 tdStatus.appendChild(critBadge);
             }
             row.appendChild(tdStatus);
@@ -648,17 +648,17 @@ class App {
         modal.className = 'modal resource-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
-        modal.setAttribute('aria-label', isEdit ? 'Modifier la ressource' : 'Nouvelle ressource');
+        modal.setAttribute('aria-label', isEdit ? t('resource.edit.title') : t('resource.create.title'));
 
         // ---- Header ----
         const header = document.createElement('div');
         header.className = 'modal-header';
         const title = document.createElement('h2');
         title.className = 'modal-title';
-        title.textContent = isEdit ? 'Modifier la ressource' : 'Nouvelle ressource';
+        title.textContent = isEdit ? t('resource.edit.title') : t('resource.create.title');
         const closeBtn = document.createElement('button');
         closeBtn.className = 'icon-btn';
-        closeBtn.setAttribute('aria-label', 'Fermer');
+        closeBtn.setAttribute('aria-label', t('task.btnCancel'));
         closeBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
         header.appendChild(title);
         header.appendChild(closeBtn);
@@ -685,12 +685,12 @@ class App {
         nameGroup.className = 'form-group';
         const nameLabel = document.createElement('label');
         nameLabel.className = 'form-label';
-        nameLabel.textContent = 'Nom complet';
+        nameLabel.textContent = t('resource.name.label');
         const nameInput = document.createElement('input');
         nameInput.className = 'input';
         nameInput.type = 'text';
         nameInput.id = 'resName';
-        nameInput.placeholder = 'Ex: Marie Dupont';
+        nameInput.placeholder = t('resource.name.placeholder');
         nameInput.value = isEdit ? resource.name : '';
         nameGroup.appendChild(nameLabel);
         nameGroup.appendChild(nameInput);
@@ -701,12 +701,12 @@ class App {
         roleGroup.className = 'form-group';
         const roleLabel = document.createElement('label');
         roleLabel.className = 'form-label';
-        roleLabel.textContent = 'Rôle / Fonction';
+        roleLabel.textContent = t('resource.role.label');
         const roleInput = document.createElement('input');
         roleInput.className = 'input';
         roleInput.type = 'text';
         roleInput.id = 'resRole';
-        roleInput.placeholder = 'Ex: UX Designer, Développeur...';
+        roleInput.placeholder = t('resource.role.placeholder');
         roleInput.value = isEdit ? (resource.role || '') : '';
         roleGroup.appendChild(roleLabel);
         roleGroup.appendChild(roleInput);
@@ -724,16 +724,16 @@ class App {
         avatarGroup.className = 'form-group';
         const avatarLabel = document.createElement('label');
         avatarLabel.className = 'form-label';
-        avatarLabel.textContent = 'Initiales';
+        avatarLabel.textContent = t('resource.initials.label');
         const avatarHint = document.createElement('span');
         avatarHint.className = 'form-hint';
-        avatarHint.textContent = 'Auto-généré si vide';
+        avatarHint.textContent = t('resource.initials.hint');
         const avatarInput = document.createElement('input');
         avatarInput.className = 'input';
         avatarInput.type = 'text';
         avatarInput.id = 'resAvatar';
         avatarInput.maxLength = 3;
-        avatarInput.placeholder = 'Ex: MD';
+        avatarInput.placeholder = t('resource.initials.placeholder');
         avatarInput.value = isEdit ? (resource.avatar || '') : '';
         avatarGroup.appendChild(avatarLabel);
         avatarGroup.appendChild(avatarInput);
@@ -744,7 +744,7 @@ class App {
         rateGroup.className = 'form-group';
         const rateLabel = document.createElement('label');
         rateLabel.className = 'form-label';
-        rateLabel.textContent = 'Tarification';
+        rateLabel.textContent = t('resource.rate.label');
 
         // Rate type toggle
         let currentRateType = (isEdit && resource.rateType === 'daily') ? 'daily' : 'hourly';
@@ -753,11 +753,11 @@ class App {
         const btnHourly = document.createElement('button');
         btnHourly.type = 'button';
         btnHourly.className = 'res-rate-toggle-btn' + (currentRateType === 'hourly' ? ' active' : '');
-        btnHourly.textContent = 'Taux horaire';
+        btnHourly.textContent = t('resource.rate.hourly');
         const btnDaily = document.createElement('button');
         btnDaily.type = 'button';
         btnDaily.className = 'res-rate-toggle-btn' + (currentRateType === 'daily' ? ' active' : '');
-        btnDaily.textContent = 'TJM';
+        btnDaily.textContent = t('resource.rate.daily');
         rateToggle.appendChild(btnHourly);
         rateToggle.appendChild(btnDaily);
 
@@ -803,7 +803,7 @@ class App {
         colorGroup.className = 'form-group';
         const colorLabel = document.createElement('label');
         colorLabel.className = 'form-label';
-        colorLabel.textContent = 'Couleur';
+        colorLabel.textContent = t('task.color');
         colorGroup.appendChild(colorLabel);
         const colorPicker = document.createElement('div');
         colorPicker.className = 'color-picker';
@@ -834,10 +834,10 @@ class App {
         footer.className = 'modal-footer';
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-ghost';
-        cancelBtn.textContent = 'Annuler';
+        cancelBtn.textContent = t('task.btnCancel');
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn btn-primary';
-        saveBtn.textContent = isEdit ? 'Enregistrer' : 'Créer la ressource';
+        saveBtn.textContent = isEdit ? t('task.btnSave') : t('resource.create.btn');
         footer.appendChild(cancelBtn);
         footer.appendChild(saveBtn);
         modal.appendChild(footer);
@@ -872,7 +872,7 @@ class App {
         saveBtn.addEventListener('click', () => {
             const name = nameInput.value.trim();
             if (!name) {
-                this._showToast('Le nom est obligatoire', 'warning');
+                this._showToast(t('toast.resourceNameRequired'), 'warning');
                 nameInput.focus();
                 return;
             }
@@ -888,10 +888,10 @@ class App {
 
             if (isEdit) {
                 store.updateResource(resource.id, { name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
-                this._showToast('Ressource modifiée', 'success');
+                this._showToast(t('toast.resourceUpdated'), 'success');
             } else {
                 store.addResource({ name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
-                this._showToast('Ressource créée', 'success');
+                this._showToast(t('toast.resourceCreated'), 'success');
             }
             close();
             this._renderResourceView();
@@ -905,9 +905,9 @@ class App {
     }
 
     _deleteResource(resource) {
-        if (!confirm(`Supprimer la ressource "${resource.name}" ?\nElle sera désassignée de toutes les tâches.`)) return;
+        if (!confirm(t('confirm.deleteResource', { name: resource.name }))) return;
         store.deleteResource(resource.id);
-        this._showToast('Ressource supprimée', 'success');
+        this._showToast(t('toast.resourceDeleted'), 'success');
         this._renderResourceView();
     }
 
@@ -1041,7 +1041,7 @@ class App {
 
             const countBadge = document.createElement('div');
             countBadge.className = 'resource-card-count';
-            countBadge.textContent = `${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}`;
+            countBadge.textContent = t('resource.tasks.count', { count: assignedTasks.length, plural: assignedTasks.length !== 1 ? 's' : '' });
             header.appendChild(countBadge);
 
             // Edit / Delete actions
@@ -1049,13 +1049,13 @@ class App {
             actions.className = 'resource-card-actions';
             const editBtn = document.createElement('button');
             editBtn.className = 'resource-action-btn';
-            editBtn.title = 'Modifier';
+            editBtn.title = t('resource.edit.btn');
             editBtn.innerHTML = '&#9998;';
             editBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showResourceModal(resource); });
             actions.appendChild(editBtn);
             const delBtn = document.createElement('button');
             delBtn.className = 'resource-action-btn resource-action-delete';
-            delBtn.title = 'Supprimer';
+            delBtn.title = t('resource.delete.btn');
             delBtn.innerHTML = '&times;';
             delBtn.addEventListener('click', (e) => { e.stopPropagation(); this._deleteResource(resource); });
             actions.appendChild(delBtn);
@@ -1070,7 +1070,7 @@ class App {
             const workloadHeader = document.createElement('div');
             workloadHeader.className = 'resource-workload-header';
             const workloadLabel = document.createElement('span');
-            workloadLabel.textContent = 'Charge de travail';
+            workloadLabel.textContent = t('resource.workload.label');
             workloadHeader.appendChild(workloadLabel);
             const workloadValue = document.createElement('span');
             workloadValue.textContent = workload.percent + '%';
@@ -1091,7 +1091,7 @@ class App {
             if (workload.percent > 100) {
                 const warning = document.createElement('div');
                 warning.className = 'resource-overload-warning';
-                warning.textContent = 'Surcharge détectée (' + workload.concurrent + ' tâches simultanées)';
+                warning.textContent = t('resource.workload.overload', { count: workload.concurrent });
                 workloadSection.appendChild(warning);
             }
 
@@ -1121,9 +1121,9 @@ class App {
                     dates.className = 'resource-task-dates';
                     const daysLeft = daysBetween(new Date(), task.endDate);
                     if (task.status === 'done') {
-                        dates.textContent = 'Terminé';
+                        dates.textContent = t('resource.tasks.done');
                     } else if (daysLeft < 0) {
-                        dates.textContent = 'En retard';
+                        dates.textContent = t('resource.tasks.late');
                         dates.style.color = '#EF4444';
                     } else {
                         dates.textContent = daysLeft + 'j';
@@ -1187,7 +1187,7 @@ class App {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action annulée', 'info');
+                    this._showToast(t('toast.actionUndone'), 'info');
                 }
             });
         }
@@ -1199,7 +1199,7 @@ class App {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action rétablie', 'info');
+                    this._showToast(t('toast.actionRedone'), 'info');
                 }
             });
         }
@@ -1207,7 +1207,7 @@ class App {
         // Settings panel events dispatched from Aide tab
         document.addEventListener('show-keyboard-help', () => this._showKeyboardHelp());
         document.addEventListener('launch-onboarding', () => onboarding.start());
-        document.addEventListener('settings-saved', () => this._showToast('Réglages enregistrés', 'success'));
+        document.addEventListener('settings-saved', () => this._showToast(t('toast.settingsSaved'), 'success'));
         document.addEventListener('gantt:addTask', () => this._showAddTaskDialog());
 
         // Baseline
@@ -1309,7 +1309,7 @@ class App {
         if (baselines.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'bl-pop-empty';
-            empty.textContent = 'Aucune baseline. Créez-en une ci-dessous.';
+            empty.textContent = t('baseline.empty');
             list.appendChild(empty);
         } else {
             baselines.forEach(bl => {
@@ -1326,7 +1326,7 @@ class App {
                 // Radio-style activate button
                 const radio = document.createElement('button');
                 radio.className = 'bl-radio' + (isActive ? ' bl-radio--on' : '');
-                radio.title = isActive ? 'Baseline active' : 'Activer';
+                radio.title = isActive ? t('baseline.active') : t('baseline.activate');
                 radio.tabIndex = -1; // item row handles activation
                 radio.innerHTML = isActive
                     ? `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>`
@@ -1363,13 +1363,13 @@ class App {
 
                     const okBtn = document.createElement('button');
                     okBtn.className = 'bl-icon-btn bl-icon-btn--ok';
-                    okBtn.title = 'Valider';
+                    okBtn.title = t('baseline.rename.validate');
                     okBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
                     okBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmRename(); });
 
                     const cancelBtn = document.createElement('button');
                     cancelBtn.className = 'bl-icon-btn';
-                    cancelBtn.title = 'Annuler';
+                    cancelBtn.title = t('task.btnCancel');
                     cancelBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
                     cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelRename(); });
 
@@ -1396,7 +1396,7 @@ class App {
 
                 const renameBtn = document.createElement('button');
                 renameBtn.className = 'bl-icon-btn';
-                renameBtn.title = 'Renommer';
+                renameBtn.title = t('baseline.rename');
                 renameBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
                 renameBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1407,7 +1407,7 @@ class App {
 
                 const delBtn = document.createElement('button');
                 delBtn.className = 'bl-icon-btn bl-icon-btn--danger';
-                delBtn.title = 'Supprimer';
+                delBtn.title = t('baseline.delete');
                 delBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
                 delBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1432,15 +1432,15 @@ class App {
             const input = document.createElement('input');
             input.className = 'bl-create-input';
             input.type = 'text';
-            input.placeholder = 'Nom de la baseline…';
+            input.placeholder = t('baseline.namePlaceholder');
             input.addEventListener('click', e => e.stopPropagation());
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') createBtn.click();
             });
             const createBtn = document.createElement('button');
             createBtn.className = 'bl-create-btn';
-            createBtn.title = 'Créer une baseline';
-            createBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Créer`;
+            createBtn.title = t('baseline.create.title');
+            createBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${t('baseline.create')}`;
             createBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const name = input.value.trim() || null;
@@ -1448,9 +1448,9 @@ class App {
                 if (bl) {
                     input.value = '';
                     this._updateBaselineBtnState();
-                    this._showToast(`Baseline "${bl.name}" créée`, 'success');
+                    this._showToast(t('toast.baselineCreated', { name: bl.name }), 'success');
                 } else {
-                    this._showToast('Maximum 5 baselines par projet', 'error');
+                    this._showToast(t('toast.baselineMaxReached'), 'error');
                 }
             });
             createRow.appendChild(input);
@@ -1530,7 +1530,7 @@ class App {
         const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
-        this._showToast('Projet exporté en JSON', 'success');
+        this._showToast(t('toast.projectExportedJSON'), 'success');
     }
 
     _exportAllJSON() {
@@ -1538,7 +1538,7 @@ class App {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const date = new Date().toISOString().slice(0, 10);
         this._downloadBlob(blob, `gantt_planner_backup_${date}.json`);
-        this._showToast(`${data.projects.length} projet(s) exporté(s)`, 'success');
+        this._showToast(t('toast.exportAll', { count: data.projects.length }), 'success');
     }
 
     _exportCSV() {
@@ -1587,7 +1587,7 @@ class App {
         }
         const blob = new Blob([bytes], { type: 'text/csv;charset=windows-1252' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
-        this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
+        this._showToast(t('toast.projectExportedCSV'), 'success');
         this._showMSProjectImportHelp();
     }
 
@@ -1684,7 +1684,7 @@ ${assignLines.join('\n')}
 
         const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.xml`);
-        this._showToast('Projet exporté en XML MS Project', 'success');
+        this._showToast(t('toast.projectExportedXML'), 'success');
     }
 
     _showMSProjectImportHelp() {
@@ -1842,7 +1842,7 @@ ${assignLines.join('\n')}
             const sections = [];
             checks.forEach(cb => { if (cb.checked) sections.push(cb.value); });
             if (sections.length === 0) {
-                this._showToast('Sélectionnez au moins une vue', 'warning');
+                this._showToast(t('toast.selectAtLeastOneView'), 'warning');
                 return;
             }
             const tlStart = document.getElementById('pdfDateStart').value;
@@ -1859,8 +1859,8 @@ ${assignLines.join('\n')}
         const tasks = store.getTasks();
         const resources = store.getResources();
 
-        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const statusLabels = { todo: t('task.status.todo'), in_progress: t('task.status.inProgress'), done: t('task.status.done') };
+        const priorityLabels = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
         const stats = store.getProjectStats();
 
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
@@ -1960,7 +1960,7 @@ thead{display:table-header-group}
         printWindow.document.write(html);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
-        this._showToast('Impression PDF prête', 'success');
+        this._showToast(t('toast.pdfPrintReady'), 'success');
     }
 
     _pdfTimelineSection(tasks, resources, tlStart, tlEnd) {
@@ -2275,7 +2275,7 @@ thead{display:table-header-group}
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action annulée', 'info');
+                    this._showToast(t('toast.actionUndone'), 'info');
                 }
                 return;
             }
@@ -2287,7 +2287,7 @@ thead{display:table-header-group}
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action rétablie', 'info');
+                    this._showToast(t('toast.actionRedone'), 'info');
                 }
                 return;
             }
@@ -3466,7 +3466,7 @@ thead{display:table-header-group}
         });
 
         if (allPermits.length === 0) {
-            this._showToast('Aucun permis à exporter', 'warning');
+            this._showToast(t('toast.noPermitsToExport'), 'warning');
             return;
         }
 
@@ -3583,7 +3583,7 @@ tr:nth-child(even){background:#fafbfc}
         printWindow.document.write(html);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
-        this._showToast('Export PDF des permis prêt', 'success');
+        this._showToast(t('toast.permitExportPdfReady'), 'success');
     }
 
     /* ---- Project Name ---- */
@@ -3631,7 +3631,7 @@ tr:nth-child(even){background:#fafbfc}
             const newName = input.value.trim();
             if (save && newName && newName !== project.name) {
                 store.updateProject(project.id, { name: newName });
-                this._showToast('Projet renommé', 'success');
+                this._showToast(t('toast.projectRenamed'), 'success');
             }
             this._renderProjectName();
         };
@@ -3686,9 +3686,9 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) importé(s)`, 'success');
+                                this._showToast(t('toast.importProjectsCount', { count: result.count }), 'success');
                             } else {
-                                this._showToast('Erreur lors de l\'import multi-projets', 'error');
+                                this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         } else {
                             const result = store.importProject(parsed);
@@ -3696,14 +3696,14 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" importé`, 'success');
+                                this._showToast(t('toast.importProjectName', { name: result.name }), 'success');
                             } else {
-                                this._showToast('Erreur lors de l\'import JSON', 'error');
+                                this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         }
                     } catch (e) {
                         console.error('JSON import failed:', e);
-                        this._showToast('Erreur lors de l\'import JSON', 'error');
+                        this._showToast(t('toast.importErrorJson'), 'error');
                     }
                 };
                 reader.readAsText(file);
@@ -3715,16 +3715,16 @@ tr:nth-child(even){background:#fafbfc}
                         ganttRenderer.render();
                         this._renderStats();
                         this._renderProjectName();
-                        this._showToast(`Projet "${result.name}" importé depuis MS Project XML`, 'success');
+                        this._showToast(t('toast.importXmlName', { name: result.name }), 'success');
                     } else {
-                        this._showToast('Erreur lors de l\'import XML', 'error');
+                        this._showToast(t('toast.importErrorXml'), 'error');
                     }
                 };
                 reader.readAsText(file);
             } else if (ext === 'xlsx' || ext === 'xls') {
                 this._importExcelFile(file);
             } else {
-                this._showToast('Format non supporté', 'error');
+                this._showToast(t('toast.importFormatUnsupported'), 'error');
             }
         });
         input.click();
@@ -3748,7 +3748,7 @@ tr:nth-child(even){background:#fafbfc}
             const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
             if (!rows.length) {
-                this._showToast('Le fichier Excel est vide', 'error');
+                this._showToast(t('toast.importExcelEmpty'), 'error');
                 return;
             }
 
@@ -3757,13 +3757,13 @@ tr:nth-child(even){background:#fafbfc}
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
-                this._showToast(`Projet "${result.name}" importé depuis Excel (${rows.length} lignes)`, 'success');
+                this._showToast(t('toast.importExcelName', { name: result.name, rows: rows.length }), 'success');
             } else {
-                this._showToast('Erreur lors de l\'import Excel', 'error');
+                this._showToast(t('toast.importErrorExcel'), 'error');
             }
         } catch (e) {
             console.error('Excel import failed:', e);
-            this._showToast('Erreur: ' + e.message, 'error');
+            this._showToast(t('toast.error', { message: e.message }), 'error');
         }
     }
 
@@ -3882,7 +3882,7 @@ tr:nth-child(even){background:#fafbfc}
                 await cloudBackup.init(clientId);
                 this._renderCloudPanel(modal);
             } catch (err) {
-                this._showToast('Erreur Google Drive: ' + err.message, 'error');
+                this._showToast(t('toast.cloudError', { service: 'Google Drive', message: err.message }), 'error');
                 form.querySelector('button[type="submit"]').textContent = 'Connecter à Google Drive';
             }
         });
@@ -3898,7 +3898,7 @@ tr:nth-child(even){background:#fafbfc}
         } catch (err) {
             modal.innerHTML = this._gdriveConfigHTML();
             this._bindGDriveConfigForm(modal);
-            this._showToast('Erreur Google Drive: ' + err.message, 'error');
+            this._showToast(t('toast.cloudError', { service: 'Google Drive', message: err.message }), 'error');
         }
     }
 
@@ -3987,7 +3987,7 @@ tr:nth-child(even){background:#fafbfc}
                     await cloudBackup.signIn();
                     this._renderCloudPanel(modal);
                 } catch (err) {
-                    this._showToast('Erreur connexion Google: ' + err.message, 'error');
+                    this._showToast(t('toast.cloudConnectError', { service: 'Google', message: err.message }), 'error');
                     googleBtn.textContent = 'Se connecter avec Google';
                     googleBtn.disabled = false;
                 }
@@ -4023,10 +4023,10 @@ tr:nth-child(even){background:#fafbfc}
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
                     await cloudBackup.saveBackup(`Backup complet - ${date}`, data);
-                    this._showToast('Sauvegarde Google Drive réussie', 'success');
+                    this._showToast(t('toast.cloudSaveSuccess', { service: 'Google Drive' }), 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
                     saveAllBtn.textContent = 'Sauvegarder tous les projets';
                     saveAllBtn.disabled = false;
@@ -4045,10 +4045,10 @@ tr:nth-child(even){background:#fafbfc}
                     const resources = store.getResources();
                     const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
                     await cloudBackup.saveBackup(project.name, data);
-                    this._showToast(`"${project.name}" sauvegardé sur Google Drive`, 'success');
+                    this._showToast(t('toast.cloudSaveProject', { name: project.name, service: 'Google Drive' }), 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
                     saveCurrentBtn.textContent = 'Sauvegarder projet actif';
                     saveCurrentBtn.disabled = false;
@@ -4106,7 +4106,7 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                                this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
                             const result = store.importProject(data);
@@ -4114,11 +4114,11 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                                this._showToast(t('toast.cloudRestoreName', { name: result.name }), 'success');
                             }
                         }
                     } catch (err) {
-                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                        this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
                         btn.textContent = 'Restaurer';
                     }
@@ -4127,14 +4127,14 @@ tr:nth-child(even){background:#fafbfc}
 
             container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    if (!confirm(t('confirm.deleteBackup'))) return;
                     const id = btn.dataset.id;
                     try {
                         await cloudBackup.deleteBackup(id);
                         this._refreshBackupList(modal);
-                        this._showToast('Sauvegarde supprimée', 'info');
+                        this._showToast(t('toast.backupDeleted'), 'info');
                     } catch (err) {
-                        this._showToast('Erreur: ' + err.message, 'error');
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
                     }
                 });
             });
@@ -4258,7 +4258,7 @@ tr:nth-child(even){background:#fafbfc}
                 await oneDriveBackup.init(clientId);
                 this._renderOneDrivePanel(modal);
             } catch (err) {
-                this._showToast('Erreur OneDrive: ' + err.message, 'error');
+                this._showToast(t('toast.cloudError', { service: 'OneDrive', message: err.message }), 'error');
                 form.querySelector('button[type="submit"]').textContent = 'Connecter à OneDrive';
             }
         });
@@ -4274,7 +4274,7 @@ tr:nth-child(even){background:#fafbfc}
         } catch (err) {
             modal.innerHTML = this._onedriveConfigHTML();
             this._bindOneDriveConfigForm(modal);
-            this._showToast('Erreur OneDrive: ' + err.message, 'error');
+            this._showToast(t('toast.cloudError', { service: 'OneDrive', message: err.message }), 'error');
         }
     }
 
@@ -4361,7 +4361,7 @@ tr:nth-child(even){background:#fafbfc}
                     await oneDriveBackup.signIn();
                     this._renderOneDrivePanel(modal);
                 } catch (err) {
-                    this._showToast('Erreur connexion Microsoft: ' + err.message, 'error');
+                    this._showToast(t('toast.cloudConnectError', { service: 'Microsoft', message: err.message }), 'error');
                     msBtn.textContent = 'Se connecter avec Microsoft';
                     msBtn.disabled = false;
                 }
@@ -4397,10 +4397,10 @@ tr:nth-child(even){background:#fafbfc}
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
                     await oneDriveBackup.saveBackup(`Backup complet - ${date}`, data);
-                    this._showToast('Sauvegarde OneDrive réussie', 'success');
+                    this._showToast(t('toast.cloudSaveSuccess', { service: 'OneDrive' }), 'success');
                     this._refreshOneDriveBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
                     saveAllBtn.textContent = 'Sauvegarder tous les projets';
                     saveAllBtn.disabled = false;
@@ -4419,10 +4419,10 @@ tr:nth-child(even){background:#fafbfc}
                     const resources = store.getResources();
                     const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
                     await oneDriveBackup.saveBackup(project.name, data);
-                    this._showToast(`"${project.name}" sauvegardé sur OneDrive`, 'success');
+                    this._showToast(t('toast.cloudSaveProject', { name: project.name, service: 'OneDrive' }), 'success');
                     this._refreshOneDriveBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
                     saveCurrentBtn.textContent = 'Sauvegarder projet actif';
                     saveCurrentBtn.disabled = false;
@@ -4480,7 +4480,7 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                                this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
                             const result = store.importProject(data);
@@ -4488,11 +4488,11 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                                this._showToast(t('toast.cloudRestoreName', { name: result.name }), 'success');
                             }
                         }
                     } catch (err) {
-                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                        this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
                         btn.textContent = 'Restaurer';
                     }
@@ -4501,14 +4501,14 @@ tr:nth-child(even){background:#fafbfc}
 
             container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    if (!confirm(t('confirm.deleteBackup'))) return;
                     const id = btn.dataset.id;
                     try {
                         await oneDriveBackup.deleteBackup(id);
                         this._refreshOneDriveBackupList(modal);
-                        this._showToast('Sauvegarde supprimée', 'info');
+                        this._showToast(t('toast.backupDeleted'), 'info');
                     } catch (err) {
-                        this._showToast('Erreur: ' + err.message, 'error');
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
                     }
                 });
             });
@@ -4529,10 +4529,10 @@ tr:nth-child(even){background:#fafbfc}
             const cp = store.getCriticalPath();
             ganttRenderer.setCriticalPath(cp);
             const total = store.getTasks().filter(t => !t.isPhase).length;
-            this._showToast(`Chemin critique : ${cp.length} tâches sur ${total}`, 'info');
+            this._showToast(t('toast.criticalPathShown', { count: cp.length, total }), 'info');
         } else {
             ganttRenderer.setCriticalPath(null);
-            this._showToast('Chemin critique masqué', 'info');
+            this._showToast(t('toast.criticalPathHidden'), 'info');
         }
         ganttRenderer.render();
         this._renderBoardView();
@@ -4623,14 +4623,14 @@ tr:nth-child(even){background:#fafbfc}
         store.addTask(data);
         ganttRenderer.render();
         this._renderStats();
-        this._showToast('Tâche dupliquée', 'success');
+        this._showToast(t('toast.taskDuplicated'), 'success');
     }
 
     _markDone(taskId) {
         store.updateTask(taskId, { status: 'done', progress: 100 });
         ganttRenderer.render();
         this._renderStats();
-        this._showToast('Tâche terminée', 'success');
+        this._showToast(t('toast.taskCompleted'), 'success');
     }
 
     _markInProgress(taskId) {
@@ -4642,11 +4642,11 @@ tr:nth-child(even){background:#fafbfc}
     _deleteTask(taskId) {
         const task = store.getTask(taskId);
         if (!task) return;
-        if (confirm(`Supprimer "${task.name}" ?`)) {
+        if (confirm(t('confirm.deleteTask', { name: task.name }))) {
             store.deleteTask(taskId);
             ganttRenderer.render();
             this._renderStats();
-            this._showToast('Tâche supprimée', 'success');
+            this._showToast(t('toast.taskDeleted'), 'success');
         }
     }
 
@@ -5104,7 +5104,7 @@ tr:nth-child(even){background:#fafbfc}
                 this._renderStats();
                 this._renderProjectName();
                 this._refreshCurrentView();
-                this._showToast(`Projet dupliqué : "${dup.name}"`, 'success');
+                this._showToast(t('toast.projectDuplicated', { name: dup.name }), 'success');
             }
         });
         dropdown.appendChild(dupBtn);
@@ -5117,12 +5117,12 @@ tr:nth-child(even){background:#fafbfc}
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 dropdown.remove();
-                if (confirm(`Supprimer le projet "${activeProject.name}" ?`)) {
+                if (confirm(t('confirm.deleteProject', { name: activeProject.name }))) {
                     store.deleteProject(activeProject.id);
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Projet supprimé', 'success');
+                    this._showToast(t('toast.projectDeleted'), 'success');
                 }
             });
             dropdown.appendChild(delBtn);
@@ -5151,7 +5151,7 @@ tr:nth-child(even){background:#fafbfc}
             if (save && newName && newName !== project.name) {
                 store.updateProject(project.id, { name: newName });
                 this._renderProjectName();
-                this._showToast('Projet renommé', 'success');
+                this._showToast(t('toast.projectRenamed'), 'success');
             }
             dropdown.remove();
         };
@@ -5188,7 +5188,7 @@ tr:nth-child(even){background:#fafbfc}
         this._renderProjectName();
         this._refreshPhaseFilter();
         this._refreshCurrentView();
-        this._showToast(`Projet "${project.name}" créé`, 'success');
+        this._showToast(t('toast.projectCreated', { name: project.name }), 'success');
     }
 
     /* ---- Multi-Selection ---- */
@@ -5297,18 +5297,18 @@ tr:nth-child(even){background:#fafbfc}
         ganttRenderer.render();
         this._renderStats();
         this._refreshCurrentView();
-        this._showToast(`${count} tâche${count > 1 ? 's' : ''} → ${statusLabels[status]}`, 'success');
+        this._showToast(t('toast.tasksStatusChanged', { count, plural: count > 1 ? 's' : '', status: statusLabels[status] }), 'success');
     }
 
     _batchDelete() {
         const count = this._selectedTaskIds.size;
-        if (!confirm(`Supprimer ${count} tâche${count > 1 ? 's' : ''} ?`)) return;
+        if (!confirm(t('confirm.deleteTasks', { count, plural: count > 1 ? 's' : '' }))) return;
         this._selectedTaskIds.forEach(id => store.deleteTask(id));
         this._clearSelection();
         ganttRenderer.render();
         this._renderStats();
         this._refreshCurrentView();
-        this._showToast(`${count} tâche${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`, 'success');
+        this._showToast(t('toast.tasksDeleted', { count, plural: count > 1 ? 's' : '' }), 'success');
     }
 
     /* ---- Accessibility ---- */
