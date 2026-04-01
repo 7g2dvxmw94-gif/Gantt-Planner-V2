@@ -297,8 +297,8 @@ class TaskModal {
         const permitTypeGroup = createElement('div', { className: 'form-group' });
         permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.type.label')));
         this._permitTypeSelect = createElement('select', { className: 'select', id: 'permitType' });
-        Object.entries(PERMIT_TYPES).forEach(([key, val]) => {
-            this._permitTypeSelect.appendChild(createElement('option', { value: key }, val.label));
+        Object.entries(PERMIT_TYPES).forEach(([key]) => {
+            this._permitTypeSelect.appendChild(createElement('option', { value: key }, t(`permit.type.${key}`)));
         });
         this._permitTypeSelect.addEventListener('change', () => this._updatePermitDeadlines());
         permitTypeGroup.appendChild(this._permitTypeSelect);
@@ -331,8 +331,8 @@ class TaskModal {
         const permitStatusGroup = createElement('div', { className: 'form-group' });
         permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.status.label')));
         this._permitStatusSelect = createElement('select', { className: 'select', id: 'permitStatus' });
-        Object.entries(PERMIT_STATUSES).forEach(([key, val]) => {
-            this._permitStatusSelect.appendChild(createElement('option', { value: key }, val.label));
+        Object.entries(PERMIT_STATUSES).forEach(([key]) => {
+            this._permitStatusSelect.appendChild(createElement('option', { value: key }, t(`permit.status.${key}`)));
         });
         this._permitStatusSelect.addEventListener('change', () => this._updatePermitDeadlines());
         permitStatusGroup.appendChild(this._permitStatusSelect);

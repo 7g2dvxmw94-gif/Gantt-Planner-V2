@@ -6750,6 +6750,25 @@ const I18N = {
         'permit.deadline.appealEnd': 'Fin recours tiers (J-{days})',
         'permit.deadline.expiry': 'Péremption permis',
 
+        // Permit type options
+        'permit.type.PC': 'Permis de construire',
+        'permit.type.PCM': 'PC Maison individuelle',
+        'permit.type.DP': 'Déclaration préalable',
+        'permit.type.PA': "Permis d'aménager",
+        'permit.type.PD': 'Permis de démolir',
+
+        // Permit status options
+        'permit.status.draft': 'En préparation',
+        'permit.status.submitted': 'Déposé',
+        'permit.status.completeness': 'Complétude notifiée',
+        'permit.status.additional_docs': 'Pièces complémentaires',
+        'permit.status.under_review': 'En instruction',
+        'permit.status.granted': 'Accordé',
+        'permit.status.granted_conditions': 'Accordé avec réserves',
+        'permit.status.refused': 'Refusé',
+        'permit.status.third_party_appeal': 'Recours tiers',
+        'permit.status.appeal_cleared': 'Purgé de recours',
+
         // Resources
         'resource.edit.title': 'Modifier la ressource',
         'resource.create.title': 'Nouvelle ressource',
@@ -7317,6 +7336,25 @@ const I18N = {
         'permit.deadline.appealPurged': 'Appeal cleared',
         'permit.deadline.appealEnd': 'Appeal end (D-{days})',
         'permit.deadline.expiry': 'Permit expiry',
+
+        // Permit type options
+        'permit.type.PC': 'Building Permit',
+        'permit.type.PCM': 'Individual House Permit',
+        'permit.type.DP': 'Prior Declaration',
+        'permit.type.PA': 'Development Permit',
+        'permit.type.PD': 'Demolition Permit',
+
+        // Permit status options
+        'permit.status.draft': 'In preparation',
+        'permit.status.submitted': 'Submitted',
+        'permit.status.completeness': 'Completeness notified',
+        'permit.status.additional_docs': 'Additional documents',
+        'permit.status.under_review': 'Under review',
+        'permit.status.granted': 'Granted',
+        'permit.status.granted_conditions': 'Granted with conditions',
+        'permit.status.refused': 'Refused',
+        'permit.status.third_party_appeal': 'Third-party appeal',
+        'permit.status.appeal_cleared': 'Appeal cleared',
 
         // Resources
         'resource.edit.title': 'Edit resource',
@@ -10274,8 +10312,8 @@ class TaskModal {
         const permitTypeGroup = createElement('div', { className: 'form-group' });
         permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.type.label')));
         this._permitTypeSelect = createElement('select', { className: 'select', id: 'permitType' });
-        Object.entries(PERMIT_TYPES).forEach(([key, val]) => {
-            this._permitTypeSelect.appendChild(createElement('option', { value: key }, val.label));
+        Object.entries(PERMIT_TYPES).forEach(([key]) => {
+            this._permitTypeSelect.appendChild(createElement('option', { value: key }, t(`permit.type.${key}`)));
         });
         this._permitTypeSelect.addEventListener('change', () => this._updatePermitDeadlines());
         permitTypeGroup.appendChild(this._permitTypeSelect);
@@ -10308,8 +10346,8 @@ class TaskModal {
         const permitStatusGroup = createElement('div', { className: 'form-group' });
         permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.status.label')));
         this._permitStatusSelect = createElement('select', { className: 'select', id: 'permitStatus' });
-        Object.entries(PERMIT_STATUSES).forEach(([key, val]) => {
-            this._permitStatusSelect.appendChild(createElement('option', { value: key }, val.label));
+        Object.entries(PERMIT_STATUSES).forEach(([key]) => {
+            this._permitStatusSelect.appendChild(createElement('option', { value: key }, t(`permit.status.${key}`)));
         });
         this._permitStatusSelect.addEventListener('change', () => this._updatePermitDeadlines());
         permitStatusGroup.appendChild(this._permitStatusSelect);
@@ -11617,7 +11655,7 @@ class GanttRenderer {
         }
         if (isPermit) {
             const statusInfo = PERMIT_STATUSES[task.permitStatus];
-            if (statusInfo) metaParts.push(statusInfo.label);
+            if (statusInfo) metaParts.push(t(`permit.status.${task.permitStatus}`));
             if (task.permitDossier) metaParts.push(task.permitDossier);
         } else if (isMilestone) {
             metaParts.push(t('task.meta.milestone', { date: formatDateShort(task.startDate) }));
@@ -11820,8 +11858,8 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: `linear-gradient(135deg, ${color}, ${color}dd)` },
             role: 'button',
             tabindex: '0',
-            'aria-label': t('task.meta.permitAria', { name: task.name, status: statusInfo.label }),
-            title: `${task.name}\n${statusInfo.label}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
+            'aria-label': t('task.meta.permitAria', { name: task.name, status: t(`permit.status.${task.permitStatus}`) }),
+            title: `${task.name}\n${t(`permit.status.${task.permitStatus}`)}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
             dataset: { taskId: task.id },
         });
 
@@ -18321,8 +18359,9 @@ thead{display:table-header-group}
         const appealCleared = allPermits.filter(p => p.permitStatus === 'appeal_cleared').length;
 
         const rows = allPermits.map(permit => {
-            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
-            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
             const deadlines = calculatePermitDeadlines(permit);
             let nextDeadline = '';
             if (deadlines.suspended) {
@@ -18341,8 +18380,8 @@ thead{display:table-header-group}
             return `<tr class="dashboard-permit-row">
                 <td style="font-weight:500;">${permit.name}</td>
                 <td style="color:var(--text-secondary);">${permit.projectName}</td>
-                <td>${typeInfo.label}</td>
-                <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusInfo.label}</span></td>
+                <td>${typeLabel}</td>
+                <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusLabel}</span></td>
                 <td style="color:var(--text-secondary);">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
                 <td style="font-size:11px;">${nextDeadline || '-'}</td>
             </tr>`;
@@ -18441,8 +18480,9 @@ tr:nth-child(even){background:#fafbfc}
 <table><thead><tr><th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance décision</th><th>Purge recours</th><th>Péremption</th></tr></thead><tbody>`;
 
         allPermits.forEach(permit => {
-            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
-            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
             const deadlines = calculatePermitDeadlines(permit);
 
             let decisionCol = '-';
@@ -18455,8 +18495,8 @@ tr:nth-child(even){background:#fafbfc}
             html += `<tr>
                 <td style="font-weight:500;">${permit.name}</td>
                 <td>${permit.projectName}</td>
-                <td>${typeInfo.label}</td>
-                <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusInfo.label}</span></td>
+                <td>${typeLabel}</td>
+                <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></td>
                 <td>${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>${decisionCol}</td>
                 <td>${deadlines.appealEndDate ? new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR') : '-'}</td>

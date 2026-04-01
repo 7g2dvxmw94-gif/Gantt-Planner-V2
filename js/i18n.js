@@ -221,6 +221,25 @@ const I18N = {
         'permit.deadline.appealEnd': 'Fin recours tiers (J-{days})',
         'permit.deadline.expiry': 'Péremption permis',
 
+        // Permit type options
+        'permit.type.PC': 'Permis de construire',
+        'permit.type.PCM': 'PC Maison individuelle',
+        'permit.type.DP': 'Déclaration préalable',
+        'permit.type.PA': "Permis d'aménager",
+        'permit.type.PD': 'Permis de démolir',
+
+        // Permit status options
+        'permit.status.draft': 'En préparation',
+        'permit.status.submitted': 'Déposé',
+        'permit.status.completeness': 'Complétude notifiée',
+        'permit.status.additional_docs': 'Pièces complémentaires',
+        'permit.status.under_review': 'En instruction',
+        'permit.status.granted': 'Accordé',
+        'permit.status.granted_conditions': 'Accordé avec réserves',
+        'permit.status.refused': 'Refusé',
+        'permit.status.third_party_appeal': 'Recours tiers',
+        'permit.status.appeal_cleared': 'Purgé de recours',
+
         // Resources
         'resource.edit.title': 'Modifier la ressource',
         'resource.create.title': 'Nouvelle ressource',
@@ -788,6 +807,25 @@ const I18N = {
         'permit.deadline.appealPurged': 'Appeal cleared',
         'permit.deadline.appealEnd': 'Appeal end (D-{days})',
         'permit.deadline.expiry': 'Permit expiry',
+
+        // Permit type options
+        'permit.type.PC': 'Building Permit',
+        'permit.type.PCM': 'Individual House Permit',
+        'permit.type.DP': 'Prior Declaration',
+        'permit.type.PA': 'Development Permit',
+        'permit.type.PD': 'Demolition Permit',
+
+        // Permit status options
+        'permit.status.draft': 'In preparation',
+        'permit.status.submitted': 'Submitted',
+        'permit.status.completeness': 'Completeness notified',
+        'permit.status.additional_docs': 'Additional documents',
+        'permit.status.under_review': 'Under review',
+        'permit.status.granted': 'Granted',
+        'permit.status.granted_conditions': 'Granted with conditions',
+        'permit.status.refused': 'Refused',
+        'permit.status.third_party_appeal': 'Third-party appeal',
+        'permit.status.appeal_cleared': 'Appeal cleared',
 
         // Resources
         'resource.edit.title': 'Edit resource',

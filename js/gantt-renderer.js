@@ -450,7 +450,7 @@ class GanttRenderer {
         }
         if (isPermit) {
             const statusInfo = PERMIT_STATUSES[task.permitStatus];
-            if (statusInfo) metaParts.push(statusInfo.label);
+            if (statusInfo) metaParts.push(t(`permit.status.${task.permitStatus}`));
             if (task.permitDossier) metaParts.push(task.permitDossier);
         } else if (isMilestone) {
             metaParts.push(t('task.meta.milestone', { date: formatDateShort(task.startDate) }));
@@ -653,8 +653,8 @@ class GanttRenderer {
             style: { left: left + 'px', width: width + 'px', background: `linear-gradient(135deg, ${color}, ${color}dd)` },
             role: 'button',
             tabindex: '0',
-            'aria-label': t('task.meta.permitAria', { name: task.name, status: statusInfo.label }),
-            title: `${task.name}\n${statusInfo.label}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
+            'aria-label': t('task.meta.permitAria', { name: task.name, status: t(`permit.status.${task.permitStatus}`) }),
+            title: `${task.name}\n${t(`permit.status.${task.permitStatus}`)}${task.permitDossier ? '\nN°' + task.permitDossier : ''}`,
             dataset: { taskId: task.id },
         });
 

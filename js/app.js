@@ -3402,8 +3402,9 @@ thead{display:table-header-group}
         const appealCleared = allPermits.filter(p => p.permitStatus === 'appeal_cleared').length;
 
         const rows = allPermits.map(permit => {
-            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
-            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
             const deadlines = calculatePermitDeadlines(permit);
             let nextDeadline = '';
             if (deadlines.suspended) {
@@ -3422,8 +3423,8 @@ thead{display:table-header-group}
             return `<tr class="dashboard-permit-row">
                 <td style="font-weight:500;">${permit.name}</td>
                 <td style="color:var(--text-secondary);">${permit.projectName}</td>
-                <td>${typeInfo.label}</td>
-                <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusInfo.label}</span></td>
+                <td>${typeLabel}</td>
+                <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusLabel}</span></td>
                 <td style="color:var(--text-secondary);">${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
                 <td style="font-size:11px;">${nextDeadline || '-'}</td>
             </tr>`;
@@ -3522,8 +3523,9 @@ tr:nth-child(even){background:#fafbfc}
 <table><thead><tr><th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance décision</th><th>Purge recours</th><th>Péremption</th></tr></thead><tbody>`;
 
         allPermits.forEach(permit => {
-            const typeInfo = PERMIT_TYPES[permit.permitType] || { label: permit.permitType };
-            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { label: permit.permitStatus, color: '#64748B' };
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
             const deadlines = calculatePermitDeadlines(permit);
 
             let decisionCol = '-';
@@ -3536,8 +3538,8 @@ tr:nth-child(even){background:#fafbfc}
             html += `<tr>
                 <td style="font-weight:500;">${permit.name}</td>
                 <td>${permit.projectName}</td>
-                <td>${typeInfo.label}</td>
-                <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusInfo.label}</span></td>
+                <td>${typeLabel}</td>
+                <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></td>
                 <td>${permit.depositDate ? new Date(permit.depositDate).toLocaleDateString('fr-FR') : '-'}</td>
                 <td>${decisionCol}</td>
                 <td>${deadlines.appealEndDate ? new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR') : '-'}</td>
