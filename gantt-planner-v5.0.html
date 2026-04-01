@@ -7035,6 +7035,7 @@ const I18N = {
 
         // Project selector
         'project.noResult': 'Aucun projet trouvé',
+        'project.new': '+ Nouveau projet',
         'project.action.duplicate': 'Dupliquer ce projet',
         'project.action.delete': 'Supprimer ce projet',
 
@@ -7624,6 +7625,7 @@ const I18N = {
 
         // Project selector
         'project.noResult': 'No project found',
+        'project.new': '+ New project',
         'project.action.duplicate': 'Duplicate this project',
         'project.action.delete': 'Delete this project',
 
@@ -20039,7 +20041,7 @@ tr:nth-child(even){background:#fafbfc}
         // New project
         const newBtn = document.createElement('button');
         newBtn.className = 'project-dropdown-item new-project';
-        newBtn.textContent = '+ Nouveau projet';
+        newBtn.textContent = t('project.new');
         newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.remove();

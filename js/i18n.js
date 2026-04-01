@@ -506,6 +506,7 @@ const I18N = {
 
         // Project selector
         'project.noResult': 'Aucun projet trouvé',
+        'project.new': '+ Nouveau projet',
         'project.action.duplicate': 'Dupliquer ce projet',
         'project.action.delete': 'Supprimer ce projet',
 
@@ -1095,6 +1096,7 @@ const I18N = {
 
         // Project selector
         'project.noResult': 'No project found',
+        'project.new': '+ New project',
         'project.action.duplicate': 'Duplicate this project',
         'project.action.delete': 'Delete this project',
 

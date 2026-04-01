@@ -5082,7 +5082,7 @@ tr:nth-child(even){background:#fafbfc}
         // New project
         const newBtn = document.createElement('button');
         newBtn.className = 'project-dropdown-item new-project';
-        newBtn.textContent = '+ Nouveau projet';
+        newBtn.textContent = t('project.new');
         newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.remove();
