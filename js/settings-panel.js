@@ -70,35 +70,35 @@ class SettingsPanel {
     _renderPanel() {
         return `
             <div class="settings-panel-header">
-                <button class="settings-panel-back" id="settingsPanelClose" aria-label="Fermer les réglages">
+                <button class="settings-panel-back" id="settingsPanelClose" aria-label="${t('settings.btnClose')}">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="9 18 15 12 9 6"/>
                     </svg>
                 </button>
-                <h2 class="settings-panel-title">Réglages</h2>
+                <h2 class="settings-panel-title">${t('settings.title')}</h2>
                 <div class="settings-panel-header-spacer"></div>
             </div>
 
             <div class="settings-panel-tabs">
-                <button class="settings-tab active" data-tab="profil" aria-label="Profil">
+                <button class="settings-tab active" data-tab="profil" aria-label="${t('settings.tab.profile')}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Profil
+                    ${t('settings.tab.profile')}
                 </button>
-                <button class="settings-tab" data-tab="apparence" aria-label="Apparence">
+                <button class="settings-tab" data-tab="apparence" aria-label="${t('settings.tab.appearance')}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-                    Apparence
+                    ${t('settings.tab.appearance')}
                 </button>
-                <button class="settings-tab" data-tab="general" aria-label="Général">
+                <button class="settings-tab" data-tab="general" aria-label="${t('settings.tab.general')}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-                    Général
+                    ${t('settings.tab.general')}
                 </button>
-                <button class="settings-tab" data-tab="synchro" aria-label="Synchronisation">
+                <button class="settings-tab" data-tab="synchro" aria-label="${t('settings.tab.sync')}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                    Synchro
+                    ${t('settings.tab.sync')}
                 </button>
-                <button class="settings-tab" data-tab="aide" aria-label="Aide">
+                <button class="settings-tab" data-tab="aide" aria-label="${t('settings.tab.help')}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>
-                    Aide
+                    ${t('settings.tab.help')}
                 </button>
             </div>
 
@@ -109,8 +109,8 @@ class SettingsPanel {
             </div>
 
             <div class="settings-panel-footer">
-                <button class="btn btn-ghost" id="settingsCancelBtn">Annuler</button>
-                <button class="btn btn-primary" id="settingsSaveBtn">Enregistrer</button>
+                <button class="btn btn-ghost" id="settingsCancelBtn">${t('settings.btnCancel')}</button>
+                <button class="btn btn-primary" id="settingsSaveBtn">${t('settings.btnSave')}</button>
             </div>
         `;
     }
@@ -293,17 +293,40 @@ class SettingsPanel {
     _renderGeneralTab() {
         const currency  = this._getCustomization('currency')  || 'EUR';
         const showLinks = this._getCustomization('showLinks') !== false;
+        const currentLang = getCurrentLang();
 
         return `
             <div class="settings-section">
+
+                <!-- Language -->
                 <div class="settings-group" style="border-top:none;padding-top:0;">
                     <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <h3>${t('settings.lang.title')}</h3>
+                    </div>
+                    <div class="lang-selector">
+                        ${Object.entries(I18N_LANGUAGES).map(([code, lang]) => `
+                            <button class="lang-btn${currentLang === code ? ' active' : ''}${lang.comingSoon ? ' disabled' : ''}"
+                                    data-lang="${code}"
+                                    ${lang.comingSoon ? 'disabled' : ''}
+                                    title="${lang.nativeName}${lang.comingSoon ? ' (à venir)' : ''}">
+                                <span class="lang-btn-name">${lang.nativeName}</span>
+                                ${lang.comingSoon ? '<span class="lang-coming-soon">à venir</span>' : ''}
+                                ${currentLang === code ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Currency -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="16" r=".5"/></svg>
-                        <h3>Devise</h3>
+                        <h3>${t('settings.currency.title')}</h3>
                     </div>
                     <div class="settings-identity-fields">
                         <div class="settings-field">
-                            <label class="settings-field-label" for="settingsCurrency">Devise affichée</label>
+                            <label class="settings-field-label" for="settingsCurrency">${t('settings.currency.label')}</label>
                             <select class="settings-field-input" id="settingsCurrency">
                                 ${Object.entries(CURRENCIES).map(([code, c]) =>
                                     `<option value="${code}" ${currency === code ? 'selected' : ''}>${c.symbol} – ${code}</option>`
@@ -313,14 +336,15 @@ class SettingsPanel {
                     </div>
                 </div>
 
+                <!-- Display -->
                 <div class="settings-group">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        <h3>Affichage</h3>
+                        <h3>${t('settings.display.title')}</h3>
                     </div>
                     <div class="settings-identity-fields">
                         <div class="settings-field settings-field-toggle">
-                            <label class="settings-field-label" for="settingsShowLinks">Afficher les liens (dépendances)</label>
+                            <label class="settings-field-label" for="settingsShowLinks">${t('settings.display.showLinks')}</label>
                             <label class="settings-toggle">
                                 <input type="checkbox" id="settingsShowLinks" ${showLinks ? 'checked' : ''}>
                                 <span class="settings-toggle-slider"></span>
@@ -759,6 +783,13 @@ class SettingsPanel {
     }
 
     _bindGeneralEvents() {
+        // Language selector
+        this._panel.querySelectorAll('.lang-btn:not([disabled])').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.dataset.lang);
+            });
+        });
+
         const currencySelect = this._panel.querySelector('#settingsCurrency');
         if (currencySelect) {
             currencySelect.addEventListener('change', () => {
