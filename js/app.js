@@ -2640,27 +2640,27 @@ thead{display:table-header-group}
             const nonPhase = tasks.filter(t => !t.isPhase);
 
             // Overdue tasks
-            nonPhase.filter(t => t.endDate && t.endDate < today && t.progress < 100).forEach(t => {
-                const days = daysBetween(new Date(t.endDate), new Date());
+            nonPhase.filter(tk => tk.endDate && tk.endDate < today && tk.progress < 100).forEach(tk => {
+                const days = daysBetween(new Date(tk.endDate), new Date());
                 notifications.push({
                     type: 'danger',
                     icon: '\u26A0',
-                    text: t('dashboard.notif.late', { name: t.name, days }),
+                    text: t('dashboard.notif.late', { name: tk.name, days }),
                     sub: p.name,
-                    taskId: t.id,
+                    taskId: tk.id,
                     projectId: p.id,
                 });
             });
 
             // Milestones approaching (within 3 days)
-            nonPhase.filter(t => t.isMilestone && t.endDate >= today && t.endDate <= soon && t.progress < 100).forEach(t => {
-                const days = daysBetween(new Date(), new Date(t.endDate));
+            nonPhase.filter(tk => tk.isMilestone && tk.endDate >= today && tk.endDate <= soon && tk.progress < 100).forEach(tk => {
+                const days = daysBetween(new Date(), new Date(tk.endDate));
                 notifications.push({
                     type: 'warning',
                     icon: '\u25C6',
-                    text: t('dashboard.notif.milestone', { name: t.name, days }),
+                    text: t('dashboard.notif.milestone', { name: tk.name, days }),
                     sub: p.name,
-                    taskId: t.id,
+                    taskId: tk.id,
                     projectId: p.id,
                 });
             });

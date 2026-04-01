@@ -49,6 +49,7 @@ const I18N = {
 
         // Settings Panel - Tabs
         'settings.title': 'Réglages',
+        'settings.ariaLabel': 'Panneau de réglages',
         'settings.tab.profile': 'Profil',
         'settings.tab.appearance': 'Apparence',
         'settings.tab.general': 'Général',
@@ -61,6 +62,7 @@ const I18N = {
         // Settings - General
         'settings.lang.title': 'Langue',
         'settings.lang.select': 'Sélectionner une langue',
+        'settings.lang.comingSoon': 'à venir',
         'settings.currency.title': 'Devise',
         'settings.currency.label': 'Devise affichée',
         'settings.display.title': 'Affichage',
@@ -93,6 +95,28 @@ const I18N = {
         'settings.font.label': 'Police',
         'settings.font.default': '(défaut)',
         'settings.fontSize.label': 'Taille de texte',
+
+        // Settings - Sync tab
+        'settings.sync.gdrive.desc': 'Sauvegardez et restaurez vos projets depuis Google Drive.',
+        'settings.sync.gdrive.btn': 'Gérer les sauvegardes Google Drive',
+        'settings.sync.onedrive.desc': 'Sauvegardez et restaurez vos projets depuis Microsoft OneDrive.',
+        'settings.sync.onedrive.btn': 'Gérer les sauvegardes OneDrive',
+
+        // Settings - Help/Aide tab
+        'settings.help.actions': 'Actions',
+        'settings.help.guide.label': 'Guide de démarrage',
+        'settings.help.guide.desc': 'Relancer le tutoriel interactif',
+        'settings.help.shortcuts.label': 'Raccourcis clavier',
+        'settings.help.shortcuts.desc': 'Voir tous les raccourcis disponibles',
+        'settings.help.contact.label': 'Contact / Signaler un bug',
+        'settings.help.contact.desc': 'Envoyer un message à l\'équipe',
+        'settings.help.changelog': 'Nouveautés',
+
+        // Changelog labels
+        'changelog.fix': 'Correctif',
+        'changelog.feature': 'Fonctionnalité',
+        'changelog.improve': 'Amélioration',
+        'changelog.major': 'Majeur',
 
         // Task Modal
         'task.type.task': 'Tâche',
@@ -554,6 +578,7 @@ const I18N = {
 
         // Settings Panel - Tabs
         'settings.title': 'Settings',
+        'settings.ariaLabel': 'Settings panel',
         'settings.tab.profile': 'Profile',
         'settings.tab.appearance': 'Appearance',
         'settings.tab.general': 'General',
@@ -566,6 +591,7 @@ const I18N = {
         // Settings - General
         'settings.lang.title': 'Language',
         'settings.lang.select': 'Select a language',
+        'settings.lang.comingSoon': 'coming soon',
         'settings.currency.title': 'Currency',
         'settings.currency.label': 'Display currency',
         'settings.display.title': 'Display',
@@ -598,6 +624,28 @@ const I18N = {
         'settings.font.label': 'Font',
         'settings.font.default': '(default)',
         'settings.fontSize.label': 'Text Size',
+
+        // Settings - Sync tab
+        'settings.sync.gdrive.desc': 'Save and restore your projects from Google Drive.',
+        'settings.sync.gdrive.btn': 'Manage Google Drive backups',
+        'settings.sync.onedrive.desc': 'Save and restore your projects from Microsoft OneDrive.',
+        'settings.sync.onedrive.btn': 'Manage OneDrive backups',
+
+        // Settings - Help tab
+        'settings.help.actions': 'Actions',
+        'settings.help.guide.label': 'Getting started guide',
+        'settings.help.guide.desc': 'Restart interactive tutorial',
+        'settings.help.shortcuts.label': 'Keyboard shortcuts',
+        'settings.help.shortcuts.desc': 'See all available shortcuts',
+        'settings.help.contact.label': 'Contact / Report a bug',
+        'settings.help.contact.desc': 'Send a message to the team',
+        'settings.help.changelog': 'What\'s new',
+
+        // Changelog labels
+        'changelog.fix': 'Fix',
+        'changelog.feature': 'Feature',
+        'changelog.improve': 'Enhancement',
+        'changelog.major': 'Major',
 
         // Task Modal
         'task.type.task': 'Task',

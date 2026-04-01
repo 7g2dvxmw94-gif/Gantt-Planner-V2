@@ -56,7 +56,7 @@ class SettingsPanel {
         this._panel = document.createElement('aside');
         this._panel.className = 'settings-panel';
         this._panel.setAttribute('role', 'dialog');
-        this._panel.setAttribute('aria-label', 'Panneau de réglages');
+        this._panel.setAttribute('aria-label', t('settings.ariaLabel'));
         this._panel.innerHTML = this._renderPanel();
 
         document.body.appendChild(this._overlay);
@@ -143,7 +143,7 @@ class SettingsPanel {
                 <div class="settings-group" style="border-top:none;padding-top:0;">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <h3>Identité</h3>
+                        <h3>${t('settings.identity')}</h3>
                     </div>
 
                     <!-- Avatar upload -->
@@ -153,10 +153,10 @@ class SettingsPanel {
                             ${avatarPhoto ? '' : `<span>${initials}</span>`}
                         </div>
                         <div class="avatar-upload-info">
-                            <p class="avatar-upload-hint">JPG, PNG ou GIF · Max 2 Mo</p>
+                            <p class="avatar-upload-hint">${t('settings.avatar.hint')}</p>
                             <div class="avatar-upload-actions">
-                                <button class="btn btn-secondary" id="settingsAvatarUploadBtn">Choisir une photo</button>
-                                ${avatarPhoto ? `<button class="btn btn-ghost" id="settingsAvatarRemoveBtn">Supprimer</button>` : ''}
+                                <button class="btn btn-secondary" id="settingsAvatarUploadBtn">${t('settings.avatar.upload')}</button>
+                                ${avatarPhoto ? `<button class="btn btn-ghost" id="settingsAvatarRemoveBtn">${t('settings.avatar.remove')}</button>` : ''}
                             </div>
                         </div>
                         <input type="file" id="settingsAvatarInput" accept="image/*" style="display:none">
@@ -164,16 +164,16 @@ class SettingsPanel {
 
                     <div class="settings-identity-fields">
                         <div class="settings-field">
-                            <label class="settings-field-label" for="settingsUserName">Prénom Nom</label>
-                            <input type="text" class="settings-field-input" id="settingsUserName" placeholder="Jean Dupont" value="${userName}">
+                            <label class="settings-field-label" for="settingsUserName">${t('settings.name.label')}</label>
+                            <input type="text" class="settings-field-input" id="settingsUserName" placeholder="${t('settings.name.placeholder')}" value="${userName}">
                         </div>
                         <div class="settings-field">
-                            <label class="settings-field-label" for="settingsInitials">Initiales <span style="font-weight:400;color:var(--text-muted)">(2 caractères max)</span></label>
+                            <label class="settings-field-label" for="settingsInitials">${t('settings.initials.label')} <span style="font-weight:400;color:var(--text-muted)">${t('settings.initials.hint')}</span></label>
                             <input type="text" class="settings-field-input" id="settingsInitials" placeholder="${autoInitials || 'JD'}" value="${savedInitials}" maxlength="2" style="text-transform:uppercase;width:80px;">
                         </div>
                         <div class="settings-field">
-                            <label class="settings-field-label" for="settingsName">Nom de l'entreprise</label>
-                            <input type="text" class="settings-field-input" id="settingsName" placeholder="Mon entreprise" value="${brandName}">
+                            <label class="settings-field-label" for="settingsName">${t('settings.company.label')}</label>
+                            <input type="text" class="settings-field-input" id="settingsName" placeholder="${t('settings.company.placeholder')}" value="${brandName}">
                         </div>
                     </div>
                 </div>
@@ -182,7 +182,7 @@ class SettingsPanel {
                 <div class="settings-group">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        <h3>Logo</h3>
+                        <h3>${t('settings.logo')}</h3>
                     </div>
                     <div class="asset-upload-wrap">
                         <div class="asset-upload-preview" id="settingsLogoPreview">
@@ -191,10 +191,10 @@ class SettingsPanel {
                                 : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`}
                         </div>
                         <div class="avatar-upload-info">
-                            <p class="avatar-upload-hint">PNG, SVG ou JPG · Max 2 Mo</p>
+                            <p class="avatar-upload-hint">${t('settings.logo.hint')}</p>
                             <div class="avatar-upload-actions">
-                                <button class="btn btn-secondary" id="settingsLogoUploadBtn">Choisir un logo</button>
-                                ${logoData ? `<button class="btn btn-ghost" id="settingsLogoRemoveBtn">Supprimer</button>` : ''}
+                                <button class="btn btn-secondary" id="settingsLogoUploadBtn">${t('settings.logo.upload')}</button>
+                                ${logoData ? `<button class="btn btn-ghost" id="settingsLogoRemoveBtn">${t('settings.avatar.remove')}</button>` : ''}
                             </div>
                         </div>
                         <input type="file" id="settingsLogoInput" accept="image/*" style="display:none">
@@ -205,10 +205,10 @@ class SettingsPanel {
                 <div class="settings-group">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                        <h3>Favicon</h3>
+                        <h3>${t('settings.favicon')}</h3>
                         <span class="settings-tooltip-wrap">
                             <svg class="settings-tooltip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor" stroke="none"/></svg>
-                            <span class="settings-tooltip">La petite icône affichée dans l'onglet de votre navigateur, à gauche du titre de la page.</span>
+                            <span class="settings-tooltip">${t('settings.favicon.description')}</span>
                         </span>
                     </div>
                     <div class="asset-upload-wrap">
@@ -218,10 +218,10 @@ class SettingsPanel {
                                 : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>`}
                         </div>
                         <div class="avatar-upload-info">
-                            <p class="avatar-upload-hint">ICO, PNG ou SVG · Max 512 Ko</p>
+                            <p class="avatar-upload-hint">${t('settings.favicon.hint')}</p>
                             <div class="avatar-upload-actions">
-                                <button class="btn btn-secondary" id="settingsFaviconUploadBtn">Choisir un favicon</button>
-                                ${faviconData ? `<button class="btn btn-ghost" id="settingsFaviconRemoveBtn">Supprimer</button>` : ''}
+                                <button class="btn btn-secondary" id="settingsFaviconUploadBtn">${t('settings.favicon.upload')}</button>
+                                ${faviconData ? `<button class="btn btn-ghost" id="settingsFaviconRemoveBtn">${t('settings.avatar.remove')}</button>` : ''}
                             </div>
                         </div>
                         <input type="file" id="settingsFaviconInput" accept="image/*,.ico" style="display:none">
@@ -241,9 +241,9 @@ class SettingsPanel {
                 <div class="settings-group" style="border-top:none;padding-top:0;">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-                        <h3>Couleurs</h3>
+                        <h3>${t('settings.colors')}</h3>
                     </div>
-                    <p class="settings-group-description">Couleur d'accentuation aux couleurs de votre société.</p>
+                    <p class="settings-group-description">${t('settings.colors.description')}</p>
                     <div class="color-presets">
                         ${COLOR_PRESETS.map(p => `
                             <button class="color-swatch${savedColor === p.primary ? ' active' : ''}"
@@ -254,7 +254,7 @@ class SettingsPanel {
                         `).join('')}
                     </div>
                     <div class="custom-color-field">
-                        <label class="settings-field-label">Couleur personnalisée</label>
+                        <label class="settings-field-label">${t('settings.color.custom')}</label>
                         <div class="custom-color-wrap">
                             <input type="color" id="settingsAccentColor" value="${savedColor}">
                             <span class="custom-color-hex" id="settingsAccentColorHex">${savedColor}</span>
@@ -265,19 +265,19 @@ class SettingsPanel {
                 <div class="settings-group">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-                        <h3>Typographie</h3>
+                        <h3>${t('settings.typography')}</h3>
                     </div>
                     <div class="settings-identity-fields">
                         <div class="settings-field">
-                            <label class="settings-field-label" for="settingsFontFamily">Police</label>
+                            <label class="settings-field-label" for="settingsFontFamily">${t('settings.font.label')}</label>
                             <select class="settings-field-input" id="settingsFontFamily">
                                 ${Object.keys(FONT_PRESETS).map(name => `
-                                    <option value="${name}" ${savedFont === name ? 'selected' : ''}>${name}${name === 'Inter' ? ' (défaut)' : ''}</option>
+                                    <option value="${name}" ${savedFont === name ? 'selected' : ''}>${name}${name === 'Inter' ? ` ${t('settings.font.default')}` : ''}</option>
                                 `).join('')}
                             </select>
                         </div>
                         <div class="settings-field">
-                            <label class="settings-field-label">Taille de texte</label>
+                            <label class="settings-field-label">${t('settings.fontSize.label')}</label>
                             <div class="font-size-toggle">
                                 ${Object.entries(FONT_SIZES).map(([key, { label }]) => `
                                     <button class="font-size-btn${savedSize === key ? ' active' : ''}" data-size="${key}">${label}</button>
@@ -309,9 +309,9 @@ class SettingsPanel {
                             <button class="lang-btn${currentLang === code ? ' active' : ''}${lang.comingSoon ? ' disabled' : ''}"
                                     data-lang="${code}"
                                     ${lang.comingSoon ? 'disabled' : ''}
-                                    title="${lang.nativeName}${lang.comingSoon ? ' (à venir)' : ''}">
+                                    title="${lang.nativeName}${lang.comingSoon ? ` (${t('settings.lang.comingSoon')})` : ''}">
                                 <span class="lang-btn-name">${lang.nativeName}</span>
-                                ${lang.comingSoon ? '<span class="lang-coming-soon">à venir</span>' : ''}
+                                ${lang.comingSoon ? `<span class="lang-coming-soon">${t('settings.lang.comingSoon')}</span>` : ''}
                                 ${currentLang === code ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
                             </button>
                         `).join('')}
@@ -371,10 +371,10 @@ class SettingsPanel {
                         </svg>
                         <h3>Google Drive</h3>
                     </div>
-                    <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Google Drive.</p>
+                    <p class="settings-group-description">${t('settings.sync.gdrive.desc')}</p>
                     <button class="btn btn-primary" id="settingsGDriveBtn" style="width:100%;margin-top:8px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                        Gérer les sauvegardes Google Drive
+                        ${t('settings.sync.gdrive.btn')}
                     </button>
                 </div>
 
@@ -388,10 +388,10 @@ class SettingsPanel {
                         </svg>
                         <h3>OneDrive</h3>
                     </div>
-                    <p class="settings-group-description">Sauvegardez et restaurez vos projets depuis Microsoft OneDrive.</p>
+                    <p class="settings-group-description">${t('settings.sync.onedrive.desc')}</p>
                     <button class="btn btn-primary" id="settingsOneDriveBtn" style="width:100%;margin-top:8px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                        Gérer les sauvegardes OneDrive
+                        ${t('settings.sync.onedrive.btn')}
                     </button>
                 </div>
             </div>
@@ -479,12 +479,13 @@ class SettingsPanel {
                 'Champ de recherche dans le sélecteur "Assigné à"',
             ]},
         ];
+        const labelMap = { 'Majeur': t('changelog.major'), 'Fonctionnalité': t('changelog.feature'), 'Amélioration': t('changelog.improve'), 'Correctif': t('changelog.fix') };
         const labelColors = { 'Majeur': '#6366F1', 'Fonctionnalité': '#10B981', 'Amélioration': '#3B82F6', 'Correctif': '#F59E0B' };
         const changelogHTML = changelog.map(v => `
             <div class="changelog-entry">
                 <div class="changelog-version-row">
                     <span class="changelog-version">v${v.version}</span>
-                    <span class="changelog-label" style="background:${labelColors[v.label] || '#64748B'}18;color:${labelColors[v.label] || '#64748B'};border:1px solid ${labelColors[v.label] || '#64748B'}35;">${v.label}</span>
+                    <span class="changelog-label" style="background:${labelColors[v.label] || '#64748B'}18;color:${labelColors[v.label] || '#64748B'};border:1px solid ${labelColors[v.label] || '#64748B'}35;">${labelMap[v.label] || v.label}</span>
                     <span class="changelog-date">${v.date}</span>
                 </div>
                 <ul class="changelog-list">
@@ -498,30 +499,30 @@ class SettingsPanel {
                 <div class="settings-group" style="border-top:none;padding-top:0;">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
-                        <h3>Actions</h3>
+                        <h3>${t('settings.help.actions')}</h3>
                     </div>
                     <div class="aide-actions">
                         <button class="aide-action-btn" id="aideGuide">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
                             <div>
-                                <div class="aide-action-label">Guide de démarrage</div>
-                                <div class="aide-action-desc">Relancer le tutoriel interactif</div>
+                                <div class="aide-action-label">${t('settings.help.guide.label')}</div>
+                                <div class="aide-action-desc">${t('settings.help.guide.desc')}</div>
                             </div>
                             <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <button class="aide-action-btn" id="aideShortcuts">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg>
                             <div>
-                                <div class="aide-action-label">Raccourcis clavier</div>
-                                <div class="aide-action-desc">Voir tous les raccourcis disponibles</div>
+                                <div class="aide-action-label">${t('settings.help.shortcuts.label')}</div>
+                                <div class="aide-action-desc">${t('settings.help.shortcuts.desc')}</div>
                             </div>
                             <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                         <button class="aide-action-btn" id="aideContact">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                             <div>
-                                <div class="aide-action-label">Contact / Signaler un bug</div>
-                                <div class="aide-action-desc">Envoyer un message à l'équipe</div>
+                                <div class="aide-action-label">${t('settings.help.contact.label')}</div>
+                                <div class="aide-action-desc">${t('settings.help.contact.desc')}</div>
                             </div>
                             <svg class="aide-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
@@ -531,7 +532,7 @@ class SettingsPanel {
                 <div class="settings-group">
                     <div class="settings-group-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <h3>Nouveautés</h3>
+                        <h3>${t('settings.help.changelog')}</h3>
                     </div>
                     <div class="changelog-scroll">${changelogHTML}</div>
                 </div>
