@@ -26,16 +26,30 @@ const I18N = {
         // Toolbar
         'toolbar.undo': 'Annuler (Ctrl/⌘+Z)',
         'toolbar.redo': 'Rétablir (Ctrl/⌘+Y)',
+        'toolbar.undoGroup': 'Annuler/Rétablir',
         'toolbar.criticalPath': 'Chemin critique',
         'toolbar.criticalPathTooltip': 'Afficher/masquer le chemin critique',
         'toolbar.baseline': 'Baseline',
         'toolbar.baselineTooltip': 'Gérer les baselines',
+        'toolbar.baselineDialog': 'Gestion des baselines',
         'toolbar.import': 'Importer',
+        'toolbar.importAriaLabel': 'Importer un projet',
         'toolbar.importTooltip': 'Importer (JSON, XML MS Project, Excel)',
         'toolbar.export': 'Exporter',
+        'toolbar.exportAriaLabel': 'Exporter le projet',
         'toolbar.notifications': 'Notifications',
         'toolbar.addTask': 'Nouvelle tâche',
+        'toolbar.addTaskAriaLabel': 'Ajouter une nouvelle tâche',
         'toolbar.addTaskTooltip': 'Ajouter une nouvelle tâche',
+        'toolbar.navAriaLabel': 'Navigation principale',
+        'toolbar.tabsAriaLabel': 'Vues du projet',
+
+        // Header extras
+        'header.settingsTitle': 'Réglages',
+        'header.themeAriaLabel': 'Passer en mode sombre',
+        'project.select': 'Sélectionner un projet',
+        'main.ariaLabel': 'Contenu principal',
+        'skip.link': 'Aller au contenu principal',
 
         // Zoom
         'zoom.day': 'Jour',
@@ -46,6 +60,15 @@ const I18N = {
         'zoom.weekLabel': 'Vue par semaine',
         'zoom.monthLabel': 'Vue par mois',
         'zoom.quarterLabel': 'Vue par trimestre',
+        'zoom.group': 'Niveau de zoom',
+        'zoom.dayShort': 'J',
+        'zoom.weekShort': 'S',
+        'zoom.monthShort': 'M',
+        'zoom.quarterShort': 'T',
+        'zoom.dayAria': 'Zoom jour',
+        'zoom.weekAria': 'Zoom semaine',
+        'zoom.monthAria': 'Zoom mois',
+        'zoom.quarterAria': 'Zoom trimestre',
 
         // Settings Panel - Tabs
         'settings.title': 'Réglages',
@@ -555,16 +578,30 @@ const I18N = {
         // Toolbar
         'toolbar.undo': 'Undo (Ctrl/⌘+Z)',
         'toolbar.redo': 'Redo (Ctrl/⌘+Y)',
+        'toolbar.undoGroup': 'Undo/Redo',
         'toolbar.criticalPath': 'Critical Path',
         'toolbar.criticalPathTooltip': 'Show/hide critical path',
         'toolbar.baseline': 'Baseline',
         'toolbar.baselineTooltip': 'Manage baselines',
+        'toolbar.baselineDialog': 'Manage baselines',
         'toolbar.import': 'Import',
+        'toolbar.importAriaLabel': 'Import a project',
         'toolbar.importTooltip': 'Import (JSON, MS Project XML, Excel)',
         'toolbar.export': 'Export',
+        'toolbar.exportAriaLabel': 'Export project',
         'toolbar.notifications': 'Notifications',
         'toolbar.addTask': 'New Task',
+        'toolbar.addTaskAriaLabel': 'Add a new task',
         'toolbar.addTaskTooltip': 'Add a new task',
+        'toolbar.navAriaLabel': 'Main navigation',
+        'toolbar.tabsAriaLabel': 'Project views',
+
+        // Header extras
+        'header.settingsTitle': 'Settings',
+        'header.themeAriaLabel': 'Switch to dark mode',
+        'project.select': 'Select a project',
+        'main.ariaLabel': 'Main content',
+        'skip.link': 'Skip to main content',
 
         // Zoom
         'zoom.day': 'Day',
@@ -575,6 +612,15 @@ const I18N = {
         'zoom.weekLabel': 'Week view',
         'zoom.monthLabel': 'Month view',
         'zoom.quarterLabel': 'Quarter view',
+        'zoom.group': 'Zoom level',
+        'zoom.dayShort': 'D',
+        'zoom.weekShort': 'W',
+        'zoom.monthShort': 'M',
+        'zoom.quarterShort': 'Q',
+        'zoom.dayAria': 'Day zoom',
+        'zoom.weekAria': 'Week zoom',
+        'zoom.monthAria': 'Month zoom',
+        'zoom.quarterAria': 'Quarter zoom',
 
         // Settings Panel - Tabs
         'settings.title': 'Settings',

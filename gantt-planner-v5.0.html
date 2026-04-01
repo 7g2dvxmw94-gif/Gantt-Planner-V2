@@ -6243,7 +6243,7 @@ tr.critical-path:hover {
 </head>
 <body>
     <!-- Skip Navigation (Accessibility) -->
-    <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
+    <a href="#mainContent" class="skip-link" data-i18n="skip.link">Aller au contenu principal</a>
 
     <!-- Screen Reader Announcer -->
     <div id="srAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -6258,7 +6258,7 @@ tr.critical-path:hover {
             <span>Gantt Planner</span>
         </div>
 
-        <button class="project-selector" tabindex="0" role="button" aria-haspopup="listbox" data-i18n-aria-label="Sélectionner un projet">
+        <button class="project-selector" tabindex="0" role="button" aria-haspopup="listbox" data-i18n-aria-label="project.select">
             <span class="project-name" id="projectName">Projet Alpha</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M6 9l6 6 6-6"/>
@@ -6279,7 +6279,7 @@ tr.critical-path:hover {
         <!-- Header Actions -->
         <div class="header-actions">
             <!-- Theme Toggle -->
-            <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" title="Mode sombre/clair (Ctrl/⌘+D)">
+            <button class="icon-btn" id="themeToggle" aria-label="Passer en mode sombre" data-i18n-title="header.theme">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sun-icon" aria-hidden="true">
                     <circle cx="12" cy="12" r="5"/>
                     <line x1="12" y1="1" x2="12" y2="3"/>
@@ -6297,7 +6297,7 @@ tr.critical-path:hover {
             </button>
 
             <!-- Avatar — opens settings panel -->
-            <div class="avatar" id="settingsBtn" tabindex="0" role="button" aria-label="Réglages et profil utilisateur" title="Réglages">JD</div>
+            <div class="avatar" id="settingsBtn" tabindex="0" role="button" data-i18n-aria-label="header.settings" data-i18n-title="header.settingsTitle">JD</div>
         </div>
     </header>
 
@@ -6305,8 +6305,8 @@ tr.critical-path:hover {
     <div class="main-container">
 
         <!-- ==================== TOOLBAR ==================== -->
-        <nav class="toolbar" role="navigation" aria-label="Navigation principale">
-            <div class="tabs" role="tablist" aria-label="Vues du projet">
+        <nav class="toolbar" role="navigation" data-i18n-aria-label="toolbar.navAriaLabel">
+            <div class="tabs" role="tablist" data-i18n-aria-label="toolbar.tabsAriaLabel">
                 <!-- Timeline Tab -->
                 <button class="tab active" role="tab" aria-selected="true" data-view="timeline" tabindex="0" id="tabTimeline" aria-controls="mainContent">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -6362,14 +6362,14 @@ tr.critical-path:hover {
 
             <div class="toolbar-actions">
                 <!-- Undo/Redo -->
-                <div class="undo-redo-group" role="group" aria-label="Annuler/Rétablir">
-                    <button class="icon-btn" id="undoBtn" aria-label="Annuler (Ctrl/⌘+Z)" title="Annuler (Ctrl/⌘+Z)">
+                <div class="undo-redo-group" role="group" data-i18n-aria-label="toolbar.undoGroup">
+                    <button class="icon-btn" id="undoBtn" data-i18n-aria-label="toolbar.undo" data-i18n-title="toolbar.undo">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <polyline points="1 4 1 10 7 10"/>
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
                         </svg>
                     </button>
-                    <button class="icon-btn" id="redoBtn" aria-label="Rétablir (Ctrl/⌘+Y)" title="Rétablir (Ctrl/⌘+Y)">
+                    <button class="icon-btn" id="redoBtn" data-i18n-aria-label="toolbar.redo" data-i18n-title="toolbar.redo">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <polyline points="23 4 23 10 17 10"/>
                             <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>
@@ -6378,57 +6378,57 @@ tr.critical-path:hover {
                 </div>
 
                 <!-- Critical Path -->
-                <button class="btn btn-secondary" id="criticalPathBtn" aria-label="Chemin critique" title="Afficher/masquer le chemin critique">
+                <button class="btn btn-secondary" id="criticalPathBtn" data-i18n-aria-label="toolbar.criticalPath" data-i18n-title="toolbar.criticalPathTooltip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
                         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                     </svg>
-                    <span>Chemin critique</span>
+                    <span data-i18n="toolbar.criticalPath">Chemin critique</span>
                 </button>
 
                 <!-- Baseline -->
                 <div class="baseline-wrap" id="baselineWrap">
-                    <button class="btn btn-secondary" id="baselineBtn" aria-label="Baselines" title="Gérer les baselines" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-secondary" id="baselineBtn" data-i18n-aria-label="toolbar.baseline" data-i18n-title="toolbar.baselineTooltip" aria-haspopup="true" aria-expanded="false">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                             <path d="M2 17l10 5 10-5"/>
                             <path d="M2 12l10 5 10-5"/>
                         </svg>
-                        <span>Baseline</span>
+                        <span data-i18n="toolbar.baseline">Baseline</span>
                     </button>
-                    <div class="baseline-popover" id="baselinePopover" role="dialog" aria-label="Gestion des baselines" style="display:none;"></div>
+                    <div class="baseline-popover" id="baselinePopover" role="dialog" data-i18n-aria-label="toolbar.baselineDialog" style="display:none;"></div>
                 </div>
 
                 <!-- Zoom Controls -->
-                <div class="zoom-controls" role="group" aria-label="Niveau de zoom">
-                    <button class="zoom-btn" data-zoom="day" aria-label="Zoom jour" title="Vue par jour">J</button>
-                    <button class="zoom-btn active" data-zoom="week" aria-label="Zoom semaine" title="Vue par semaine">S</button>
-                    <button class="zoom-btn" data-zoom="month" aria-label="Zoom mois" title="Vue par mois">M</button>
-                    <button class="zoom-btn" data-zoom="quarter" aria-label="Zoom trimestre" title="Vue par trimestre">T</button>
-                    <span class="zoom-label" aria-live="polite">Semaine</span>
+                <div class="zoom-controls" role="group" data-i18n-aria-label="zoom.group">
+                    <button class="zoom-btn" data-zoom="day" data-i18n-aria-label="zoom.dayAria" data-i18n-title="zoom.dayLabel" data-i18n="zoom.dayShort">J</button>
+                    <button class="zoom-btn active" data-zoom="week" data-i18n-aria-label="zoom.weekAria" data-i18n-title="zoom.weekLabel" data-i18n="zoom.weekShort">S</button>
+                    <button class="zoom-btn" data-zoom="month" data-i18n-aria-label="zoom.monthAria" data-i18n-title="zoom.monthLabel" data-i18n="zoom.monthShort">M</button>
+                    <button class="zoom-btn" data-zoom="quarter" data-i18n-aria-label="zoom.quarterAria" data-i18n-title="zoom.quarterLabel" data-i18n="zoom.quarterShort">T</button>
+                    <span class="zoom-label" aria-live="polite" data-i18n="zoom.week">Semaine</span>
                 </div>
 
                 <!-- Import (arrow down = download into app) -->
-                <button class="btn btn-secondary" id="importBtn" aria-label="Importer un projet" title="Importer (JSON, XML MS Project, Excel)">
+                <button class="btn btn-secondary" id="importBtn" data-i18n-aria-label="toolbar.importAriaLabel" data-i18n-title="toolbar.importTooltip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    <span>Importer</span>
+                    <span data-i18n="toolbar.import">Importer</span>
                 </button>
 
                 <!-- Export (arrow up = send out) -->
-                <button class="btn btn-secondary" id="exportBtn" aria-label="Exporter le projet">
+                <button class="btn btn-secondary" id="exportBtn" data-i18n-aria-label="toolbar.exportAriaLabel">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="17 8 12 3 7 8"/>
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    <span>Exporter</span>
+                    <span data-i18n="toolbar.export">Exporter</span>
                 </button>
 
                 <!-- Notifications -->
-                <button class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications" style="position: relative;">
+                <button class="icon-btn" id="notifBtn" data-i18n-aria-label="toolbar.notifications" data-i18n-title="toolbar.notifications" style="position: relative;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -6437,18 +6437,18 @@ tr.critical-path:hover {
                 </button>
 
                 <!-- Add Task -->
-                <button class="btn btn-primary" id="addTaskBtn" aria-label="Ajouter une nouvelle tâche">
+                <button class="btn btn-primary" id="addTaskBtn" data-i18n-aria-label="toolbar.addTaskAriaLabel" data-i18n-title="toolbar.addTaskTooltip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
-                    <span>Nouvelle tâche</span>
+                    <span data-i18n="toolbar.addTask">Nouvelle tâche</span>
                 </button>
             </div>
         </nav>
 
         <!-- ==================== CONTENT ==================== -->
-        <main class="content" role="main" id="mainContent" aria-label="Contenu principal">
+        <main class="content" role="main" id="mainContent" data-i18n-aria-label="main.ariaLabel">
             <!-- Timeline View (Gantt Chart) -->
             <div class="gantt-wrapper">
                 <div class="gantt-container" id="ganttContainer" aria-label="Diagramme de Gantt">
@@ -6555,16 +6555,30 @@ const I18N = {
         // Toolbar
         'toolbar.undo': 'Annuler (Ctrl/⌘+Z)',
         'toolbar.redo': 'Rétablir (Ctrl/⌘+Y)',
+        'toolbar.undoGroup': 'Annuler/Rétablir',
         'toolbar.criticalPath': 'Chemin critique',
         'toolbar.criticalPathTooltip': 'Afficher/masquer le chemin critique',
         'toolbar.baseline': 'Baseline',
         'toolbar.baselineTooltip': 'Gérer les baselines',
+        'toolbar.baselineDialog': 'Gestion des baselines',
         'toolbar.import': 'Importer',
+        'toolbar.importAriaLabel': 'Importer un projet',
         'toolbar.importTooltip': 'Importer (JSON, XML MS Project, Excel)',
         'toolbar.export': 'Exporter',
+        'toolbar.exportAriaLabel': 'Exporter le projet',
         'toolbar.notifications': 'Notifications',
         'toolbar.addTask': 'Nouvelle tâche',
+        'toolbar.addTaskAriaLabel': 'Ajouter une nouvelle tâche',
         'toolbar.addTaskTooltip': 'Ajouter une nouvelle tâche',
+        'toolbar.navAriaLabel': 'Navigation principale',
+        'toolbar.tabsAriaLabel': 'Vues du projet',
+
+        // Header extras
+        'header.settingsTitle': 'Réglages',
+        'header.themeAriaLabel': 'Passer en mode sombre',
+        'project.select': 'Sélectionner un projet',
+        'main.ariaLabel': 'Contenu principal',
+        'skip.link': 'Aller au contenu principal',
 
         // Zoom
         'zoom.day': 'Jour',
@@ -6575,6 +6589,15 @@ const I18N = {
         'zoom.weekLabel': 'Vue par semaine',
         'zoom.monthLabel': 'Vue par mois',
         'zoom.quarterLabel': 'Vue par trimestre',
+        'zoom.group': 'Niveau de zoom',
+        'zoom.dayShort': 'J',
+        'zoom.weekShort': 'S',
+        'zoom.monthShort': 'M',
+        'zoom.quarterShort': 'T',
+        'zoom.dayAria': 'Zoom jour',
+        'zoom.weekAria': 'Zoom semaine',
+        'zoom.monthAria': 'Zoom mois',
+        'zoom.quarterAria': 'Zoom trimestre',
 
         // Settings Panel - Tabs
         'settings.title': 'Réglages',
@@ -7084,16 +7107,30 @@ const I18N = {
         // Toolbar
         'toolbar.undo': 'Undo (Ctrl/⌘+Z)',
         'toolbar.redo': 'Redo (Ctrl/⌘+Y)',
+        'toolbar.undoGroup': 'Undo/Redo',
         'toolbar.criticalPath': 'Critical Path',
         'toolbar.criticalPathTooltip': 'Show/hide critical path',
         'toolbar.baseline': 'Baseline',
         'toolbar.baselineTooltip': 'Manage baselines',
+        'toolbar.baselineDialog': 'Manage baselines',
         'toolbar.import': 'Import',
+        'toolbar.importAriaLabel': 'Import a project',
         'toolbar.importTooltip': 'Import (JSON, MS Project XML, Excel)',
         'toolbar.export': 'Export',
+        'toolbar.exportAriaLabel': 'Export project',
         'toolbar.notifications': 'Notifications',
         'toolbar.addTask': 'New Task',
+        'toolbar.addTaskAriaLabel': 'Add a new task',
         'toolbar.addTaskTooltip': 'Add a new task',
+        'toolbar.navAriaLabel': 'Main navigation',
+        'toolbar.tabsAriaLabel': 'Project views',
+
+        // Header extras
+        'header.settingsTitle': 'Settings',
+        'header.themeAriaLabel': 'Switch to dark mode',
+        'project.select': 'Select a project',
+        'main.ariaLabel': 'Main content',
+        'skip.link': 'Skip to main content',
 
         // Zoom
         'zoom.day': 'Day',
@@ -7104,6 +7141,15 @@ const I18N = {
         'zoom.weekLabel': 'Week view',
         'zoom.monthLabel': 'Month view',
         'zoom.quarterLabel': 'Quarter view',
+        'zoom.group': 'Zoom level',
+        'zoom.dayShort': 'D',
+        'zoom.weekShort': 'W',
+        'zoom.monthShort': 'M',
+        'zoom.quarterShort': 'Q',
+        'zoom.dayAria': 'Day zoom',
+        'zoom.weekAria': 'Week zoom',
+        'zoom.monthAria': 'Month zoom',
+        'zoom.quarterAria': 'Quarter zoom',
 
         // Settings Panel - Tabs
         'settings.title': 'Settings',
