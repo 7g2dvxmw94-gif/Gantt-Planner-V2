@@ -321,7 +321,7 @@ class App {
         });
 
         if (sorted.length === 0) {
-            container.innerHTML = '<div class="table-empty">Aucune tâche ne correspond aux filtres sélectionnés.</div>';
+            container.innerHTML = `<div class="table-empty">${t('board.empty')}</div>`;
             return;
         }
 
@@ -1497,11 +1497,11 @@ class App {
         dd.style.right = (window.innerWidth - rect.right) + 'px';
 
         const formats = [
-            { label: 'JSON', icon: '{ }', desc: 'Réimportable', tooltip: 'Exporte le projet actif au format JSON. Ce fichier peut être réimporté dans Gantt Planner pour restaurer toutes les tâches, ressources et paramètres.', action: () => this._exportJSON() },
-            { label: 'Tout exporter', icon: '★', desc: 'Tous les projets (JSON)', tooltip: 'Exporte l\'ensemble de vos projets en un seul fichier JSON. Idéal pour créer une sauvegarde complète ou migrer vers un autre appareil.', action: () => this._exportAllJSON() },
-            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
-            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
-            { label: 'PDF', icon: 'PDF', desc: 'Impression', tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
+            { label: 'JSON', icon: '{ }', desc: t('export.json.desc'), tooltip: 'Exporte le projet actif au format JSON. Ce fichier peut être réimporté dans Gantt Planner pour restaurer toutes les tâches, ressources et paramètres.', action: () => this._exportJSON() },
+            { label: t('export.all.label'), icon: '★', desc: t('export.all.desc'), tooltip: 'Exporte l\'ensemble de vos projets en un seul fichier JSON. Idéal pour créer une sauvegarde complète ou migrer vers un autre appareil.', action: () => this._exportAllJSON() },
+            { label: 'CSV', icon: 'CSV', desc: t('export.csv.desc'), tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
+            { label: 'XML', icon: 'XML', desc: t('export.xml.desc'), tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
+            { label: 'PDF', icon: 'PDF', desc: t('export.pdf.desc'), tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
         ];
 
         formats.forEach(f => {
@@ -1570,7 +1570,7 @@ class App {
             task.progress,
         ].join(SEP);
 
-        const headers = ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé'];
+        const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress')];
         const rows = [];
         allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
             rows.push(row(task, 1));
@@ -1769,14 +1769,14 @@ ${assignLines.join('\n')}
                 <h3>Export PDF</h3>
                 <button class="pdf-export-close" aria-label="Fermer">&times;</button>
             </div>
-            <p class="pdf-export-desc">Sélectionnez les vues à inclure dans le PDF :</p>
+            <p class="pdf-export-desc">${t('pdf.dialog.desc')}</p>
             <div class="pdf-export-options">
                 <label class="pdf-export-option">
                     <input type="checkbox" value="table" checked>
                     <span class="pdf-export-option-icon">☰</span>
                     <div>
-                        <div class="pdf-export-option-label">Tableau des tâches</div>
-                        <div class="pdf-export-option-desc">Liste détaillée avec statut, priorité et progression</div>
+                        <div class="pdf-export-option-label">${t('pdf.dialog.table.label')}</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.table.desc')}</div>
                     </div>
                 </label>
                 <label class="pdf-export-option">
@@ -1784,37 +1784,37 @@ ${assignLines.join('\n')}
                     <span class="pdf-export-option-icon">▸</span>
                     <div>
                         <div class="pdf-export-option-label">Timeline (Gantt)</div>
-                        <div class="pdf-export-option-desc">Diagramme de Gantt avec barres de tâches</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.timeline.desc')}</div>
                     </div>
                 </label>
                 <label class="pdf-export-option">
                     <input type="checkbox" value="resources" checked>
                     <span class="pdf-export-option-icon">👤</span>
                     <div>
-                        <div class="pdf-export-option-label">Ressources</div>
-                        <div class="pdf-export-option-desc">Charge de travail et tâches par ressource</div>
+                        <div class="pdf-export-option-label">${t('pdf.dialog.resources.label')}</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.resources.desc')}</div>
                     </div>
                 </label>
             </div>
             <div class="pdf-export-date-section" id="pdfDateSection">
-                <div class="pdf-export-date-label">Fenêtre temporelle de la Timeline :</div>
+                <div class="pdf-export-date-label">${t('pdf.dialog.dateLabel')}</div>
                 <div class="pdf-export-date-row">
                     <label class="pdf-export-date-field">
-                        <span>Du</span>
+                        <span>${t('pdf.dialog.from')}</span>
                         <input type="date" id="pdfDateStart" class="input" value="${defaultStart}">
                     </label>
                     <span class="pdf-export-date-arrow">→</span>
                     <label class="pdf-export-date-field">
-                        <span>Au</span>
+                        <span>${t('pdf.dialog.to')}</span>
                         <input type="date" id="pdfDateEnd" class="input" value="${defaultEnd}">
                     </label>
                 </div>
             </div>
             <div class="pdf-export-actions">
-                <button class="btn btn-secondary pdf-export-cancel">Annuler</button>
+                <button class="btn btn-secondary pdf-export-cancel">${t('pdf.dialog.cancel')}</button>
                 <button class="btn btn-primary pdf-export-confirm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-                    Générer le PDF
+                    ${t('pdf.dialog.generate')}
                 </button>
             </div>`;
 
@@ -1914,18 +1914,18 @@ thead{display:table-header-group}
 .page-break{page-break-before:always}
 </style></head><body>
 <h1>${project.name}</h1>
-<div class="subtitle">${project.description || 'Exporté le ' + new Date().toLocaleDateString('fr-FR')}</div>
+<div class="subtitle">${project.description || t('pdf.exportedOn', { date: new Date().toLocaleDateString() })}</div>
 <div class="stats">
-<div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">Tâches</div></div>
-<div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">Progression</div></div>
-<div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">Jours restants</div></div>
-<div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">Terminées</div></div>
+<div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">${t('pdf.stats.tasks')}</div></div>
+<div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">${t('pdf.stats.progress')}</div></div>
+<div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">${t('pdf.stats.daysRemaining')}</div></div>
+<div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">${t('pdf.stats.done')}</div></div>
 </div>`;
 
         // ---- TABLE SECTION ----
         if (sections.includes('table')) {
-            html += `<h2>Tableau des tâches</h2>`;
-            html += `<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>`;
+            html += `<h2>${t('pdf.table.title')}</h2>`;
+            html += `<table><thead><tr><th>${t('pdf.table.task')}</th><th>${t('pdf.table.start')}</th><th>${t('pdf.table.end')}</th><th>${t('pdf.table.assignees')}</th><th>${t('pdf.table.status')}</th><th>${t('pdf.table.priority')}</th><th>${t('pdf.table.progress')}</th></tr></thead><tbody>`;
             const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
             rootTasks.forEach(task => {
                 if (task.isPhase) {
@@ -1953,7 +1953,7 @@ thead{display:table-header-group}
             html += this._pdfResourceSection(tasks, resources, statusLabels);
         }
 
-        html += `<div class="footer">Gantt Planner Pro — ${project.name} — Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+        html += `<div class="footer">${t('pdf.footer', { name: project.name, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
 </body></html>`;
 
         const printWindow = window.open('', '_blank');
@@ -1980,10 +1980,10 @@ thead{display:table-header-group}
         else scale = 'quarters';
 
         const fmtDate = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-        const scaleLabels = { days: 'Jours', weeks: 'Semaines', months: 'Mois', quarters: 'Trimestres' };
+        const scaleLabels = { days: t('pdf.scale.days'), weeks: t('pdf.scale.weeks'), months: t('pdf.scale.months'), quarters: t('pdf.scale.quarters') };
 
-        let html = `<h2>Timeline (Gantt)</h2>`;
-        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">Période : ${fmtDate(start)} → ${fmtDate(end)} — Échelle : ${scaleLabels[scale]}</p>`;
+        let html = `<h2>${t('pdf.timeline.title')}</h2>`;
+        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">${t('pdf.timeline.period', { start: fmtDate(start), end: fmtDate(end), scale: scaleLabels[scale] })}</p>`;
 
         // Build header columns based on scale
         const headerCols = [];
@@ -2133,7 +2133,7 @@ thead{display:table-header-group}
             html += `<div style="margin-left:auto;font-size:10px;color:#64748b">${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}</div>`;
             html += `</div>`;
 
-            html += `<div class="res-workload-label">Charge : ${workload.percent}%${workload.percent > 100 ? ' ⚠ Surcharge' : ''}</div>`;
+            html += `<div class="res-workload-label">${t('pdf.resources.workload', { percent: workload.percent })}${workload.percent > 100 ? ' ⚠' : ''}</div>`;
             html += `<div class="res-workload"><div class="res-workload-fill" style="width:${Math.min(workload.percent, 100)}%;background:${fillColor}"></div></div>`;
 
             if (assignedTasks.length > 0) {
@@ -2220,7 +2220,7 @@ thead{display:table-header-group}
         zoomBtns.forEach(b => b.classList.toggle('active', b.dataset.zoom === currentLevel));
         const label = $('.zoom-label');
         if (label) {
-            label.textContent = ganttRenderer.zoomConfig[currentLevel]?.label || '';
+            label.textContent = t(ganttRenderer.zoomConfig[currentLevel]?.labelKey || '');
         }
 
         zoomBtns.forEach(btn => {
@@ -2237,7 +2237,7 @@ thead{display:table-header-group}
                 // Update label
                 const lbl = $('.zoom-label');
                 if (lbl) {
-                    lbl.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+                    lbl.textContent = t(ganttRenderer.zoomConfig[level]?.labelKey || '');
                 }
             });
         });
@@ -2257,7 +2257,7 @@ thead{display:table-header-group}
         // Update zoom UI
         $$('.zoom-btn[data-zoom]').forEach(b => b.classList.toggle('active', b.dataset.zoom === level));
         const label = $('.zoom-label');
-        if (label) label.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+        if (label) label.textContent = t(ganttRenderer.zoomConfig[level]?.labelKey || '');
     }
 
     /* ---- Keyboard Shortcuts ---- */
@@ -2350,30 +2350,30 @@ thead{display:table-header-group}
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         const shortcuts = [
-            ['Ctrl/⌘+Z', 'Annuler'],
-            ['Ctrl/⌘+Y', 'Rétablir'],
-            ['Ctrl/⌘+F', 'Rechercher'],
-            ['Ctrl/⌘+D', 'Mode sombre/clair'],
-            ['1 / 2 / 3', 'Changer de vue'],
-            ['Suppr', 'Supprimer la sélection'],
-            ['Échap', 'Fermer / Annuler'],
-            ['?', 'Afficher cette aide'],
+            ['Ctrl/⌘+Z', t('shortcuts.undo')],
+            ['Ctrl/⌘+Y', t('shortcuts.redo')],
+            ['Ctrl/⌘+F', t('shortcuts.search')],
+            ['Ctrl/⌘+D', t('shortcuts.darkMode')],
+            ['1 / 2 / 3', t('shortcuts.changeView')],
+            ['Suppr', t('shortcuts.delete')],
+            ['Échap', t('shortcuts.escape')],
+            ['?', t('shortcuts.help')],
         ];
         const rows = shortcuts.map(([key, desc]) =>
             `<tr><td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap"><kbd style="background:var(--bg-muted,#f0f0f0);padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid var(--border-default,#e0e0e0)">${key}</kbd></td><td style="padding:6px 0;font-size:13px">${desc}</td></tr>`
         ).join('');
         overlay.innerHTML = `
-            <div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
+            <div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="${t('shortcuts.title')}">
                 <div class="modal-header">
-                    <h2 class="modal-title">Raccourcis clavier</h2>
+                    <h2 class="modal-title">${t('shortcuts.title')}</h2>
                     <button class="icon-btn kbd-close" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 </div>
                 <div class="modal-body" style="padding:12px 20px 20px">
                     <table style="width:100%">${rows}</table>
-                    <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">Relancer le guide de démarrage</button>
+                    <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">${t('shortcuts.restart')}</button>
                     <button class="btn btn-primary" id="openContact" style="margin-top:8px;width:100%;gap:8px">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        Contact / Signaler un bug
+                        ${t('shortcuts.contact')}
                     </button>
                 </div>
             </div>`;
@@ -2645,7 +2645,7 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'danger',
                     icon: '\u26A0',
-                    text: `<strong>${t.name}</strong> en retard de ${days}j`,
+                    text: t('dashboard.notif.late', { name: t.name, days }),
                     sub: p.name,
                     taskId: t.id,
                     projectId: p.id,
@@ -2658,7 +2658,7 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'warning',
                     icon: '\u25C6',
-                    text: `Jalon <strong>${t.name}</strong> dans ${days}j`,
+                    text: t('dashboard.notif.milestone', { name: t.name, days }),
                     sub: p.name,
                     taskId: t.id,
                     projectId: p.id,
@@ -2742,14 +2742,14 @@ thead{display:table-header-group}
 
         const title = document.createElement('div');
         title.className = 'notif-panel-title';
-        title.textContent = 'Notifications';
+        title.textContent = t('notif.title');
         panel.appendChild(title);
 
         const notifs = this._getNotifications();
         if (notifs.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'notif-empty';
-            empty.textContent = 'Aucune alerte pour le moment';
+            empty.textContent = t('notif.noAlerts');
             panel.appendChild(empty);
         } else {
             notifs.forEach(n => {
@@ -2761,7 +2761,7 @@ thead{display:table-header-group}
                     `<div class="notif-text">${n.text}` +
                     (n.sub ? `<div class="notif-sub">${n.sub}</div>` : '') +
                     `</div>` +
-                    `<button class="notif-dismiss" title="Supprimer">&times;</button>`;
+                    `<button class="notif-dismiss" title="${t('notif.dismiss')}">&times;</button>`;
 
                 const dismissBtn = item.querySelector('.notif-dismiss');
                 dismissBtn.addEventListener('click', (e) => {
@@ -2777,7 +2777,7 @@ thead{display:table-header-group}
                         if (!panel.querySelector('.notif-item')) {
                             const empty = document.createElement('div');
                             empty.className = 'notif-empty';
-                            empty.textContent = 'Aucune alerte pour le moment';
+                            empty.textContent = t('notif.noAlerts');
                             panel.appendChild(empty);
                         }
                     }, 200);
@@ -2907,31 +2907,31 @@ thead{display:table-header-group}
         container.className = 'costs-view';
         container.innerHTML = `
         <div class="costs-header">
-            <h2 class="costs-title">Suivi des coûts</h2>
+            <h2 class="costs-title">${t('costs.title')}</h2>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('costs.filterLabel')}</label>
                 <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
-                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
             </div>
             <div class="costs-kpi-grid">
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Budget total (estimé)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.totalBudget')}</div>
                     <div class="costs-kpi-value">${fmt(totalEstimated)}</div>
                 </div>
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Coût réel (dépensé)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.actualCost')}</div>
                     <div class="costs-kpi-value">${fmt(totalActual)}</div>
                 </div>
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Écart (variance)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.variance')}</div>
                     <div class="costs-kpi-value" style="color:${varianceColor}">
                         <span>${varianceIcon}</span> ${variance >= 0 ? '+' : ''}${fmt(variance)}
                     </div>
                 </div>
                 <div class="costs-kpi costs-kpi-progress">
-                    <div class="costs-kpi-label">% consommé</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.consumed')}</div>
                     <div class="costs-kpi-value">${pctConsumed}%</div>
                     <div class="costs-progress-bar">
                         <div class="costs-progress-fill" style="width:${Math.min(pctConsumed, 100)}%;background:${pctConsumed > 100 ? '#EF4444' : pctConsumed > 75 ? '#F59E0B' : '#10B981'};"></div>
@@ -2943,20 +2943,20 @@ thead{display:table-header-group}
             <table class="cost-table costs-full-table">
                 <thead>
                     <tr>
-                        <th>Tâche</th>
-                        <th>Ressource(s)</th>
-                        <th style="text-align:center;">Durée (j)</th>
-                        <th style="text-align:center;">Taux horaire</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût fixe</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût estimé total</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût réel</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Écart</th>
+                        <th>${t('dashboard.col.task')}</th>
+                        <th>${t('dashboard.col.resourceCol')}</th>
+                        <th style="text-align:center;">${t('costs.col.durationDays')}</th>
+                        <th style="text-align:center;">${t('costs.col.hourlyRate')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('dashboard.col.fixedCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.estimatedCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.actualCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.variance')}</th>
                     </tr>
                 </thead>
                 <tbody>${tableRows}</tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4" style="font-weight:700;">Total</td>
+                        <td colspan="4" style="font-weight:700;">${t('dashboard.total')}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalActual)}</td>
@@ -3056,50 +3056,50 @@ thead{display:table-header-group}
         <div class="dashboard-grid">
             <!-- Project filter -->
             <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('dashboard.filterLabel')}</label>
                 <select id="dashboardProjectFilter" class="select filter-select" style="min-width:200px;">
-                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
             </div>
             <!-- KPI Cards -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Vue d'ensemble</h3>
+                <h3>${t('dashboard.overview')}</h3>
                 <div class="dashboard-kpi-grid">
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${projectCount}</div>
-                        <div class="kpi-label">Projets</div>
+                        <div class="kpi-label">${t('dashboard.kpi.projects')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${totalTasks}</div>
-                        <div class="kpi-label">Tâches totales</div>
+                        <div class="kpi-label">${t('dashboard.kpi.totalTasks')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${activeTasks}</div>
-                        <div class="kpi-label">Tâches actives</div>
+                        <div class="kpi-label">${t('dashboard.kpi.activeTasks')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${completedTasks}</div>
-                        <div class="kpi-label">Terminées</div>
+                        <div class="kpi-label">${t('dashboard.kpi.completed')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${avgProgress}%</div>
-                        <div class="kpi-label">Progression moy.</div>
+                        <div class="kpi-label">${t('dashboard.kpi.avgProgress')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value" style="${budgetPct > 90 ? 'color:#EF4444' : budgetPct > 75 ? 'color:#F59E0B' : ''}">${totalBudget > 0 ? budgetPct + '%' : '-'}</div>
-                        <div class="kpi-label">Budget consommé</div>
+                        <div class="kpi-label">${t('dashboard.kpi.budgetConsumed')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${totalBudget > 0 ? formatCurrency(totalBudget) : '-'}</div>
-                        <div class="kpi-label">Budget total estimé</div>
+                        <div class="kpi-label">${t('dashboard.kpi.totalBudget')}</div>
                     </div>
                 </div>
             </div>
 
             <!-- Projects breakdown -->
             <div class="dashboard-card">
-                <h3>Projets (${projectCount})</h3>
+                <h3>${t('dashboard.projects', { count: projectCount })}</h3>
                 ${projectStats.map(ps => {
                     const color = ps.progress >= 100 ? '#10B981' : ps.overdue > 0 ? '#EF4444' : '#6366F1';
                     return `<div class="dashboard-project-row" data-project-id="${ps.project.id}" style="cursor:pointer;">
@@ -3114,32 +3114,32 @@ thead{display:table-header-group}
 
             <!-- Alerts -->
             <div class="dashboard-card">
-                <h3>Alertes (${allNotifs.length})</h3>
+                <h3>${t('dashboard.alerts', { count: allNotifs.length })}</h3>
                 ${allNotifs.length === 0
-                    ? '<div class="notif-empty">Aucune alerte</div>'
+                    ? `<div class="notif-empty">${t('dashboard.noAlerts')}</div>`
                     : `<ul class="dashboard-alert-list">${allNotifs.slice(0, 15).map(n => {
                         const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
                         return `<li class="dashboard-alert-item">
                             <span class="dashboard-alert-dot ${dotColor}"></span>
                             <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
                         </li>`;
-                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
+                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">${t('dashboard.moreAlerts', { count: allNotifs.length - 15 })}</li>` : ''}</ul>`}
             </div>
 
             <!-- Tâches à venir / en retard -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Tâches prioritaires (${this._dashUpcomingItems.length})</h3>
+                <h3>${t('dashboard.priorityTasks', { count: this._dashUpcomingItems.length })}</h3>
                 ${this._dashUpcomingItems.length === 0
-                    ? '<div class="notif-empty">Aucune tâche en cours</div>'
+                    ? `<div class="notif-empty">${t('dashboard.noTasks')}</div>`
                     : `<div style="overflow-x:auto;">
                         <table class="cost-table" id="priorityTable">
                             <thead><tr>
-                                <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
-                                <th class="sortable" data-sort="projectName">Projet <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="priority">Priorité <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="daysLeft">Échéance <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="progress">Progression <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="status">Statut <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-sort="name">${t('dashboard.col.task')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-sort="projectName">${t('dashboard.col.project')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="priority">${t('dashboard.col.priority')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="daysLeft">${t('dashboard.col.deadline')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="progress">${t('dashboard.col.progress')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="status">${t('dashboard.col.status')} <span class="sort-icon">↕</span></th>
                             </tr></thead>
                             <tbody id="priorityTableBody">${this._renderPriorityTableRows()}</tbody>
                         </table>
@@ -3206,27 +3206,27 @@ thead{display:table-header-group}
             return dir === 'asc' ? va - vb : vb - va;
         });
         const priorityColors  = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
-        const priorityLabels  = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
-        const statusLabels    = { in_progress: 'En cours', done: 'Terminé', todo: 'À faire' };
-        return sorted.slice(0, 10).map(t => {
-            const isOverdue = t.daysLeft < 0;
-            const isUrgent  = !isOverdue && t.daysLeft <= 3;
+        const priorityLabels  = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
+        const statusLabels    = { in_progress: t('task.status.inProgress'), done: t('task.status.done'), todo: t('task.status.todo') };
+        return sorted.slice(0, 10).map(task => {
+            const isOverdue = task.daysLeft < 0;
+            const isUrgent  = !isOverdue && task.daysLeft <= 3;
             const deadlineColor = isOverdue ? '#EF4444' : isUrgent ? '#F59E0B' : 'var(--text-secondary)';
-            const deadlineText  = isOverdue ? `<strong>Retard (${Math.abs(t.daysLeft)}j)</strong>` : t.daysLeft === 0 ? '<strong>Auj.</strong>' : `J-${t.daysLeft}`;
-            const pColor   = priorityColors[t.priority] || '#64748B';
-            const barColor = t.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
+            const deadlineText  = isOverdue ? `<strong>${t('dashboard.deadline.overdue', { days: Math.abs(task.daysLeft) })}</strong>` : task.daysLeft === 0 ? `<strong>${t('dashboard.deadline.today')}</strong>` : t('dashboard.deadline.daysLeft', { days: task.daysLeft });
+            const pColor   = priorityColors[task.priority] || '#64748B';
+            const barColor = task.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
             return `<tr>
-                <td class="dt-name">${t.name}</td>
-                <td class="dt-secondary">${t.projectName}</td>
-                <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[t.priority] || t.priority || '—'}</span></td>
+                <td class="dt-name">${task.name}</td>
+                <td class="dt-secondary">${task.projectName}</td>
+                <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[task.priority] || task.priority || '—'}</span></td>
                 <td class="dt-center dt-deadline" style="color:${deadlineColor};">${deadlineText}</td>
                 <td class="dt-center">
                     <div class="dt-progress-wrap">
-                        <div class="dt-progress-bar"><div class="dt-progress-fill" style="width:${t.progress}%;background:${barColor};"></div></div>
-                        <span class="dt-secondary">${t.progress}%</span>
+                        <div class="dt-progress-bar"><div class="dt-progress-fill" style="width:${task.progress}%;background:${barColor};"></div></div>
+                        <span class="dt-secondary">${task.progress}%</span>
                     </div>
                 </td>
-                <td class="dt-center dt-secondary">${statusLabels[t.status] || t.status || '—'}</td>
+                <td class="dt-center dt-secondary">${statusLabels[task.status] || task.status || '—'}</td>
             </tr>`;
         }).join('');
     }
@@ -3340,25 +3340,25 @@ thead{display:table-header-group}
         const totalFixed    = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         return `<div class="dashboard-card" style="grid-column: 1 / -1;">
-            <h3>Coûts par tâche</h3>
+            <h3>${t('dashboard.costTable.title')}</h3>
             <div style="overflow-x:auto;">
                 <table class="cost-table" id="costTable">
                     <thead>
                         <tr>
-                            <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
-                            <th class="sortable" data-sort="resources">Ressource(s) <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="rate">Taux <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="durationDays">Durée <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="fixedCost">Coût fixe <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="cost">Coût total <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="costDone">Consommé <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="progress">Avancement <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="name">${t('dashboard.col.task')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="resources">${t('dashboard.col.resourceCol')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="rate">${t('dashboard.col.rate')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="durationDays">${t('dashboard.col.duration')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="fixedCost">${t('dashboard.col.fixedCost')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="cost">${t('dashboard.col.totalCost')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="costDone">${t('dashboard.col.consumed')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="progress">${t('dashboard.col.advancement')} <span class="sort-icon">↕</span></th>
                         </tr>
                     </thead>
                     <tbody id="costTableBody">${this._renderCostTableRows()}</tbody>
                     <tfoot>
                         <tr class="dt-total">
-                            <td colspan="4">Total</td>
+                            <td colspan="4">${t('dashboard.total')}</td>
                             <td class="dt-right">${totalFixed > 0 ? formatCurrency(totalFixed) : '—'}</td>
                             <td class="dt-right">${formatCurrency(totalCost)}</td>
                             <td class="dt-right">${formatCurrency(totalCostDone)}</td>
@@ -3381,8 +3381,8 @@ thead{display:table-header-group}
 
         if (allPermits.length === 0) {
             return `<div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Récapitulatif Permis</h3>
-                <div class="notif-empty">Aucun permis de construire dans les projets</div>
+                <h3>${t('dashboard.permit.title', { count: 0 })}</h3>
+                <div class="notif-empty">${t('dashboard.permit.empty')}</div>
             </div>`;
         }
 
@@ -3407,16 +3407,16 @@ thead{display:table-header-group}
             const deadlines = calculatePermitDeadlines(permit);
             let nextDeadline = '';
             if (deadlines.suspended) {
-                nextDeadline = '<span style="color:#F59E0B;">Suspendu</span>';
+                nextDeadline = `<span style="color:#F59E0B;">${t('dashboard.permit.suspended')}</span>`;
             } else if (deadlines.decisionDeadline && (permit.permitStatus !== 'granted' && permit.permitStatus !== 'granted_conditions' && permit.permitStatus !== 'refused')) {
                 const dl = new Date(deadlines.decisionDeadline);
                 const daysLeft = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
                 const color = daysLeft <= 3 ? '#EF4444' : daysLeft <= 14 ? '#F59E0B' : 'var(--text-secondary)';
-                nextDeadline = `<span style="color:${color};">Décision: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` (J-${daysLeft})` : ' (dépassé)'}</span>`;
+                nextDeadline = `<span style="color:${color};">${t('dashboard.permit.decisionLabel')}: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` ${t('dashboard.permit.daysLeft', { days: daysLeft })}` : ` ${t('dashboard.permit.overdue')}`}</span>`;
             } else if (deadlines.appealEndDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
-                nextDeadline = `Purge recours: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.appealLabel')}: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
             } else if (deadlines.expiryDate && permit.permitStatus === 'appeal_cleared') {
-                nextDeadline = `Péremption: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.expiryLabel')}: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
             }
 
             return `<tr class="dashboard-permit-row">
@@ -3431,23 +3431,23 @@ thead{display:table-header-group}
 
         return `<div class="dashboard-card" style="grid-column: 1 / -1;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h3>Récapitulatif Permis (${total})</h3>
+                <h3>${t('dashboard.permit.title', { count: total })}</h3>
                 <button id="dashboardPermitPdfBtn" class="btn btn-secondary" style="font-size:12px;padding:4px 12px;display:flex;align-items:center;gap:6px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
                     Export PDF
                 </button>
             </div>
             <div class="dashboard-permit-kpis">
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#3B82F6;">${total}</span><span class="kpi-label">Total</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#F59E0B;">${pending}</span><span class="kpi-label">En instruction</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#10B981;">${granted}</span><span class="kpi-label">Accordés</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#EF4444;">${refused}</span><span class="kpi-label">Refusés</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#065F46;">${appealCleared}</span><span class="kpi-label">Purgés</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#3B82F6;">${total}</span><span class="kpi-label">${t('dashboard.permit.kpi.total')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#F59E0B;">${pending}</span><span class="kpi-label">${t('dashboard.permit.kpi.inReview')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#10B981;">${granted}</span><span class="kpi-label">${t('dashboard.permit.kpi.granted')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#EF4444;">${refused}</span><span class="kpi-label">${t('dashboard.permit.kpi.refused')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#065F46;">${appealCleared}</span><span class="kpi-label">${t('dashboard.permit.kpi.cleared')}</span></div>
             </div>
             <div style="overflow-x:auto;margin-top:12px;">
                 <table class="dashboard-permit-table">
                     <thead><tr>
-                        <th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance</th>
+                        <th>${t('dashboard.permit.col.permit')}</th><th>${t('dashboard.col.project')}</th><th>${t('dashboard.permit.col.type')}</th><th>${t('dashboard.col.status')}</th><th>${t('dashboard.permit.col.deposit')}</th><th>${t('dashboard.permit.col.deadline')}</th>
                     </tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
@@ -3857,7 +3857,7 @@ tr:nth-child(even){background:#fafbfc}
                         <label for="cfgClientId">Client ID Google *</label>
                         <input type="text" id="cfgClientId" required placeholder="123456789-abc.apps.googleusercontent.com">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à Google Drive</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">${t('cloud.connectGDrive')}</button>
                 </form>
             </div>`;
     }
@@ -3877,13 +3877,13 @@ tr:nth-child(even){background:#fafbfc}
             if (!clientId) return;
 
             try {
-                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connecting');
                 localStorage.setItem('gantt-planner-gdrive-clientid', clientId);
                 await cloudBackup.init(clientId);
                 this._renderCloudPanel(modal);
             } catch (err) {
                 this._showToast(t('toast.cloudError', { service: 'Google Drive', message: err.message }), 'error');
-                form.querySelector('button[type="submit"]').textContent = 'Connecter à Google Drive';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connectGDrive');
             }
         });
     }
@@ -3891,7 +3891,7 @@ tr:nth-child(even){background:#fafbfc}
     async _initGDriveAndShowPanel(modal, clientId) {
         try {
             const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+                setTimeout(() => reject(new Error(t('cloud.connectionTimeout'))), 15000)
             );
             await Promise.race([cloudBackup.init(clientId), timeout]);
             this._renderCloudPanel(modal);
@@ -3946,18 +3946,18 @@ tr:nth-child(even){background:#fafbfc}
                         <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
                     </svg>
                 </div>
-                <p>Connectez-vous avec votre compte Google pour sauvegarder vos projets dans Google Drive.</p>
+                <p>${t('cloud.googleLoginDesc')}</p>
                 <button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 12px;">
-                    Se connecter avec Google
+                    ${t('cloud.signInGoogle')}
                 </button>
                 <button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; font-size: 12px;">
-                    Modifier le Client ID
+                    ${t('cloud.modifyClientId')}
                 </button>
             </div>`;
     }
 
     _cloudLoggedInHTML(user) {
-        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
         const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
         return `
             <div class="cloud-user-bar">
@@ -3965,14 +3965,14 @@ tr:nth-child(even){background:#fafbfc}
                     <span class="cloud-user-name">${name}</span>
                     ${email}
                 </div>
-                <button class="btn btn-secondary btn-sm" id="cloudSignOut">Déconnexion</button>
+                <button class="btn btn-secondary btn-sm" id="cloudSignOut">${t('cloud.signOut')}</button>
             </div>
             <div class="cloud-actions">
                 <button class="btn btn-primary" id="cloudSaveAll" style="flex: 1;">
-                    Sauvegarder tous les projets
+                    ${t('cloud.saveAll')}
                 </button>
                 <button class="btn btn-secondary" id="cloudSaveCurrent" style="flex: 1;">
-                    Sauvegarder projet actif
+                    ${t('cloud.saveCurrent')}
                 </button>
             </div>`;
     }
@@ -3982,13 +3982,13 @@ tr:nth-child(even){background:#fafbfc}
         if (googleBtn) {
             googleBtn.addEventListener('click', async () => {
                 try {
-                    googleBtn.textContent = 'Connexion...';
+                    googleBtn.textContent = t('cloud.connecting');
                     googleBtn.disabled = true;
                     await cloudBackup.signIn();
                     this._renderCloudPanel(modal);
                 } catch (err) {
                     this._showToast(t('toast.cloudConnectError', { service: 'Google', message: err.message }), 'error');
-                    googleBtn.textContent = 'Se connecter avec Google';
+                    googleBtn.textContent = t('cloud.signInGoogle');
                     googleBtn.disabled = false;
                 }
             });
@@ -4018,7 +4018,7 @@ tr:nth-child(even){background:#fafbfc}
         if (saveAllBtn) {
             saveAllBtn.addEventListener('click', async () => {
                 try {
-                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
@@ -4028,7 +4028,7 @@ tr:nth-child(even){background:#fafbfc}
                 } catch (err) {
                     this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.textContent = t('cloud.saveAll');
                     saveAllBtn.disabled = false;
                 }
             });
@@ -4038,7 +4038,7 @@ tr:nth-child(even){background:#fafbfc}
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', async () => {
                 try {
-                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.textContent = t('cloud.saving');
                     saveCurrentBtn.disabled = true;
                     const project = store.getActiveProject();
                     const tasks = store.getTasks();
@@ -4050,7 +4050,7 @@ tr:nth-child(even){background:#fafbfc}
                 } catch (err) {
                     this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.textContent = t('cloud.saveCurrent');
                     saveCurrentBtn.disabled = false;
                 }
             });
@@ -4061,16 +4061,16 @@ tr:nth-child(even){background:#fafbfc}
         const container = modal.querySelector('#cloudBackupList');
         if (!container) return;
 
-        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+        container.innerHTML = `<div class="cloud-loading">${t('cloud.loading')}</div>`;
 
         try {
             const backups = await cloudBackup.listBackups();
             if (backups.length === 0) {
-                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans Google Drive</div>';
+                container.innerHTML = `<div class="cloud-empty">${t('cloud.noBackups', { service: 'Google Drive' })}</div>`;
                 return;
             }
 
-            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            container.innerHTML = `<h3 class="cloud-list-title">${t('cloud.listTitle')}</h3>`;
             backups.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'cloud-backup-item';
@@ -4088,8 +4088,8 @@ tr:nth-child(even){background:#fafbfc}
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
-                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
-                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">${t('cloud.restore')}</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="${t('notif.dismiss')}">&times;</button>
                     </div>`;
                 container.appendChild(item);
             });
@@ -4120,7 +4120,7 @@ tr:nth-child(even){background:#fafbfc}
                     } catch (err) {
                         this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
-                        btn.textContent = 'Restaurer';
+                        btn.textContent = t('cloud.restore');
                     }
                 });
             });
@@ -4233,7 +4233,7 @@ tr:nth-child(even){background:#fafbfc}
                         <label for="cfgOnedriveClientId">Client ID Microsoft *</label>
                         <input type="text" id="cfgOnedriveClientId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à OneDrive</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">${t('cloud.connectOneDrive')}</button>
                 </form>
             </div>`;
     }
@@ -4253,13 +4253,13 @@ tr:nth-child(even){background:#fafbfc}
             if (!clientId) return;
 
             try {
-                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connecting');
                 localStorage.setItem('gantt-planner-onedrive-clientid', clientId);
                 await oneDriveBackup.init(clientId);
                 this._renderOneDrivePanel(modal);
             } catch (err) {
                 this._showToast(t('toast.cloudError', { service: 'OneDrive', message: err.message }), 'error');
-                form.querySelector('button[type="submit"]').textContent = 'Connecter à OneDrive';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connectOneDrive');
             }
         });
     }
@@ -4267,7 +4267,7 @@ tr:nth-child(even){background:#fafbfc}
     async _initOneDriveAndShowPanel(modal, clientId) {
         try {
             const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+                setTimeout(() => reject(new Error(t('cloud.connectionTimeout'))), 15000)
             );
             await Promise.race([oneDriveBackup.init(clientId), timeout]);
             this._renderOneDrivePanel(modal);
@@ -4320,18 +4320,18 @@ tr:nth-child(even){background:#fafbfc}
                         <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
                     </svg>
                 </div>
-                <p>Connectez-vous avec votre compte Microsoft pour sauvegarder vos projets dans OneDrive.</p>
+                <p>${t('cloud.microsoftLoginDesc')}</p>
                 <button class="btn btn-primary cloud-microsoft-btn" id="cloudMicrosoftLogin" style="width: 100%; margin-bottom: 12px;">
-                    Se connecter avec Microsoft
+                    ${t('cloud.signInMicrosoft')}
                 </button>
                 <button class="btn btn-secondary" id="onedriveResetConfig" style="width: 100%; font-size: 12px;">
-                    Modifier le Client ID
+                    ${t('cloud.modifyClientId')}
                 </button>
             </div>`;
     }
 
     _onedriveLoggedInHTML(user) {
-        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
         const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
         return `
             <div class="cloud-user-bar">
@@ -4339,14 +4339,14 @@ tr:nth-child(even){background:#fafbfc}
                     <span class="cloud-user-name">${name}</span>
                     ${email}
                 </div>
-                <button class="btn btn-secondary btn-sm" id="onedriveSignOut">Déconnexion</button>
+                <button class="btn btn-secondary btn-sm" id="onedriveSignOut">${t('cloud.signOut')}</button>
             </div>
             <div class="cloud-actions">
                 <button class="btn btn-primary" id="onedriveSaveAll" style="flex: 1;">
-                    Sauvegarder tous les projets
+                    ${t('cloud.saveAll')}
                 </button>
                 <button class="btn btn-secondary" id="onedriveSaveCurrent" style="flex: 1;">
-                    Sauvegarder projet actif
+                    ${t('cloud.saveCurrent')}
                 </button>
             </div>`;
     }
@@ -4356,13 +4356,13 @@ tr:nth-child(even){background:#fafbfc}
         if (msBtn) {
             msBtn.addEventListener('click', async () => {
                 try {
-                    msBtn.textContent = 'Connexion...';
+                    msBtn.textContent = t('cloud.connecting');
                     msBtn.disabled = true;
                     await oneDriveBackup.signIn();
                     this._renderOneDrivePanel(modal);
                 } catch (err) {
                     this._showToast(t('toast.cloudConnectError', { service: 'Microsoft', message: err.message }), 'error');
-                    msBtn.textContent = 'Se connecter avec Microsoft';
+                    msBtn.textContent = t('cloud.signInMicrosoft');
                     msBtn.disabled = false;
                 }
             });
@@ -4392,7 +4392,7 @@ tr:nth-child(even){background:#fafbfc}
         if (saveAllBtn) {
             saveAllBtn.addEventListener('click', async () => {
                 try {
-                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
@@ -4402,7 +4402,7 @@ tr:nth-child(even){background:#fafbfc}
                 } catch (err) {
                     this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.textContent = t('cloud.saveAll');
                     saveAllBtn.disabled = false;
                 }
             });
@@ -4412,7 +4412,7 @@ tr:nth-child(even){background:#fafbfc}
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', async () => {
                 try {
-                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.textContent = t('cloud.saving');
                     saveCurrentBtn.disabled = true;
                     const project = store.getActiveProject();
                     const tasks = store.getTasks();
@@ -4424,7 +4424,7 @@ tr:nth-child(even){background:#fafbfc}
                 } catch (err) {
                     this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.textContent = t('cloud.saveCurrent');
                     saveCurrentBtn.disabled = false;
                 }
             });
@@ -4435,16 +4435,16 @@ tr:nth-child(even){background:#fafbfc}
         const container = modal.querySelector('#onedriveBackupList');
         if (!container) return;
 
-        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+        container.innerHTML = `<div class="cloud-loading">${t('cloud.loading')}</div>`;
 
         try {
             const backups = await oneDriveBackup.listBackups();
             if (backups.length === 0) {
-                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans OneDrive</div>';
+                container.innerHTML = `<div class="cloud-empty">${t('cloud.noBackups', { service: 'OneDrive' })}</div>`;
                 return;
             }
 
-            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            container.innerHTML = `<h3 class="cloud-list-title">${t('cloud.listTitle')}</h3>`;
             backups.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'cloud-backup-item';
@@ -4462,8 +4462,8 @@ tr:nth-child(even){background:#fafbfc}
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
-                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
-                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">${t('cloud.restore')}</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="${t('notif.dismiss')}">&times;</button>
                     </div>`;
                 container.appendChild(item);
             });
@@ -4494,7 +4494,7 @@ tr:nth-child(even){background:#fafbfc}
                     } catch (err) {
                         this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
-                        btn.textContent = 'Restaurer';
+                        btn.textContent = t('cloud.restore');
                     }
                 });
             });
@@ -4573,13 +4573,13 @@ tr:nth-child(even){background:#fafbfc}
         menu.id = 'ctxMenu';
 
         const items = [
-            { label: 'Modifier', icon: 'edit', action: () => taskModal.openEdit(taskId) },
-            { label: 'Dupliquer', icon: 'copy', action: () => this._duplicateTask(taskId) },
+            { label: t('task.action.edit'), icon: 'edit', action: () => taskModal.openEdit(taskId) },
+            { label: t('task.action.duplicate'), icon: 'copy', action: () => this._duplicateTask(taskId) },
             { label: 'divider' },
-            { label: 'Marquer terminé', icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
-            { label: 'Marquer en cours', icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
+            { label: t('task.action.markDone'), icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
+            { label: t('task.action.markInProgress'), icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
             { label: 'divider' },
-            { label: 'Supprimer', icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
+            { label: t('task.action.delete'), icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
         ];
 
         items.forEach(item => {
@@ -4669,36 +4669,36 @@ tr:nth-child(even){background:#fafbfc}
         filterBar.appendChild(filterIcon);
 
         // Status filter (multi-select)
-        const statusGroup = this._createMultiFilterGroup('Statut', 'filterStatus', [
-            { value: 'todo', label: 'À faire' },
-            { value: 'in_progress', label: 'En cours' },
-            { value: 'done', label: 'Terminé' },
-        ], 'Tous');
+        const statusGroup = this._createMultiFilterGroup(t('filter.status'), 'filterStatus', [
+            { value: 'todo', label: t('task.status.todo') },
+            { value: 'in_progress', label: t('task.status.inProgress') },
+            { value: 'done', label: t('task.status.done') },
+        ], t('filter.all.m'));
         filterBar.appendChild(statusGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Assignee filter (multi-select)
-        const assigneeGroup = this._createMultiFilterGroup('Ressource', 'filterAssignee', this._getAssigneeOptions(), 'Toutes');
+        const assigneeGroup = this._createMultiFilterGroup(t('filter.assignee'), 'filterAssignee', this._getAssigneeOptions(), t('filter.all.f'));
         filterBar.appendChild(assigneeGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Phase filter (multi-select)
-        const phaseGroup = this._createMultiFilterGroup('Phase', 'filterPhase', this._getPhaseOptions(), 'Toutes');
+        const phaseGroup = this._createMultiFilterGroup(t('filter.phase'), 'filterPhase', this._getPhaseOptions(), t('filter.all.f'));
         filterBar.appendChild(phaseGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Priority filter (multi-select)
-        const priorityGroup = this._createMultiFilterGroup('Priorité', 'filterPriority', [
-            { value: 'high', label: 'Haute' },
-            { value: 'medium', label: 'Moyenne' },
-            { value: 'low', label: 'Basse' },
-        ], 'Toutes');
+        const priorityGroup = this._createMultiFilterGroup(t('filter.priority'), 'filterPriority', [
+            { value: 'high', label: t('task.priority.high') },
+            { value: 'medium', label: t('task.priority.medium') },
+            { value: 'low', label: t('task.priority.low') },
+        ], t('filter.all.f'));
         filterBar.appendChild(priorityGroup);
 
         // Separator
@@ -4709,7 +4709,7 @@ tr:nth-child(even){background:#fafbfc}
         dateGroup.className = 'filter-group';
         const dateLabel = document.createElement('label');
         dateLabel.className = 'filter-label';
-        dateLabel.textContent = 'Période';
+        dateLabel.textContent = t('filter.period');
         dateGroup.appendChild(dateLabel);
 
         const dateInputs = document.createElement('div');
@@ -4882,7 +4882,7 @@ tr:nth-child(even){background:#fafbfc}
         });
         const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
         const badge = wrapper.querySelector('.filter-multi-badge');
-        if (toggleText) toggleText.textContent = 'Toutes';
+        if (toggleText) toggleText.textContent = t('filter.all.f');
         if (badge) badge.style.display = 'none';
         this._filters.phase = [];
     }
@@ -5029,7 +5029,7 @@ tr:nth-child(even){background:#fafbfc}
 
         const noResult = document.createElement('div');
         noResult.className = 'project-search-empty';
-        noResult.textContent = 'Aucun projet trouvé';
+        noResult.textContent = t('project.noResult');
         noResult.style.display = 'none';
 
         projects.forEach(p => {
@@ -5091,7 +5091,7 @@ tr:nth-child(even){background:#fafbfc}
         // Duplicate current project
         const dupBtn = document.createElement('button');
         dupBtn.className = 'project-dropdown-item';
-        dupBtn.textContent = 'Dupliquer ce projet';
+        dupBtn.textContent = t('project.action.duplicate');
         dupBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.remove();
@@ -5113,7 +5113,7 @@ tr:nth-child(even){background:#fafbfc}
         if (projects.length > 1) {
             const delBtn = document.createElement('button');
             delBtn.className = 'project-dropdown-item danger';
-            delBtn.textContent = 'Supprimer ce projet';
+            delBtn.textContent = t('project.action.delete');
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 dropdown.remove();
@@ -5286,7 +5286,7 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _batchSetStatus(status) {
-        const statusLabels = { done: 'Terminé', in_progress: 'En cours', todo: 'À faire' };
+        const statusLabels = { done: t('task.status.done'), in_progress: t('task.status.inProgress'), todo: t('task.status.todo') };
         this._selectedTaskIds.forEach(id => {
             const updates = { status };
             if (status === 'done') updates.progress = 100;

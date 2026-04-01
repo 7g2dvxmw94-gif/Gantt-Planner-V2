@@ -425,7 +425,7 @@ class GanttInteractions {
             const franchi = task.progress >= 100;
             const statusColor = franchi ? '#10B981' : '#F59E0B';
             const statusIcon  = franchi ? '✓' : '○';
-            const statusLabel = franchi ? 'Franchi' : 'Non franchi';
+            const statusLabel = franchi ? t('gantt.milestone.reached') : t('gantt.milestone.pending');
             html += `<div class="gtt-row"><span class="gtt-icon" style="color:${statusColor};font-weight:700;">${statusIcon}</span><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></div>`;
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;

@@ -5,42 +5,12 @@
 const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
-    {
-        target: '.project-selector',
-        title: 'Vos projets',
-        text: 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.',
-        position: 'bottom',
-    },
-    {
-        target: '.tabs',
-        title: 'Vues du projet',
-        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
-        position: 'bottom',
-    },
-    {
-        target: '#addTaskBtn',
-        title: 'Ajouter une tâche',
-        text: 'Créez une tâche, un jalon ou une phase.',
-        position: 'bottom',
-    },
-    {
-        target: '.gantt-wrapper',
-        title: 'Diagramme de Gantt',
-        text: 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.',
-        position: 'top',
-    },
-    {
-        target: '.zoom-controls',
-        title: 'Niveau de zoom',
-        text: 'Passez de la vue Jour à Trimestre pour ajuster la granularité.',
-        position: 'bottom',
-    },
-    {
-        target: '#exportBtn',
-        title: 'Import / Export',
-        text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
-        position: 'bottom',
-    },
+    { target: '.project-selector', titleKey: 'onboarding.step1Title', textKey: 'onboarding.step1Text', position: 'bottom' },
+    { target: '.tabs',            titleKey: 'onboarding.step2Title', textKey: 'onboarding.step2Text', position: 'bottom' },
+    { target: '#addTaskBtn',      titleKey: 'onboarding.step3Title', textKey: 'onboarding.step3Text', position: 'bottom' },
+    { target: '.gantt-wrapper',   titleKey: 'onboarding.step4Title', textKey: 'onboarding.step4Text', position: 'top' },
+    { target: '.zoom-controls',   titleKey: 'onboarding.step5Title', textKey: 'onboarding.step5Text', position: 'bottom' },
+    { target: '#exportBtn',       titleKey: 'onboarding.step6Title', textKey: 'onboarding.step6Text', position: 'bottom' },
 ];
 
 class Onboarding {
@@ -71,7 +41,7 @@ class Onboarding {
         this._overlay.className = 'onboarding-overlay';
         this._overlay.setAttribute('role', 'dialog');
         this._overlay.setAttribute('aria-modal', 'true');
-        this._overlay.setAttribute('aria-label', 'Guide de démarrage');
+        this._overlay.setAttribute('aria-label', t('onboarding.ariaLabel'));
 
         // Spotlight hole (SVG mask)
         this._overlay.innerHTML = `
@@ -95,8 +65,8 @@ class Onboarding {
             <div class="onboarding-footer">
                 <span class="onboarding-counter"></span>
                 <div class="onboarding-btns">
-                    <button class="onboarding-skip">Passer</button>
-                    <button class="onboarding-next">Suivant</button>
+                    <button class="onboarding-skip">${t('onboarding.skip')}</button>
+                    <button class="onboarding-next">${t('onboarding.next')}</button>
                 </div>
             </div>
         `;
@@ -146,12 +116,12 @@ class Onboarding {
             hole.setAttribute('height', rect.height + pad * 2);
 
             // Update tooltip content
-            this._tooltip.querySelector('.onboarding-title').textContent = step.title;
-            this._tooltip.querySelector('.onboarding-text').textContent = step.text;
-            this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
+            this._tooltip.querySelector('.onboarding-title').textContent = t(step.titleKey);
+            this._tooltip.querySelector('.onboarding-text').textContent = t(step.textKey);
+            this._tooltip.querySelector('.onboarding-counter').textContent = t('onboarding.counter', { current: this._step + 1, total: STEPS.length });
 
             const nextBtn = this._tooltip.querySelector('.onboarding-next');
-            nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
+            nextBtn.textContent = this._step === STEPS.length - 1 ? t('onboarding.finish') : t('onboarding.next');
 
             // Position tooltip
             const tt = this._tooltip;

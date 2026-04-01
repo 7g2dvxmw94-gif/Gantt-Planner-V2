@@ -6653,6 +6653,84 @@ const I18N = {
         'task.btnCancel': 'Annuler',
         'task.btnCreate': 'Créer',
         'task.btnSave': 'Enregistrer',
+        'task.type.label': 'Type',
+        'task.new.title': 'Nouvelle tâche',
+        'task.edit.title': 'Modifier la tâche',
+        'task.phase.name.label': 'Nom de la phase',
+        'task.milestone.pending': '○ Non franchi',
+        'task.milestone.done': '✓ Franchi',
+        'task.fixedCosts.label': 'Coûts fixes',
+        'task.fixedCosts.addBtn': '+ Ajouter un coût',
+        'task.fixedCosts.hint': 'Coûts forfaitaires hors ressources (matériel, sous-traitance, frais...)',
+        'task.fixedCosts.total': 'Total coûts fixes : {total} {symbol}',
+        'task.fixedCosts.defaultName': 'Coût fixe',
+        'task.fixedCosts.namePlaceholder': 'Libellé (ex: Matériel)',
+        'task.fixedCosts.removeTitle': 'Supprimer ce coût',
+        'task.predecessors': 'Précédée par',
+        'task.successors': 'Succédée par',
+        'task.noTasks': 'Aucune tâche disponible',
+        'task.saveFirstForSuccessors': 'Sauvegardez d\'abord pour ajouter des successeurs',
+        'task.assignee.noResults': 'Aucune ressource trouvée',
+        'task.parent.none': '— Aucune (racine) —',
+        'permit.section.info': 'Informations du permis de construire',
+        'permit.type.label': 'Type de permis',
+        'permit.dossier.label': 'N° de dossier',
+        'permit.commune.label': 'Commune',
+        'permit.commune.placeholder': 'Nom de la commune',
+        'permit.service.label': 'Service instructeur',
+        'permit.service.placeholder': 'DDT / Mairie...',
+        'permit.status.label': 'Statut réglementaire',
+        'permit.abf.label': 'Secteur protégé',
+        'permit.section.dates': 'Dates réglementaires',
+        'permit.deposit.label': 'Date de dépôt',
+        'permit.completeness.label': 'Date de complétude',
+        'permit.addDocsReq.label': 'Demande pièces complémentaires',
+        'permit.addDocsResp.label': 'Réponse pièces complémentaires',
+        'permit.decision.label': 'Date de décision',
+        'permit.display.label': 'Date début d\'affichage',
+        'permit.section.deadlines': 'Délais calculés',
+        'permit.deadlines.noDate': 'Renseignez la date de dépôt pour calculer les délais',
+        'permit.deadline.instruction': 'Délai d\'instruction',
+        'permit.deadline.instructionDays': '{days} jours',
+        'permit.deadline.instructionDaysABF': '{days} jours (ABF +30j)',
+        'permit.deadline.completenessLimit': 'Limite complétude',
+        'permit.deadline.provisional': 'Décision prévisionnelle',
+        'permit.deadline.suspended': 'Suspendue',
+        'permit.deadline.daysLeft': '(J-{days})',
+        'permit.deadline.daysExceeded': '(dépassé de {days}j)',
+        'permit.deadline.tacitApproval': 'Approbation tacite',
+        'permit.deadline.appealPurged': 'Recours purgé',
+        'permit.deadline.appealEnd': 'Fin recours tiers (J-{days})',
+        'permit.deadline.expiry': 'Péremption permis',
+
+        // Resources
+        'resource.edit.title': 'Modifier la ressource',
+        'resource.create.title': 'Nouvelle ressource',
+        'resource.name.label': 'Nom complet',
+        'resource.name.placeholder': 'Ex: Marie Dupont',
+        'resource.role.label': 'Rôle / Fonction',
+        'resource.role.placeholder': 'Ex: UX Designer, Développeur...',
+        'resource.initials.label': 'Initiales',
+        'resource.initials.hint': 'Auto-généré si vide',
+        'resource.initials.placeholder': 'Ex: MD',
+        'resource.rate.label': 'Tarification',
+        'resource.rate.hourly': 'Taux horaire',
+        'resource.rate.daily': 'TJM',
+        'resource.edit.btn': 'Modifier',
+        'resource.delete.btn': 'Supprimer',
+        'resource.workload.label': 'Charge de travail',
+        'resource.workload.overload': 'Surcharge détectée ({count} tâches simultanées)',
+        'resource.tasks.done': 'Terminé',
+        'resource.tasks.late': 'En retard',
+        'resource.tasks.count': '{count} tâche{plural}',
+        'resource.create.btn': 'Créer la ressource',
+        'task.badge.critical': 'Critique',
+        'board.type': 'Type',
+        'baseline.active': 'Baseline active',
+        'baseline.activate': 'Activer',
+        'baseline.rename.validate': 'Valider',
+        'baseline.namePlaceholder': 'Nom de la baseline…',
+        'baseline.create.title': 'Créer une baseline',
 
         // Board/Table View
         'board.taskName': 'Tâche',
@@ -6711,11 +6789,31 @@ const I18N = {
         'toast.criticalPathShown': 'Chemin critique : {count} tâches sur {total}',
         'toast.criticalPathHidden': 'Chemin critique masqué',
         'toast.noPermitsToExport': 'Aucun permis à exporter',
+        'toast.exportAll': '{count} projet(s) exporté(s)',
+        'toast.backupDeleted': 'Sauvegarde supprimée',
+        'toast.importProjectsCount': '{count} projet(s) importé(s)',
+        'toast.importProjectName': 'Projet "{name}" importé',
+        'toast.importXmlName': 'Projet "{name}" importé depuis MS Project XML',
+        'toast.importExcelName': 'Projet "{name}" importé depuis Excel ({rows} lignes)',
+        'toast.importErrorJson': 'Erreur lors de l\'import JSON',
+        'toast.importErrorXml': 'Erreur lors de l\'import XML',
+        'toast.importErrorExcel': 'Erreur lors de l\'import Excel',
+        'toast.importFormatUnsupported': 'Format non supporté',
+        'toast.importExcelEmpty': 'Le fichier Excel est vide',
+        'toast.cloudSaveSuccess': 'Sauvegarde {service} réussie',
+        'toast.cloudSaveProject': '"{name}" sauvegardé sur {service}',
+        'toast.cloudRestoreCount': '{count} projet(s) restauré(s)',
+        'toast.cloudRestoreName': 'Projet "{name}" restauré',
+        'toast.error': 'Erreur: {message}',
+        'toast.cloudError': 'Erreur {service}: {message}',
+        'toast.cloudConnectError': 'Erreur connexion {service}: {message}',
+        'toast.restoreError': 'Erreur restauration: {message}',
 
         // Confirmations
         'confirm.deleteResource': 'Supprimer la ressource "{name}" ?\nElle sera désassignée de toutes les tâches.',
         'confirm.deleteBackup': 'Supprimer cette sauvegarde ?',
         'confirm.deleteTask': 'Supprimer "{name}" ?',
+        'confirm.deleteTaskWithChildren': 'Supprimer "{name}" et toutes ses sous-tâches ?',
         'confirm.deleteProject': 'Supprimer le projet "{name}" ?',
         'confirm.deleteTasks': 'Supprimer {count} tâche{plural} ?',
 
@@ -6736,6 +6834,215 @@ const I18N = {
         'onboarding.skip': 'Passer',
         'onboarding.next': 'Suivant',
         'onboarding.finish': 'Terminer',
+        'onboarding.ariaLabel': 'Guide de démarrage',
+
+        // Gantt renderer
+        'gantt.taskColumnHeader': 'Tâche',
+        'gantt.expand': 'Développer',
+        'gantt.collapse': 'Réduire',
+        'gantt.empty.title': 'Aucune tâche',
+        'gantt.empty.text': 'Commencez par ajouter votre première tâche pour visualiser votre planning.',
+        'gantt.empty.addBtn': '+ Nouvelle tâche',
+        'gantt.permit.instruction': 'Instruction',
+        'gantt.permit.appeal': 'Recours tiers',
+        'gantt.milestone.reached': 'Franchi',
+        'gantt.milestone.pending': 'Non franchi',
+        'zoom.day': 'Jour',
+        'zoom.week': 'Semaine',
+        'zoom.month': 'Mois',
+        'zoom.quarter': 'Trimestre',
+
+        // PDF export
+        'pdf.exportedOn': 'Exporté le {date}',
+        'pdf.stats.tasks': 'Tâches',
+        'pdf.stats.progress': 'Progression',
+        'pdf.stats.daysRemaining': 'Jours restants',
+        'pdf.stats.done': 'Terminées',
+        'pdf.table.title': 'Tableau des tâches',
+        'pdf.table.task': 'Tâche',
+        'pdf.table.start': 'Début',
+        'pdf.table.end': 'Fin',
+        'pdf.table.assignees': 'Assigné(s)',
+        'pdf.table.status': 'Statut',
+        'pdf.table.priority': 'Priorité',
+        'pdf.table.progress': 'Progression',
+        'pdf.timeline.title': 'Timeline (Gantt)',
+        'pdf.timeline.period': 'Période : {start} → {end} — Échelle : {scale}',
+        'pdf.scale.days': 'Jours',
+        'pdf.scale.weeks': 'Semaines',
+        'pdf.scale.months': 'Mois',
+        'pdf.scale.quarters': 'Trimestres',
+        'pdf.footer': 'Gantt Planner Pro — {name} — Exporté le {date} à {time}',
+        'pdf.resources.title': 'Ressources',
+        'pdf.resources.workload': 'Charge : {percent}%',
+        'pdf.resources.tasks': '{count} tâche(s)',
+
+        // Dashboard
+        'dashboard.filterLabel': 'Filtrer par projet :',
+        'dashboard.allProjects': 'Tous les projets',
+        'dashboard.overview': 'Vue d\'ensemble',
+        'dashboard.kpi.projects': 'Projets',
+        'dashboard.kpi.totalTasks': 'Tâches totales',
+        'dashboard.kpi.activeTasks': 'Tâches actives',
+        'dashboard.kpi.completed': 'Terminées',
+        'dashboard.kpi.avgProgress': 'Progression moy.',
+        'dashboard.kpi.budgetConsumed': 'Budget consommé',
+        'dashboard.kpi.totalBudget': 'Budget total estimé',
+        'dashboard.projects': 'Projets ({count})',
+        'dashboard.alerts': 'Alertes ({count})',
+        'dashboard.noAlerts': 'Aucune alerte',
+        'dashboard.moreAlerts': '+{count} autres alertes',
+        'dashboard.priorityTasks': 'Tâches prioritaires ({count})',
+        'dashboard.noTasks': 'Aucune tâche en cours',
+        'dashboard.col.task': 'Tâche',
+        'dashboard.col.project': 'Projet',
+        'dashboard.col.priority': 'Priorité',
+        'dashboard.col.deadline': 'Échéance',
+        'dashboard.col.progress': 'Progression',
+        'dashboard.col.status': 'Statut',
+        'dashboard.col.duration': 'Durée',
+        'dashboard.col.fixedCost': 'Coût fixe',
+        'dashboard.col.totalCost': 'Coût total',
+        'dashboard.col.consumed': 'Consommé',
+        'dashboard.col.assignees': 'Ressources',
+        'dashboard.notif.late': '{name} en retard de {days}j',
+        'dashboard.notif.milestone': 'Jalon <strong>{name}</strong> dans {days}j',
+
+        // Priority table deadline text
+        'dashboard.deadline.overdue': 'Retard ({days}j)',
+        'dashboard.deadline.today': 'Auj.',
+        'dashboard.deadline.daysLeft': 'J-{days}',
+
+        // Cost table (dashboard)
+        'dashboard.costTable.title': 'Coûts par tâche',
+        'dashboard.col.resourceCol': 'Ressource(s)',
+        'dashboard.col.rate': 'Taux',
+        'dashboard.col.advancement': 'Avancement',
+        'dashboard.total': 'Total',
+
+        // Costs view (full costs tab)
+        'costs.title': 'Suivi des coûts',
+        'costs.filterLabel': 'Filtrer par projet :',
+        'costs.kpi.totalBudget': 'Budget total (estimé)',
+        'costs.kpi.actualCost': 'Coût réel (dépensé)',
+        'costs.kpi.variance': 'Écart (variance)',
+        'costs.kpi.consumed': '% consommé',
+        'costs.col.durationDays': 'Durée (j)',
+        'costs.col.hourlyRate': 'Taux horaire',
+        'costs.col.estimatedCost': 'Coût estimé total',
+        'costs.col.actualCost': 'Coût réel',
+        'costs.col.variance': 'Écart',
+
+        // Context menu task actions
+        'task.action.edit': 'Modifier',
+        'task.action.duplicate': 'Dupliquer',
+        'task.action.markDone': 'Marquer terminé',
+        'task.action.markInProgress': 'Marquer en cours',
+        'task.action.delete': 'Supprimer',
+
+        // Filter labels
+        'filter.status': 'Statut',
+        'filter.all.m': 'Tous',
+        'filter.all.f': 'Toutes',
+        'filter.assignee': 'Ressource',
+        'filter.phase': 'Phase',
+        'filter.priority': 'Priorité',
+        'filter.period': 'Période',
+
+        // Project selector
+        'project.noResult': 'Aucun projet trouvé',
+        'project.action.duplicate': 'Dupliquer ce projet',
+        'project.action.delete': 'Supprimer ce projet',
+
+        // Keyboard shortcuts dialog
+        'shortcuts.title': 'Raccourcis clavier',
+        'shortcuts.undo': 'Annuler',
+        'shortcuts.redo': 'Rétablir',
+        'shortcuts.search': 'Rechercher',
+        'shortcuts.darkMode': 'Mode sombre/clair',
+        'shortcuts.changeView': 'Changer de vue',
+        'shortcuts.delete': 'Supprimer la sélection',
+        'shortcuts.escape': 'Fermer / Annuler',
+        'shortcuts.help': 'Afficher cette aide',
+        'shortcuts.restart': 'Relancer le guide de démarrage',
+        'shortcuts.contact': 'Contact / Signaler un bug',
+
+        // Permit summary section
+        'dashboard.permit.title': 'Récapitulatif Permis ({count})',
+        'dashboard.permit.empty': 'Aucun permis de construire dans les projets',
+        'dashboard.permit.suspended': 'Suspendu',
+        'dashboard.permit.decisionLabel': 'Décision',
+        'dashboard.permit.daysLeft': '(J-{days})',
+        'dashboard.permit.overdue': '(dépassé)',
+        'dashboard.permit.appealLabel': 'Purge recours',
+        'dashboard.permit.expiryLabel': 'Péremption',
+        'dashboard.permit.kpi.total': 'Total',
+        'dashboard.permit.kpi.inReview': 'En instruction',
+        'dashboard.permit.kpi.granted': 'Accordés',
+        'dashboard.permit.kpi.refused': 'Refusés',
+        'dashboard.permit.kpi.cleared': 'Purgés',
+        'dashboard.permit.col.permit': 'Permis',
+        'dashboard.permit.col.type': 'Type',
+        'dashboard.permit.col.deposit': 'Dépôt',
+        'dashboard.permit.col.deadline': 'Échéance',
+
+        // PDF export dialog
+        'pdf.dialog.desc': 'Sélectionnez les vues à inclure dans le PDF :',
+        'pdf.dialog.table.label': 'Tableau des tâches',
+        'pdf.dialog.table.desc': 'Liste détaillée avec statut, priorité et progression',
+        'pdf.dialog.timeline.desc': 'Diagramme de Gantt avec barres de tâches',
+        'pdf.dialog.resources.label': 'Ressources',
+        'pdf.dialog.resources.desc': 'Charge de travail et tâches par ressource',
+        'pdf.dialog.dateLabel': 'Fenêtre temporelle de la Timeline :',
+        'pdf.dialog.from': 'Du',
+        'pdf.dialog.to': 'Au',
+        'pdf.dialog.cancel': 'Annuler',
+        'pdf.dialog.generate': 'Générer le PDF',
+
+        // Export menu
+        'export.json.desc': 'Réimportable',
+        'export.all.label': 'Tout exporter',
+        'export.all.desc': 'Tous les projets (JSON)',
+        'export.csv.desc': 'MS Project / Excel / Tableur',
+        'export.xml.desc': 'MS Project (recommandé)',
+        'export.pdf.desc': 'Impression',
+
+        // CSV headers
+        'csv.col.level': 'Niveau hiérarchique',
+        'csv.col.name': 'Nom',
+        'csv.col.duration': 'Durée',
+        'csv.col.start': 'Début',
+        'csv.col.end': 'Fin',
+        'csv.col.resources': 'Noms ressources',
+        'csv.col.progress': '% achevé',
+
+        // Notification panel
+        'notif.title': 'Notifications',
+        'notif.noAlerts': 'Aucune alerte pour le moment',
+        'notif.dismiss': 'Supprimer',
+
+        // Costs view / notifications
+        'notif.noCurrent': 'Aucune tâche en cours',
+
+        // Cloud backup buttons
+        'cloud.connecting': 'Connexion...',
+        'cloud.connectGDrive': 'Connecter à Google Drive',
+        'cloud.signInGoogle': 'Se connecter avec Google',
+        'cloud.connectOneDrive': 'Connecter à OneDrive',
+        'cloud.signInMicrosoft': 'Se connecter avec Microsoft',
+        'cloud.saving': 'Sauvegarde...',
+        'cloud.saveAll': 'Sauvegarder tous les projets',
+        'cloud.saveCurrent': 'Sauvegarder projet actif',
+        'cloud.restore': 'Restaurer',
+        'cloud.signOut': 'Déconnexion',
+        'cloud.modifyClientId': 'Modifier le Client ID',
+        'cloud.loading': 'Chargement des sauvegardes...',
+        'cloud.noBackups': 'Aucune sauvegarde dans {service}',
+        'cloud.listTitle': 'Sauvegardes disponibles',
+        'cloud.defaultUser': 'Utilisateur',
+        'cloud.connectionTimeout': 'Délai de connexion dépassé',
+        'cloud.googleLoginDesc': 'Connectez-vous avec votre compte Google pour sauvegarder vos projets dans Google Drive.',
+        'cloud.microsoftLoginDesc': 'Connectez-vous avec votre compte Microsoft pour sauvegarder vos projets dans OneDrive.',
     },
     en: {
         // Navigation & Header
@@ -6851,6 +7158,84 @@ const I18N = {
         'task.btnCancel': 'Cancel',
         'task.btnCreate': 'Create',
         'task.btnSave': 'Save',
+        'task.type.label': 'Type',
+        'task.new.title': 'New task',
+        'task.edit.title': 'Edit task',
+        'task.phase.name.label': 'Phase name',
+        'task.milestone.pending': '○ Not reached',
+        'task.milestone.done': '✓ Reached',
+        'task.fixedCosts.label': 'Fixed costs',
+        'task.fixedCosts.addBtn': '+ Add a cost',
+        'task.fixedCosts.hint': 'Fixed costs outside resources (materials, subcontracting, expenses...)',
+        'task.fixedCosts.total': 'Total fixed costs: {total} {symbol}',
+        'task.fixedCosts.defaultName': 'Fixed cost',
+        'task.fixedCosts.namePlaceholder': 'Label (e.g. Materials)',
+        'task.fixedCosts.removeTitle': 'Remove this cost',
+        'task.predecessors': 'Preceded by',
+        'task.successors': 'Followed by',
+        'task.noTasks': 'No tasks available',
+        'task.saveFirstForSuccessors': 'Save first to add successors',
+        'task.assignee.noResults': 'No resources found',
+        'task.parent.none': '— None (root) —',
+        'permit.section.info': 'Building permit information',
+        'permit.type.label': 'Permit type',
+        'permit.dossier.label': 'File no.',
+        'permit.commune.label': 'Municipality',
+        'permit.commune.placeholder': 'Municipality name',
+        'permit.service.label': 'Instructing service',
+        'permit.service.placeholder': 'DDT / Town hall...',
+        'permit.status.label': 'Regulatory status',
+        'permit.abf.label': 'Protected area',
+        'permit.section.dates': 'Regulatory dates',
+        'permit.deposit.label': 'Filing date',
+        'permit.completeness.label': 'Completeness date',
+        'permit.addDocsReq.label': 'Additional documents request',
+        'permit.addDocsResp.label': 'Additional documents response',
+        'permit.decision.label': 'Decision date',
+        'permit.display.label': 'Display start date',
+        'permit.section.deadlines': 'Calculated deadlines',
+        'permit.deadlines.noDate': 'Enter the filing date to calculate deadlines',
+        'permit.deadline.instruction': 'Instruction deadline',
+        'permit.deadline.instructionDays': '{days} days',
+        'permit.deadline.instructionDaysABF': '{days} days (ABF +30d)',
+        'permit.deadline.completenessLimit': 'Completeness limit',
+        'permit.deadline.provisional': 'Provisional decision',
+        'permit.deadline.suspended': 'Suspended',
+        'permit.deadline.daysLeft': '(D-{days})',
+        'permit.deadline.daysExceeded': '(exceeded by {days}d)',
+        'permit.deadline.tacitApproval': 'Tacit approval',
+        'permit.deadline.appealPurged': 'Appeal cleared',
+        'permit.deadline.appealEnd': 'Appeal end (D-{days})',
+        'permit.deadline.expiry': 'Permit expiry',
+
+        // Resources
+        'resource.edit.title': 'Edit resource',
+        'resource.create.title': 'New resource',
+        'resource.name.label': 'Full Name',
+        'resource.name.placeholder': 'Ex: John Doe',
+        'resource.role.label': 'Role / Position',
+        'resource.role.placeholder': 'Ex: UX Designer, Developer...',
+        'resource.initials.label': 'Initials',
+        'resource.initials.hint': 'Auto-generated if empty',
+        'resource.initials.placeholder': 'Ex: JD',
+        'resource.rate.label': 'Billing',
+        'resource.rate.hourly': 'Hourly rate',
+        'resource.rate.daily': 'Daily rate',
+        'resource.edit.btn': 'Edit',
+        'resource.delete.btn': 'Delete',
+        'resource.workload.label': 'Workload',
+        'resource.workload.overload': 'Overload detected ({count} concurrent tasks)',
+        'resource.tasks.done': 'Done',
+        'resource.tasks.late': 'Late',
+        'resource.tasks.count': '{count} task{plural}',
+        'resource.create.btn': 'Create resource',
+        'task.badge.critical': 'Critical',
+        'board.type': 'Type',
+        'baseline.active': 'Active baseline',
+        'baseline.activate': 'Activate',
+        'baseline.rename.validate': 'Validate',
+        'baseline.namePlaceholder': 'Baseline name…',
+        'baseline.create.title': 'Create a baseline',
 
         // Board/Table View
         'board.taskName': 'Task',
@@ -6909,11 +7294,31 @@ const I18N = {
         'toast.criticalPathShown': 'Critical path: {count} tasks out of {total}',
         'toast.criticalPathHidden': 'Critical path hidden',
         'toast.noPermitsToExport': 'No permits to export',
+        'toast.exportAll': '{count} project(s) exported',
+        'toast.backupDeleted': 'Backup deleted',
+        'toast.importProjectsCount': '{count} project(s) imported',
+        'toast.importProjectName': 'Project "{name}" imported',
+        'toast.importXmlName': 'Project "{name}" imported from MS Project XML',
+        'toast.importExcelName': 'Project "{name}" imported from Excel ({rows} rows)',
+        'toast.importErrorJson': 'Error importing JSON',
+        'toast.importErrorXml': 'Error importing XML',
+        'toast.importErrorExcel': 'Error importing Excel',
+        'toast.importFormatUnsupported': 'Unsupported format',
+        'toast.importExcelEmpty': 'Excel file is empty',
+        'toast.cloudSaveSuccess': '{service} backup successful',
+        'toast.cloudSaveProject': '"{name}" saved to {service}',
+        'toast.cloudRestoreCount': '{count} project(s) restored',
+        'toast.cloudRestoreName': 'Project "{name}" restored',
+        'toast.error': 'Error: {message}',
+        'toast.cloudError': '{service} error: {message}',
+        'toast.cloudConnectError': '{service} connection error: {message}',
+        'toast.restoreError': 'Restore error: {message}',
 
         // Confirmations
         'confirm.deleteResource': 'Delete resource "{name}" ?\nIt will be unassigned from all tasks.',
         'confirm.deleteBackup': 'Delete this backup?',
         'confirm.deleteTask': 'Delete "{name}" ?',
+        'confirm.deleteTaskWithChildren': 'Delete "{name}" and all its subtasks?',
         'confirm.deleteProject': 'Delete project "{name}" ?',
         'confirm.deleteTasks': 'Delete {count} task{plural} ?',
 
@@ -6934,6 +7339,215 @@ const I18N = {
         'onboarding.skip': 'Skip',
         'onboarding.next': 'Next',
         'onboarding.finish': 'Finish',
+        'onboarding.ariaLabel': 'Getting started guide',
+
+        // Gantt renderer
+        'gantt.taskColumnHeader': 'Task',
+        'gantt.expand': 'Expand',
+        'gantt.collapse': 'Collapse',
+        'gantt.empty.title': 'No tasks',
+        'gantt.empty.text': 'Start by adding your first task to visualize your schedule.',
+        'gantt.empty.addBtn': '+ New task',
+        'gantt.permit.instruction': 'Instruction',
+        'gantt.permit.appeal': 'Third-party appeal',
+        'gantt.milestone.reached': 'Reached',
+        'gantt.milestone.pending': 'Not reached',
+        'zoom.day': 'Day',
+        'zoom.week': 'Week',
+        'zoom.month': 'Month',
+        'zoom.quarter': 'Quarter',
+
+        // PDF export
+        'pdf.exportedOn': 'Exported on {date}',
+        'pdf.stats.tasks': 'Tasks',
+        'pdf.stats.progress': 'Progress',
+        'pdf.stats.daysRemaining': 'Days remaining',
+        'pdf.stats.done': 'Completed',
+        'pdf.table.title': 'Task list',
+        'pdf.table.task': 'Task',
+        'pdf.table.start': 'Start',
+        'pdf.table.end': 'End',
+        'pdf.table.assignees': 'Assignee(s)',
+        'pdf.table.status': 'Status',
+        'pdf.table.priority': 'Priority',
+        'pdf.table.progress': 'Progress',
+        'pdf.timeline.title': 'Timeline (Gantt)',
+        'pdf.timeline.period': 'Period: {start} → {end} — Scale: {scale}',
+        'pdf.scale.days': 'Days',
+        'pdf.scale.weeks': 'Weeks',
+        'pdf.scale.months': 'Months',
+        'pdf.scale.quarters': 'Quarters',
+        'pdf.footer': 'Gantt Planner Pro — {name} — Exported on {date} at {time}',
+        'pdf.resources.title': 'Resources',
+        'pdf.resources.workload': 'Workload: {percent}%',
+        'pdf.resources.tasks': '{count} task(s)',
+
+        // Dashboard
+        'dashboard.filterLabel': 'Filter by project:',
+        'dashboard.allProjects': 'All projects',
+        'dashboard.overview': 'Overview',
+        'dashboard.kpi.projects': 'Projects',
+        'dashboard.kpi.totalTasks': 'Total tasks',
+        'dashboard.kpi.activeTasks': 'Active tasks',
+        'dashboard.kpi.completed': 'Completed',
+        'dashboard.kpi.avgProgress': 'Avg. progress',
+        'dashboard.kpi.budgetConsumed': 'Budget consumed',
+        'dashboard.kpi.totalBudget': 'Estimated total budget',
+        'dashboard.projects': 'Projects ({count})',
+        'dashboard.alerts': 'Alerts ({count})',
+        'dashboard.noAlerts': 'No alerts',
+        'dashboard.moreAlerts': '+{count} more alerts',
+        'dashboard.priorityTasks': 'Priority tasks ({count})',
+        'dashboard.noTasks': 'No tasks in progress',
+        'dashboard.col.task': 'Task',
+        'dashboard.col.project': 'Project',
+        'dashboard.col.priority': 'Priority',
+        'dashboard.col.deadline': 'Deadline',
+        'dashboard.col.progress': 'Progress',
+        'dashboard.col.status': 'Status',
+        'dashboard.col.duration': 'Duration',
+        'dashboard.col.fixedCost': 'Fixed cost',
+        'dashboard.col.totalCost': 'Total cost',
+        'dashboard.col.consumed': 'Consumed',
+        'dashboard.col.assignees': 'Resources',
+        'dashboard.notif.late': '{name} {days}d late',
+        'dashboard.notif.milestone': 'Milestone <strong>{name}</strong> in {days}d',
+
+        // Priority table deadline text
+        'dashboard.deadline.overdue': '{days}d late',
+        'dashboard.deadline.today': 'Today',
+        'dashboard.deadline.daysLeft': 'D-{days}',
+
+        // Cost table (dashboard)
+        'dashboard.costTable.title': 'Task costs',
+        'dashboard.col.resourceCol': 'Resource(s)',
+        'dashboard.col.rate': 'Rate',
+        'dashboard.col.advancement': 'Progress',
+        'dashboard.total': 'Total',
+
+        // Costs view (full costs tab)
+        'costs.title': 'Cost tracking',
+        'costs.filterLabel': 'Filter by project:',
+        'costs.kpi.totalBudget': 'Total budget (estimated)',
+        'costs.kpi.actualCost': 'Actual cost (spent)',
+        'costs.kpi.variance': 'Variance',
+        'costs.kpi.consumed': '% consumed',
+        'costs.col.durationDays': 'Duration (d)',
+        'costs.col.hourlyRate': 'Hourly rate',
+        'costs.col.estimatedCost': 'Total estimated cost',
+        'costs.col.actualCost': 'Actual cost',
+        'costs.col.variance': 'Variance',
+
+        // Context menu task actions
+        'task.action.edit': 'Edit',
+        'task.action.duplicate': 'Duplicate',
+        'task.action.markDone': 'Mark as done',
+        'task.action.markInProgress': 'Mark in progress',
+        'task.action.delete': 'Delete',
+
+        // Filter labels
+        'filter.status': 'Status',
+        'filter.all.m': 'All',
+        'filter.all.f': 'All',
+        'filter.assignee': 'Resource',
+        'filter.phase': 'Phase',
+        'filter.priority': 'Priority',
+        'filter.period': 'Period',
+
+        // Project selector
+        'project.noResult': 'No project found',
+        'project.action.duplicate': 'Duplicate this project',
+        'project.action.delete': 'Delete this project',
+
+        // Keyboard shortcuts dialog
+        'shortcuts.title': 'Keyboard shortcuts',
+        'shortcuts.undo': 'Undo',
+        'shortcuts.redo': 'Redo',
+        'shortcuts.search': 'Search',
+        'shortcuts.darkMode': 'Dark/light mode',
+        'shortcuts.changeView': 'Switch view',
+        'shortcuts.delete': 'Delete selection',
+        'shortcuts.escape': 'Close / Cancel',
+        'shortcuts.help': 'Show this help',
+        'shortcuts.restart': 'Restart onboarding guide',
+        'shortcuts.contact': 'Contact / Report a bug',
+
+        // Permit summary section
+        'dashboard.permit.title': 'Permits summary ({count})',
+        'dashboard.permit.empty': 'No building permits in projects',
+        'dashboard.permit.suspended': 'Suspended',
+        'dashboard.permit.decisionLabel': 'Decision',
+        'dashboard.permit.daysLeft': '(D-{days})',
+        'dashboard.permit.overdue': '(overdue)',
+        'dashboard.permit.appealLabel': 'Appeal purge',
+        'dashboard.permit.expiryLabel': 'Expiry',
+        'dashboard.permit.kpi.total': 'Total',
+        'dashboard.permit.kpi.inReview': 'Under review',
+        'dashboard.permit.kpi.granted': 'Granted',
+        'dashboard.permit.kpi.refused': 'Refused',
+        'dashboard.permit.kpi.cleared': 'Cleared',
+        'dashboard.permit.col.permit': 'Permit',
+        'dashboard.permit.col.type': 'Type',
+        'dashboard.permit.col.deposit': 'Filing',
+        'dashboard.permit.col.deadline': 'Deadline',
+
+        // PDF export dialog
+        'pdf.dialog.desc': 'Select views to include in PDF:',
+        'pdf.dialog.table.label': 'Task table',
+        'pdf.dialog.table.desc': 'Detailed list with status, priority and progress',
+        'pdf.dialog.timeline.desc': 'Gantt chart with task bars',
+        'pdf.dialog.resources.label': 'Resources',
+        'pdf.dialog.resources.desc': 'Workload and tasks by resource',
+        'pdf.dialog.dateLabel': 'Timeline window:',
+        'pdf.dialog.from': 'From',
+        'pdf.dialog.to': 'To',
+        'pdf.dialog.cancel': 'Cancel',
+        'pdf.dialog.generate': 'Generate PDF',
+
+        // Export menu
+        'export.json.desc': 'Re-importable',
+        'export.all.label': 'Export all',
+        'export.all.desc': 'All projects (JSON)',
+        'export.csv.desc': 'MS Project / Excel / Spreadsheet',
+        'export.xml.desc': 'MS Project (recommended)',
+        'export.pdf.desc': 'Print',
+
+        // CSV headers
+        'csv.col.level': 'Hierarchical level',
+        'csv.col.name': 'Name',
+        'csv.col.duration': 'Duration',
+        'csv.col.start': 'Start',
+        'csv.col.end': 'End',
+        'csv.col.resources': 'Resource names',
+        'csv.col.progress': '% complete',
+
+        // Notification panel
+        'notif.title': 'Notifications',
+        'notif.noAlerts': 'No alerts at the moment',
+        'notif.dismiss': 'Dismiss',
+
+        // Notifications
+        'notif.noCurrent': 'No tasks in progress',
+
+        // Cloud backup buttons
+        'cloud.connecting': 'Connecting...',
+        'cloud.connectGDrive': 'Connect to Google Drive',
+        'cloud.signInGoogle': 'Sign in with Google',
+        'cloud.connectOneDrive': 'Connect to OneDrive',
+        'cloud.signInMicrosoft': 'Sign in with Microsoft',
+        'cloud.saving': 'Saving...',
+        'cloud.saveAll': 'Save all projects',
+        'cloud.saveCurrent': 'Save active project',
+        'cloud.restore': 'Restore',
+        'cloud.signOut': 'Sign out',
+        'cloud.modifyClientId': 'Modify Client ID',
+        'cloud.loading': 'Loading backups...',
+        'cloud.noBackups': 'No backups in {service}',
+        'cloud.listTitle': 'Available backups',
+        'cloud.defaultUser': 'User',
+        'cloud.connectionTimeout': 'Connection timeout',
+        'cloud.googleLoginDesc': 'Sign in with your Google account to save your projects to Google Drive.',
+        'cloud.microsoftLoginDesc': 'Sign in with your Microsoft account to save your projects to OneDrive.',
     },
 };
 
@@ -9272,10 +9886,10 @@ class TaskModal {
 
         // Header
         const header = createElement('div', { className: 'modal-header' });
-        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, 'Nouvelle tâche');
+        this._titleEl = createElement('h2', { className: 'modal-title', id: 'taskModalTitle' }, t('task.new.title'));
         const closeBtn = createElement('button', {
             className: 'icon-btn',
-            'aria-label': 'Fermer',
+            'aria-label': t('task.btnCancel'),
             onClick: () => this.close(),
         });
         closeBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -9288,13 +9902,13 @@ class TaskModal {
 
         // === TYPE SELECTOR (top of modal) ===
         const typeGroup = createElement('div', { className: 'form-group' });
-        typeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type'));
+        typeGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.type.label')));
         const typeSwitcher = createElement('div', { className: 'type-switcher' });
         this._typeButtons = {};
-        [['task', 'Tâche', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
-         ['milestone', 'Jalon', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
-         ['phase', 'Phase', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>'],
-         ['permit', 'Permis', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>']
+        [['task', t('task.type.task'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'],
+         ['milestone', t('task.type.milestone'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'],
+         ['phase', t('task.type.phase'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>'],
+         ['permit', t('task.type.permit'), '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>']
         ].forEach(([val, lbl, icon]) => {
             const btn = createElement('button', {
                 className: 'type-switcher-btn' + (val === 'task' ? ' active' : ''),
@@ -9316,7 +9930,7 @@ class TaskModal {
         this._phaseCheck = { input: createElement('input', { type: 'checkbox', id: 'taskPhase', style: { display: 'none' } }) };
 
         // Task name
-        this._taskNameGroup = this._createField('Nom de la tâche', 'text', 'taskName', 'Ex: Design de la page d\'accueil');
+        this._taskNameGroup = this._createField(t('task.name.label'), 'text', 'taskName', t('task.name.placeholder'));
         this._taskNameLabel = this._taskNameGroup.querySelector('.form-label');
         body.appendChild(this._taskNameGroup);
 
@@ -9324,18 +9938,18 @@ class TaskModal {
         const nameParentRow = createElement('div', { className: 'form-row' });
         // Parent phase selector
         const parentGroup = createElement('div', { className: 'form-group' });
-        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, 'Phase parente'));
+        parentGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskParent' }, t('task.phase.label')));
         this._parentSelect = createElement('select', { className: 'select', id: 'taskParent' });
         parentGroup.appendChild(this._parentSelect);
         nameParentRow.appendChild(parentGroup);
         // Description
         const descGroup = createElement('div', { className: 'form-group' });
-        descGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDesc' }, 'Description'));
+        descGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDesc' }, t('task.description.label')));
         this._descInput = createElement('textarea', {
             className: 'input',
             id: 'taskDesc',
             rows: '2',
-            placeholder: 'Description optionnelle...',
+            placeholder: t('task.description.placeholder'),
             style: { resize: 'vertical', minHeight: '48px' },
         });
         descGroup.appendChild(this._descInput);
@@ -9345,17 +9959,17 @@ class TaskModal {
         // Dates + Duration row (3 columns)
         this._datesRow = createElement('div', { className: 'form-row form-row-3' });
         const datesRow = this._datesRow;
-        datesRow.appendChild(this._createField('Date de début', 'date', 'taskStart'));
-        datesRow.appendChild(this._createField('Date de fin', 'date', 'taskEnd'));
+        datesRow.appendChild(this._createField(t('task.startDate'), 'date', 'taskStart'));
+        datesRow.appendChild(this._createField(t('task.endDate'), 'date', 'taskEnd'));
         const durationGroup = createElement('div', { className: 'form-group' });
-        durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, 'Durée (jours)'));
+        durationGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskDuration' }, t('task.duration')));
         this._durationInput = createElement('input', {
             className: 'input',
             type: 'number',
             id: 'taskDuration',
             min: '1',
             value: '7',
-            placeholder: 'Jours',
+            placeholder: t('task.duration'),
         });
         durationGroup.appendChild(this._durationInput);
         datesRow.appendChild(durationGroup);
@@ -9367,9 +9981,9 @@ class TaskModal {
 
         // Priority
         const priorityGroup = createElement('div', { className: 'form-group' });
-        priorityGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskPriority' }, 'Priorité'));
+        priorityGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskPriority' }, t('task.priority')));
         this._prioritySelect = createElement('select', { className: 'select', id: 'taskPriority' });
-        [['low', 'Basse'], ['medium', 'Moyenne'], ['high', 'Haute']].forEach(([val, lbl]) => {
+        [['low', t('task.priority.low')], ['medium', t('task.priority.medium')], ['high', t('task.priority.high')]].forEach(([val, lbl]) => {
             const opt = createElement('option', { value: val }, lbl);
             if (val === 'medium') opt.selected = true;
             this._prioritySelect.appendChild(opt);
@@ -9379,9 +9993,9 @@ class TaskModal {
 
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
-        statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, 'Statut'));
+        statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, t('task.status')));
         this._statusSelect = createElement('select', { className: 'select', id: 'taskStatus' });
-        [['todo', 'À faire'], ['in_progress', 'En cours'], ['done', 'Terminé']].forEach(([val, lbl]) => {
+        [['todo', t('task.status.todo')], ['in_progress', t('task.status.inProgress')], ['done', t('task.status.done')]].forEach(([val, lbl]) => {
             this._statusSelect.appendChild(createElement('option', { value: val }, lbl));
         });
         statusGroup.appendChild(this._statusSelect);
@@ -9389,7 +10003,7 @@ class TaskModal {
 
         // Progress
         const progressGroup = createElement('div', { className: 'form-group' });
-        progressGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskProgress' }, 'Progression'));
+        progressGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskProgress' }, t('task.progress')));
         const progressWrap = createElement('div', { className: 'progress-input-wrap' });
         this._progressInput = createElement('input', {
             className: 'input',
@@ -9415,12 +10029,12 @@ class TaskModal {
             type: 'button',
             className: 'milestone-status-btn',
             dataset: { value: '0' },
-        }, '○ Non franchi');
+        }, t('task.milestone.pending'));
         this._milestoneBtnDone = createElement('button', {
             type: 'button',
             className: 'milestone-status-btn',
             dataset: { value: '100' },
-        }, '✓ Franchi');
+        }, t('task.milestone.done'));
         this._milestoneBtnPending.classList.add('active');
         [this._milestoneBtnPending, this._milestoneBtnDone].forEach(btn => {
             btn.addEventListener('click', () => {
@@ -9443,7 +10057,7 @@ class TaskModal {
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
-        colorGroup.appendChild(createElement('label', { className: 'form-label' }, 'Couleur'));
+        colorGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.color')));
         this._colorPicker = createElement('div', { className: 'color-picker' });
         TASK_COLORS.forEach((color, idx) => {
             const swatch = createElement('button', {
@@ -9465,11 +10079,11 @@ class TaskModal {
 
         // Assignees (multi-select with search)
         const assigneeGroup = createElement('div', { className: 'form-group' });
-        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Assigné à'));
+        assigneeGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.assignee')));
         this._assigneeSearch = createElement('input', {
             type: 'text',
             className: 'input assignee-search',
-            placeholder: 'Rechercher une ressource…',
+            placeholder: t('task.assigneeSearch'),
         });
         this._assigneeSearch.addEventListener('input', () => this._filterAssignees());
         assigneeGroup.appendChild(this._assigneeSearch);
@@ -9481,11 +10095,11 @@ class TaskModal {
         // Fixed costs section (multiple named costs)
         const fixedCostsGroup = createElement('div', { className: 'form-group' });
         const fixedCostsHeader = createElement('div', { className: 'fixed-costs-header' });
-        fixedCostsHeader.appendChild(createElement('label', { className: 'form-label' }, 'Coûts fixes (' + getCurrencySymbol() + ')'));
+        fixedCostsHeader.appendChild(createElement('label', { className: 'form-label' }, t('task.fixedCosts.label') + ' (' + getCurrencySymbol() + ')'));
         const addCostBtn = createElement('button', {
             className: 'btn btn-xs btn-outline fixed-costs-add-btn',
             type: 'button',
-        }, '+ Ajouter un coût');
+        }, t('task.fixedCosts.addBtn'));
         addCostBtn.addEventListener('click', () => this._addFixedCostRow());
         fixedCostsHeader.appendChild(addCostBtn);
         fixedCostsGroup.appendChild(fixedCostsHeader);
@@ -9495,7 +10109,7 @@ class TaskModal {
         fixedCostsGroup.appendChild(this._fixedCostsTotalEl);
         const fixedCostHint = createElement('div', {
             style: { fontSize: '11px', color: 'var(--text-muted, #999)', marginTop: '4px' },
-        }, 'Coûts forfaitaires hors ressources (matériel, sous-traitance, frais...)');
+        }, t('task.fixedCosts.hint'));
         fixedCostsGroup.appendChild(fixedCostHint);
         body.appendChild(fixedCostsGroup);
 
@@ -9505,14 +10119,14 @@ class TaskModal {
 
         // Predecessors (with link type)
         const predGroup = createElement('div', { className: 'form-group' });
-        predGroup.appendChild(createElement('label', { className: 'form-label' }, 'Précédée par'));
+        predGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.predecessors')));
         this._predList = createElement('div', { className: 'dep-list' });
         predGroup.appendChild(this._predList);
         depRow.appendChild(predGroup);
 
         // Successors (with link type)
         const succGroup = createElement('div', { className: 'form-group' });
-        succGroup.appendChild(createElement('label', { className: 'form-label' }, 'Succédée par'));
+        succGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.successors')));
         this._succList = createElement('div', { className: 'dep-list' });
         succGroup.appendChild(this._succList);
         depRow.appendChild(succGroup);
@@ -9522,12 +10136,12 @@ class TaskModal {
         this._permitFields = createElement('div', { className: 'permit-fields' });
 
         // Permit section title
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Informations du permis de construire'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.info')));
 
         // Row 1: Permit type + Dossier number
         const permitRow1 = createElement('div', { className: 'form-row' });
         const permitTypeGroup = createElement('div', { className: 'form-group' });
-        permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Type de permis'));
+        permitTypeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.type.label')));
         this._permitTypeSelect = createElement('select', { className: 'select', id: 'permitType' });
         Object.entries(PERMIT_TYPES).forEach(([key, val]) => {
             this._permitTypeSelect.appendChild(createElement('option', { value: key }, val.label));
@@ -9537,7 +10151,7 @@ class TaskModal {
         permitRow1.appendChild(permitTypeGroup);
 
         const dossierGroup = createElement('div', { className: 'form-group' });
-        dossierGroup.appendChild(createElement('label', { className: 'form-label' }, 'N° de dossier'));
+        dossierGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.dossier.label')));
         this._permitDossier = createElement('input', { className: 'input', type: 'text', placeholder: 'PC 075 123 45 R0001' });
         dossierGroup.appendChild(this._permitDossier);
         permitRow1.appendChild(dossierGroup);
@@ -9546,14 +10160,14 @@ class TaskModal {
         // Row 2: Commune + Service instructeur
         const permitRow2 = createElement('div', { className: 'form-row' });
         const communeGroup = createElement('div', { className: 'form-group' });
-        communeGroup.appendChild(createElement('label', { className: 'form-label' }, 'Commune'));
-        this._permitCommune = createElement('input', { className: 'input', type: 'text', placeholder: 'Nom de la commune' });
+        communeGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.commune.label')));
+        this._permitCommune = createElement('input', { className: 'input', type: 'text', placeholder: t('permit.commune.placeholder') });
         communeGroup.appendChild(this._permitCommune);
         permitRow2.appendChild(communeGroup);
 
         const serviceGroup = createElement('div', { className: 'form-group' });
-        serviceGroup.appendChild(createElement('label', { className: 'form-label' }, 'Service instructeur'));
-        this._permitService = createElement('input', { className: 'input', type: 'text', placeholder: 'DDT / Mairie...' });
+        serviceGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.service.label')));
+        this._permitService = createElement('input', { className: 'input', type: 'text', placeholder: t('permit.service.placeholder') });
         serviceGroup.appendChild(this._permitService);
         permitRow2.appendChild(serviceGroup);
         this._permitFields.appendChild(permitRow2);
@@ -9561,7 +10175,7 @@ class TaskModal {
         // Row 3: Permit status + ABF sector
         const permitRow3 = createElement('div', { className: 'form-row' });
         const permitStatusGroup = createElement('div', { className: 'form-group' });
-        permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, 'Statut réglementaire'));
+        permitStatusGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.status.label')));
         this._permitStatusSelect = createElement('select', { className: 'select', id: 'permitStatus' });
         Object.entries(PERMIT_STATUSES).forEach(([key, val]) => {
             this._permitStatusSelect.appendChild(createElement('option', { value: key }, val.label));
@@ -9571,7 +10185,7 @@ class TaskModal {
         permitRow3.appendChild(permitStatusGroup);
 
         const abfGroup = createElement('div', { className: 'form-group' });
-        abfGroup.appendChild(createElement('label', { className: 'form-label' }, 'Secteur protégé'));
+        abfGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.abf.label')));
         this._abfCheck = createElement('input', { type: 'checkbox', id: 'permitABF' });
         const abfLabel = createElement('label', { className: 'permit-toggle' });
         abfLabel.appendChild(this._abfCheck);
@@ -9582,19 +10196,19 @@ class TaskModal {
         this._permitFields.appendChild(permitRow3);
 
         // Section: Dates réglementaires
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Dates réglementaires'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.dates')));
 
         // Row 4: deposit + completeness dates
         const permitRow4 = createElement('div', { className: 'form-row' });
         const depositGroup = createElement('div', { className: 'form-group' });
-        depositGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de dépôt'));
+        depositGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.deposit.label')));
         this._permitDeposit = createElement('input', { className: 'input', type: 'date' });
         this._permitDeposit.addEventListener('change', () => this._updatePermitDeadlines());
         depositGroup.appendChild(this._permitDeposit);
         permitRow4.appendChild(depositGroup);
 
         const completenessGroup = createElement('div', { className: 'form-group' });
-        completenessGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de complétude'));
+        completenessGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.completeness.label')));
         this._permitCompleteness = createElement('input', { className: 'input', type: 'date' });
         this._permitCompleteness.addEventListener('change', () => this._updatePermitDeadlines());
         completenessGroup.appendChild(this._permitCompleteness);
@@ -9604,14 +10218,14 @@ class TaskModal {
         // Row 5: Additional docs request + response
         const permitRow5 = createElement('div', { className: 'form-row' });
         const addDocsReqGroup = createElement('div', { className: 'form-group' });
-        addDocsReqGroup.appendChild(createElement('label', { className: 'form-label' }, 'Demande pièces complémentaires'));
+        addDocsReqGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.addDocsReq.label')));
         this._permitAddDocsReq = createElement('input', { className: 'input', type: 'date' });
         this._permitAddDocsReq.addEventListener('change', () => this._updatePermitDeadlines());
         addDocsReqGroup.appendChild(this._permitAddDocsReq);
         permitRow5.appendChild(addDocsReqGroup);
 
         const addDocsRespGroup = createElement('div', { className: 'form-group' });
-        addDocsRespGroup.appendChild(createElement('label', { className: 'form-label' }, 'Réponse pièces complémentaires'));
+        addDocsRespGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.addDocsResp.label')));
         this._permitAddDocsResp = createElement('input', { className: 'input', type: 'date' });
         this._permitAddDocsResp.addEventListener('change', () => this._updatePermitDeadlines());
         addDocsRespGroup.appendChild(this._permitAddDocsResp);
@@ -9621,14 +10235,14 @@ class TaskModal {
         // Row 6: Decision date + Display start
         const permitRow6 = createElement('div', { className: 'form-row' });
         const decisionGroup = createElement('div', { className: 'form-group' });
-        decisionGroup.appendChild(createElement('label', { className: 'form-label' }, 'Date de décision'));
+        decisionGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.decision.label')));
         this._permitDecision = createElement('input', { className: 'input', type: 'date' });
         this._permitDecision.addEventListener('change', () => this._updatePermitDeadlines());
         decisionGroup.appendChild(this._permitDecision);
         permitRow6.appendChild(decisionGroup);
 
         const displayGroup = createElement('div', { className: 'form-group' });
-        displayGroup.appendChild(createElement('label', { className: 'form-label' }, "Date début d'affichage"));
+        displayGroup.appendChild(createElement('label', { className: 'form-label' }, t('permit.display.label')));
         this._permitDisplay = createElement('input', { className: 'input', type: 'date' });
         this._permitDisplay.addEventListener('change', () => this._updatePermitDeadlines());
         displayGroup.appendChild(this._permitDisplay);
@@ -9636,7 +10250,7 @@ class TaskModal {
         this._permitFields.appendChild(permitRow6);
 
         // Computed deadlines display
-        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, 'Délais calculés'));
+        this._permitFields.appendChild(createElement('div', { className: 'permit-section-title' }, t('permit.section.deadlines')));
         this._permitDeadlinesPanel = createElement('div', { className: 'permit-deadlines' });
         this._permitFields.appendChild(this._permitDeadlinesPanel);
 
@@ -9650,16 +10264,16 @@ class TaskModal {
             className: 'btn btn-danger',
             style: { marginRight: 'auto', display: 'none' },
             onClick: () => this._handleDelete(),
-        }, 'Supprimer');
+        }, t('task.btnDelete'));
         footer.appendChild(this._deleteBtn);
         footer.appendChild(createElement('button', {
             className: 'btn btn-secondary',
             onClick: () => this.close(),
-        }, 'Annuler'));
+        }, t('task.btnCancel')));
         this._saveBtn = createElement('button', {
             className: 'btn btn-primary',
             onClick: () => this._handleSave(),
-        }, 'Créer');
+        }, t('task.btnCreate'));
         footer.appendChild(this._saveBtn);
         modal.appendChild(footer);
 
@@ -9712,7 +10326,7 @@ class TaskModal {
 
         // Update task name label based on type
         if (this._taskNameLabel) {
-            this._taskNameLabel.textContent = isPhase ? 'Nom de la phase' : 'Nom de la tâche';
+            this._taskNameLabel.textContent = isPhase ? t('task.phase.name.label') : t('task.name.label');
         }
 
         // Apply milestone-specific logic
@@ -9795,8 +10409,8 @@ class TaskModal {
     openCreate(parentId = null) {
         this._mode = 'create';
         this._editingTaskId = null;
-        this._titleEl.textContent = 'Nouvelle tâche';
-        this._saveBtn.textContent = 'Créer';
+        this._titleEl.textContent = t('task.new.title');
+        this._saveBtn.textContent = t('task.btnCreate');
         this._deleteBtn.style.display = 'none';
 
         // Defaults
@@ -9847,8 +10461,8 @@ class TaskModal {
 
         this._mode = 'edit';
         this._editingTaskId = taskId;
-        this._titleEl.textContent = 'Modifier la tâche';
-        this._saveBtn.textContent = 'Enregistrer';
+        this._titleEl.textContent = t('task.edit.title');
+        this._saveBtn.textContent = t('task.btnSave');
         this._deleteBtn.style.display = '';
 
         // Fill fields
@@ -9887,7 +10501,7 @@ class TaskModal {
 
         // Fixed costs (support legacy fixedCost field)
         const fixedCosts = Array.isArray(task.fixedCosts) ? task.fixedCosts
-            : (task.fixedCost ? [{ name: 'Coût fixe', amount: task.fixedCost }] : []);
+            : (task.fixedCost ? [{ name: t('task.fixedCosts.defaultName'), amount: task.fixedCost }] : []);
         this._populateFixedCosts(fixedCosts);
 
         // Assignees (multi)
@@ -9931,7 +10545,7 @@ class TaskModal {
             : this._allResources;
 
         if (resources.length === 0) {
-            const empty = createElement('p', { className: 'assignee-empty' }, 'Aucune ressource trouvée');
+            const empty = createElement('p', { className: 'assignee-empty' }, t('task.assignee.noResults'));
             this._assigneeList.appendChild(empty);
             return;
         }
@@ -9970,7 +10584,7 @@ class TaskModal {
         if (tasks.length === 0) {
             this._predList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
-            }, 'Aucune tâche disponible'));
+            }, t('task.noTasks')));
             return;
         }
         const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
@@ -10021,7 +10635,7 @@ class TaskModal {
         if (!taskId) {
             this._succList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
-            }, 'Sauvegardez d\'abord pour ajouter des successeurs'));
+            }, t('task.saveFirstForSuccessors')));
             return;
         }
         const successors = store.getSuccessors(taskId);
@@ -10114,47 +10728,51 @@ class TaskModal {
         const items = [];
         const typeInfo = PERMIT_TYPES[permitData.permitType];
         if (typeInfo) {
-            let instrLabel = `${deadlines.instructionDays || typeInfo.instructionDays} jours`;
-            if (permitData.abfSector) instrLabel += ' (ABF +30j)';
-            items.push({ label: "Délai d'instruction", value: instrLabel });
+            const days = deadlines.instructionDays || typeInfo.instructionDays;
+            const instrLabel = permitData.abfSector
+                ? t('permit.deadline.instructionDaysABF', { days })
+                : t('permit.deadline.instructionDays', { days });
+            items.push({ label: t('permit.deadline.instruction'), value: instrLabel });
         }
 
         if (deadlines.completenessDeadline) {
-            items.push({ label: 'Limite complétude', value: formatDateDisplay(deadlines.completenessDeadline) });
+            items.push({ label: t('permit.deadline.completenessLimit'), value: formatDateDisplay(deadlines.completenessDeadline) });
         }
 
         if (deadlines.suspended) {
-            items.push({ label: 'Décision prévisionnelle', value: 'Suspendue', cls: 'warning' });
+            items.push({ label: t('permit.deadline.provisional'), value: t('permit.deadline.suspended'), cls: 'warning' });
         } else if (deadlines.decisionDeadline) {
             const dl = new Date(deadlines.decisionDeadline);
             const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
             let cls = '';
             if (daysLeft <= 7 && daysLeft >= 0) cls = 'urgent';
             else if (daysLeft <= 15 && daysLeft >= 0) cls = 'warning';
-            const suffix = daysLeft >= 0 ? ` (J-${daysLeft})` : ` (dépassé de ${Math.abs(daysLeft)}j)`;
-            items.push({ label: 'Décision prévisionnelle', value: formatDateDisplay(deadlines.decisionDeadline) + suffix, cls });
+            const suffix = daysLeft >= 0
+                ? ' ' + t('permit.deadline.daysLeft', { days: daysLeft })
+                : ' ' + t('permit.deadline.daysExceeded', { days: Math.abs(daysLeft) });
+            items.push({ label: t('permit.deadline.provisional'), value: formatDateDisplay(deadlines.decisionDeadline) + suffix, cls });
         }
 
         if (deadlines.tacitApprovalDate && !deadlines.suspended) {
-            items.push({ label: 'Approbation tacite', value: formatDateDisplay(deadlines.tacitApprovalDate) });
+            items.push({ label: t('permit.deadline.tacitApproval'), value: formatDateDisplay(deadlines.tacitApprovalDate) });
         }
 
         if (deadlines.appealEndDate) {
             const appeal = new Date(deadlines.appealEndDate);
             const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
             let cls = daysLeft < 0 ? '' : (daysLeft <= 7 ? 'urgent' : '');
-            const label = daysLeft < 0 ? 'Recours purgé' : `Fin recours tiers (J-${daysLeft})`;
+            const label = daysLeft < 0 ? t('permit.deadline.appealPurged') : t('permit.deadline.appealEnd', { days: daysLeft });
             items.push({ label, value: formatDateDisplay(deadlines.appealEndDate), cls });
         }
 
         if (deadlines.expiryDate) {
-            items.push({ label: 'Péremption permis', value: formatDateDisplay(deadlines.expiryDate) });
+            items.push({ label: t('permit.deadline.expiry'), value: formatDateDisplay(deadlines.expiryDate) });
         }
 
         if (items.length === 0) {
             this._permitDeadlinesPanel.appendChild(
                 createElement('div', { style: { gridColumn: '1 / -1', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' } },
-                    'Renseignez la date de dépôt pour calculer les délais')
+                    t('permit.deadlines.noDate'))
             );
             return;
         }
@@ -10222,7 +10840,7 @@ class TaskModal {
 
     _populateParents(selectedParentId) {
         this._parentSelect.innerHTML = '';
-        this._parentSelect.appendChild(createElement('option', { value: '' }, '— Aucune (racine) —'));
+        this._parentSelect.appendChild(createElement('option', { value: '' }, t('task.parent.none')));
         const phases = store.getTasks().filter(t => t.isPhase);
         phases.forEach(phase => {
             // Don't allow a task to be its own parent
@@ -10334,7 +10952,7 @@ class TaskModal {
         const nameInput = createElement('input', {
             className: 'input fixed-cost-name',
             type: 'text',
-            placeholder: 'Libellé (ex: Matériel)',
+            placeholder: t('task.fixedCosts.namePlaceholder'),
             value: name,
         });
 
@@ -10351,7 +10969,7 @@ class TaskModal {
         const removeBtn = createElement('button', {
             className: 'btn btn-xs btn-icon fixed-cost-remove',
             type: 'button',
-            title: 'Supprimer ce coût',
+            title: t('task.fixedCosts.removeTitle'),
         }, '×');
         removeBtn.addEventListener('click', () => {
             row.remove();
@@ -10373,7 +10991,7 @@ class TaskModal {
         const total = costs.reduce((s, fc) => s + fc.amount, 0);
         const symbol = getCurrencySymbol();
         if (total > 0) {
-            this._fixedCostsTotalEl.textContent = `Total coûts fixes : ${total.toLocaleString('fr-FR')} ${symbol}`;
+            this._fixedCostsTotalEl.textContent = t('task.fixedCosts.total', { total: total.toLocaleString('fr-FR'), symbol });
             this._fixedCostsTotalEl.style.display = '';
         } else {
             this._fixedCostsTotalEl.style.display = 'none';
@@ -10387,7 +11005,7 @@ class TaskModal {
             const name = row.querySelector('.fixed-cost-name').value.trim();
             const amount = parseFloat(row.querySelector('.fixed-cost-amount').value) || 0;
             if (amount > 0) {
-                costs.push({ name: name || 'Coût fixe', amount });
+                costs.push({ name: name || t('task.fixedCosts.defaultName'), amount });
             }
         });
         return costs;
@@ -10402,8 +11020,8 @@ class TaskModal {
 
         const hasChildren = store.getChildTasks ? store.getChildTasks(this._editingTaskId).length > 0 : false;
         const msg = hasChildren
-            ? `Supprimer "${task.name}" et toutes ses sous-tâches ?`
-            : `Supprimer "${task.name}" ?`;
+            ? t('confirm.deleteTaskWithChildren', { name: task.name })
+            : t('confirm.deleteTask', { name: task.name });
 
         if (confirm(msg)) {
             store.deleteTask(this._editingTaskId);
@@ -10424,10 +11042,10 @@ const taskModal = new TaskModal();
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
-    day:     { colWidth: 36,  label: 'Jour' },
-    week:    { colWidth: 50,  label: 'Semaine' },
-    month:   { colWidth: 120, label: 'Mois' },
-    quarter: { colWidth: 80,  label: 'Trimestre' },
+    day:     { colWidth: 36,  labelKey: 'zoom.day' },
+    week:    { colWidth: 50,  labelKey: 'zoom.week' },
+    month:   { colWidth: 120, labelKey: 'zoom.month' },
+    quarter: { colWidth: 80,  labelKey: 'zoom.quarter' },
 };
 
 const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
@@ -10673,7 +11291,7 @@ class GanttRenderer {
         const taskHeader = createElement('div', {
             className: 'gantt-header-task',
             role: 'columnheader',
-        }, 'Tâche');
+        }, t('gantt.taskColumnHeader'));
         header.appendChild(taskHeader);
 
         // Timeline header
@@ -10833,7 +11451,7 @@ class GanttRenderer {
         if (hasChildren || isPhase) {
             const expandBtn = createElement('button', {
                 className: `task-expand${task.collapsed ? '' : ' expanded'}`,
-                'aria-label': task.collapsed ? 'Développer' : 'Réduire',
+                'aria-label': task.collapsed ? t('gantt.expand') : t('gantt.collapse'),
                 'aria-expanded': !task.collapsed,
                 onClick: (e) => {
                     e.stopPropagation();
@@ -11088,7 +11706,7 @@ class GanttRenderer {
                 sections.appendChild(createElement('div', {
                     className: 'gantt-permit-section instruction',
                     style: { width: Math.min(100, (instrDays / totalDays) * 100) + '%' },
-                    title: 'Instruction',
+                    title: t('gantt.permit.instruction'),
                 }));
             }
 
@@ -11101,7 +11719,7 @@ class GanttRenderer {
                     sections.appendChild(createElement('div', {
                         className: 'gantt-permit-section appeal',
                         style: { width: Math.min(100 - (appealOffset / totalDays) * 100, (appealDays / totalDays) * 100) + '%' },
-                        title: 'Recours tiers',
+                        title: t('gantt.permit.appeal'),
                     }));
                 }
             }
@@ -11390,16 +12008,15 @@ class GanttRenderer {
     _renderEmpty() {
         const empty = createElement('div', { className: 'gantt-empty' });
         empty.appendChild(createElement('div', { className: 'gantt-empty-icon' }, '\uD83D\uDCCA'));
-        empty.appendChild(createElement('div', { className: 'gantt-empty-title' }, 'Aucune tâche'));
-        empty.appendChild(createElement('div', { className: 'gantt-empty-text' },
-            'Commencez par ajouter votre première tâche pour visualiser votre planning.'));
+        empty.appendChild(createElement('div', { className: 'gantt-empty-title' }, t('gantt.empty.title')));
+        empty.appendChild(createElement('div', { className: 'gantt-empty-text' }, t('gantt.empty.text')));
         empty.appendChild(createElement('button', {
             className: 'btn btn-primary',
             onClick: () => {
                 document.dispatchEvent(new CustomEvent('gantt:addTask'));
             },
         }, [
-            createElement('span', {}, '+ Nouvelle tâche'),
+            createElement('span', {}, t('gantt.empty.addBtn')),
         ]));
         return empty;
     }
@@ -11858,7 +12475,7 @@ class GanttInteractions {
             const franchi = task.progress >= 100;
             const statusColor = franchi ? '#10B981' : '#F59E0B';
             const statusIcon  = franchi ? '✓' : '○';
-            const statusLabel = franchi ? 'Franchi' : 'Non franchi';
+            const statusLabel = franchi ? t('gantt.milestone.reached') : t('gantt.milestone.pending');
             html += `<div class="gtt-row"><span class="gtt-icon" style="color:${statusColor};font-weight:700;">${statusIcon}</span><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></div>`;
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
@@ -12189,42 +12806,12 @@ const ganttInteractions = new GanttInteractions();
 const ONBOARDING_STORAGE_KEY = 'gantt_onboarding_done';
 
 const STEPS = [
-    {
-        target: '.project-selector',
-        title: 'Vos projets',
-        text: 'Cliquez ici pour basculer entre vos projets, en créer, dupliquer ou supprimer.',
-        position: 'bottom',
-    },
-    {
-        target: '.tabs',
-        title: 'Vues du projet',
-        text: 'Timeline, Tableau Kanban, Ressources, Dashboard et Coûts : naviguez entre les différentes vues.',
-        position: 'bottom',
-    },
-    {
-        target: '#addTaskBtn',
-        title: 'Ajouter une tâche',
-        text: 'Créez une tâche, un jalon ou une phase.',
-        position: 'bottom',
-    },
-    {
-        target: '.gantt-wrapper',
-        title: 'Diagramme de Gantt',
-        text: 'Glissez les barres pour déplacer les tâches, étirez les bords pour changer les dates. Sur mobile, pincez pour zoomer.',
-        position: 'top',
-    },
-    {
-        target: '.zoom-controls',
-        title: 'Niveau de zoom',
-        text: 'Passez de la vue Jour à Trimestre pour ajuster la granularité.',
-        position: 'bottom',
-    },
-    {
-        target: '#exportBtn',
-        title: 'Import / Export',
-        text: 'Exportez en JSON, CSV, XML MS Project ou Excel. Importez depuis ces mêmes formats.',
-        position: 'bottom',
-    },
+    { target: '.project-selector', titleKey: 'onboarding.step1Title', textKey: 'onboarding.step1Text', position: 'bottom' },
+    { target: '.tabs',            titleKey: 'onboarding.step2Title', textKey: 'onboarding.step2Text', position: 'bottom' },
+    { target: '#addTaskBtn',      titleKey: 'onboarding.step3Title', textKey: 'onboarding.step3Text', position: 'bottom' },
+    { target: '.gantt-wrapper',   titleKey: 'onboarding.step4Title', textKey: 'onboarding.step4Text', position: 'top' },
+    { target: '.zoom-controls',   titleKey: 'onboarding.step5Title', textKey: 'onboarding.step5Text', position: 'bottom' },
+    { target: '#exportBtn',       titleKey: 'onboarding.step6Title', textKey: 'onboarding.step6Text', position: 'bottom' },
 ];
 
 class Onboarding {
@@ -12255,7 +12842,7 @@ class Onboarding {
         this._overlay.className = 'onboarding-overlay';
         this._overlay.setAttribute('role', 'dialog');
         this._overlay.setAttribute('aria-modal', 'true');
-        this._overlay.setAttribute('aria-label', 'Guide de démarrage');
+        this._overlay.setAttribute('aria-label', t('onboarding.ariaLabel'));
 
         // Spotlight hole (SVG mask)
         this._overlay.innerHTML = `
@@ -12279,8 +12866,8 @@ class Onboarding {
             <div class="onboarding-footer">
                 <span class="onboarding-counter"></span>
                 <div class="onboarding-btns">
-                    <button class="onboarding-skip">Passer</button>
-                    <button class="onboarding-next">Suivant</button>
+                    <button class="onboarding-skip">${t('onboarding.skip')}</button>
+                    <button class="onboarding-next">${t('onboarding.next')}</button>
                 </div>
             </div>
         `;
@@ -12330,12 +12917,12 @@ class Onboarding {
             hole.setAttribute('height', rect.height + pad * 2);
 
             // Update tooltip content
-            this._tooltip.querySelector('.onboarding-title').textContent = step.title;
-            this._tooltip.querySelector('.onboarding-text').textContent = step.text;
-            this._tooltip.querySelector('.onboarding-counter').textContent = `${this._step + 1} / ${STEPS.length}`;
+            this._tooltip.querySelector('.onboarding-title').textContent = t(step.titleKey);
+            this._tooltip.querySelector('.onboarding-text').textContent = t(step.textKey);
+            this._tooltip.querySelector('.onboarding-counter').textContent = t('onboarding.counter', { current: this._step + 1, total: STEPS.length });
 
             const nextBtn = this._tooltip.querySelector('.onboarding-next');
-            nextBtn.textContent = this._step === STEPS.length - 1 ? 'Terminer' : 'Suivant';
+            nextBtn.textContent = this._step === STEPS.length - 1 ? t('onboarding.finish') : t('onboarding.next');
 
             // Position tooltip
             const tt = this._tooltip;
@@ -14256,7 +14843,7 @@ class App {
             ganttRenderer.render();
             this._renderStats();
             this._refreshCurrentView();
-            this._showToast('Tâche mise à jour', 'success');
+            this._showToast(t('toast.taskUpdated'), 'success');
         });
 
         // Initialize Gantt interactions (drag, resize, click)
@@ -14299,7 +14886,7 @@ class App {
         });
 
         // Announce to screen readers
-        this._announceToSR('Gantt Planner Pro chargé');
+        this._announceToSR('Gantt Planner Pro');
 
         // Onboarding for new users
         onboarding.tryAutoStart();
@@ -14521,7 +15108,7 @@ class App {
         });
 
         if (sorted.length === 0) {
-            container.innerHTML = '<div class="table-empty">Aucune tâche ne correspond aux filtres sélectionnés.</div>';
+            container.innerHTML = `<div class="table-empty">${t('board.empty')}</div>`;
             return;
         }
 
@@ -14539,7 +15126,7 @@ class App {
         selectAllCb.type = 'checkbox';
         selectAllCb.id = 'tableSelectAll';
         const _isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
-        selectAllCb.title = `Tout sélectionner (${_isMac ? '⌘' : 'Ctrl'}+A)`;
+        selectAllCb.title = t('board.selectAll');
         selectAllCb.addEventListener('change', (e) => {
             e.stopPropagation();
             if (selectAllCb.checked) this._selectAllTasks();
@@ -14551,7 +15138,7 @@ class App {
         // Type column header (sortable)
         const thType = document.createElement('th');
         thType.className = 'table-type-col sortable';
-        thType.textContent = 'Type';
+        thType.textContent = t('board.type');
         if (this._tableSortKey === 'type') {
             thType.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
         }
@@ -14570,19 +15157,19 @@ class App {
         const activeBaseline = store.getActiveBaseline();
 
         const columns = [
-            { key: 'name', label: 'Tâche' },
-            { key: 'phase', label: 'Phase' },
-            { key: 'startDate', label: 'Début' },
-            { key: 'endDate', label: 'Fin' },
+            { key: 'name', label: t('board.taskName') },
+            { key: 'phase', label: t('board.phase') },
+            { key: 'startDate', label: t('board.start') },
+            { key: 'endDate', label: t('board.end') },
             ...(activeBaseline ? [
-                { key: '_blStart', label: 'Début BL', baseline: true, tooltip: `Date de début planifiée dans la baseline "${activeBaseline.name}"` },
-                { key: '_blEnd',   label: 'Fin BL',   baseline: true, tooltip: `Date de fin planifiée dans la baseline "${activeBaseline.name}"` },
-                { key: '_blVariance', label: 'Écart', baseline: true, tooltip: `Écart entre la date de fin actuelle et la baseline "${activeBaseline.name}" (+Nj = retard, −Nj = avance)` },
+                { key: '_blStart', label: t('board.blStart'), baseline: true, tooltip: t('baseline.startTooltip', { name: activeBaseline.name }) },
+                { key: '_blEnd',   label: t('board.blEnd'),   baseline: true, tooltip: t('baseline.endTooltip', { name: activeBaseline.name }) },
+                { key: '_blVariance', label: t('board.blVariance'), baseline: true, tooltip: t('baseline.varianceTooltip', { name: activeBaseline.name }) },
             ] : []),
-            { key: 'assignees', label: 'Assigné(s)' },
-            { key: 'status', label: 'Statut' },
-            { key: 'priority', label: 'Priorité' },
-            { key: 'progress', label: 'Progression' },
+            { key: 'assignees', label: t('board.assignees') },
+            { key: 'status', label: t('board.status') },
+            { key: 'priority', label: t('board.priority') },
+            { key: 'progress', label: t('board.progress') },
         ];
 
         columns.forEach(col => {
@@ -14612,8 +15199,8 @@ class App {
         table.appendChild(thead);
 
         // Body
-        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const statusLabels = { todo: t('task.status.todo'), in_progress: t('task.status.inProgress'), done: t('task.status.done') };
+        const priorityLabels = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
         const criticalIds = this._showCriticalPath ? store.getCriticalPath() : [];
         const tbody = document.createElement('tbody');
 
@@ -14654,13 +15241,13 @@ class App {
             let typeIcon, typeTitle;
             if (task.isMilestone) {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-                typeTitle = 'Jalon';
+                typeTitle = t('task.type.milestone');
             } else if (task.isPermit) {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>';
-                typeTitle = 'Permis';
+                typeTitle = t('task.type.permit');
             } else {
                 typeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>';
-                typeTitle = 'Tâche';
+                typeTitle = t('task.type.task');
             }
             const typeSpan = document.createElement('span');
             typeSpan.className = 'table-type-icon';
@@ -14784,7 +15371,7 @@ class App {
             if (isCritical) {
                 const critBadge = document.createElement('span');
                 critBadge.className = 'badge-critical';
-                critBadge.textContent = 'Critique';
+                critBadge.textContent = t('task.badge.critical');
                 tdStatus.appendChild(critBadge);
             }
             row.appendChild(tdStatus);
@@ -14848,17 +15435,17 @@ class App {
         modal.className = 'modal resource-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
-        modal.setAttribute('aria-label', isEdit ? 'Modifier la ressource' : 'Nouvelle ressource');
+        modal.setAttribute('aria-label', isEdit ? t('resource.edit.title') : t('resource.create.title'));
 
         // ---- Header ----
         const header = document.createElement('div');
         header.className = 'modal-header';
         const title = document.createElement('h2');
         title.className = 'modal-title';
-        title.textContent = isEdit ? 'Modifier la ressource' : 'Nouvelle ressource';
+        title.textContent = isEdit ? t('resource.edit.title') : t('resource.create.title');
         const closeBtn = document.createElement('button');
         closeBtn.className = 'icon-btn';
-        closeBtn.setAttribute('aria-label', 'Fermer');
+        closeBtn.setAttribute('aria-label', t('task.btnCancel'));
         closeBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
         header.appendChild(title);
         header.appendChild(closeBtn);
@@ -14885,12 +15472,12 @@ class App {
         nameGroup.className = 'form-group';
         const nameLabel = document.createElement('label');
         nameLabel.className = 'form-label';
-        nameLabel.textContent = 'Nom complet';
+        nameLabel.textContent = t('resource.name.label');
         const nameInput = document.createElement('input');
         nameInput.className = 'input';
         nameInput.type = 'text';
         nameInput.id = 'resName';
-        nameInput.placeholder = 'Ex: Marie Dupont';
+        nameInput.placeholder = t('resource.name.placeholder');
         nameInput.value = isEdit ? resource.name : '';
         nameGroup.appendChild(nameLabel);
         nameGroup.appendChild(nameInput);
@@ -14901,12 +15488,12 @@ class App {
         roleGroup.className = 'form-group';
         const roleLabel = document.createElement('label');
         roleLabel.className = 'form-label';
-        roleLabel.textContent = 'Rôle / Fonction';
+        roleLabel.textContent = t('resource.role.label');
         const roleInput = document.createElement('input');
         roleInput.className = 'input';
         roleInput.type = 'text';
         roleInput.id = 'resRole';
-        roleInput.placeholder = 'Ex: UX Designer, Développeur...';
+        roleInput.placeholder = t('resource.role.placeholder');
         roleInput.value = isEdit ? (resource.role || '') : '';
         roleGroup.appendChild(roleLabel);
         roleGroup.appendChild(roleInput);
@@ -14924,16 +15511,16 @@ class App {
         avatarGroup.className = 'form-group';
         const avatarLabel = document.createElement('label');
         avatarLabel.className = 'form-label';
-        avatarLabel.textContent = 'Initiales';
+        avatarLabel.textContent = t('resource.initials.label');
         const avatarHint = document.createElement('span');
         avatarHint.className = 'form-hint';
-        avatarHint.textContent = 'Auto-généré si vide';
+        avatarHint.textContent = t('resource.initials.hint');
         const avatarInput = document.createElement('input');
         avatarInput.className = 'input';
         avatarInput.type = 'text';
         avatarInput.id = 'resAvatar';
         avatarInput.maxLength = 3;
-        avatarInput.placeholder = 'Ex: MD';
+        avatarInput.placeholder = t('resource.initials.placeholder');
         avatarInput.value = isEdit ? (resource.avatar || '') : '';
         avatarGroup.appendChild(avatarLabel);
         avatarGroup.appendChild(avatarInput);
@@ -14944,7 +15531,7 @@ class App {
         rateGroup.className = 'form-group';
         const rateLabel = document.createElement('label');
         rateLabel.className = 'form-label';
-        rateLabel.textContent = 'Tarification';
+        rateLabel.textContent = t('resource.rate.label');
 
         // Rate type toggle
         let currentRateType = (isEdit && resource.rateType === 'daily') ? 'daily' : 'hourly';
@@ -14953,11 +15540,11 @@ class App {
         const btnHourly = document.createElement('button');
         btnHourly.type = 'button';
         btnHourly.className = 'res-rate-toggle-btn' + (currentRateType === 'hourly' ? ' active' : '');
-        btnHourly.textContent = 'Taux horaire';
+        btnHourly.textContent = t('resource.rate.hourly');
         const btnDaily = document.createElement('button');
         btnDaily.type = 'button';
         btnDaily.className = 'res-rate-toggle-btn' + (currentRateType === 'daily' ? ' active' : '');
-        btnDaily.textContent = 'TJM';
+        btnDaily.textContent = t('resource.rate.daily');
         rateToggle.appendChild(btnHourly);
         rateToggle.appendChild(btnDaily);
 
@@ -15003,7 +15590,7 @@ class App {
         colorGroup.className = 'form-group';
         const colorLabel = document.createElement('label');
         colorLabel.className = 'form-label';
-        colorLabel.textContent = 'Couleur';
+        colorLabel.textContent = t('task.color');
         colorGroup.appendChild(colorLabel);
         const colorPicker = document.createElement('div');
         colorPicker.className = 'color-picker';
@@ -15034,10 +15621,10 @@ class App {
         footer.className = 'modal-footer';
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-ghost';
-        cancelBtn.textContent = 'Annuler';
+        cancelBtn.textContent = t('task.btnCancel');
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn btn-primary';
-        saveBtn.textContent = isEdit ? 'Enregistrer' : 'Créer la ressource';
+        saveBtn.textContent = isEdit ? t('task.btnSave') : t('resource.create.btn');
         footer.appendChild(cancelBtn);
         footer.appendChild(saveBtn);
         modal.appendChild(footer);
@@ -15072,7 +15659,7 @@ class App {
         saveBtn.addEventListener('click', () => {
             const name = nameInput.value.trim();
             if (!name) {
-                this._showToast('Le nom est obligatoire', 'warning');
+                this._showToast(t('toast.resourceNameRequired'), 'warning');
                 nameInput.focus();
                 return;
             }
@@ -15088,10 +15675,10 @@ class App {
 
             if (isEdit) {
                 store.updateResource(resource.id, { name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
-                this._showToast('Ressource modifiée', 'success');
+                this._showToast(t('toast.resourceUpdated'), 'success');
             } else {
                 store.addResource({ name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
-                this._showToast('Ressource créée', 'success');
+                this._showToast(t('toast.resourceCreated'), 'success');
             }
             close();
             this._renderResourceView();
@@ -15105,9 +15692,9 @@ class App {
     }
 
     _deleteResource(resource) {
-        if (!confirm(`Supprimer la ressource "${resource.name}" ?\nElle sera désassignée de toutes les tâches.`)) return;
+        if (!confirm(t('confirm.deleteResource', { name: resource.name }))) return;
         store.deleteResource(resource.id);
-        this._showToast('Ressource supprimée', 'success');
+        this._showToast(t('toast.resourceDeleted'), 'success');
         this._renderResourceView();
     }
 
@@ -15241,7 +15828,7 @@ class App {
 
             const countBadge = document.createElement('div');
             countBadge.className = 'resource-card-count';
-            countBadge.textContent = `${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}`;
+            countBadge.textContent = t('resource.tasks.count', { count: assignedTasks.length, plural: assignedTasks.length !== 1 ? 's' : '' });
             header.appendChild(countBadge);
 
             // Edit / Delete actions
@@ -15249,13 +15836,13 @@ class App {
             actions.className = 'resource-card-actions';
             const editBtn = document.createElement('button');
             editBtn.className = 'resource-action-btn';
-            editBtn.title = 'Modifier';
+            editBtn.title = t('resource.edit.btn');
             editBtn.innerHTML = '&#9998;';
             editBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showResourceModal(resource); });
             actions.appendChild(editBtn);
             const delBtn = document.createElement('button');
             delBtn.className = 'resource-action-btn resource-action-delete';
-            delBtn.title = 'Supprimer';
+            delBtn.title = t('resource.delete.btn');
             delBtn.innerHTML = '&times;';
             delBtn.addEventListener('click', (e) => { e.stopPropagation(); this._deleteResource(resource); });
             actions.appendChild(delBtn);
@@ -15270,7 +15857,7 @@ class App {
             const workloadHeader = document.createElement('div');
             workloadHeader.className = 'resource-workload-header';
             const workloadLabel = document.createElement('span');
-            workloadLabel.textContent = 'Charge de travail';
+            workloadLabel.textContent = t('resource.workload.label');
             workloadHeader.appendChild(workloadLabel);
             const workloadValue = document.createElement('span');
             workloadValue.textContent = workload.percent + '%';
@@ -15291,7 +15878,7 @@ class App {
             if (workload.percent > 100) {
                 const warning = document.createElement('div');
                 warning.className = 'resource-overload-warning';
-                warning.textContent = 'Surcharge détectée (' + workload.concurrent + ' tâches simultanées)';
+                warning.textContent = t('resource.workload.overload', { count: workload.concurrent });
                 workloadSection.appendChild(warning);
             }
 
@@ -15321,9 +15908,9 @@ class App {
                     dates.className = 'resource-task-dates';
                     const daysLeft = daysBetween(new Date(), task.endDate);
                     if (task.status === 'done') {
-                        dates.textContent = 'Terminé';
+                        dates.textContent = t('resource.tasks.done');
                     } else if (daysLeft < 0) {
-                        dates.textContent = 'En retard';
+                        dates.textContent = t('resource.tasks.late');
                         dates.style.color = '#EF4444';
                     } else {
                         dates.textContent = daysLeft + 'j';
@@ -15387,7 +15974,7 @@ class App {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action annulée', 'info');
+                    this._showToast(t('toast.actionUndone'), 'info');
                 }
             });
         }
@@ -15399,7 +15986,7 @@ class App {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action rétablie', 'info');
+                    this._showToast(t('toast.actionRedone'), 'info');
                 }
             });
         }
@@ -15407,7 +15994,7 @@ class App {
         // Settings panel events dispatched from Aide tab
         document.addEventListener('show-keyboard-help', () => this._showKeyboardHelp());
         document.addEventListener('launch-onboarding', () => onboarding.start());
-        document.addEventListener('settings-saved', () => this._showToast('Réglages enregistrés', 'success'));
+        document.addEventListener('settings-saved', () => this._showToast(t('toast.settingsSaved'), 'success'));
         document.addEventListener('gantt:addTask', () => this._showAddTaskDialog());
 
         // Baseline
@@ -15509,7 +16096,7 @@ class App {
         if (baselines.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'bl-pop-empty';
-            empty.textContent = 'Aucune baseline. Créez-en une ci-dessous.';
+            empty.textContent = t('baseline.empty');
             list.appendChild(empty);
         } else {
             baselines.forEach(bl => {
@@ -15526,7 +16113,7 @@ class App {
                 // Radio-style activate button
                 const radio = document.createElement('button');
                 radio.className = 'bl-radio' + (isActive ? ' bl-radio--on' : '');
-                radio.title = isActive ? 'Baseline active' : 'Activer';
+                radio.title = isActive ? t('baseline.active') : t('baseline.activate');
                 radio.tabIndex = -1; // item row handles activation
                 radio.innerHTML = isActive
                     ? `<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>`
@@ -15563,13 +16150,13 @@ class App {
 
                     const okBtn = document.createElement('button');
                     okBtn.className = 'bl-icon-btn bl-icon-btn--ok';
-                    okBtn.title = 'Valider';
+                    okBtn.title = t('baseline.rename.validate');
                     okBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
                     okBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmRename(); });
 
                     const cancelBtn = document.createElement('button');
                     cancelBtn.className = 'bl-icon-btn';
-                    cancelBtn.title = 'Annuler';
+                    cancelBtn.title = t('task.btnCancel');
                     cancelBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
                     cancelBtn.addEventListener('click', (e) => { e.stopPropagation(); cancelRename(); });
 
@@ -15596,7 +16183,7 @@ class App {
 
                 const renameBtn = document.createElement('button');
                 renameBtn.className = 'bl-icon-btn';
-                renameBtn.title = 'Renommer';
+                renameBtn.title = t('baseline.rename');
                 renameBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
                 renameBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -15607,7 +16194,7 @@ class App {
 
                 const delBtn = document.createElement('button');
                 delBtn.className = 'bl-icon-btn bl-icon-btn--danger';
-                delBtn.title = 'Supprimer';
+                delBtn.title = t('baseline.delete');
                 delBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
                 delBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -15632,15 +16219,15 @@ class App {
             const input = document.createElement('input');
             input.className = 'bl-create-input';
             input.type = 'text';
-            input.placeholder = 'Nom de la baseline…';
+            input.placeholder = t('baseline.namePlaceholder');
             input.addEventListener('click', e => e.stopPropagation());
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') createBtn.click();
             });
             const createBtn = document.createElement('button');
             createBtn.className = 'bl-create-btn';
-            createBtn.title = 'Créer une baseline';
-            createBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Créer`;
+            createBtn.title = t('baseline.create.title');
+            createBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${t('baseline.create')}`;
             createBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const name = input.value.trim() || null;
@@ -15648,9 +16235,9 @@ class App {
                 if (bl) {
                     input.value = '';
                     this._updateBaselineBtnState();
-                    this._showToast(`Baseline "${bl.name}" créée`, 'success');
+                    this._showToast(t('toast.baselineCreated', { name: bl.name }), 'success');
                 } else {
-                    this._showToast('Maximum 5 baselines par projet', 'error');
+                    this._showToast(t('toast.baselineMaxReached'), 'error');
                 }
             });
             createRow.appendChild(input);
@@ -15697,11 +16284,11 @@ class App {
         dd.style.right = (window.innerWidth - rect.right) + 'px';
 
         const formats = [
-            { label: 'JSON', icon: '{ }', desc: 'Réimportable', tooltip: 'Exporte le projet actif au format JSON. Ce fichier peut être réimporté dans Gantt Planner pour restaurer toutes les tâches, ressources et paramètres.', action: () => this._exportJSON() },
-            { label: 'Tout exporter', icon: '★', desc: 'Tous les projets (JSON)', tooltip: 'Exporte l\'ensemble de vos projets en un seul fichier JSON. Idéal pour créer une sauvegarde complète ou migrer vers un autre appareil.', action: () => this._exportAllJSON() },
-            { label: 'CSV', icon: 'CSV', desc: 'MS Project / Excel / Tableur', tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
-            { label: 'XML', icon: 'XML', desc: 'MS Project (recommandé)', tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
-            { label: 'PDF', icon: 'PDF', desc: 'Impression', tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
+            { label: 'JSON', icon: '{ }', desc: t('export.json.desc'), tooltip: 'Exporte le projet actif au format JSON. Ce fichier peut être réimporté dans Gantt Planner pour restaurer toutes les tâches, ressources et paramètres.', action: () => this._exportJSON() },
+            { label: t('export.all.label'), icon: '★', desc: t('export.all.desc'), tooltip: 'Exporte l\'ensemble de vos projets en un seul fichier JSON. Idéal pour créer une sauvegarde complète ou migrer vers un autre appareil.', action: () => this._exportAllJSON() },
+            { label: 'CSV', icon: 'CSV', desc: t('export.csv.desc'), tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
+            { label: 'XML', icon: 'XML', desc: t('export.xml.desc'), tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
+            { label: 'PDF', icon: 'PDF', desc: t('export.pdf.desc'), tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
         ];
 
         formats.forEach(f => {
@@ -15730,7 +16317,7 @@ class App {
         const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
-        this._showToast('Projet exporté en JSON', 'success');
+        this._showToast(t('toast.projectExportedJSON'), 'success');
     }
 
     _exportAllJSON() {
@@ -15738,7 +16325,7 @@ class App {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const date = new Date().toISOString().slice(0, 10);
         this._downloadBlob(blob, `gantt_planner_backup_${date}.json`);
-        this._showToast(`${data.projects.length} projet(s) exporté(s)`, 'success');
+        this._showToast(t('toast.exportAll', { count: data.projects.length }), 'success');
     }
 
     _exportCSV() {
@@ -15770,7 +16357,7 @@ class App {
             task.progress,
         ].join(SEP);
 
-        const headers = ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé'];
+        const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress')];
         const rows = [];
         allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
             rows.push(row(task, 1));
@@ -15787,7 +16374,7 @@ class App {
         }
         const blob = new Blob([bytes], { type: 'text/csv;charset=windows-1252' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.csv`);
-        this._showToast('Projet exporté en CSV (compatible MS Project)', 'success');
+        this._showToast(t('toast.projectExportedCSV'), 'success');
         this._showMSProjectImportHelp();
     }
 
@@ -15884,7 +16471,7 @@ ${assignLines.join('\n')}
 
         const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
         this._downloadBlob(blob, `${project.name.replace(/\s+/g, '_')}_msproject.xml`);
-        this._showToast('Projet exporté en XML MS Project', 'success');
+        this._showToast(t('toast.projectExportedXML'), 'success');
     }
 
     _showMSProjectImportHelp() {
@@ -15969,14 +16556,14 @@ ${assignLines.join('\n')}
                 <h3>Export PDF</h3>
                 <button class="pdf-export-close" aria-label="Fermer">&times;</button>
             </div>
-            <p class="pdf-export-desc">Sélectionnez les vues à inclure dans le PDF :</p>
+            <p class="pdf-export-desc">${t('pdf.dialog.desc')}</p>
             <div class="pdf-export-options">
                 <label class="pdf-export-option">
                     <input type="checkbox" value="table" checked>
                     <span class="pdf-export-option-icon">☰</span>
                     <div>
-                        <div class="pdf-export-option-label">Tableau des tâches</div>
-                        <div class="pdf-export-option-desc">Liste détaillée avec statut, priorité et progression</div>
+                        <div class="pdf-export-option-label">${t('pdf.dialog.table.label')}</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.table.desc')}</div>
                     </div>
                 </label>
                 <label class="pdf-export-option">
@@ -15984,37 +16571,37 @@ ${assignLines.join('\n')}
                     <span class="pdf-export-option-icon">▸</span>
                     <div>
                         <div class="pdf-export-option-label">Timeline (Gantt)</div>
-                        <div class="pdf-export-option-desc">Diagramme de Gantt avec barres de tâches</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.timeline.desc')}</div>
                     </div>
                 </label>
                 <label class="pdf-export-option">
                     <input type="checkbox" value="resources" checked>
                     <span class="pdf-export-option-icon">👤</span>
                     <div>
-                        <div class="pdf-export-option-label">Ressources</div>
-                        <div class="pdf-export-option-desc">Charge de travail et tâches par ressource</div>
+                        <div class="pdf-export-option-label">${t('pdf.dialog.resources.label')}</div>
+                        <div class="pdf-export-option-desc">${t('pdf.dialog.resources.desc')}</div>
                     </div>
                 </label>
             </div>
             <div class="pdf-export-date-section" id="pdfDateSection">
-                <div class="pdf-export-date-label">Fenêtre temporelle de la Timeline :</div>
+                <div class="pdf-export-date-label">${t('pdf.dialog.dateLabel')}</div>
                 <div class="pdf-export-date-row">
                     <label class="pdf-export-date-field">
-                        <span>Du</span>
+                        <span>${t('pdf.dialog.from')}</span>
                         <input type="date" id="pdfDateStart" class="input" value="${defaultStart}">
                     </label>
                     <span class="pdf-export-date-arrow">→</span>
                     <label class="pdf-export-date-field">
-                        <span>Au</span>
+                        <span>${t('pdf.dialog.to')}</span>
                         <input type="date" id="pdfDateEnd" class="input" value="${defaultEnd}">
                     </label>
                 </div>
             </div>
             <div class="pdf-export-actions">
-                <button class="btn btn-secondary pdf-export-cancel">Annuler</button>
+                <button class="btn btn-secondary pdf-export-cancel">${t('pdf.dialog.cancel')}</button>
                 <button class="btn btn-primary pdf-export-confirm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-                    Générer le PDF
+                    ${t('pdf.dialog.generate')}
                 </button>
             </div>`;
 
@@ -16042,7 +16629,7 @@ ${assignLines.join('\n')}
             const sections = [];
             checks.forEach(cb => { if (cb.checked) sections.push(cb.value); });
             if (sections.length === 0) {
-                this._showToast('Sélectionnez au moins une vue', 'warning');
+                this._showToast(t('toast.selectAtLeastOneView'), 'warning');
                 return;
             }
             const tlStart = document.getElementById('pdfDateStart').value;
@@ -16059,8 +16646,8 @@ ${assignLines.join('\n')}
         const tasks = store.getTasks();
         const resources = store.getResources();
 
-        const statusLabels = { todo: 'À faire', in_progress: 'En cours', done: 'Terminé' };
-        const priorityLabels = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
+        const statusLabels = { todo: t('task.status.todo'), in_progress: t('task.status.inProgress'), done: t('task.status.done') };
+        const priorityLabels = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
         const stats = store.getProjectStats();
 
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
@@ -16114,18 +16701,18 @@ thead{display:table-header-group}
 .page-break{page-break-before:always}
 </style></head><body>
 <h1>${project.name}</h1>
-<div class="subtitle">${project.description || 'Exporté le ' + new Date().toLocaleDateString('fr-FR')}</div>
+<div class="subtitle">${project.description || t('pdf.exportedOn', { date: new Date().toLocaleDateString() })}</div>
 <div class="stats">
-<div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">Tâches</div></div>
-<div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">Progression</div></div>
-<div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">Jours restants</div></div>
-<div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">Terminées</div></div>
+<div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">${t('pdf.stats.tasks')}</div></div>
+<div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">${t('pdf.stats.progress')}</div></div>
+<div class="stat"><div class="stat-val">${stats.daysRemaining}</div><div class="stat-lbl">${t('pdf.stats.daysRemaining')}</div></div>
+<div class="stat"><div class="stat-val">${stats.completedTasks}/${stats.totalTasks}</div><div class="stat-lbl">${t('pdf.stats.done')}</div></div>
 </div>`;
 
         // ---- TABLE SECTION ----
         if (sections.includes('table')) {
-            html += `<h2>Tableau des tâches</h2>`;
-            html += `<table><thead><tr><th>Tâche</th><th>Début</th><th>Fin</th><th>Assigné(s)</th><th>Statut</th><th>Priorité</th><th>Progression</th></tr></thead><tbody>`;
+            html += `<h2>${t('pdf.table.title')}</h2>`;
+            html += `<table><thead><tr><th>${t('pdf.table.task')}</th><th>${t('pdf.table.start')}</th><th>${t('pdf.table.end')}</th><th>${t('pdf.table.assignees')}</th><th>${t('pdf.table.status')}</th><th>${t('pdf.table.priority')}</th><th>${t('pdf.table.progress')}</th></tr></thead><tbody>`;
             const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
             rootTasks.forEach(task => {
                 if (task.isPhase) {
@@ -16153,14 +16740,14 @@ thead{display:table-header-group}
             html += this._pdfResourceSection(tasks, resources, statusLabels);
         }
 
-        html += `<div class="footer">Gantt Planner Pro — ${project.name} — Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+        html += `<div class="footer">${t('pdf.footer', { name: project.name, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
 </body></html>`;
 
         const printWindow = window.open('', '_blank');
         printWindow.document.write(html);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
-        this._showToast('Impression PDF prête', 'success');
+        this._showToast(t('toast.pdfPrintReady'), 'success');
     }
 
     _pdfTimelineSection(tasks, resources, tlStart, tlEnd) {
@@ -16180,10 +16767,10 @@ thead{display:table-header-group}
         else scale = 'quarters';
 
         const fmtDate = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-        const scaleLabels = { days: 'Jours', weeks: 'Semaines', months: 'Mois', quarters: 'Trimestres' };
+        const scaleLabels = { days: t('pdf.scale.days'), weeks: t('pdf.scale.weeks'), months: t('pdf.scale.months'), quarters: t('pdf.scale.quarters') };
 
-        let html = `<h2>Timeline (Gantt)</h2>`;
-        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">Période : ${fmtDate(start)} → ${fmtDate(end)} — Échelle : ${scaleLabels[scale]}</p>`;
+        let html = `<h2>${t('pdf.timeline.title')}</h2>`;
+        html += `<p style="font-size:10px;color:#64748b;margin-bottom:10px">${t('pdf.timeline.period', { start: fmtDate(start), end: fmtDate(end), scale: scaleLabels[scale] })}</p>`;
 
         // Build header columns based on scale
         const headerCols = [];
@@ -16333,7 +16920,7 @@ thead{display:table-header-group}
             html += `<div style="margin-left:auto;font-size:10px;color:#64748b">${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}</div>`;
             html += `</div>`;
 
-            html += `<div class="res-workload-label">Charge : ${workload.percent}%${workload.percent > 100 ? ' ⚠ Surcharge' : ''}</div>`;
+            html += `<div class="res-workload-label">${t('pdf.resources.workload', { percent: workload.percent })}${workload.percent > 100 ? ' ⚠' : ''}</div>`;
             html += `<div class="res-workload"><div class="res-workload-fill" style="width:${Math.min(workload.percent, 100)}%;background:${fillColor}"></div></div>`;
 
             if (assignedTasks.length > 0) {
@@ -16420,7 +17007,7 @@ thead{display:table-header-group}
         zoomBtns.forEach(b => b.classList.toggle('active', b.dataset.zoom === currentLevel));
         const label = $('.zoom-label');
         if (label) {
-            label.textContent = ganttRenderer.zoomConfig[currentLevel]?.label || '';
+            label.textContent = t(ganttRenderer.zoomConfig[currentLevel]?.labelKey || '');
         }
 
         zoomBtns.forEach(btn => {
@@ -16437,7 +17024,7 @@ thead{display:table-header-group}
                 // Update label
                 const lbl = $('.zoom-label');
                 if (lbl) {
-                    lbl.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+                    lbl.textContent = t(ganttRenderer.zoomConfig[level]?.labelKey || '');
                 }
             });
         });
@@ -16457,7 +17044,7 @@ thead{display:table-header-group}
         // Update zoom UI
         $$('.zoom-btn[data-zoom]').forEach(b => b.classList.toggle('active', b.dataset.zoom === level));
         const label = $('.zoom-label');
-        if (label) label.textContent = ganttRenderer.zoomConfig[level]?.label || '';
+        if (label) label.textContent = t(ganttRenderer.zoomConfig[level]?.labelKey || '');
     }
 
     /* ---- Keyboard Shortcuts ---- */
@@ -16475,7 +17062,7 @@ thead{display:table-header-group}
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action annulée', 'info');
+                    this._showToast(t('toast.actionUndone'), 'info');
                 }
                 return;
             }
@@ -16487,7 +17074,7 @@ thead{display:table-header-group}
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Action rétablie', 'info');
+                    this._showToast(t('toast.actionRedone'), 'info');
                 }
                 return;
             }
@@ -16550,30 +17137,30 @@ thead{display:table-header-group}
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         const shortcuts = [
-            ['Ctrl/⌘+Z', 'Annuler'],
-            ['Ctrl/⌘+Y', 'Rétablir'],
-            ['Ctrl/⌘+F', 'Rechercher'],
-            ['Ctrl/⌘+D', 'Mode sombre/clair'],
-            ['1 / 2 / 3', 'Changer de vue'],
-            ['Suppr', 'Supprimer la sélection'],
-            ['Échap', 'Fermer / Annuler'],
-            ['?', 'Afficher cette aide'],
+            ['Ctrl/⌘+Z', t('shortcuts.undo')],
+            ['Ctrl/⌘+Y', t('shortcuts.redo')],
+            ['Ctrl/⌘+F', t('shortcuts.search')],
+            ['Ctrl/⌘+D', t('shortcuts.darkMode')],
+            ['1 / 2 / 3', t('shortcuts.changeView')],
+            ['Suppr', t('shortcuts.delete')],
+            ['Échap', t('shortcuts.escape')],
+            ['?', t('shortcuts.help')],
         ];
         const rows = shortcuts.map(([key, desc]) =>
             `<tr><td style="padding:6px 12px 6px 0;font-weight:600;white-space:nowrap"><kbd style="background:var(--bg-muted,#f0f0f0);padding:2px 8px;border-radius:4px;font-size:12px;border:1px solid var(--border-default,#e0e0e0)">${key}</kbd></td><td style="padding:6px 0;font-size:13px">${desc}</td></tr>`
         ).join('');
         overlay.innerHTML = `
-            <div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="Raccourcis clavier">
+            <div class="modal" style="max-width:420px" role="dialog" aria-modal="true" aria-label="${t('shortcuts.title')}">
                 <div class="modal-header">
-                    <h2 class="modal-title">Raccourcis clavier</h2>
+                    <h2 class="modal-title">${t('shortcuts.title')}</h2>
                     <button class="icon-btn kbd-close" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 </div>
                 <div class="modal-body" style="padding:12px 20px 20px">
                     <table style="width:100%">${rows}</table>
-                    <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">Relancer le guide de démarrage</button>
+                    <button class="btn btn-secondary" id="restartTour" style="margin-top:16px;width:100%">${t('shortcuts.restart')}</button>
                     <button class="btn btn-primary" id="openContact" style="margin-top:8px;width:100%;gap:8px">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        Contact / Signaler un bug
+                        ${t('shortcuts.contact')}
                     </button>
                 </div>
             </div>`;
@@ -16845,7 +17432,7 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'danger',
                     icon: '\u26A0',
-                    text: `<strong>${t.name}</strong> en retard de ${days}j`,
+                    text: t('dashboard.notif.late', { name: t.name, days }),
                     sub: p.name,
                     taskId: t.id,
                     projectId: p.id,
@@ -16858,7 +17445,7 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'warning',
                     icon: '\u25C6',
-                    text: `Jalon <strong>${t.name}</strong> dans ${days}j`,
+                    text: t('dashboard.notif.milestone', { name: t.name, days }),
                     sub: p.name,
                     taskId: t.id,
                     projectId: p.id,
@@ -16942,14 +17529,14 @@ thead{display:table-header-group}
 
         const title = document.createElement('div');
         title.className = 'notif-panel-title';
-        title.textContent = 'Notifications';
+        title.textContent = t('notif.title');
         panel.appendChild(title);
 
         const notifs = this._getNotifications();
         if (notifs.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'notif-empty';
-            empty.textContent = 'Aucune alerte pour le moment';
+            empty.textContent = t('notif.noAlerts');
             panel.appendChild(empty);
         } else {
             notifs.forEach(n => {
@@ -16961,7 +17548,7 @@ thead{display:table-header-group}
                     `<div class="notif-text">${n.text}` +
                     (n.sub ? `<div class="notif-sub">${n.sub}</div>` : '') +
                     `</div>` +
-                    `<button class="notif-dismiss" title="Supprimer">&times;</button>`;
+                    `<button class="notif-dismiss" title="${t('notif.dismiss')}">&times;</button>`;
 
                 const dismissBtn = item.querySelector('.notif-dismiss');
                 dismissBtn.addEventListener('click', (e) => {
@@ -16977,7 +17564,7 @@ thead{display:table-header-group}
                         if (!panel.querySelector('.notif-item')) {
                             const empty = document.createElement('div');
                             empty.className = 'notif-empty';
-                            empty.textContent = 'Aucune alerte pour le moment';
+                            empty.textContent = t('notif.noAlerts');
                             panel.appendChild(empty);
                         }
                     }, 200);
@@ -17107,31 +17694,31 @@ thead{display:table-header-group}
         container.className = 'costs-view';
         container.innerHTML = `
         <div class="costs-header">
-            <h2 class="costs-title">Suivi des coûts</h2>
+            <h2 class="costs-title">${t('costs.title')}</h2>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('costs.filterLabel')}</label>
                 <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
-                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
             </div>
             <div class="costs-kpi-grid">
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Budget total (estimé)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.totalBudget')}</div>
                     <div class="costs-kpi-value">${fmt(totalEstimated)}</div>
                 </div>
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Coût réel (dépensé)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.actualCost')}</div>
                     <div class="costs-kpi-value">${fmt(totalActual)}</div>
                 </div>
                 <div class="costs-kpi">
-                    <div class="costs-kpi-label">Écart (variance)</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.variance')}</div>
                     <div class="costs-kpi-value" style="color:${varianceColor}">
                         <span>${varianceIcon}</span> ${variance >= 0 ? '+' : ''}${fmt(variance)}
                     </div>
                 </div>
                 <div class="costs-kpi costs-kpi-progress">
-                    <div class="costs-kpi-label">% consommé</div>
+                    <div class="costs-kpi-label">${t('costs.kpi.consumed')}</div>
                     <div class="costs-kpi-value">${pctConsumed}%</div>
                     <div class="costs-progress-bar">
                         <div class="costs-progress-fill" style="width:${Math.min(pctConsumed, 100)}%;background:${pctConsumed > 100 ? '#EF4444' : pctConsumed > 75 ? '#F59E0B' : '#10B981'};"></div>
@@ -17143,20 +17730,20 @@ thead{display:table-header-group}
             <table class="cost-table costs-full-table">
                 <thead>
                     <tr>
-                        <th>Tâche</th>
-                        <th>Ressource(s)</th>
-                        <th style="text-align:center;">Durée (j)</th>
-                        <th style="text-align:center;">Taux horaire</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût fixe</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût estimé total</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Coût réel</th>
-                        <th style="text-align:right;min-width:110px;white-space:nowrap;">Écart</th>
+                        <th>${t('dashboard.col.task')}</th>
+                        <th>${t('dashboard.col.resourceCol')}</th>
+                        <th style="text-align:center;">${t('costs.col.durationDays')}</th>
+                        <th style="text-align:center;">${t('costs.col.hourlyRate')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('dashboard.col.fixedCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.estimatedCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.actualCost')}</th>
+                        <th style="text-align:right;min-width:110px;white-space:nowrap;">${t('costs.col.variance')}</th>
                     </tr>
                 </thead>
                 <tbody>${tableRows}</tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4" style="font-weight:700;">Total</td>
+                        <td colspan="4" style="font-weight:700;">${t('dashboard.total')}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalActual)}</td>
@@ -17256,50 +17843,50 @@ thead{display:table-header-group}
         <div class="dashboard-grid">
             <!-- Project filter -->
             <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filtrer par projet :</label>
+                <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('dashboard.filterLabel')}</label>
                 <select id="dashboardProjectFilter" class="select filter-select" style="min-width:200px;">
-                    <option value="all"${filterId === 'all' ? ' selected' : ''}>Tous les projets</option>
+                    <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
             </div>
             <!-- KPI Cards -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Vue d'ensemble</h3>
+                <h3>${t('dashboard.overview')}</h3>
                 <div class="dashboard-kpi-grid">
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${projectCount}</div>
-                        <div class="kpi-label">Projets</div>
+                        <div class="kpi-label">${t('dashboard.kpi.projects')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${totalTasks}</div>
-                        <div class="kpi-label">Tâches totales</div>
+                        <div class="kpi-label">${t('dashboard.kpi.totalTasks')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${activeTasks}</div>
-                        <div class="kpi-label">Tâches actives</div>
+                        <div class="kpi-label">${t('dashboard.kpi.activeTasks')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${completedTasks}</div>
-                        <div class="kpi-label">Terminées</div>
+                        <div class="kpi-label">${t('dashboard.kpi.completed')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${avgProgress}%</div>
-                        <div class="kpi-label">Progression moy.</div>
+                        <div class="kpi-label">${t('dashboard.kpi.avgProgress')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value" style="${budgetPct > 90 ? 'color:#EF4444' : budgetPct > 75 ? 'color:#F59E0B' : ''}">${totalBudget > 0 ? budgetPct + '%' : '-'}</div>
-                        <div class="kpi-label">Budget consommé</div>
+                        <div class="kpi-label">${t('dashboard.kpi.budgetConsumed')}</div>
                     </div>
                     <div class="dashboard-kpi">
                         <div class="kpi-value">${totalBudget > 0 ? formatCurrency(totalBudget) : '-'}</div>
-                        <div class="kpi-label">Budget total estimé</div>
+                        <div class="kpi-label">${t('dashboard.kpi.totalBudget')}</div>
                     </div>
                 </div>
             </div>
 
             <!-- Projects breakdown -->
             <div class="dashboard-card">
-                <h3>Projets (${projectCount})</h3>
+                <h3>${t('dashboard.projects', { count: projectCount })}</h3>
                 ${projectStats.map(ps => {
                     const color = ps.progress >= 100 ? '#10B981' : ps.overdue > 0 ? '#EF4444' : '#6366F1';
                     return `<div class="dashboard-project-row" data-project-id="${ps.project.id}" style="cursor:pointer;">
@@ -17314,32 +17901,32 @@ thead{display:table-header-group}
 
             <!-- Alerts -->
             <div class="dashboard-card">
-                <h3>Alertes (${allNotifs.length})</h3>
+                <h3>${t('dashboard.alerts', { count: allNotifs.length })}</h3>
                 ${allNotifs.length === 0
-                    ? '<div class="notif-empty">Aucune alerte</div>'
+                    ? `<div class="notif-empty">${t('dashboard.noAlerts')}</div>`
                     : `<ul class="dashboard-alert-list">${allNotifs.slice(0, 15).map(n => {
                         const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
                         return `<li class="dashboard-alert-item">
                             <span class="dashboard-alert-dot ${dotColor}"></span>
                             <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
                         </li>`;
-                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">+${allNotifs.length - 15} autres alertes</li>` : ''}</ul>`}
+                    }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">${t('dashboard.moreAlerts', { count: allNotifs.length - 15 })}</li>` : ''}</ul>`}
             </div>
 
             <!-- Tâches à venir / en retard -->
             <div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Tâches prioritaires (${this._dashUpcomingItems.length})</h3>
+                <h3>${t('dashboard.priorityTasks', { count: this._dashUpcomingItems.length })}</h3>
                 ${this._dashUpcomingItems.length === 0
-                    ? '<div class="notif-empty">Aucune tâche en cours</div>'
+                    ? `<div class="notif-empty">${t('dashboard.noTasks')}</div>`
                     : `<div style="overflow-x:auto;">
                         <table class="cost-table" id="priorityTable">
                             <thead><tr>
-                                <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
-                                <th class="sortable" data-sort="projectName">Projet <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="priority">Priorité <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="daysLeft">Échéance <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="progress">Progression <span class="sort-icon">↕</span></th>
-                                <th class="sortable" style="text-align:center;" data-sort="status">Statut <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-sort="name">${t('dashboard.col.task')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-sort="projectName">${t('dashboard.col.project')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="priority">${t('dashboard.col.priority')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="daysLeft">${t('dashboard.col.deadline')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="progress">${t('dashboard.col.progress')} <span class="sort-icon">↕</span></th>
+                                <th class="sortable" style="text-align:center;" data-sort="status">${t('dashboard.col.status')} <span class="sort-icon">↕</span></th>
                             </tr></thead>
                             <tbody id="priorityTableBody">${this._renderPriorityTableRows()}</tbody>
                         </table>
@@ -17406,27 +17993,27 @@ thead{display:table-header-group}
             return dir === 'asc' ? va - vb : vb - va;
         });
         const priorityColors  = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
-        const priorityLabels  = { high: 'Haute', medium: 'Moyenne', low: 'Basse' };
-        const statusLabels    = { in_progress: 'En cours', done: 'Terminé', todo: 'À faire' };
-        return sorted.slice(0, 10).map(t => {
-            const isOverdue = t.daysLeft < 0;
-            const isUrgent  = !isOverdue && t.daysLeft <= 3;
+        const priorityLabels  = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
+        const statusLabels    = { in_progress: t('task.status.inProgress'), done: t('task.status.done'), todo: t('task.status.todo') };
+        return sorted.slice(0, 10).map(task => {
+            const isOverdue = task.daysLeft < 0;
+            const isUrgent  = !isOverdue && task.daysLeft <= 3;
             const deadlineColor = isOverdue ? '#EF4444' : isUrgent ? '#F59E0B' : 'var(--text-secondary)';
-            const deadlineText  = isOverdue ? `<strong>Retard (${Math.abs(t.daysLeft)}j)</strong>` : t.daysLeft === 0 ? '<strong>Auj.</strong>' : `J-${t.daysLeft}`;
-            const pColor   = priorityColors[t.priority] || '#64748B';
-            const barColor = t.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
+            const deadlineText  = isOverdue ? `<strong>${t('dashboard.deadline.overdue', { days: Math.abs(task.daysLeft) })}</strong>` : task.daysLeft === 0 ? `<strong>${t('dashboard.deadline.today')}</strong>` : t('dashboard.deadline.daysLeft', { days: task.daysLeft });
+            const pColor   = priorityColors[task.priority] || '#64748B';
+            const barColor = task.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
             return `<tr>
-                <td class="dt-name">${t.name}</td>
-                <td class="dt-secondary">${t.projectName}</td>
-                <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[t.priority] || t.priority || '—'}</span></td>
+                <td class="dt-name">${task.name}</td>
+                <td class="dt-secondary">${task.projectName}</td>
+                <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[task.priority] || task.priority || '—'}</span></td>
                 <td class="dt-center dt-deadline" style="color:${deadlineColor};">${deadlineText}</td>
                 <td class="dt-center">
                     <div class="dt-progress-wrap">
-                        <div class="dt-progress-bar"><div class="dt-progress-fill" style="width:${t.progress}%;background:${barColor};"></div></div>
-                        <span class="dt-secondary">${t.progress}%</span>
+                        <div class="dt-progress-bar"><div class="dt-progress-fill" style="width:${task.progress}%;background:${barColor};"></div></div>
+                        <span class="dt-secondary">${task.progress}%</span>
                     </div>
                 </td>
-                <td class="dt-center dt-secondary">${statusLabels[t.status] || t.status || '—'}</td>
+                <td class="dt-center dt-secondary">${statusLabels[task.status] || task.status || '—'}</td>
             </tr>`;
         }).join('');
     }
@@ -17540,25 +18127,25 @@ thead{display:table-header-group}
         const totalFixed    = allTaskCosts.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
 
         return `<div class="dashboard-card" style="grid-column: 1 / -1;">
-            <h3>Coûts par tâche</h3>
+            <h3>${t('dashboard.costTable.title')}</h3>
             <div style="overflow-x:auto;">
                 <table class="cost-table" id="costTable">
                     <thead>
                         <tr>
-                            <th class="sortable" data-sort="name">Tâche <span class="sort-icon">↕</span></th>
-                            <th class="sortable" data-sort="resources">Ressource(s) <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="rate">Taux <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="durationDays">Durée <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="fixedCost">Coût fixe <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="cost">Coût total <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="costDone">Consommé <span class="sort-icon">↕</span></th>
-                            <th class="sortable" style="text-align:center;" data-sort="progress">Avancement <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="name">${t('dashboard.col.task')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="resources">${t('dashboard.col.resourceCol')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="rate">${t('dashboard.col.rate')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="durationDays">${t('dashboard.col.duration')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="fixedCost">${t('dashboard.col.fixedCost')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="cost">${t('dashboard.col.totalCost')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:right;min-width:100px;" data-sort="costDone">${t('dashboard.col.consumed')} <span class="sort-icon">↕</span></th>
+                            <th class="sortable" style="text-align:center;" data-sort="progress">${t('dashboard.col.advancement')} <span class="sort-icon">↕</span></th>
                         </tr>
                     </thead>
                     <tbody id="costTableBody">${this._renderCostTableRows()}</tbody>
                     <tfoot>
                         <tr class="dt-total">
-                            <td colspan="4">Total</td>
+                            <td colspan="4">${t('dashboard.total')}</td>
                             <td class="dt-right">${totalFixed > 0 ? formatCurrency(totalFixed) : '—'}</td>
                             <td class="dt-right">${formatCurrency(totalCost)}</td>
                             <td class="dt-right">${formatCurrency(totalCostDone)}</td>
@@ -17581,8 +18168,8 @@ thead{display:table-header-group}
 
         if (allPermits.length === 0) {
             return `<div class="dashboard-card" style="grid-column: 1 / -1;">
-                <h3>Récapitulatif Permis</h3>
-                <div class="notif-empty">Aucun permis de construire dans les projets</div>
+                <h3>${t('dashboard.permit.title', { count: 0 })}</h3>
+                <div class="notif-empty">${t('dashboard.permit.empty')}</div>
             </div>`;
         }
 
@@ -17607,16 +18194,16 @@ thead{display:table-header-group}
             const deadlines = calculatePermitDeadlines(permit);
             let nextDeadline = '';
             if (deadlines.suspended) {
-                nextDeadline = '<span style="color:#F59E0B;">Suspendu</span>';
+                nextDeadline = `<span style="color:#F59E0B;">${t('dashboard.permit.suspended')}</span>`;
             } else if (deadlines.decisionDeadline && (permit.permitStatus !== 'granted' && permit.permitStatus !== 'granted_conditions' && permit.permitStatus !== 'refused')) {
                 const dl = new Date(deadlines.decisionDeadline);
                 const daysLeft = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
                 const color = daysLeft <= 3 ? '#EF4444' : daysLeft <= 14 ? '#F59E0B' : 'var(--text-secondary)';
-                nextDeadline = `<span style="color:${color};">Décision: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` (J-${daysLeft})` : ' (dépassé)'}</span>`;
+                nextDeadline = `<span style="color:${color};">${t('dashboard.permit.decisionLabel')}: ${new Date(deadlines.decisionDeadline).toLocaleDateString('fr-FR')}${daysLeft >= 0 ? ` ${t('dashboard.permit.daysLeft', { days: daysLeft })}` : ` ${t('dashboard.permit.overdue')}`}</span>`;
             } else if (deadlines.appealEndDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
-                nextDeadline = `Purge recours: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.appealLabel')}: ${new Date(deadlines.appealEndDate).toLocaleDateString('fr-FR')}`;
             } else if (deadlines.expiryDate && permit.permitStatus === 'appeal_cleared') {
-                nextDeadline = `Péremption: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
+                nextDeadline = `${t('dashboard.permit.expiryLabel')}: ${new Date(deadlines.expiryDate).toLocaleDateString('fr-FR')}`;
             }
 
             return `<tr class="dashboard-permit-row">
@@ -17631,23 +18218,23 @@ thead{display:table-header-group}
 
         return `<div class="dashboard-card" style="grid-column: 1 / -1;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h3>Récapitulatif Permis (${total})</h3>
+                <h3>${t('dashboard.permit.title', { count: total })}</h3>
                 <button id="dashboardPermitPdfBtn" class="btn btn-secondary" style="font-size:12px;padding:4px 12px;display:flex;align-items:center;gap:6px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg>
                     Export PDF
                 </button>
             </div>
             <div class="dashboard-permit-kpis">
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#3B82F6;">${total}</span><span class="kpi-label">Total</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#F59E0B;">${pending}</span><span class="kpi-label">En instruction</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#10B981;">${granted}</span><span class="kpi-label">Accordés</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#EF4444;">${refused}</span><span class="kpi-label">Refusés</span></div>
-                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#065F46;">${appealCleared}</span><span class="kpi-label">Purgés</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#3B82F6;">${total}</span><span class="kpi-label">${t('dashboard.permit.kpi.total')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#F59E0B;">${pending}</span><span class="kpi-label">${t('dashboard.permit.kpi.inReview')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#10B981;">${granted}</span><span class="kpi-label">${t('dashboard.permit.kpi.granted')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#EF4444;">${refused}</span><span class="kpi-label">${t('dashboard.permit.kpi.refused')}</span></div>
+                <div class="dashboard-permit-kpi"><span class="kpi-value" style="color:#065F46;">${appealCleared}</span><span class="kpi-label">${t('dashboard.permit.kpi.cleared')}</span></div>
             </div>
             <div style="overflow-x:auto;margin-top:12px;">
                 <table class="dashboard-permit-table">
                     <thead><tr>
-                        <th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance</th>
+                        <th>${t('dashboard.permit.col.permit')}</th><th>${t('dashboard.col.project')}</th><th>${t('dashboard.permit.col.type')}</th><th>${t('dashboard.col.status')}</th><th>${t('dashboard.permit.col.deposit')}</th><th>${t('dashboard.permit.col.deadline')}</th>
                     </tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
@@ -17666,7 +18253,7 @@ thead{display:table-header-group}
         });
 
         if (allPermits.length === 0) {
-            this._showToast('Aucun permis à exporter', 'warning');
+            this._showToast(t('toast.noPermitsToExport'), 'warning');
             return;
         }
 
@@ -17783,7 +18370,7 @@ tr:nth-child(even){background:#fafbfc}
         printWindow.document.write(html);
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
-        this._showToast('Export PDF des permis prêt', 'success');
+        this._showToast(t('toast.permitExportPdfReady'), 'success');
     }
 
     /* ---- Project Name ---- */
@@ -17831,7 +18418,7 @@ tr:nth-child(even){background:#fafbfc}
             const newName = input.value.trim();
             if (save && newName && newName !== project.name) {
                 store.updateProject(project.id, { name: newName });
-                this._showToast('Projet renommé', 'success');
+                this._showToast(t('toast.projectRenamed'), 'success');
             }
             this._renderProjectName();
         };
@@ -17886,9 +18473,9 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) importé(s)`, 'success');
+                                this._showToast(t('toast.importProjectsCount', { count: result.count }), 'success');
                             } else {
-                                this._showToast('Erreur lors de l\'import multi-projets', 'error');
+                                this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         } else {
                             const result = store.importProject(parsed);
@@ -17896,14 +18483,14 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" importé`, 'success');
+                                this._showToast(t('toast.importProjectName', { name: result.name }), 'success');
                             } else {
-                                this._showToast('Erreur lors de l\'import JSON', 'error');
+                                this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         }
                     } catch (e) {
                         console.error('JSON import failed:', e);
-                        this._showToast('Erreur lors de l\'import JSON', 'error');
+                        this._showToast(t('toast.importErrorJson'), 'error');
                     }
                 };
                 reader.readAsText(file);
@@ -17915,16 +18502,16 @@ tr:nth-child(even){background:#fafbfc}
                         ganttRenderer.render();
                         this._renderStats();
                         this._renderProjectName();
-                        this._showToast(`Projet "${result.name}" importé depuis MS Project XML`, 'success');
+                        this._showToast(t('toast.importXmlName', { name: result.name }), 'success');
                     } else {
-                        this._showToast('Erreur lors de l\'import XML', 'error');
+                        this._showToast(t('toast.importErrorXml'), 'error');
                     }
                 };
                 reader.readAsText(file);
             } else if (ext === 'xlsx' || ext === 'xls') {
                 this._importExcelFile(file);
             } else {
-                this._showToast('Format non supporté', 'error');
+                this._showToast(t('toast.importFormatUnsupported'), 'error');
             }
         });
         input.click();
@@ -17948,7 +18535,7 @@ tr:nth-child(even){background:#fafbfc}
             const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
             if (!rows.length) {
-                this._showToast('Le fichier Excel est vide', 'error');
+                this._showToast(t('toast.importExcelEmpty'), 'error');
                 return;
             }
 
@@ -17957,13 +18544,13 @@ tr:nth-child(even){background:#fafbfc}
                 ganttRenderer.render();
                 this._renderStats();
                 this._renderProjectName();
-                this._showToast(`Projet "${result.name}" importé depuis Excel (${rows.length} lignes)`, 'success');
+                this._showToast(t('toast.importExcelName', { name: result.name, rows: rows.length }), 'success');
             } else {
-                this._showToast('Erreur lors de l\'import Excel', 'error');
+                this._showToast(t('toast.importErrorExcel'), 'error');
             }
         } catch (e) {
             console.error('Excel import failed:', e);
-            this._showToast('Erreur: ' + e.message, 'error');
+            this._showToast(t('toast.error', { message: e.message }), 'error');
         }
     }
 
@@ -18057,7 +18644,7 @@ tr:nth-child(even){background:#fafbfc}
                         <label for="cfgClientId">Client ID Google *</label>
                         <input type="text" id="cfgClientId" required placeholder="123456789-abc.apps.googleusercontent.com">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à Google Drive</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">${t('cloud.connectGDrive')}</button>
                 </form>
             </div>`;
     }
@@ -18077,13 +18664,13 @@ tr:nth-child(even){background:#fafbfc}
             if (!clientId) return;
 
             try {
-                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connecting');
                 localStorage.setItem('gantt-planner-gdrive-clientid', clientId);
                 await cloudBackup.init(clientId);
                 this._renderCloudPanel(modal);
             } catch (err) {
-                this._showToast('Erreur Google Drive: ' + err.message, 'error');
-                form.querySelector('button[type="submit"]').textContent = 'Connecter à Google Drive';
+                this._showToast(t('toast.cloudError', { service: 'Google Drive', message: err.message }), 'error');
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connectGDrive');
             }
         });
     }
@@ -18091,14 +18678,14 @@ tr:nth-child(even){background:#fafbfc}
     async _initGDriveAndShowPanel(modal, clientId) {
         try {
             const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+                setTimeout(() => reject(new Error(t('cloud.connectionTimeout'))), 15000)
             );
             await Promise.race([cloudBackup.init(clientId), timeout]);
             this._renderCloudPanel(modal);
         } catch (err) {
             modal.innerHTML = this._gdriveConfigHTML();
             this._bindGDriveConfigForm(modal);
-            this._showToast('Erreur Google Drive: ' + err.message, 'error');
+            this._showToast(t('toast.cloudError', { service: 'Google Drive', message: err.message }), 'error');
         }
     }
 
@@ -18146,18 +18733,18 @@ tr:nth-child(even){background:#fafbfc}
                         <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
                     </svg>
                 </div>
-                <p>Connectez-vous avec votre compte Google pour sauvegarder vos projets dans Google Drive.</p>
+                <p>${t('cloud.googleLoginDesc')}</p>
                 <button class="btn btn-primary cloud-google-btn" id="cloudGoogleLogin" style="width: 100%; margin-bottom: 12px;">
-                    Se connecter avec Google
+                    ${t('cloud.signInGoogle')}
                 </button>
                 <button class="btn btn-secondary" id="cloudResetConfig" style="width: 100%; font-size: 12px;">
-                    Modifier le Client ID
+                    ${t('cloud.modifyClientId')}
                 </button>
             </div>`;
     }
 
     _cloudLoggedInHTML(user) {
-        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
         const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
         return `
             <div class="cloud-user-bar">
@@ -18165,14 +18752,14 @@ tr:nth-child(even){background:#fafbfc}
                     <span class="cloud-user-name">${name}</span>
                     ${email}
                 </div>
-                <button class="btn btn-secondary btn-sm" id="cloudSignOut">Déconnexion</button>
+                <button class="btn btn-secondary btn-sm" id="cloudSignOut">${t('cloud.signOut')}</button>
             </div>
             <div class="cloud-actions">
                 <button class="btn btn-primary" id="cloudSaveAll" style="flex: 1;">
-                    Sauvegarder tous les projets
+                    ${t('cloud.saveAll')}
                 </button>
                 <button class="btn btn-secondary" id="cloudSaveCurrent" style="flex: 1;">
-                    Sauvegarder projet actif
+                    ${t('cloud.saveCurrent')}
                 </button>
             </div>`;
     }
@@ -18182,13 +18769,13 @@ tr:nth-child(even){background:#fafbfc}
         if (googleBtn) {
             googleBtn.addEventListener('click', async () => {
                 try {
-                    googleBtn.textContent = 'Connexion...';
+                    googleBtn.textContent = t('cloud.connecting');
                     googleBtn.disabled = true;
                     await cloudBackup.signIn();
                     this._renderCloudPanel(modal);
                 } catch (err) {
-                    this._showToast('Erreur connexion Google: ' + err.message, 'error');
-                    googleBtn.textContent = 'Se connecter avec Google';
+                    this._showToast(t('toast.cloudConnectError', { service: 'Google', message: err.message }), 'error');
+                    googleBtn.textContent = t('cloud.signInGoogle');
                     googleBtn.disabled = false;
                 }
             });
@@ -18218,17 +18805,17 @@ tr:nth-child(even){background:#fafbfc}
         if (saveAllBtn) {
             saveAllBtn.addEventListener('click', async () => {
                 try {
-                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
                     await cloudBackup.saveBackup(`Backup complet - ${date}`, data);
-                    this._showToast('Sauvegarde Google Drive réussie', 'success');
+                    this._showToast(t('toast.cloudSaveSuccess', { service: 'Google Drive' }), 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.textContent = t('cloud.saveAll');
                     saveAllBtn.disabled = false;
                 }
             });
@@ -18238,19 +18825,19 @@ tr:nth-child(even){background:#fafbfc}
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', async () => {
                 try {
-                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.textContent = t('cloud.saving');
                     saveCurrentBtn.disabled = true;
                     const project = store.getActiveProject();
                     const tasks = store.getTasks();
                     const resources = store.getResources();
                     const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
                     await cloudBackup.saveBackup(project.name, data);
-                    this._showToast(`"${project.name}" sauvegardé sur Google Drive`, 'success');
+                    this._showToast(t('toast.cloudSaveProject', { name: project.name, service: 'Google Drive' }), 'success');
                     this._refreshBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.textContent = t('cloud.saveCurrent');
                     saveCurrentBtn.disabled = false;
                 }
             });
@@ -18261,16 +18848,16 @@ tr:nth-child(even){background:#fafbfc}
         const container = modal.querySelector('#cloudBackupList');
         if (!container) return;
 
-        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+        container.innerHTML = `<div class="cloud-loading">${t('cloud.loading')}</div>`;
 
         try {
             const backups = await cloudBackup.listBackups();
             if (backups.length === 0) {
-                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans Google Drive</div>';
+                container.innerHTML = `<div class="cloud-empty">${t('cloud.noBackups', { service: 'Google Drive' })}</div>`;
                 return;
             }
 
-            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            container.innerHTML = `<h3 class="cloud-list-title">${t('cloud.listTitle')}</h3>`;
             backups.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'cloud-backup-item';
@@ -18288,8 +18875,8 @@ tr:nth-child(even){background:#fafbfc}
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
-                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
-                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">${t('cloud.restore')}</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="${t('notif.dismiss')}">&times;</button>
                     </div>`;
                 container.appendChild(item);
             });
@@ -18306,7 +18893,7 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                                this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
                             const result = store.importProject(data);
@@ -18314,27 +18901,27 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                                this._showToast(t('toast.cloudRestoreName', { name: result.name }), 'success');
                             }
                         }
                     } catch (err) {
-                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                        this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
-                        btn.textContent = 'Restaurer';
+                        btn.textContent = t('cloud.restore');
                     }
                 });
             });
 
             container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    if (!confirm(t('confirm.deleteBackup'))) return;
                     const id = btn.dataset.id;
                     try {
                         await cloudBackup.deleteBackup(id);
                         this._refreshBackupList(modal);
-                        this._showToast('Sauvegarde supprimée', 'info');
+                        this._showToast(t('toast.backupDeleted'), 'info');
                     } catch (err) {
-                        this._showToast('Erreur: ' + err.message, 'error');
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
                     }
                 });
             });
@@ -18433,7 +19020,7 @@ tr:nth-child(even){background:#fafbfc}
                         <label for="cfgOnedriveClientId">Client ID Microsoft *</label>
                         <input type="text" id="cfgOnedriveClientId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Connecter à OneDrive</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">${t('cloud.connectOneDrive')}</button>
                 </form>
             </div>`;
     }
@@ -18453,13 +19040,13 @@ tr:nth-child(even){background:#fafbfc}
             if (!clientId) return;
 
             try {
-                form.querySelector('button[type="submit"]').textContent = 'Connexion...';
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connecting');
                 localStorage.setItem('gantt-planner-onedrive-clientid', clientId);
                 await oneDriveBackup.init(clientId);
                 this._renderOneDrivePanel(modal);
             } catch (err) {
-                this._showToast('Erreur OneDrive: ' + err.message, 'error');
-                form.querySelector('button[type="submit"]').textContent = 'Connecter à OneDrive';
+                this._showToast(t('toast.cloudError', { service: 'OneDrive', message: err.message }), 'error');
+                form.querySelector('button[type="submit"]').textContent = t('cloud.connectOneDrive');
             }
         });
     }
@@ -18467,14 +19054,14 @@ tr:nth-child(even){background:#fafbfc}
     async _initOneDriveAndShowPanel(modal, clientId) {
         try {
             const timeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Délai de connexion dépassé')), 15000)
+                setTimeout(() => reject(new Error(t('cloud.connectionTimeout'))), 15000)
             );
             await Promise.race([oneDriveBackup.init(clientId), timeout]);
             this._renderOneDrivePanel(modal);
         } catch (err) {
             modal.innerHTML = this._onedriveConfigHTML();
             this._bindOneDriveConfigForm(modal);
-            this._showToast('Erreur OneDrive: ' + err.message, 'error');
+            this._showToast(t('toast.cloudError', { service: 'OneDrive', message: err.message }), 'error');
         }
     }
 
@@ -18520,18 +19107,18 @@ tr:nth-child(even){background:#fafbfc}
                         <path d="M22.957 12.187H12.144V23h10.813z" fill="#ffb900"/>
                     </svg>
                 </div>
-                <p>Connectez-vous avec votre compte Microsoft pour sauvegarder vos projets dans OneDrive.</p>
+                <p>${t('cloud.microsoftLoginDesc')}</p>
                 <button class="btn btn-primary cloud-microsoft-btn" id="cloudMicrosoftLogin" style="width: 100%; margin-bottom: 12px;">
-                    Se connecter avec Microsoft
+                    ${t('cloud.signInMicrosoft')}
                 </button>
                 <button class="btn btn-secondary" id="onedriveResetConfig" style="width: 100%; font-size: 12px;">
-                    Modifier le Client ID
+                    ${t('cloud.modifyClientId')}
                 </button>
             </div>`;
     }
 
     _onedriveLoggedInHTML(user) {
-        const name = user ? (user.displayName || user.email || 'Utilisateur') : 'Utilisateur';
+        const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
         const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
         return `
             <div class="cloud-user-bar">
@@ -18539,14 +19126,14 @@ tr:nth-child(even){background:#fafbfc}
                     <span class="cloud-user-name">${name}</span>
                     ${email}
                 </div>
-                <button class="btn btn-secondary btn-sm" id="onedriveSignOut">Déconnexion</button>
+                <button class="btn btn-secondary btn-sm" id="onedriveSignOut">${t('cloud.signOut')}</button>
             </div>
             <div class="cloud-actions">
                 <button class="btn btn-primary" id="onedriveSaveAll" style="flex: 1;">
-                    Sauvegarder tous les projets
+                    ${t('cloud.saveAll')}
                 </button>
                 <button class="btn btn-secondary" id="onedriveSaveCurrent" style="flex: 1;">
-                    Sauvegarder projet actif
+                    ${t('cloud.saveCurrent')}
                 </button>
             </div>`;
     }
@@ -18556,13 +19143,13 @@ tr:nth-child(even){background:#fafbfc}
         if (msBtn) {
             msBtn.addEventListener('click', async () => {
                 try {
-                    msBtn.textContent = 'Connexion...';
+                    msBtn.textContent = t('cloud.connecting');
                     msBtn.disabled = true;
                     await oneDriveBackup.signIn();
                     this._renderOneDrivePanel(modal);
                 } catch (err) {
-                    this._showToast('Erreur connexion Microsoft: ' + err.message, 'error');
-                    msBtn.textContent = 'Se connecter avec Microsoft';
+                    this._showToast(t('toast.cloudConnectError', { service: 'Microsoft', message: err.message }), 'error');
+                    msBtn.textContent = t('cloud.signInMicrosoft');
                     msBtn.disabled = false;
                 }
             });
@@ -18592,17 +19179,17 @@ tr:nth-child(even){background:#fafbfc}
         if (saveAllBtn) {
             saveAllBtn.addEventListener('click', async () => {
                 try {
-                    saveAllBtn.textContent = 'Sauvegarde...';
+                    saveAllBtn.textContent = t('cloud.saving');
                     saveAllBtn.disabled = true;
                     const data = store.exportAllProjects();
                     const date = new Date().toLocaleDateString('fr-FR');
                     await oneDriveBackup.saveBackup(`Backup complet - ${date}`, data);
-                    this._showToast('Sauvegarde OneDrive réussie', 'success');
+                    this._showToast(t('toast.cloudSaveSuccess', { service: 'OneDrive' }), 'success');
                     this._refreshOneDriveBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveAllBtn.textContent = 'Sauvegarder tous les projets';
+                    saveAllBtn.textContent = t('cloud.saveAll');
                     saveAllBtn.disabled = false;
                 }
             });
@@ -18612,19 +19199,19 @@ tr:nth-child(even){background:#fafbfc}
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', async () => {
                 try {
-                    saveCurrentBtn.textContent = 'Sauvegarde...';
+                    saveCurrentBtn.textContent = t('cloud.saving');
                     saveCurrentBtn.disabled = true;
                     const project = store.getActiveProject();
                     const tasks = store.getTasks();
                     const resources = store.getResources();
                     const data = { project, tasks, resources, exportedAt: new Date().toISOString() };
                     await oneDriveBackup.saveBackup(project.name, data);
-                    this._showToast(`"${project.name}" sauvegardé sur OneDrive`, 'success');
+                    this._showToast(t('toast.cloudSaveProject', { name: project.name, service: 'OneDrive' }), 'success');
                     this._refreshOneDriveBackupList(modal);
                 } catch (err) {
-                    this._showToast('Erreur: ' + err.message, 'error');
+                    this._showToast(t('toast.error', { message: err.message }), 'error');
                 } finally {
-                    saveCurrentBtn.textContent = 'Sauvegarder projet actif';
+                    saveCurrentBtn.textContent = t('cloud.saveCurrent');
                     saveCurrentBtn.disabled = false;
                 }
             });
@@ -18635,16 +19222,16 @@ tr:nth-child(even){background:#fafbfc}
         const container = modal.querySelector('#onedriveBackupList');
         if (!container) return;
 
-        container.innerHTML = '<div class="cloud-loading">Chargement des sauvegardes...</div>';
+        container.innerHTML = `<div class="cloud-loading">${t('cloud.loading')}</div>`;
 
         try {
             const backups = await oneDriveBackup.listBackups();
             if (backups.length === 0) {
-                container.innerHTML = '<div class="cloud-empty">Aucune sauvegarde dans OneDrive</div>';
+                container.innerHTML = `<div class="cloud-empty">${t('cloud.noBackups', { service: 'OneDrive' })}</div>`;
                 return;
             }
 
-            container.innerHTML = '<h3 class="cloud-list-title">Sauvegardes disponibles</h3>';
+            container.innerHTML = `<h3 class="cloud-list-title">${t('cloud.listTitle')}</h3>`;
             backups.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'cloud-backup-item';
@@ -18662,8 +19249,8 @@ tr:nth-child(even){background:#fafbfc}
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
-                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">Restaurer</button>
-                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="Supprimer">&times;</button>
+                        <button class="btn btn-sm btn-primary cloud-restore-btn" data-id="${b.id}">${t('cloud.restore')}</button>
+                        <button class="btn btn-sm btn-danger cloud-delete-btn" data-id="${b.id}" aria-label="${t('notif.dismiss')}">&times;</button>
                     </div>`;
                 container.appendChild(item);
             });
@@ -18680,7 +19267,7 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`${result.count} projet(s) restauré(s)`, 'success');
+                                this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
                             const result = store.importProject(data);
@@ -18688,27 +19275,27 @@ tr:nth-child(even){background:#fafbfc}
                                 ganttRenderer.render();
                                 this._renderStats();
                                 this._renderProjectName();
-                                this._showToast(`Projet "${result.name}" restauré`, 'success');
+                                this._showToast(t('toast.cloudRestoreName', { name: result.name }), 'success');
                             }
                         }
                     } catch (err) {
-                        this._showToast('Erreur restauration: ' + err.message, 'error');
+                        this._showToast(t('toast.restoreError', { message: err.message }), 'error');
                     } finally {
-                        btn.textContent = 'Restaurer';
+                        btn.textContent = t('cloud.restore');
                     }
                 });
             });
 
             container.querySelectorAll('.cloud-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    if (!confirm('Supprimer cette sauvegarde ?')) return;
+                    if (!confirm(t('confirm.deleteBackup'))) return;
                     const id = btn.dataset.id;
                     try {
                         await oneDriveBackup.deleteBackup(id);
                         this._refreshOneDriveBackupList(modal);
-                        this._showToast('Sauvegarde supprimée', 'info');
+                        this._showToast(t('toast.backupDeleted'), 'info');
                     } catch (err) {
-                        this._showToast('Erreur: ' + err.message, 'error');
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
                     }
                 });
             });
@@ -18729,10 +19316,10 @@ tr:nth-child(even){background:#fafbfc}
             const cp = store.getCriticalPath();
             ganttRenderer.setCriticalPath(cp);
             const total = store.getTasks().filter(t => !t.isPhase).length;
-            this._showToast(`Chemin critique : ${cp.length} tâches sur ${total}`, 'info');
+            this._showToast(t('toast.criticalPathShown', { count: cp.length, total }), 'info');
         } else {
             ganttRenderer.setCriticalPath(null);
-            this._showToast('Chemin critique masqué', 'info');
+            this._showToast(t('toast.criticalPathHidden'), 'info');
         }
         ganttRenderer.render();
         this._renderBoardView();
@@ -18773,13 +19360,13 @@ tr:nth-child(even){background:#fafbfc}
         menu.id = 'ctxMenu';
 
         const items = [
-            { label: 'Modifier', icon: 'edit', action: () => taskModal.openEdit(taskId) },
-            { label: 'Dupliquer', icon: 'copy', action: () => this._duplicateTask(taskId) },
+            { label: t('task.action.edit'), icon: 'edit', action: () => taskModal.openEdit(taskId) },
+            { label: t('task.action.duplicate'), icon: 'copy', action: () => this._duplicateTask(taskId) },
             { label: 'divider' },
-            { label: 'Marquer terminé', icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
-            { label: 'Marquer en cours', icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
+            { label: t('task.action.markDone'), icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
+            { label: t('task.action.markInProgress'), icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
             { label: 'divider' },
-            { label: 'Supprimer', icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
+            { label: t('task.action.delete'), icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
         ];
 
         items.forEach(item => {
@@ -18823,14 +19410,14 @@ tr:nth-child(even){background:#fafbfc}
         store.addTask(data);
         ganttRenderer.render();
         this._renderStats();
-        this._showToast('Tâche dupliquée', 'success');
+        this._showToast(t('toast.taskDuplicated'), 'success');
     }
 
     _markDone(taskId) {
         store.updateTask(taskId, { status: 'done', progress: 100 });
         ganttRenderer.render();
         this._renderStats();
-        this._showToast('Tâche terminée', 'success');
+        this._showToast(t('toast.taskCompleted'), 'success');
     }
 
     _markInProgress(taskId) {
@@ -18842,11 +19429,11 @@ tr:nth-child(even){background:#fafbfc}
     _deleteTask(taskId) {
         const task = store.getTask(taskId);
         if (!task) return;
-        if (confirm(`Supprimer "${task.name}" ?`)) {
+        if (confirm(t('confirm.deleteTask', { name: task.name }))) {
             store.deleteTask(taskId);
             ganttRenderer.render();
             this._renderStats();
-            this._showToast('Tâche supprimée', 'success');
+            this._showToast(t('toast.taskDeleted'), 'success');
         }
     }
 
@@ -18869,36 +19456,36 @@ tr:nth-child(even){background:#fafbfc}
         filterBar.appendChild(filterIcon);
 
         // Status filter (multi-select)
-        const statusGroup = this._createMultiFilterGroup('Statut', 'filterStatus', [
-            { value: 'todo', label: 'À faire' },
-            { value: 'in_progress', label: 'En cours' },
-            { value: 'done', label: 'Terminé' },
-        ], 'Tous');
+        const statusGroup = this._createMultiFilterGroup(t('filter.status'), 'filterStatus', [
+            { value: 'todo', label: t('task.status.todo') },
+            { value: 'in_progress', label: t('task.status.inProgress') },
+            { value: 'done', label: t('task.status.done') },
+        ], t('filter.all.m'));
         filterBar.appendChild(statusGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Assignee filter (multi-select)
-        const assigneeGroup = this._createMultiFilterGroup('Ressource', 'filterAssignee', this._getAssigneeOptions(), 'Toutes');
+        const assigneeGroup = this._createMultiFilterGroup(t('filter.assignee'), 'filterAssignee', this._getAssigneeOptions(), t('filter.all.f'));
         filterBar.appendChild(assigneeGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Phase filter (multi-select)
-        const phaseGroup = this._createMultiFilterGroup('Phase', 'filterPhase', this._getPhaseOptions(), 'Toutes');
+        const phaseGroup = this._createMultiFilterGroup(t('filter.phase'), 'filterPhase', this._getPhaseOptions(), t('filter.all.f'));
         filterBar.appendChild(phaseGroup);
 
         // Separator
         filterBar.appendChild(this._createFilterSep());
 
         // Priority filter (multi-select)
-        const priorityGroup = this._createMultiFilterGroup('Priorité', 'filterPriority', [
-            { value: 'high', label: 'Haute' },
-            { value: 'medium', label: 'Moyenne' },
-            { value: 'low', label: 'Basse' },
-        ], 'Toutes');
+        const priorityGroup = this._createMultiFilterGroup(t('filter.priority'), 'filterPriority', [
+            { value: 'high', label: t('task.priority.high') },
+            { value: 'medium', label: t('task.priority.medium') },
+            { value: 'low', label: t('task.priority.low') },
+        ], t('filter.all.f'));
         filterBar.appendChild(priorityGroup);
 
         // Separator
@@ -18909,7 +19496,7 @@ tr:nth-child(even){background:#fafbfc}
         dateGroup.className = 'filter-group';
         const dateLabel = document.createElement('label');
         dateLabel.className = 'filter-label';
-        dateLabel.textContent = 'Période';
+        dateLabel.textContent = t('filter.period');
         dateGroup.appendChild(dateLabel);
 
         const dateInputs = document.createElement('div');
@@ -19082,7 +19669,7 @@ tr:nth-child(even){background:#fafbfc}
         });
         const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
         const badge = wrapper.querySelector('.filter-multi-badge');
-        if (toggleText) toggleText.textContent = 'Toutes';
+        if (toggleText) toggleText.textContent = t('filter.all.f');
         if (badge) badge.style.display = 'none';
         this._filters.phase = [];
     }
@@ -19229,7 +19816,7 @@ tr:nth-child(even){background:#fafbfc}
 
         const noResult = document.createElement('div');
         noResult.className = 'project-search-empty';
-        noResult.textContent = 'Aucun projet trouvé';
+        noResult.textContent = t('project.noResult');
         noResult.style.display = 'none';
 
         projects.forEach(p => {
@@ -19291,7 +19878,7 @@ tr:nth-child(even){background:#fafbfc}
         // Duplicate current project
         const dupBtn = document.createElement('button');
         dupBtn.className = 'project-dropdown-item';
-        dupBtn.textContent = 'Dupliquer ce projet';
+        dupBtn.textContent = t('project.action.duplicate');
         dupBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.remove();
@@ -19304,7 +19891,7 @@ tr:nth-child(even){background:#fafbfc}
                 this._renderStats();
                 this._renderProjectName();
                 this._refreshCurrentView();
-                this._showToast(`Projet dupliqué : "${dup.name}"`, 'success');
+                this._showToast(t('toast.projectDuplicated', { name: dup.name }), 'success');
             }
         });
         dropdown.appendChild(dupBtn);
@@ -19313,16 +19900,16 @@ tr:nth-child(even){background:#fafbfc}
         if (projects.length > 1) {
             const delBtn = document.createElement('button');
             delBtn.className = 'project-dropdown-item danger';
-            delBtn.textContent = 'Supprimer ce projet';
+            delBtn.textContent = t('project.action.delete');
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 dropdown.remove();
-                if (confirm(`Supprimer le projet "${activeProject.name}" ?`)) {
+                if (confirm(t('confirm.deleteProject', { name: activeProject.name }))) {
                     store.deleteProject(activeProject.id);
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast('Projet supprimé', 'success');
+                    this._showToast(t('toast.projectDeleted'), 'success');
                 }
             });
             dropdown.appendChild(delBtn);
@@ -19351,7 +19938,7 @@ tr:nth-child(even){background:#fafbfc}
             if (save && newName && newName !== project.name) {
                 store.updateProject(project.id, { name: newName });
                 this._renderProjectName();
-                this._showToast('Projet renommé', 'success');
+                this._showToast(t('toast.projectRenamed'), 'success');
             }
             dropdown.remove();
         };
@@ -19388,7 +19975,7 @@ tr:nth-child(even){background:#fafbfc}
         this._renderProjectName();
         this._refreshPhaseFilter();
         this._refreshCurrentView();
-        this._showToast(`Projet "${project.name}" créé`, 'success');
+        this._showToast(t('toast.projectCreated', { name: project.name }), 'success');
     }
 
     /* ---- Multi-Selection ---- */
@@ -19486,7 +20073,7 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _batchSetStatus(status) {
-        const statusLabels = { done: 'Terminé', in_progress: 'En cours', todo: 'À faire' };
+        const statusLabels = { done: t('task.status.done'), in_progress: t('task.status.inProgress'), todo: t('task.status.todo') };
         this._selectedTaskIds.forEach(id => {
             const updates = { status };
             if (status === 'done') updates.progress = 100;
@@ -19497,18 +20084,18 @@ tr:nth-child(even){background:#fafbfc}
         ganttRenderer.render();
         this._renderStats();
         this._refreshCurrentView();
-        this._showToast(`${count} tâche${count > 1 ? 's' : ''} → ${statusLabels[status]}`, 'success');
+        this._showToast(t('toast.tasksStatusChanged', { count, plural: count > 1 ? 's' : '', status: statusLabels[status] }), 'success');
     }
 
     _batchDelete() {
         const count = this._selectedTaskIds.size;
-        if (!confirm(`Supprimer ${count} tâche${count > 1 ? 's' : ''} ?`)) return;
+        if (!confirm(t('confirm.deleteTasks', { count, plural: count > 1 ? 's' : '' }))) return;
         this._selectedTaskIds.forEach(id => store.deleteTask(id));
         this._clearSelection();
         ganttRenderer.render();
         this._renderStats();
         this._refreshCurrentView();
-        this._showToast(`${count} tâche${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`, 'success');
+        this._showToast(t('toast.tasksDeleted', { count, plural: count > 1 ? 's' : '' }), 'success');
     }
 
     /* ---- Accessibility ---- */

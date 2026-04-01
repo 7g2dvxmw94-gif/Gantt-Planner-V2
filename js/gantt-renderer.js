@@ -6,10 +6,10 @@
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
-    day:     { colWidth: 36,  label: 'Jour' },
-    week:    { colWidth: 50,  label: 'Semaine' },
-    month:   { colWidth: 120, label: 'Mois' },
-    quarter: { colWidth: 80,  label: 'Trimestre' },
+    day:     { colWidth: 36,  labelKey: 'zoom.day' },
+    week:    { colWidth: 50,  labelKey: 'zoom.week' },
+    month:   { colWidth: 120, labelKey: 'zoom.month' },
+    quarter: { colWidth: 80,  labelKey: 'zoom.quarter' },
 };
 
 const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
@@ -255,7 +255,7 @@ class GanttRenderer {
         const taskHeader = createElement('div', {
             className: 'gantt-header-task',
             role: 'columnheader',
-        }, 'Tâche');
+        }, t('gantt.taskColumnHeader'));
         header.appendChild(taskHeader);
 
         // Timeline header
@@ -415,7 +415,7 @@ class GanttRenderer {
         if (hasChildren || isPhase) {
             const expandBtn = createElement('button', {
                 className: `task-expand${task.collapsed ? '' : ' expanded'}`,
-                'aria-label': task.collapsed ? 'Développer' : 'Réduire',
+                'aria-label': task.collapsed ? t('gantt.expand') : t('gantt.collapse'),
                 'aria-expanded': !task.collapsed,
                 onClick: (e) => {
                     e.stopPropagation();
@@ -670,7 +670,7 @@ class GanttRenderer {
                 sections.appendChild(createElement('div', {
                     className: 'gantt-permit-section instruction',
                     style: { width: Math.min(100, (instrDays / totalDays) * 100) + '%' },
-                    title: 'Instruction',
+                    title: t('gantt.permit.instruction'),
                 }));
             }
 
@@ -683,7 +683,7 @@ class GanttRenderer {
                     sections.appendChild(createElement('div', {
                         className: 'gantt-permit-section appeal',
                         style: { width: Math.min(100 - (appealOffset / totalDays) * 100, (appealDays / totalDays) * 100) + '%' },
-                        title: 'Recours tiers',
+                        title: t('gantt.permit.appeal'),
                     }));
                 }
             }
@@ -972,16 +972,15 @@ class GanttRenderer {
     _renderEmpty() {
         const empty = createElement('div', { className: 'gantt-empty' });
         empty.appendChild(createElement('div', { className: 'gantt-empty-icon' }, '\uD83D\uDCCA'));
-        empty.appendChild(createElement('div', { className: 'gantt-empty-title' }, 'Aucune tâche'));
-        empty.appendChild(createElement('div', { className: 'gantt-empty-text' },
-            'Commencez par ajouter votre première tâche pour visualiser votre planning.'));
+        empty.appendChild(createElement('div', { className: 'gantt-empty-title' }, t('gantt.empty.title')));
+        empty.appendChild(createElement('div', { className: 'gantt-empty-text' }, t('gantt.empty.text')));
         empty.appendChild(createElement('button', {
             className: 'btn btn-primary',
             onClick: () => {
                 document.dispatchEvent(new CustomEvent('gantt:addTask'));
             },
         }, [
-            createElement('span', {}, '+ Nouvelle tâche'),
+            createElement('span', {}, t('gantt.empty.addBtn')),
         ]));
         return empty;
     }
