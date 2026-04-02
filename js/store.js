@@ -110,6 +110,7 @@ function createDefaultProject(resources) {
         endDate: formatDateISO(addDays(projectStart, 90)),
         budget: 0,
         budgetUsed: 0,
+        resourceIds: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };
@@ -405,6 +406,18 @@ class Store {
                     // Migrate: add activeBaselineId to projects
                     parsed.projects.forEach(p => {
                         if (!('activeBaselineId' in p)) p.activeBaselineId = null;
+                        // Migrate: add resourceIds pool to projects
+                        if (!p.resourceIds) {
+                            // Seed from tasks already assigned in this project
+                            const projectTaskAssignees = new Set();
+                            parsed.tasks.forEach(t => {
+                                if (t.projectId === p.id) {
+                                    (t.assignees || []).forEach(id => projectTaskAssignees.add(id));
+                                    if (t.assignee) projectTaskAssignees.add(t.assignee);
+                                }
+                            });
+                            p.resourceIds = [...projectTaskAssignees];
+                        }
                     });
                     // Migrate: add showBaseline to settings
                     if (!('showBaseline' in parsed.settings)) parsed.settings.showBaseline = true;
@@ -525,6 +538,7 @@ class Store {
             id: generateId(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            resourceIds: [],
             ...project,
         };
         this._data.projects.push(newProject);
@@ -682,6 +696,10 @@ class Store {
         return this._data.tasks
             .filter(t => t.projectId === pid)
             .sort((a, b) => a.order - b.order);
+    }
+
+    getAllTasks() {
+        return [...this._data.tasks].sort((a, b) => a.order - b.order);
     }
 
     getTask(taskId) {
@@ -997,6 +1015,41 @@ class Store {
         });
         this._save();
         this._emit('resource:delete', resourceId);
+    }
+
+    /* ---- Resource ↔ Project membership ---- */
+
+    getProjectResources(projectId) {
+        const project = this._data.projects.find(p => p.id === projectId);
+        if (!project) return [];
+        const ids = new Set(project.resourceIds || []);
+        return this._data.resources.filter(r => ids.has(r.id));
+    }
+
+    addResourceToProject(projectId, resourceId) {
+        const project = this._data.projects.find(p => p.id === projectId);
+        if (!project) return;
+        if (!project.resourceIds) project.resourceIds = [];
+        if (!project.resourceIds.includes(resourceId)) {
+            this._snapshot();
+            project.resourceIds.push(resourceId);
+            this._save();
+            this._emit('change', null);
+        }
+    }
+
+    removeResourceFromProject(projectId, resourceId) {
+        const project = this._data.projects.find(p => p.id === projectId);
+        if (!project || !project.resourceIds) return;
+        this._snapshot();
+        project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+        this._save();
+        this._emit('change', null);
+    }
+
+    isResourceInProject(projectId, resourceId) {
+        const project = this._data.projects.find(p => p.id === projectId);
+        return project ? (project.resourceIds || []).includes(resourceId) : false;
     }
 
     /* ---- Settings ---- */

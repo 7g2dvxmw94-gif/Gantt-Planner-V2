@@ -911,14 +911,14 @@ class App {
         this._renderResourceView();
     }
 
-    _calculateResourceWorkload(resource, assignedTasks) {
+    _calculateResourceWorkload(resource, assignedTasks, rangeStart, rangeEnd) {
         if (assignedTasks.length === 0) return { percent: 0, concurrent: 0 };
 
         const project = store.getActiveProject();
         if (!project) return { percent: 0, concurrent: 0 };
 
-        const projectStart = new Date(project.startDate);
-        const projectEnd = new Date(project.endDate);
+        const projectStart = rangeStart ? new Date(rangeStart) : new Date(project.startDate);
+        const projectEnd   = rangeEnd   ? new Date(rangeEnd)   : new Date(project.endDate);
 
         let totalWorkDays = 0;
         let allocatedDays = 0;
@@ -944,45 +944,65 @@ class App {
         return { percent, concurrent: maxConcurrent, totalWorkDays, allocatedDays };
     }
 
+    _calculateGlobalWorkload(resource) {
+        // All tasks across all projects assigned to this resource
+        const allTasks = store.getAllTasks();
+        const assignedAll = allTasks.filter(t =>
+            (t.assignees || []).includes(resource.id) || t.assignee === resource.id
+        );
+        if (assignedAll.length === 0) return { percent: 0, concurrent: 0, projectCount: 0 };
+
+        // Derive date range spanning all assigned tasks
+        const dates = assignedAll.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
+        const rangeStart = new Date(Math.min(...dates));
+        const rangeEnd   = new Date(Math.max(...dates));
+
+        const projectIds = [...new Set(assignedAll.map(t => t.projectId).filter(Boolean))];
+        const workload = this._calculateResourceWorkload(resource, assignedAll, rangeStart, rangeEnd);
+        return { ...workload, projectCount: projectIds.length, projectIds };
+    }
+
     _renderResourceView() {
         const container = $('#resourceView');
         if (!container) return;
 
-        const allResources = store.getResources();
-        const allTasks = this._getFilteredTasks(false);
+        if (!this._resourceScope) this._resourceScope = 'project';
 
-        // Only show resources assigned to at least one task in the current project,
-        // plus always show all resources when no tasks exist yet
-        const assignedIds = new Set();
-        allTasks.forEach(t => {
-            (t.assignees || []).forEach(id => assignedIds.add(id));
-            if (t.assignee) assignedIds.add(t.assignee);
-        });
-        const filteredAssigneeIds = this._filters.assignee;
-        const searchQuery = this._filters.search;
-        // If the search term matches a resource name/role, restrict displayed resources accordingly
-        const searchMatchesResource = searchQuery
-            ? allResources.some(r => r.name.toLowerCase().includes(searchQuery) || (r.role || '').toLowerCase().includes(searchQuery))
-            : false;
-        const resources = allTasks.length > 0
-            ? allResources.filter(r => {
-                if (!assignedIds.has(r.id)) return false;
-                if (filteredAssigneeIds.length > 0 && !filteredAssigneeIds.includes(r.id)) return false;
-                if (searchMatchesResource && !r.name.toLowerCase().includes(searchQuery) && !(r.role || '').toLowerCase().includes(searchQuery)) return false;
-                return true;
-            })
-            : allResources.filter(r => {
-                if (filteredAssigneeIds.length > 0 && !filteredAssigneeIds.includes(r.id)) return false;
-                if (searchMatchesResource && !r.name.toLowerCase().includes(searchQuery) && !(r.role || '').toLowerCase().includes(searchQuery)) return false;
-                return true;
-            });
+        const activeProject = store.getActiveProject();
+        const allResources = store.getResources();
+        const projectTasks = this._getFilteredTasks(false);
+        const allProjects = store.getProjects();
+
+        // Resources in scope
+        const projectResourceIds = new Set(activeProject ? (activeProject.resourceIds || []) : []);
+        const scopedResources = this._resourceScope === 'all'
+            ? allResources
+            : allResources.filter(r => projectResourceIds.has(r.id));
 
         container.innerHTML = '';
         container.className = 'resource-view';
 
-        // Header with add button
+        // ---- Header ----
         const header = document.createElement('div');
         header.className = 'resource-view-header';
+
+        // Scope toggle (left side)
+        const scopeToggle = document.createElement('div');
+        scopeToggle.className = 'resource-scope-toggle';
+
+        ['all', 'project'].forEach(scope => {
+            const btn = document.createElement('button');
+            btn.className = 'resource-scope-btn' + (this._resourceScope === scope ? ' active' : '');
+            btn.textContent = t(`resource.scope.${scope}`);
+            btn.addEventListener('click', () => {
+                this._resourceScope = scope;
+                this._renderResourceView();
+            });
+            scopeToggle.appendChild(btn);
+        });
+        header.appendChild(scopeToggle);
+
+        // Add resource button (right side)
         const addBtn = document.createElement('button');
         addBtn.className = 'resource-add-btn';
         addBtn.innerHTML = `<span>+</span> ${t('resource.addBtn')}`;
@@ -990,43 +1010,57 @@ class App {
         header.appendChild(addBtn);
         container.appendChild(header);
 
-        if (resources.length === 0) {
+        // ---- Empty state ----
+        if (scopedResources.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'resource-empty';
+            empty.textContent = t(this._resourceScope === 'all' ? 'resource.emptyAll' : 'resource.emptyProject');
+            container.appendChild(empty);
             return;
         }
 
-        // Grid of resource cards
+        // ---- Grid ----
         const grid = document.createElement('div');
         grid.className = 'resource-view-grid';
 
-        resources.forEach(resource => {
-            const assignedTasks = allTasks.filter(t =>
+        scopedResources.forEach(resource => {
+            const inProject = projectResourceIds.has(resource.id);
+
+            // Tasks on the current project
+            const projectAssignedTasks = projectTasks.filter(t =>
                 (t.assignees || []).includes(resource.id) || t.assignee === resource.id
             );
-
-            const workload = this._calculateResourceWorkload(resource, assignedTasks);
+            // Global workload across all projects
+            const globalWorkload = this._calculateGlobalWorkload(resource);
+            // Workload on current project only
+            const projectWorkload = this._calculateResourceWorkload(resource, projectAssignedTasks);
 
             const card = document.createElement('div');
-            card.className = 'resource-card';
+            card.className = 'resource-card' + (inProject ? ' resource-card--in-project' : '');
 
-            // Header
-            const header = document.createElement('div');
-            header.className = 'resource-card-header';
+            // ---- Card header ----
+            const cardHeader = document.createElement('div');
+            cardHeader.className = 'resource-card-header';
+
             const avatar = document.createElement('div');
             avatar.className = 'avatar resource-card-avatar';
             avatar.style.background = `linear-gradient(135deg, ${resource.color}, ${resource.color}dd)`;
             avatar.textContent = resource.avatar;
-            header.appendChild(avatar);
+            cardHeader.appendChild(avatar);
 
             const info = document.createElement('div');
             info.className = 'resource-card-info';
+
             const nameEl = document.createElement('div');
             nameEl.className = 'resource-card-name';
             nameEl.textContent = resource.name;
             info.appendChild(nameEl);
+
             const roleEl = document.createElement('div');
             roleEl.className = 'resource-card-role';
-            roleEl.textContent = resource.role;
+            roleEl.textContent = resource.role || '';
             info.appendChild(roleEl);
+
             if (resource.dailyRate || resource.hourlyRate) {
                 const rateEl = document.createElement('div');
                 rateEl.className = 'resource-card-rate';
@@ -1037,72 +1071,90 @@ class App {
                 }
                 info.appendChild(rateEl);
             }
-            header.appendChild(info);
+            cardHeader.appendChild(info);
 
-            const countBadge = document.createElement('div');
-            countBadge.className = 'resource-card-count';
-            countBadge.textContent = t('resource.tasks.count', { count: assignedTasks.length, plural: assignedTasks.length !== 1 ? 's' : '' });
-            header.appendChild(countBadge);
+            // Multi-project badge
+            if (globalWorkload.projectCount > 0) {
+                const projBadge = document.createElement('div');
+                projBadge.className = 'resource-project-badge';
+                const n = globalWorkload.projectCount;
+                projBadge.textContent = t('resource.projects', { n, s: n > 1 ? 's' : '' });
+                projBadge.title = globalWorkload.projectIds
+                    .map(id => allProjects.find(p => p.id === id)?.name || id)
+                    .join(', ');
+                cardHeader.appendChild(projBadge);
+            }
 
             // Edit / Delete actions
             const actions = document.createElement('div');
             actions.className = 'resource-card-actions';
+
             const editBtn = document.createElement('button');
             editBtn.className = 'resource-action-btn';
             editBtn.title = t('resource.edit.btn');
             editBtn.innerHTML = '&#9998;';
             editBtn.addEventListener('click', (e) => { e.stopPropagation(); this._showResourceModal(resource); });
             actions.appendChild(editBtn);
+
             const delBtn = document.createElement('button');
             delBtn.className = 'resource-action-btn resource-action-delete';
             delBtn.title = t('resource.delete.btn');
             delBtn.innerHTML = '&times;';
             delBtn.addEventListener('click', (e) => { e.stopPropagation(); this._deleteResource(resource); });
             actions.appendChild(delBtn);
-            header.appendChild(actions);
 
-            card.appendChild(header);
+            cardHeader.appendChild(actions);
+            card.appendChild(cardHeader);
 
-            // Workload bar
-            const workloadSection = document.createElement('div');
-            workloadSection.className = 'resource-workload';
+            // ---- Assign / unassign button ----
+            if (activeProject) {
+                const assignRow = document.createElement('div');
+                assignRow.className = 'resource-assign-row';
 
-            const workloadHeader = document.createElement('div');
-            workloadHeader.className = 'resource-workload-header';
-            const workloadLabel = document.createElement('span');
-            workloadLabel.textContent = t('resource.workload.label');
-            workloadHeader.appendChild(workloadLabel);
-            const workloadValue = document.createElement('span');
-            workloadValue.textContent = workload.percent + '%';
-            if (workload.percent > 100) workloadValue.className = 'overload';
-            workloadHeader.appendChild(workloadValue);
-            workloadSection.appendChild(workloadHeader);
-
-            const workloadTrack = document.createElement('div');
-            workloadTrack.className = 'resource-workload-track';
-            const workloadFill = document.createElement('div');
-            workloadFill.className = 'resource-workload-fill';
-            if (workload.percent > 100) workloadFill.classList.add('overload');
-            else if (workload.percent > 80) workloadFill.classList.add('warning');
-            workloadFill.style.width = Math.min(workload.percent, 100) + '%';
-            workloadTrack.appendChild(workloadFill);
-            workloadSection.appendChild(workloadTrack);
-
-            if (workload.percent > 100) {
-                const warning = document.createElement('div');
-                warning.className = 'resource-overload-warning';
-                warning.textContent = t('resource.workload.overload', { count: workload.concurrent });
-                workloadSection.appendChild(warning);
+                if (inProject) {
+                    const unassignBtn = document.createElement('button');
+                    unassignBtn.className = 'resource-assign-btn resource-assign-btn--in';
+                    unassignBtn.title = t('resource.unassignTooltip');
+                    unassignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${t('resource.projectBadge')}`;
+                    unassignBtn.addEventListener('click', () => {
+                        store.removeResourceFromProject(activeProject.id, resource.id);
+                    });
+                    assignRow.appendChild(unassignBtn);
+                } else {
+                    const assignBtn = document.createElement('button');
+                    assignBtn.className = 'resource-assign-btn resource-assign-btn--out';
+                    assignBtn.title = t('resource.assignTooltip');
+                    assignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${t('resource.assign')}`;
+                    assignBtn.addEventListener('click', () => {
+                        store.addResourceToProject(activeProject.id, resource.id);
+                    });
+                    assignRow.appendChild(assignBtn);
+                }
+                card.appendChild(assignRow);
             }
 
-            card.appendChild(workloadSection);
+            // ---- Global workload bar ----
+            card.appendChild(this._buildWorkloadBar(
+                t('resource.globalWorkload'),
+                globalWorkload.percent,
+                globalWorkload.concurrent
+            ));
 
-            // Task list
-            if (assignedTasks.length > 0) {
+            // ---- Project workload bar (only if resource is in project) ----
+            if (inProject && projectAssignedTasks.length > 0) {
+                card.appendChild(this._buildWorkloadBar(
+                    t('resource.projectWorkload'),
+                    projectWorkload.percent,
+                    projectWorkload.concurrent
+                ));
+            }
+
+            // ---- Task list (current project tasks only) ----
+            if (projectAssignedTasks.length > 0) {
                 const taskList = document.createElement('div');
                 taskList.className = 'resource-task-list';
 
-                assignedTasks.forEach(task => {
+                projectAssignedTasks.forEach(task => {
                     const item = document.createElement('div');
                     item.className = 'resource-task-item';
                     item.dataset.taskId = task.id;
@@ -1146,6 +1198,41 @@ class App {
         });
 
         container.appendChild(grid);
+    }
+
+    _buildWorkloadBar(label, percent, concurrent) {
+        const section = document.createElement('div');
+        section.className = 'resource-workload';
+
+        const wHeader = document.createElement('div');
+        wHeader.className = 'resource-workload-header';
+        const wLabel = document.createElement('span');
+        wLabel.textContent = label;
+        wHeader.appendChild(wLabel);
+        const wValue = document.createElement('span');
+        wValue.textContent = percent + '%';
+        if (percent > 100) wValue.className = 'overload';
+        wHeader.appendChild(wValue);
+        section.appendChild(wHeader);
+
+        const track = document.createElement('div');
+        track.className = 'resource-workload-track';
+        const fill = document.createElement('div');
+        fill.className = 'resource-workload-fill';
+        if (percent > 100) fill.classList.add('overload');
+        else if (percent > 80) fill.classList.add('warning');
+        fill.style.width = Math.min(percent, 100) + '%';
+        track.appendChild(fill);
+        section.appendChild(track);
+
+        if (percent > 100) {
+            const warning = document.createElement('div');
+            warning.className = 'resource-overload-warning';
+            warning.textContent = t('resource.workload.overload', { count: concurrent });
+            section.appendChild(warning);
+        }
+
+        return section;
     }
 
     /* ---- Toolbar ---- */
