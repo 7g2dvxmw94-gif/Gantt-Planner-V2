@@ -685,27 +685,53 @@ class TaskModal {
 
     _populateAssignees(selectedIds) {
         this._assigneeSearch.value = '';
-        this._allResources = store.getResources();
         this._selectedAssigneeIds = new Set(selectedIds || []);
+
+        // Use project team members as the primary list
+        const project = store.getActiveProject();
+        const projectResources = project ? store.getProjectResources(project.id) : store.getResources();
+        const projectIds = new Set(projectResources.map(r => r.id));
+
+        // Also include any resources already assigned to this task but not in the pool
+        // (backwards compatibility — they keep working even if removed from the team)
+        const allResources = store.getResources();
+        const extraResources = allResources.filter(r =>
+            this._selectedAssigneeIds.has(r.id) && !projectIds.has(r.id)
+        );
+
+        this._allResources = projectResources;
+        this._extraResources = extraResources; // assigned but not in team
         this._renderAssigneeList('');
     }
 
     _renderAssigneeList(query) {
         this._assigneeList.innerHTML = '';
         const q = query.toLowerCase().trim();
-        const resources = q
-            ? this._allResources.filter(r =>
-                r.name.toLowerCase().includes(q) || r.role.toLowerCase().includes(q))
-            : this._allResources;
 
-        if (resources.length === 0) {
-            const empty = createElement('p', { className: 'assignee-empty' }, t('task.assignee.noResults'));
-            this._assigneeList.appendChild(empty);
+        const filter = (list) => q
+            ? list.filter(r => r.name.toLowerCase().includes(q) || (r.role || '').toLowerCase().includes(q))
+            : list;
+
+        const teamResources  = filter(this._allResources  || []);
+        const extraResources = filter(this._extraResources || []);
+
+        // Empty pool hint
+        if ((this._allResources || []).length === 0 && !q) {
+            const hint = createElement('p', { className: 'assignee-empty assignee-empty--pool' },
+                t('task.assignee.emptyPool'));
+            this._assigneeList.appendChild(hint);
             return;
         }
 
-        resources.forEach(r => {
-            const label = createElement('label', { className: 'assignee-item' });
+        if (teamResources.length === 0 && extraResources.length === 0) {
+            this._assigneeList.appendChild(
+                createElement('p', { className: 'assignee-empty' }, t('task.assignee.noResults'))
+            );
+            return;
+        }
+
+        const renderRow = (r, outOfTeam = false) => {
+            const label = createElement('label', { className: 'assignee-item' + (outOfTeam ? ' assignee-item--out' : '') });
             const cb = createElement('input', { type: 'checkbox', value: r.id });
             if (this._selectedAssigneeIds.has(r.id)) cb.checked = true;
             cb.addEventListener('change', () => {
@@ -718,9 +744,16 @@ class TaskModal {
                 style: { background: `linear-gradient(135deg, ${r.color}, ${r.color}dd)` },
             }, r.avatar);
             label.appendChild(avatar);
-            label.appendChild(document.createTextNode(`${r.name} (${r.role})`));
+            label.appendChild(document.createTextNode(`${r.name}${r.role ? ' (' + r.role + ')' : ''}`));
+            if (outOfTeam) {
+                label.appendChild(createElement('span', { className: 'assignee-not-in-team' },
+                    t('task.assignee.notInTeam')));
+            }
             this._assigneeList.appendChild(label);
-        });
+        };
+
+        teamResources.forEach(r => renderRow(r, false));
+        extraResources.forEach(r => renderRow(r, true));
     }
 
     _filterAssignees() {

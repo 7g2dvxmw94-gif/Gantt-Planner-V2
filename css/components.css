@@ -2022,6 +2022,31 @@ textarea.input {
     font-style: italic;
 }
 
+.assignee-empty--pool {
+    background: var(--bg-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    text-align: left;
+    font-style: normal;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.assignee-item--out {
+    opacity: 0.65;
+}
+
+.assignee-not-in-team {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border-radius: 99px;
+    padding: 1px 6px;
+    white-space: nowrap;
+}
+
 /* ---- Milestone Status Toggle ---- */
 .milestone-status-toggle {
     display: flex;
