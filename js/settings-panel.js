@@ -902,14 +902,15 @@ class SettingsPanel {
     }
 
     _applyFavicon(src) {
-        // Remove all existing icon links first (some browsers have multiple)
+        // Browsers cache favicons even when the <link> element is removed.
+        // The only reliable way to clear it is to replace it with a
+        // 1×1 transparent PNG so the browser loads a new (blank) icon.
+        const EMPTY = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=';
         document.querySelectorAll("link[rel~='icon']").forEach(el => el.remove());
-        if (src) {
-            const link = document.createElement('link');
-            link.rel = 'icon';
-            link.href = src;
-            document.head.appendChild(link);
-        }
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = src || EMPTY;
+        document.head.appendChild(link);
     }
 
     _applyAvatarPhoto(dataUrl) {
