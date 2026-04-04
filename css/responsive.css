@@ -2,8 +2,15 @@
    RESPONSIVE STYLES
    ======================================== */
 
-/* ---- Laptop Large (1440px) ---- */
-@media (max-width: 1440px) {
+/* ---- Wide Desktop (1700px) — hide secondary labels early to prevent overflow ---- */
+@media (max-width: 1700px) {
+    .zoom-label {
+        display: none;
+    }
+}
+
+/* ---- Laptop Large (1600px) ---- */
+@media (max-width: 1600px) {
     .toolbar-actions .btn-secondary span {
         display: none;
     }
@@ -12,8 +19,8 @@
         padding: var(--space-2);
     }
 
-    .zoom-label {
-        display: none;
+    .toolbar-actions {
+        gap: var(--space-2);
     }
 }
 
