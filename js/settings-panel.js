@@ -902,13 +902,14 @@ class SettingsPanel {
     }
 
     _applyFavicon(src) {
-        let link = document.querySelector("link[rel~='icon']");
-        if (!link) {
-            link = document.createElement('link');
+        // Remove all existing icon links first (some browsers have multiple)
+        document.querySelectorAll("link[rel~='icon']").forEach(el => el.remove());
+        if (src) {
+            const link = document.createElement('link');
             link.rel = 'icon';
+            link.href = src;
             document.head.appendChild(link);
         }
-        link.href = src || '';
     }
 
     _applyAvatarPhoto(dataUrl) {
@@ -1033,7 +1034,7 @@ class SettingsPanel {
         }
         if (snap.brandName)   this._applyBrandName(snap.brandName);
         this._applyLogo(snap.logoData || '');
-        if (snap.faviconData) this._applyFavicon(snap.faviconData);
+        this._applyFavicon(snap.faviconData || '');
         const accent = snap.accentColor;
         if (accent) {
             const h = snap.accentColorHover, l = snap.accentColorLight, d = snap.accentColorDark;
@@ -1091,7 +1092,7 @@ class SettingsPanel {
         }
         if (brandName)   this._applyBrandName(brandName);
         this._applyLogo(this._getCustomization('logoData') || '');
-        if (faviconData) this._applyFavicon(faviconData);
+        this._applyFavicon(faviconData || '');
 
         const accentColor = this._getCustomization('accentColor');
         if (accentColor) {
