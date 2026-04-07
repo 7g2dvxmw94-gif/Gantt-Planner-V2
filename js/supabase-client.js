@@ -4,10 +4,9 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// ⚠️  Remplacer par les valeurs de votre projet Supabase
-// Tableau de bord Supabase → Settings → API
-const SUPABASE_URL     = window.__SUPABASE_URL__     || 'https://VOTRE_PROJECT_ID.supabase.co';
-const SUPABASE_ANON_KEY = window.__SUPABASE_ANON_KEY__ || 'VOTRE_ANON_KEY';
+// Identifiants du projet Supabase
+const SUPABASE_URL     = 'https://hwvgurxiwmvwhvjwfwru.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3dmd1cnhpd212d2h2andmd3J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc5NTQsImV4cCI6MjA5MTE2Mzk1NH0.iI7B5hxjnT-i-ialFICMxdvKN0DNWhWWXcO2AB6DUfc';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
