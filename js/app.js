@@ -13,6 +13,7 @@ import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
 import { settingsPanel } from './settings-panel.js';
+import { auth } from './auth.js';
 
 class App {
     constructor() {
@@ -5415,7 +5416,21 @@ tr:nth-child(even){background:#fafbfc}
 }
 
 /* ---- Bootstrap ---- */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Guard : rediriger vers auth.html si non connecté
+    const session = await auth.getSession();
+    if (!session) {
+        window.location.href = 'auth.html';
+        return;
+    }
+
+    // Écouter les déconnexions (token expiré, signOut explicite)
+    auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+            window.location.href = 'auth.html';
+        }
+    });
+
     const app = new App();
     app.init();
 });

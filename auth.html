@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Planner Pro — Connexion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --color-primary:       #6366F1;
+            --color-primary-hover: #4F46E5;
+            --color-accent:        #EC4899;
+            --bg-base:     #FFFFFF;
+            --bg-subtle:   #F8F9FA;
+            --bg-muted:    #F3F4F6;
+            --text-primary:   #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted:     #9CA3AF;
+            --border:  #E5E7EB;
+            --radius:  0.5rem;
+            --radius-lg: 0.75rem;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: linear-gradient(135deg, #F0F4FF 0%, #FFF5F8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---- Header ---- */
+        .header {
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-weight: 700; font-size: 1.1rem; color: var(--color-primary);
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.8rem; font-weight: 700;
+        }
+
+        /* ---- Main ---- */
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        /* ---- Card ---- */
+        .card {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+        .card-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.75rem;
+        }
+
+        /* ---- Form ---- */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            color: var(--text-primary);
+            background: var(--bg-base);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+        .form-group input.error { border-color: #EF4444; }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--color-primary);
+            cursor: pointer;
+            margin-top: 0.3rem;
+            background: none; border: none;
+        }
+        .forgot-link:hover { text-decoration: underline; }
+
+        /* ---- Buttons ---- */
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: none; border-radius: var(--radius);
+            font-family: var(--font);
+            font-size: 0.95rem; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--color-primary); color: white;
+            margin-top: 0.5rem;
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .btn-oauth {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            margin-bottom: 0.65rem;
+        }
+        .btn-oauth:hover { background: var(--bg-subtle); border-color: #D1D5DB; }
+
+        /* ---- Divider ---- */
+        .divider {
+            display: flex; align-items: center; gap: 1rem;
+            margin: 1.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        /* ---- Footer ---- */
+        .card-footer {
+            text-align: center;
+            margin-top: 1.25rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .card-footer button {
+            background: none; border: none;
+            color: var(--color-primary); font-weight: 600;
+            cursor: pointer; font-size: inherit;
+        }
+        .card-footer button:hover { text-decoration: underline; }
+
+        /* ---- Alert ---- */
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+        .alert.error   { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+        .alert.success { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+        .alert.show    { display: block; }
+
+        /* ---- Loading spinner ---- */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-primary.loading .spinner { display: inline-block; }
+        .btn-primary.loading .btn-label { display: none; }
+
+        /* ---- Confirmation email panel ---- */
+        .confirm-panel {
+            text-align: center;
+            display: none;
+            padding: 1rem 0;
+        }
+        .confirm-panel.show { display: block; }
+        .confirm-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .confirm-panel h2 { margin-bottom: 0.5rem; }
+        .confirm-panel p { color: var(--text-secondary); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">GP</div>
+            Gantt Planner Pro
+        </a>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+        <div class="card">
+
+            <!-- Alerte (erreurs / succès) -->
+            <div class="alert" id="alertBox"></div>
+
+            <!-- ===== VUE : LOGIN ===== -->
+            <div id="viewLogin">
+                <h1 class="card-title">Se connecter</h1>
+                <p class="card-subtitle">Content de vous revoir !</p>
+
+                <!-- OAuth -->
+                <button class="btn btn-oauth" id="btnGoogleLogin">
+                    <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.11 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.61-13.47-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                    <span>Continuer avec Google</span>
+                </button>
+                <button class="btn btn-oauth" id="btnAppleLogin">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#111" style="flex-shrink:0">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                    <span>Continuer avec Apple</span>
+                </button>
+
+                <div class="divider">ou</div>
+
+                <!-- Email / password -->
+                <form id="formLogin" novalidate>
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="vous@exemple.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Mot de passe</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="forgot-link" id="btnForgot">Mot de passe oublié ?</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnLogin">
+                        <span class="spinner"></span>
+                        <span class="btn-label">Se connecter</span>
+                    </button>
+                </form>
+
+                <div class="card-footer">
+                    Pas de compte ?
+                    <button id="goRegister">Créer un compte</button>
+                </div>
+            </div>
+
+            <!-- ===== VUE : REGISTER ===== -->
+            <div id="viewRegister" style="display:none">
+                <h1 class="card-title">Créer un compte</h1>
+                <p class="card-subtitle">Essai gratuit 14 jours, sans carte bancaire.</p>
+
+                <!-- OAuth -->
+                <button class="btn btn-oauth" id="btnGoogleRegister">
+                    <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.11 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.61-13.47-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                    <span>S'inscrire avec Google</span>
+                </button>
+                <button class="btn btn-oauth" id="btnAppleRegister">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#111" style="flex-shrink:0">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                    <span>S'inscrire avec Apple</span>
+                </button>
+
+                <div class="divider">ou</div>
+
+                <form id="formRegister" novalidate>
+                    <div class="form-group">
+                        <label for="registerName">Nom complet</label>
+                        <input type="text" id="registerName" placeholder="Jean Dupont" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" placeholder="vous@exemple.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Mot de passe</label>
+                        <input type="password" id="registerPassword" placeholder="8 caractères minimum" required autocomplete="new-password" minlength="8">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnRegister">
+                        <span class="spinner"></span>
+                        <span class="btn-label">Créer mon compte</span>
+                    </button>
+                </form>
+
+                <div class="card-footer">
+                    Déjà un compte ?
+                    <button id="goLogin">Se connecter</button>
+                </div>
+            </div>
+
+            <!-- ===== VUE : RESET PASSWORD ===== -->
+            <div id="viewReset" style="display:none">
+                <h1 class="card-title">Mot de passe oublié</h1>
+                <p class="card-subtitle">Recevez un lien de réinitialisation par email.</p>
+                <form id="formReset" novalidate>
+                    <div class="form-group">
+                        <label for="resetEmail">Email</label>
+                        <input type="email" id="resetEmail" placeholder="vous@exemple.com" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnReset">
+                        <span class="spinner"></span>
+                        <span class="btn-label">Envoyer le lien</span>
+                    </button>
+                </form>
+                <div class="card-footer">
+                    <button id="goLoginFromReset">← Retour à la connexion</button>
+                </div>
+            </div>
+
+            <!-- ===== VUE : EMAIL ENVOYÉ ===== -->
+            <div id="viewConfirm" style="display:none">
+                <div class="confirm-panel show">
+                    <div class="confirm-icon">📬</div>
+                    <h2>Vérifiez vos emails</h2>
+                    <p id="confirmText">Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer votre compte.</p>
+                    <br>
+                    <div class="card-footer">
+                        <button id="goLoginFromConfirm">← Retour à la connexion</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { auth } from './js/auth.js';
+
+        // ---- Utilitaires ---- //
+        const $ = id => document.getElementById(id);
+
+        const views = ['viewLogin', 'viewRegister', 'viewReset', 'viewConfirm'];
+        function showView(viewId) {
+            views.forEach(v => $(v).style.display = 'none');
+            $(viewId).style.display = 'block';
+            hideAlert();
+        }
+
+        function showAlert(msg, type = 'error') {
+            const box = $('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type} show`;
+        }
+        function hideAlert() {
+            $('alertBox').className = 'alert';
+        }
+
+        function setLoading(btnId, loading) {
+            const btn = $(btnId);
+            btn.classList.toggle('loading', loading);
+            btn.disabled = loading;
+        }
+
+        // ---- Vérifier si déjà connecté ---- //
+        (async () => {
+            const session = await auth.getSession();
+            if (session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            // Gérer les paramètres URL
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('confirmed') === '1') {
+                showView('viewLogin');
+                showAlert('Email confirmé ! Vous pouvez vous connecter.', 'success');
+            }
+        })();
+
+        // ---- Navigation entre vues ---- //
+        $('goRegister').onclick         = () => showView('viewRegister');
+        $('goLogin').onclick            = () => showView('viewLogin');
+        $('btnForgot').onclick          = () => showView('viewReset');
+        $('goLoginFromReset').onclick   = () => showView('viewLogin');
+        $('goLoginFromConfirm').onclick = () => showView('viewLogin');
+
+        // ---- Connexion email ---- //
+        $('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email    = $('loginEmail').value.trim();
+            const password = $('loginPassword').value;
+            if (!email || !password) return;
+
+            setLoading('btnLogin', true);
+            hideAlert();
+            try {
+                await auth.signIn(email, password);
+                window.location.href = 'index.html';
+            } catch (err) {
+                showAlert(err.message === 'Invalid login credentials'
+                    ? 'Email ou mot de passe incorrect.'
+                    : err.message);
+            } finally {
+                setLoading('btnLogin', false);
+            }
+        });
+
+        // ---- Inscription email ---- //
+        $('formRegister').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name     = $('registerName').value.trim();
+            const email    = $('registerEmail').value.trim();
+            const password = $('registerPassword').value;
+            if (!name || !email || !password) return;
+            if (password.length < 8) {
+                showAlert('Le mot de passe doit contenir au moins 8 caractères.');
+                return;
+            }
+
+            setLoading('btnRegister', true);
+            hideAlert();
+            try {
+                await auth.signUp(email, password, name);
+                showView('viewConfirm');
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                setLoading('btnRegister', false);
+            }
+        });
+
+        // ---- Réinitialisation mot de passe ---- //
+        $('formReset').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = $('resetEmail').value.trim();
+            if (!email) return;
+
+            setLoading('btnReset', true);
+            hideAlert();
+            try {
+                await auth.resetPassword(email);
+                $('confirmText').textContent = `Un email de réinitialisation a été envoyé à ${email}.`;
+                showView('viewConfirm');
+            } catch (err) {
+                showAlert(err.message);
+            } finally {
+                setLoading('btnReset', false);
+            }
+        });
+
+        // ---- OAuth Google ---- //
+        $('btnGoogleLogin').onclick    = async () => { try { await auth.signInWithGoogle(); } catch(e) { showAlert(e.message); } };
+        $('btnGoogleRegister').onclick = async () => { try { await auth.signInWithGoogle(); } catch(e) { showAlert(e.message); } };
+
+        // ---- OAuth Apple ---- //
+        $('btnAppleLogin').onclick    = async () => { try { await auth.signInWithApple(); } catch(e) { showAlert(e.message); } };
+        $('btnAppleRegister').onclick = async () => { try { await auth.signInWithApple(); } catch(e) { showAlert(e.message); } };
+    </script>
+</body>
+</html>
