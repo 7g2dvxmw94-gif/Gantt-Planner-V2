@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Planner Pro — Invitation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --color-primary:       #6366F1;
+            --color-primary-hover: #4F46E5;
+            --color-accent:        #EC4899;
+            --bg-base:     #FFFFFF;
+            --bg-subtle:   #F8F9FA;
+            --bg-muted:    #F3F4F6;
+            --text-primary:   #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted:     #9CA3AF;
+            --border:  #E5E7EB;
+            --radius:  0.5rem;
+            --radius-lg: 0.75rem;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: linear-gradient(135deg, #F0F4FF 0%, #FFF5F8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-weight: 700; font-size: 1.1rem; color: var(--color-primary);
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.8rem; font-weight: 700;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+            text-align: center;
+        }
+
+        .invite-icon {
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, #EEF2FF, #FDF2F8);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+        .invite-icon svg { color: var(--color-primary); }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .card-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .project-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #EEF2FF;
+            color: var(--color-primary);
+            border-radius: 2rem;
+            padding: 0.4rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.75rem;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            margin-bottom: 2rem;
+        }
+        .role-badge.editor { background: #DBEAFE; color: #1D4ED8; }
+        .role-badge.viewer { background: #F3F4F6; color: #374151; }
+        .role-badge.owner  { background: #FEF3C7; color: #92400E; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.65rem 1.5rem;
+            border: none; border-radius: var(--radius);
+            font-family: var(--font); font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: var(--color-primary); color: white;
+            width: 100%; justify-content: center;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-primary:hover { background: var(--color-primary-hover); }
+        .btn-secondary {
+            background: var(--bg-muted); color: var(--text-secondary);
+            width: 100%; justify-content: center; margin-top: 0.75rem;
+        }
+        .btn-secondary:hover { background: var(--border); color: var(--text-primary); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .divider {
+            height: 1px; background: var(--border);
+            margin: 1.5rem 0;
+        }
+
+        .alert {
+            padding: 0.9rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+        .alert-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+        .alert-success { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+        .alert-info    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #loadingState, #inviteState, #successState, #errorState, #loginState { display: none; }
+
+        .login-note {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+        .login-note a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-note a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">GP</div>
+            <span>Gantt Planner Pro</span>
+        </a>
+    </header>
+
+    <main class="main">
+        <div class="card">
+
+            <!-- Loading -->
+            <div id="loadingState">
+                <div class="spinner"></div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Vérification de l'invitation...</p>
+            </div>
+
+            <!-- Invite details -->
+            <div id="inviteState">
+                <div class="invite-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <h1 class="card-title">Vous êtes invité !</h1>
+                <p class="card-subtitle">Vous avez été invité à collaborer sur un projet Gantt Planner Pro.</p>
+
+                <div id="projectBadge" class="project-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    <span id="projectName">Chargement...</span>
+                </div>
+
+                <div>
+                    <span id="roleBadge" class="role-badge editor">Éditeur</span>
+                </div>
+
+                <button class="btn btn-primary" id="acceptBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Accepter l'invitation
+                </button>
+                <button class="btn btn-secondary" id="declineBtn">Décliner</button>
+
+                <p class="login-note">
+                    Pas encore de compte ?
+                    <a href="auth.html?redirect=invite" id="registerLink">Créer un compte gratuitement</a>
+                </p>
+            </div>
+
+            <!-- Login required -->
+            <div id="loginState">
+                <div class="invite-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <h1 class="card-title">Connexion requise</h1>
+                <p class="card-subtitle">Vous devez être connecté pour accepter cette invitation.</p>
+                <a id="loginLink" href="auth.html" class="btn btn-primary">Se connecter</a>
+                <a id="registerLink2" href="auth.html?view=register" class="btn btn-secondary">Créer un compte</a>
+            </div>
+
+            <!-- Success -->
+            <div id="successState">
+                <div class="invite-icon" style="background: linear-gradient(135deg, #ECFDF5, #F0FDF4);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.75">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <h1 class="card-title">Invitation acceptée !</h1>
+                <p class="card-subtitle">Vous avez rejoint le projet. Vous pouvez maintenant y accéder.</p>
+                <a href="index.html" class="btn btn-primary">Ouvrir l'application</a>
+            </div>
+
+            <!-- Error -->
+            <div id="errorState">
+                <div class="invite-icon" style="background: linear-gradient(135deg, #FEF2F2, #FFF5F5);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.75">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <h1 class="card-title">Invitation invalide</h1>
+                <p class="card-subtitle" id="errorMessage">Cette invitation est introuvable, expirée ou déjà utilisée.</p>
+                <a href="index.html" class="btn btn-primary">Retour à l'accueil</a>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { collaboration } from './js/collaboration.js';
+        import { auth } from './js/auth.js';
+        import { supabase } from './js/supabase-client.js';
+
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+
+        function show(id) {
+            ['loadingState', 'inviteState', 'successState', 'errorState', 'loginState'].forEach(s => {
+                document.getElementById(s).style.display = s === id ? 'block' : 'none';
+            });
+        }
+
+        async function init() {
+            if (!token) {
+                show('errorState');
+                document.getElementById('errorMessage').textContent = 'Lien d\'invitation invalide.';
+                return;
+            }
+
+            show('loadingState');
+
+            // Fetch the invitation details (read-only, no auth needed)
+            const { data: inv, error } = await supabase
+                .from('invitations')
+                .select('*, projects(name)')
+                .eq('token', token)
+                .is('accepted_at', null)
+                .single();
+
+            if (error || !inv) {
+                show('errorState');
+                return;
+            }
+
+            if (new Date(inv.expires_at) < new Date()) {
+                show('errorState');
+                document.getElementById('errorMessage').textContent = 'Cette invitation a expiré.';
+                return;
+            }
+
+            // Show invitation details
+            document.getElementById('projectName').textContent = inv.projects?.name || 'Projet';
+
+            const roleLabels = { editor: 'Éditeur', viewer: 'Lecteur', owner: 'Propriétaire' };
+            const roleEl = document.getElementById('roleBadge');
+            roleEl.textContent = roleLabels[inv.role] || inv.role;
+            roleEl.className = `role-badge ${inv.role}`;
+
+            // Update register link with redirect
+            const registerLink = document.getElementById('registerLink');
+            registerLink.href = `auth.html?view=register&redirect=${encodeURIComponent(window.location.href)}`;
+
+            // Check if user is logged in
+            const user = await auth.getUser();
+            if (!user) {
+                show('loginState');
+                const currentUrl = encodeURIComponent(window.location.href);
+                document.getElementById('loginLink').href = `auth.html?redirect=${currentUrl}`;
+                document.getElementById('registerLink2').href = `auth.html?view=register&redirect=${currentUrl}`;
+                return;
+            }
+
+            show('inviteState');
+
+            document.getElementById('acceptBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('acceptBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;"></div> Acceptation...';
+
+                try {
+                    await collaboration.acceptInvitation(token);
+                    show('successState');
+                } catch (err) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accepter l\'invitation';
+                    document.querySelector('#inviteState').insertAdjacentHTML('afterbegin',
+                        `<div class="alert alert-error">${err.message || 'Une erreur est survenue.'}</div>`
+                    );
+                }
+            });
+
+            document.getElementById('declineBtn').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -14,6 +14,7 @@ import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
 import { settingsPanel } from './settings-panel.js';
 import { auth } from './auth.js';
+import { collaborationUI } from './collaboration-ui.js';
 
 class App {
     constructor() {
@@ -97,7 +98,13 @@ class App {
         store.on('change', () => {
             this._renderStats();
             this._renderProjectName();
+            this._applyRoleGating();
         });
+
+        store.on('project:change', () => this._applyRoleGating());
+
+        // Initial role gating
+        this._applyRoleGating();
 
         // Announce to screen readers
         this._announceToSR('Gantt Planner Pro');
@@ -1259,6 +1266,15 @@ class App {
             importBtn.addEventListener('click', () => this._importProject());
         }
 
+        // Share modal
+        const shareBtn = $('#shareBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => {
+                const project = store.getActiveProject();
+                if (project) collaborationUI.open(project.id);
+            });
+        }
+
         // Google Drive modal triggered from settings panel via custom event
         document.addEventListener('open-cloud-backup', () => this._showCloudBackupModal());
 
@@ -1302,6 +1318,41 @@ class App {
 
         // Baseline
         this._bindBaseline();
+    }
+
+    /* ---- Role-based UI gating ---- */
+
+    _applyRoleGating() {
+        const project = store.getActiveProject();
+        const role = project?._role || 'owner';
+        const canEdit = role === 'owner' || role === 'editor';
+
+        // Elements to disable for viewers
+        const editOnlyIds = ['addTaskBtn', 'importBtn', 'undoBtn', 'redoBtn', 'baselineBtn', 'criticalPathBtn'];
+        editOnlyIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.disabled = !canEdit;
+                el.style.opacity = canEdit ? '' : '0.45';
+                el.style.pointerEvents = canEdit ? '' : 'none';
+                el.title = canEdit ? (el.title || '') : 'Accès lecture seule';
+            }
+        });
+
+        // Show viewer badge if read-only
+        let badge = document.getElementById('viewerBadge');
+        if (!canEdit) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.id = 'viewerBadge';
+                badge.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;background:#F3F4F6;color:#6B7280;border-radius:4px;font-size:0.75rem;font-weight:600;';
+                badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Lecture seule';
+                const toolbar = document.querySelector('.toolbar-actions');
+                if (toolbar) toolbar.prepend(badge);
+            }
+        } else if (badge) {
+            badge.remove();
+        }
     }
 
     /* ---- Baseline ---- */
