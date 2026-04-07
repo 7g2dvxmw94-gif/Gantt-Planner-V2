@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Planner Pro - SaaS Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #6366F1;
+            --color-primary-hover: #4F46E5;
+            --color-accent: #EC4899;
+            --bg-base: #FFFFFF;
+            --bg-subtle: #F8F9FA;
+            --bg-muted: #F3F4F6;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --border-default: #E5E7EB;
+            --border-strong: #D1D5DB;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ===== LAYOUT ===== */
+        .screen {
+            display: none;
+            min-height: 100vh;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== HEADER/NAV ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-6) var(--space-6);
+            background: var(--bg-base);
+            border-bottom: 1px solid var(--border-default);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--color-primary);
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: var(--space-6);
+            align-items: center;
+        }
+
+        .header-nav button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .header-nav button:hover {
+            color: var(--text-primary);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: var(--space-3) var(--space-5);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-sans);
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-muted);
+            color: var(--text-primary);
+            border: 1px solid var(--border-default);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-subtle);
+            border-color: var(--border-strong);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--color-primary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-subtle);
+        }
+
+        /* ===== LANDING/SPLASH ===== */
+        .landing-hero {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-6);
+            flex-direction: column;
+            text-align: center;
+            gap: var(--space-6);
+        }
+
+        .landing-hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .landing-hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: var(--space-4);
+        }
+
+        .landing-cta {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+        }
+
+        /* ===== FORMS ===== */
+        .form-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-6);
+        }
+
+        .form-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+        }
+
+        .form-card h2 {
+            margin-bottom: var(--space-4);
+            font-size: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-4);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--space-2);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-family: var(--font-sans);
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-divider {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            margin: var(--space-6) 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-default);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: var(--space-4);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-footer button {
+            background: none;
+            border: none;
+            color: var(--color-primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* ===== PRICING ===== */
+        .pricing-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: var(--space-6);
+            gap: var(--space-6);
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: var(--space-6);
+        }
+
+        .pricing-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid var(--color-primary);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+            transform: scale(1.05);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .pricing-price span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .pricing-features {
+            list-style: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dashboard-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-6);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .stat-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .projects-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--space-5);
+        }
+
+        .project-card {
+            background: var(--bg-base);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .project-card:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: var(--space-3);
+        }
+
+        .project-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .project-role {
+            background: var(--bg-subtle);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .project-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: var(--space-3);
+        }
+
+        .project-dates {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: var(--space-3);
+        }
+
+        .project-members {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-default);
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .member-count {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-4);
+        }
+
+        .project-actions button {
+            flex: 1;
+            padding: var(--space-2) var(--space-3);
+            font-size: 0.85rem;
+        }
+
+        /* ===== MODALS ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-base);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-5);
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .member-list {
+            margin-bottom: var(--space-5);
+        }
+
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-3);
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-2);
+        }
+
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .member-info strong {
+            display: block;
+            margin-bottom: var(--space-1);
+        }
+
+        .member-info small {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .role-select {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            background: var(--bg-base);
+        }
+
+        .invite-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--border-default);
+        }
+
+        .invite-form input {
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+        }
+
+        /* ===== ACCOUNT MENU ===== */
+        .account-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-base);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            min-width: 250px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-top: var(--space-2);
+            z-index: 1001;
+            display: none;
+        }
+
+        .account-menu.active {
+            display: block;
+        }
+
+        .account-menu-item {
+            padding: var(--space-3) var(--space-4);
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .account-menu-item:hover {
+            background: var(--bg-subtle);
+        }
+
+        .account-menu-divider {
+            height: 1px;
+            background: var(--border-default);
+            margin: var(--space-2) 0;
+        }
+
+        .account-menu-item.danger {
+            color: #DC2626;
+        }
+
+        /* ===== UTILITIES ===== */
+        .text-center {
+            text-align: center;
+        }
+
+        .gap-4 {
+            gap: var(--space-4);
+        }
+
+        .relative {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <!-- LANDING SCREEN -->
+    <div class="screen active" id="landing">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('login')">Se connecter</button>
+                <button class="btn btn-primary" onclick="showScreen('pricing')">Commencer</button>
+            </div>
+        </div>
+        <div class="landing-hero">
+            <h1>Planifiez. Collaborez. Réussissez.</h1>
+            <p>Gérez vos projets avec des diagrammes de Gantt intuitifs et une collaboration en temps réel.</p>
+            <div class="landing-cta">
+                <button class="btn btn-primary" onclick="showScreen('register')">Créer un compte</button>
+                <button class="btn btn-secondary" onclick="showScreen('pricing')">Voir les tarifs</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div class="screen" id="login">
+        <div class="header">
+            <div class="logo" onclick="showScreen('landing')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+        </div>
+        <div class="form-container">
+            <div class="form-card">
+                <h2>Se connecter</h2>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" placeholder="vous@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);" onclick="showScreen('dashboard')">
+                    Se connecter
+                </button>
+                <div class="form-divider">ou</div>
+                <button class="btn btn-secondary" style="width: 100%; gap: var(--space-2); display: flex; align-items: center; justify-content: center;">
+                    <span>🔵</span> Continuer avec Google
+                </button>
+                <div class="form-footer">
+                    Pas de compte ? <button onclick="showScreen('register')">S'inscrire</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGISTER SCREEN -->
+    <div class="screen" id="register">
+        <div class="header">
+            <div class="logo" onclick="showScreen('landing')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+        </div>
+        <div class="form-container">
+            <div class="form-card">
+                <h2>Créer un compte</h2>
+                <div class="form-group">
+                    <label>Nom complet</label>
+                    <input type="text" placeholder="Jean Dupont">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" placeholder="vous@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);" onclick="showScreen('pricing')">
+                    S'inscrire
+                </button>
+                <div class="form-divider">ou</div>
+                <button class="btn btn-secondary" style="width: 100%; gap: var(--space-2); display: flex; align-items: center; justify-content: center;">
+                    <span>🔵</span> S'inscrire avec Google
+                </button>
+                <div class="form-footer">
+                    Vous avez un compte ? <button onclick="showScreen('login')">Se connecter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICING SCREEN -->
+    <div class="screen" id="pricing">
+        <div class="header">
+            <div class="logo" onclick="showScreen('landing')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('login')">Se connecter</button>
+            </div>
+        </div>
+        <div class="pricing-container">
+            <div class="pricing-header">
+                <h1>Plans simples et transparents</h1>
+                <p style="color: var(--text-secondary);">Essai gratuit 14 jours, pas de carte bancaire requise</p>
+            </div>
+            <div class="pricing-grid">
+                <!-- Free -->
+                <div class="pricing-card">
+                    <h3>Gratuit</h3>
+                    <div class="pricing-price">0<span>€</span></div>
+                    <ul class="pricing-features">
+                        <li>1 projet</li>
+                        <li>Jusqu'à 50 tâches</li>
+                        <li>1 utilisateur</li>
+                        <li>Support communautaire</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Gratuit pour toujours</button>
+                </div>
+
+                <!-- Pro (Featured) -->
+                <div class="pricing-card featured">
+                    <h3>Pro</h3>
+                    <div class="pricing-price">29<span>€/mois</span></div>
+                    <ul class="pricing-features">
+                        <li>Projets illimités</li>
+                        <li>Tâches illimitées</li>
+                        <li>Jusqu'à 5 collaborateurs</li>
+                        <li>Baselines et comparaisons</li>
+                        <li>Export PDF/Excel</li>
+                        <li>Support email prioritaire</li>
+                    </ul>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="showScreen('register')">Essayer gratuitement</button>
+                </div>
+
+                <!-- Team -->
+                <div class="pricing-card">
+                    <h3>Équipe</h3>
+                    <div class="pricing-price">99<span>€/mois</span></div>
+                    <ul class="pricing-features">
+                        <li>Tout de Pro</li>
+                        <li>Collaborateurs illimités</li>
+                        <li>Gestion des rôles avancée</li>
+                        <li>Audit et logging</li>
+                        <li>API d'intégration</li>
+                        <li>Support prioritaire 24/7</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Contactez-nous</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div class="screen" id="dashboard">
+        <div class="header">
+            <div class="logo" onclick="showScreen('dashboard')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('dashboard')">Projets</button>
+                <button>Documentation</button>
+                <div class="relative">
+                    <button onclick="toggleAccountMenu()" style="background: var(--bg-subtle); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--border-default);">JD</button>
+                    <div class="account-menu" id="accountMenu">
+                        <button class="account-menu-item" onclick="showScreen('account')">Mon compte</button>
+                        <button class="account-menu-item" onclick="showScreen('billing')">Facturation</button>
+                        <button class="account-menu-item" onclick="showScreen('settings')">Paramètres</button>
+                        <div class="account-menu-divider"></div>
+                        <button class="account-menu-item danger" onclick="showScreen('landing')">Déconnexion</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <div class="dashboard-header">
+                <div>
+                    <h1>Bienvenue, Jean</h1>
+                    <p style="color: var(--text-secondary);">Plan: <strong>Pro</strong></p>
+                </div>
+                <button class="btn btn-primary" onclick="showScreen('newProject')">+ Nouveau projet</button>
+            </div>
+
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Projets</div>
+                    <div class="stat-value">3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Tâches en cours</div>
+                    <div class="stat-value">12</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Collaborateurs</div>
+                    <div class="stat-value">4</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Jours jusqu'au renouvellement</div>
+                    <div class="stat-value">23</div>
+                </div>
+            </div>
+
+            <div class="projects-section">
+                <h2>Mes projets</h2>
+                <div class="projects-grid">
+                    <!-- Project 1 -->
+                    <div class="project-card" onclick="showScreen('projectDetail')">
+                        <div class="project-header">
+                            <div class="project-title">Refonte site web</div>
+                            <div class="project-role">Propriétaire</div>
+                        </div>
+                        <div class="project-desc">Redesign complet du site principal avec nouvelle architecture</div>
+                        <div class="project-dates">📅 15 jan - 30 avril 2026</div>
+                        <div class="project-members">
+                            <div class="member-avatar">JD</div>
+                            <div class="member-avatar" style="background: var(--color-accent);">MD</div>
+                            <div class="member-avatar" style="background: #10B981;">SJ</div>
+                            <div class="member-count">+2 autres</div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-secondary">Ouvrir</button>
+                            <button class="btn btn-ghost" onclick="openInviteModal(event)">Partager</button>
+                        </div>
+                    </div>
+
+                    <!-- Project 2 -->
+                    <div class="project-card" onclick="showScreen('projectDetail')">
+                        <div class="project-header">
+                            <div class="project-title">Application mobile</div>
+                            <div class="project-role">Éditeur</div>
+                        </div>
+                        <div class="project-desc">Développement de l'app iOS et Android avec intégration API</div>
+                        <div class="project-dates">📅 1 mars - 31 juillet 2026</div>
+                        <div class="project-members">
+                            <div class="member-avatar" style="background: #F59E0B;">AC</div>
+                            <div class="member-avatar" style="background: #3B82F6;">PN</div>
+                            <div class="member-count">+1 autre</div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-secondary">Ouvrir</button>
+                            <button class="btn btn-ghost" onclick="openInviteModal(event)">Partager</button>
+                        </div>
+                    </div>
+
+                    <!-- Project 3 -->
+                    <div class="project-card" onclick="showScreen('projectDetail')">
+                        <div class="project-header">
+                            <div class="project-title">Campagne marketing Q2</div>
+                            <div class="project-role">Lecteur</div>
+                        </div>
+                        <div class="project-desc">Planification complète de la campagne de printemps</div>
+                        <div class="project-dates">📅 1 avril - 30 juin 2026</div>
+                        <div class="project-members">
+                            <div class="member-avatar" style="background: #8B5CF6;">LK</div>
+                            <div class="member-avatar" style="background: #EC4899;">RM</div>
+                            <div class="member-count">+3 autres</div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-secondary">Ouvrir</button>
+                            <button class="btn btn-ghost">Partager</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROJECT DETAIL SCREEN -->
+    <div class="screen" id="projectDetail">
+        <div class="header">
+            <div class="logo" onclick="showScreen('dashboard')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('dashboard')">← Retour aux projets</button>
+                <div class="relative">
+                    <button onclick="toggleAccountMenu()" style="background: var(--bg-subtle); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--border-default);">JD</button>
+                    <div class="account-menu" id="accountMenu">
+                        <button class="account-menu-item" onclick="showScreen('account')">Mon compte</button>
+                        <button class="account-menu-item" onclick="showScreen('billing')">Facturation</button>
+                        <div class="account-menu-divider"></div>
+                        <button class="account-menu-item danger" onclick="showScreen('landing')">Déconnexion</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <div class="dashboard-header">
+                <div>
+                    <h1>Refonte site web</h1>
+                    <p style="color: var(--text-secondary);">15 jan - 30 avril 2026 · 45% complété</p>
+                </div>
+                <button class="btn btn-primary" onclick="openInviteModal()">Inviter un collaborateur</button>
+            </div>
+
+            <div style="background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-6);">
+                <h3 style="margin-bottom: var(--space-4);">🖼️ Aperçu du diagramme de Gantt</h3>
+                <p style="color: var(--text-secondary); margin-bottom: var(--space-4);">Le diagramme interactif apparaîtra ici après connexion.</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Cette maquette montre l'interface multi-utilisateur. En Phase 3, l'éditeur intégré de Gantt Planner sera chargé ici avec les données du projet.</p>
+            </div>
+
+            <h3 style="margin-bottom: var(--space-4);">Collaborateurs du projet</h3>
+            <div style="background: var(--bg-base); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5);">
+                <div class="member-item">
+                    <div class="member-info">
+                        <div class="member-avatar" style="width: 40px; height: 40px; margin: 0;">JD</div>
+                        <div>
+                            <strong>Jean Dupont</strong>
+                            <small>jean@example.com</small>
+                        </div>
+                    </div>
+                    <select class="role-select" disabled>
+                        <option selected>Propriétaire</option>
+                    </select>
+                </div>
+                <div class="member-item">
+                    <div class="member-info">
+                        <div class="member-avatar" style="width: 40px; height: 40px; margin: 0; background: var(--color-accent);">MD</div>
+                        <div>
+                            <strong>Marie Dubois</strong>
+                            <small>marie@example.com</small>
+                        </div>
+                    </div>
+                    <select class="role-select">
+                        <option>Lecteur</option>
+                        <option selected>Éditeur</option>
+                        <option>Propriétaire</option>
+                    </select>
+                </div>
+                <div class="member-item">
+                    <div class="member-info">
+                        <div class="member-avatar" style="width: 40px; height: 40px; margin: 0; background: #10B981;">SJ</div>
+                        <div>
+                            <strong>Sylvain Joly</strong>
+                            <small>sylvain@example.com</small>
+                        </div>
+                    </div>
+                    <select class="role-select">
+                        <option selected>Lecteur</option>
+                        <option>Éditeur</option>
+                        <option>Propriétaire</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVITE MODAL -->
+    <div class="modal-overlay" id="inviteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Inviter un collaborateur</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+
+            <div class="member-list" style="margin-bottom: var(--space-6);">
+                <p style="color: var(--text-secondary); margin-bottom: var(--space-4); font-size: 0.9rem;">Collaborateurs actuels</p>
+                <div class="member-item">
+                    <div class="member-info">
+                        <div class="member-avatar" style="width: 32px; height: 32px; margin: 0;">JD</div>
+                        <div>
+                            <strong style="font-size: 0.95rem;">Jean Dupont</strong>
+                            <small>jean@example.com</small>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Propriétaire</span>
+                </div>
+                <div class="member-item">
+                    <div class="member-info">
+                        <div class="member-avatar" style="width: 32px; height: 32px; margin: 0; background: var(--color-accent);">MD</div>
+                        <div>
+                            <strong style="font-size: 0.95rem;">Marie Dubois</strong>
+                            <small>marie@example.com</small>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Éditeur</span>
+                </div>
+            </div>
+
+            <div class="invite-form">
+                <label style="font-weight: 600;">Ajouter un nouveau collaborateur</label>
+                <input type="email" placeholder="Email de la personne à inviter">
+                <select class="role-select">
+                    <option>Lecteur</option>
+                    <option selected>Éditeur</option>
+                    <option>Propriétaire</option>
+                </select>
+                <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4);">
+                    <button class="btn btn-primary" style="flex: 1;">Envoyer l'invitation</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="closeModal()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCOUNT SCREEN -->
+    <div class="screen" id="account">
+        <div class="header">
+            <div class="logo" onclick="showScreen('dashboard')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('dashboard')">← Retour</button>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <h1 style="margin-bottom: var(--space-6);">Mon compte</h1>
+            <div style="max-width: 600px;">
+                <div class="form-card">
+                    <h3 style="margin-bottom: var(--space-4);">Informations personnelles</h3>
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        <input type="text" value="Jean Dupont">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" value="jean@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="tel" placeholder="+33 6 12 34 56 78">
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: var(--space-4);">Sauvegarder</button>
+                </div>
+
+                <div class="form-card" style="margin-top: var(--space-6);">
+                    <h3 style="margin-bottom: var(--space-4);">Sécurité</h3>
+                    <div class="form-group">
+                        <label>Mot de passe</label>
+                        <input type="password" value="••••••••">
+                    </div>
+                    <button class="btn btn-secondary">Changer le mot de passe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BILLING SCREEN -->
+    <div class="screen" id="billing">
+        <div class="header">
+            <div class="logo" onclick="showScreen('dashboard')">
+                <div class="logo-icon">GP</div>
+                <span>Gantt Planner Pro</span>
+            </div>
+            <div class="header-nav">
+                <button onclick="showScreen('dashboard')">← Retour</button>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <h1 style="margin-bottom: var(--space-6);">Facturation</h1>
+            <div style="max-width: 600px;">
+                <div class="form-card">
+                    <h3 style="margin-bottom: var(--space-4);">Plan actuel</h3>
+                    <div style="padding: var(--space-4); background: var(--bg-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-4);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+                            <strong>Pro</strong>
+                            <span style="color: var(--color-primary);">29€/mois</span>
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: var(--space-3);">Renouvellement automatique le 15 mai 2026</p>
+                        <button class="btn btn-secondary">Changer de plan</button>
+                    </div>
+
+                    <h3 style="margin-bottom: var(--space-4); margin-top: var(--space-6);">Historique de facturation</h3>
+                    <div style="border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden;">
+                        <div style="padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Facture - Avril 2026</strong>
+                                <p style="color: var(--text-muted); font-size: 0.85rem;">15 avril 2026</p>
+                            </div>
+                            <button class="btn btn-ghost">Télécharger</button>
+                        </div>
+                        <div style="padding: var(--space-3) var(--space-4); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Facture - Mars 2026</strong>
+                                <p style="color: var(--text-muted); font-size: 0.85rem;">15 mars 2026</p>
+                            </div>
+                            <button class="btn btn-ghost">Télécharger</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId)?.classList.add('active');
+            document.getElementById('accountMenu')?.classList.remove('active');
+        }
+
+        function toggleAccountMenu() {
+            document.getElementById('accountMenu').classList.toggle('active');
+        }
+
+        function openInviteModal(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('inviteModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('inviteModal').classList.remove('active');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                document.getElementById('accountMenu')?.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.getElementById('accountMenu')?.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
