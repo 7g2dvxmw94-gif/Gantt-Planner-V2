@@ -5431,6 +5431,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Charger les données depuis Supabase avant d'initialiser l'app
+    await store.initFromSupabase();
+
     const app = new App();
     app.init();
 });

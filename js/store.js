@@ -4,6 +4,8 @@
    ======================================== */
 
 import { generateId, daysBetween, addDays, formatDateISO } from './utils.js';
+import { supabaseStore } from './supabase-store.js';
+import { auth } from './auth.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
@@ -433,29 +435,102 @@ class Store {
     }
 
     _createDefaults() {
-        const resources = createDefaultResources();
-        const { project, tasks } = createDefaultProject(resources);
-
+        // Avec Supabase on démarre vide — les données viennent du serveur
         return {
-            projects: [project],
-            tasks: tasks,
-            resources: resources,
+            projects: [],
+            tasks: [],
+            resources: [],
             baselines: [],
             settings: {
-                activeProjectId: project.id,
+                activeProjectId: null,
                 activeView: 'timeline',
-                zoomLevel: 'week', // 'day', 'week', 'month', 'quarter'
-                theme: null, // null = system preference
+                zoomLevel: 'week',
+                theme: null,
                 showBaseline: true,
             },
         };
     }
 
-    _save() {
+    /* ---- Supabase Init (appelé au démarrage de l'app) ---- */
+
+    async initFromSupabase() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this._data));
+            const user = await auth.getUser();
+            if (!user) return;
+
+            // 1. Charger les projets de l'utilisateur
+            const projects = await supabaseStore.getProjects();
+            this._data.projects = projects;
+
+            if (!projects.length) {
+                this._data.settings.activeProjectId = null;
+                this._emit('change', {});
+                return;
+            }
+
+            // 2. Restaurer le projet actif depuis localStorage (préférence UI)
+            const savedActiveId = localStorage.getItem('gantt_active_project');
+            const activeProject = projects.find(p => p.id === savedActiveId) || projects[0];
+            this._data.settings.activeProjectId = activeProject.id;
+
+            // 3. Charger tâches, ressources et baselines du projet actif
+            await this._loadProjectData(activeProject.id);
+
+            // 4. Restaurer les préférences UI depuis localStorage
+            const savedSettings = this._loadSettingsFromStorage();
+            if (savedSettings) {
+                this._data.settings = { ...this._data.settings, ...savedSettings };
+            }
+
+            this._emit('change', {});
         } catch (e) {
-            console.warn('Failed to save to localStorage:', e);
+            console.error('[store] initFromSupabase:', e);
+        }
+    }
+
+    async _loadProjectData(projectId) {
+        const [tasks, resources, baselines] = await Promise.all([
+            supabaseStore.getTasks(projectId),
+            supabaseStore.getResources(projectId),
+            supabaseStore.getBaselines(projectId),
+        ]);
+
+        // Retirer les anciennes données de ce projet et injecter les nouvelles
+        this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId).concat(tasks);
+        this._data.resources = resources;
+        this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
+
+        // Reconstruire resourceIds depuis les assignees des tâches
+        const project = this._data.projects.find(p => p.id === projectId);
+        if (project) {
+            const assignedIds = new Set();
+            tasks.forEach(t => (t.assignees || []).forEach(id => assignedIds.add(id)));
+            project.resourceIds = [...assignedIds];
+        }
+    }
+
+    _loadSettingsFromStorage() {
+        try {
+            const raw = localStorage.getItem('gantt_ui_settings');
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    }
+
+    _save() {
+        // Persister uniquement les préférences UI (pas les données métier → Supabase)
+        try {
+            const uiSettings = {
+                activeView:  this._data.settings.activeView,
+                zoomLevel:   this._data.settings.zoomLevel,
+                theme:       this._data.settings.theme,
+                showBaseline: this._data.settings.showBaseline,
+            };
+            localStorage.setItem('gantt_ui_settings', JSON.stringify(uiSettings));
+            if (this._data.settings.activeProjectId) {
+                localStorage.setItem('gantt_active_project', this._data.settings.activeProjectId);
+            }
+        } catch (e) {
+            console.warn('Failed to save settings to localStorage:', e);
         }
     }
 
@@ -544,6 +619,13 @@ class Store {
         this._data.projects.push(newProject);
         this._save();
         this._emit('project:add', newProject);
+        // Sync Supabase en arrière-plan
+        auth.getUser().then(user => {
+            if (!user) return;
+            supabaseStore.upsertProject(newProject, user.id)
+                .then(() => supabaseStore.addProjectMember(newProject.id, user.id, 'owner'))
+                .catch(e => console.error('[store] sync addProject:', e));
+        });
         return newProject;
     }
 
@@ -558,6 +640,12 @@ class Store {
         };
         this._save();
         this._emit('project:update', this._data.projects[idx]);
+        // Sync Supabase en arrière-plan
+        auth.getUser().then(user => {
+            if (!user) return;
+            supabaseStore.upsertProject(this._data.projects[idx], user.id)
+                .catch(e => console.error('[store] sync updateProject:', e));
+        });
         return this._data.projects[idx];
     }
 
@@ -570,6 +658,9 @@ class Store {
         }
         this._save();
         this._emit('project:delete', projectId);
+        // Sync Supabase en arrière-plan
+        supabaseStore.deleteProject(projectId)
+            .catch(e => console.error('[store] sync deleteProject:', e));
     }
 
     duplicateProject(projectId) {
@@ -757,6 +848,14 @@ class Store {
         this._data.tasks.push(newTask);
         this._save();
         this._emit('task:add', newTask);
+        // Sync Supabase en arrière-plan
+        supabaseStore.upsertTask(newTask)
+            .then(() => {
+                if (newTask.assignees?.length) {
+                    return supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
+                }
+            })
+            .catch(e => console.error('[store] sync addTask:', e));
         return newTask;
     }
 
@@ -784,7 +883,16 @@ class Store {
 
         this._save();
         this._emit('task:update', this._data.tasks[idx]);
-        return this._data.tasks[idx];
+        // Sync Supabase en arrière-plan
+        const updatedTask = this._data.tasks[idx];
+        supabaseStore.upsertTask(updatedTask)
+            .then(() => {
+                if (updates.assignees !== undefined) {
+                    return supabaseStore.syncTaskAssignees(taskId, updatedTask.assignees || []);
+                }
+            })
+            .catch(e => console.error('[store] sync updateTask:', e));
+        return updatedTask;
     }
 
     deleteTask(taskId) {
@@ -805,6 +913,9 @@ class Store {
 
         this._save();
         this._emit('task:delete', taskId);
+        // Sync Supabase en arrière-plan
+        supabaseStore.deleteTask(taskId)
+            .catch(e => console.error('[store] sync deleteTask:', e));
     }
 
     /**
@@ -990,6 +1101,9 @@ class Store {
         this._data.resources.push(newResource);
         this._save();
         this._emit('resource:add', newResource);
+        // Sync Supabase en arrière-plan
+        supabaseStore.upsertResource(newResource)
+            .catch(e => console.error('[store] sync addResource:', e));
         return newResource;
     }
 
@@ -1000,6 +1114,9 @@ class Store {
         this._data.resources[idx] = { ...this._data.resources[idx], ...updates };
         this._save();
         this._emit('resource:update', this._data.resources[idx]);
+        // Sync Supabase en arrière-plan
+        supabaseStore.upsertResource(this._data.resources[idx])
+            .catch(e => console.error('[store] sync updateResource:', e));
         return this._data.resources[idx];
     }
 
@@ -1015,6 +1132,9 @@ class Store {
         });
         this._save();
         this._emit('resource:delete', resourceId);
+        // Sync Supabase en arrière-plan
+        supabaseStore.deleteResource(resourceId)
+            .catch(e => console.error('[store] sync deleteResource:', e));
     }
 
     /* ---- Resource ↔ Project membership ---- */

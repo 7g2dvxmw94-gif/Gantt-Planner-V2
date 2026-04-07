@@ -3,9 +3,13 @@
    ======================================== */
 
 /**
- * Generate a unique ID
+ * Generate a unique ID (UUID v4, compatible with Supabase primary keys)
  */
 export function generateId() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback for older environments
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 }
 

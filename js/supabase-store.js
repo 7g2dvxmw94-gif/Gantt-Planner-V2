@@ -1,10 +1,157 @@
 /* ========================================
    SUPABASE STORE
    Couche d'accès aux données Supabase
+   Mappeurs camelCase (store) ↔ snake_case (Supabase)
    ======================================== */
 
 import { supabase } from './supabase-client.js';
 import { auth } from './auth.js';
+
+/* ---- Mappers Store → Supabase (camelCase → snake_case) ---- */
+
+function projectToRow(p, ownerId) {
+    return {
+        id:          p.id,
+        owner_id:    ownerId,
+        name:        p.name,
+        description: p.description || '',
+        start_date:  p.startDate  || null,
+        end_date:    p.endDate    || null,
+        budget:      p.budget     || 0,
+        budget_used: p.budgetUsed || 0,
+        color:       p.color      || null,
+        zoom_level:  p.zoomLevel  || 'week',
+        updated_at:  new Date().toISOString(),
+    };
+}
+
+function taskToRow(t) {
+    return {
+        id:                   t.id,
+        project_id:           t.projectId,
+        parent_id:            t.parentId     || null,
+        name:                 t.name,
+        description:          t.description  || '',
+        start_date:           t.startDate    || null,
+        end_date:             t.endDate      || null,
+        progress:             t.progress     ?? 0,
+        priority:             t.priority     || 'medium',
+        status:               t.status       || 'todo',
+        color:                t.color        || '#6366F1',
+        sort_order:           t.order        ?? 0,
+        is_milestone:         t.isMilestone  || false,
+        is_phase:             t.isPhase      || false,
+        is_permit:            t.isPermit     || false,
+        collapsed:            t.collapsed    || false,
+        dependencies:         t.dependencies || [],
+        fixed_costs:          t.fixedCosts   || [],
+        // Permit fields
+        permit_type:              t.permitType              || null,
+        permit_status:            t.permitStatus            || null,
+        dossier_number:           t.dossierNumber           || null,
+        commune:                  t.commune                 || null,
+        service_instructeur:      t.serviceInstructeur      || null,
+        abf_sector:               t.abfSector               || false,
+        deposit_date:             t.depositDate             || null,
+        completeness_date:        t.completenessDate        || null,
+        decision_date:            t.decisionDate            || null,
+        updated_at:               new Date().toISOString(),
+    };
+}
+
+function resourceToRow(r) {
+    return {
+        id:          r.id,
+        project_id:  r.projectId,
+        name:        r.name,
+        role:        r.role        || '',
+        avatar:      r.avatar      || '',
+        color:       r.color       || '#6366F1',
+        hourly_rate: r.hourlyRate  || 0,
+    };
+}
+
+/* ---- Mappers Supabase → Store (snake_case → camelCase) ---- */
+
+function rowToProject(row) {
+    return {
+        id:              row.id,
+        name:            row.name,
+        description:     row.description || '',
+        startDate:       row.start_date  || '',
+        endDate:         row.end_date    || '',
+        budget:          parseFloat(row.budget)      || 0,
+        budgetUsed:      parseFloat(row.budget_used) || 0,
+        color:           row.color      || null,
+        zoomLevel:       row.zoom_level || 'week',
+        resourceIds:     [],
+        activeBaselineId: row.active_baseline_id || null,
+        createdAt:       row.created_at,
+        updatedAt:       row.updated_at,
+        _role:           row._role || 'owner', // rôle de l'utilisateur courant
+    };
+}
+
+function rowToTask(row) {
+    return {
+        id:           row.id,
+        projectId:    row.project_id,
+        parentId:     row.parent_id   || null,
+        name:         row.name,
+        description:  row.description || '',
+        startDate:    row.start_date  || '',
+        endDate:      row.end_date    || '',
+        progress:     row.progress    ?? 0,
+        priority:     row.priority    || 'medium',
+        status:       row.status      || 'todo',
+        color:        row.color       || '#6366F1',
+        order:        row.sort_order  ?? 0,
+        isMilestone:  row.is_milestone || false,
+        isPhase:      row.is_phase     || false,
+        isPermit:     row.is_permit    || false,
+        collapsed:    row.collapsed    || false,
+        dependencies: row.dependencies || [],
+        fixedCosts:   row.fixed_costs  || [],
+        assignees:    [],   // rechargé séparément via task_assignees
+        assignee:     null,
+        // Permit fields
+        permitType:          row.permit_type          || '',
+        permitStatus:        row.permit_status        || '',
+        dossierNumber:       row.dossier_number       || '',
+        commune:             row.commune              || '',
+        serviceInstructeur:  row.service_instructeur  || '',
+        abfSector:           row.abf_sector           || false,
+        depositDate:         row.deposit_date         || '',
+        completenessDate:    row.completeness_date    || '',
+        decisionDate:        row.decision_date        || '',
+        createdAt:           row.created_at,
+        updatedAt:           row.updated_at,
+    };
+}
+
+function rowToResource(row) {
+    return {
+        id:         row.id,
+        projectId:  row.project_id,
+        name:       row.name,
+        role:       row.role       || '',
+        avatar:     row.avatar     || '',
+        color:      row.color      || '#6366F1',
+        hourlyRate: parseFloat(row.hourly_rate) || 0,
+    };
+}
+
+function rowToBaseline(row) {
+    return {
+        id:        row.id,
+        projectId: row.project_id,
+        name:      row.name,
+        tasks:     row.tasks_snapshot || [],
+        createdAt: row.created_at,
+    };
+}
+
+/* ---- Supabase Store API ---- */
 
 export const supabaseStore = {
 
@@ -14,64 +161,37 @@ export const supabaseStore = {
         const user = await auth.getUser();
         if (!user) return [];
 
+        // Récupérer tous les projets où l'utilisateur est membre
         const { data, error } = await supabase
-            .from('projects')
+            .from('project_members')
             .select(`
-                *,
-                project_members(user_id, role)
+                role,
+                projects (*)
             `)
-            .or(`owner_id.eq.${user.id},project_members.user_id.eq.${user.id}`);
+            .eq('user_id', user.id);
 
         if (error) {
             console.error('[supabaseStore] getProjects:', error);
             return [];
         }
-        return data || [];
+        return (data || []).map(row => ({
+            ...rowToProject(row.projects),
+            _role: row.role,
+        }));
     },
 
-    async createProject(name, description = '') {
-        const user = await auth.getUser();
-        if (!user) throw new Error('Non connecté');
-
-        // Créer le projet
-        const { data: project, error: projectError } = await supabase
+    async upsertProject(project, ownerId) {
+        const { error } = await supabase
             .from('projects')
-            .insert([{
-                owner_id: user.id,
-                name,
-                description,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            }])
-            .select()
-            .single();
+            .upsert(projectToRow(project, ownerId));
+        if (error) console.error('[supabaseStore] upsertProject:', error);
+    },
 
-        if (projectError) throw projectError;
-
-        // Ajouter l'owner comme membre avec rôle 'owner'
-        const { error: memberError } = await supabase
+    async addProjectMember(projectId, userId, role = 'owner') {
+        const { error } = await supabase
             .from('project_members')
-            .insert([{
-                project_id: project.id,
-                user_id: user.id,
-                role: 'owner',
-                joined_at: new Date().toISOString(),
-            }]);
-
-        if (memberError) throw memberError;
-        return project;
-    },
-
-    async updateProject(projectId, updates) {
-        const { data, error } = await supabase
-            .from('projects')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', projectId)
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
+            .upsert({ project_id: projectId, user_id: userId, role, joined_at: new Date().toISOString() });
+        if (error) console.error('[supabaseStore] addProjectMember:', error);
     },
 
     async deleteProject(projectId) {
@@ -79,8 +199,7 @@ export const supabaseStore = {
             .from('projects')
             .delete()
             .eq('id', projectId);
-
-        if (error) throw error;
+        if (error) console.error('[supabaseStore] deleteProject:', error);
     },
 
     /* ---- TASKS ---- */
@@ -96,35 +215,32 @@ export const supabaseStore = {
             console.error('[supabaseStore] getTasks:', error);
             return [];
         }
-        return data || [];
+        const tasks = (data || []).map(rowToTask);
+
+        // Charger les assignees pour toutes les tâches en une requête
+        const taskIds = tasks.map(t => t.id);
+        if (taskIds.length) {
+            const { data: assignees } = await supabase
+                .from('task_assignees')
+                .select('task_id, resource_id')
+                .in('task_id', taskIds);
+
+            (assignees || []).forEach(a => {
+                const task = tasks.find(t => t.id === a.task_id);
+                if (task) {
+                    task.assignees.push(a.resource_id);
+                    task.assignee = task.assignees[0] || null;
+                }
+            });
+        }
+        return tasks;
     },
 
-    async createTask(projectId, taskData) {
-        const { data, error } = await supabase
+    async upsertTask(task) {
+        const { error } = await supabase
             .from('tasks')
-            .insert([{
-                project_id: projectId,
-                ...taskData,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
-    },
-
-    async updateTask(taskId, updates) {
-        const { data, error } = await supabase
-            .from('tasks')
-            .update({ ...updates, updated_at: new Date().toISOString() })
-            .eq('id', taskId)
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
+            .upsert(taskToRow(task));
+        if (error) console.error('[supabaseStore] upsertTask:', error);
     },
 
     async deleteTask(taskId) {
@@ -132,8 +248,17 @@ export const supabaseStore = {
             .from('tasks')
             .delete()
             .eq('id', taskId);
+        if (error) console.error('[supabaseStore] deleteTask:', error);
+    },
 
-        if (error) throw error;
+    async syncTaskAssignees(taskId, assigneeIds) {
+        // Supprimer les anciens, insérer les nouveaux
+        await supabase.from('task_assignees').delete().eq('task_id', taskId);
+        if (assigneeIds.length) {
+            const rows = assigneeIds.map(rid => ({ task_id: taskId, resource_id: rid }));
+            const { error } = await supabase.from('task_assignees').insert(rows);
+            if (error) console.error('[supabaseStore] syncTaskAssignees:', error);
+        }
     },
 
     /* ---- RESOURCES ---- */
@@ -143,38 +268,18 @@ export const supabaseStore = {
             .from('resources')
             .select('*')
             .eq('project_id', projectId);
-
         if (error) {
             console.error('[supabaseStore] getResources:', error);
             return [];
         }
-        return data || [];
+        return (data || []).map(rowToResource);
     },
 
-    async createResource(projectId, resourceData) {
-        const { data, error } = await supabase
+    async upsertResource(resource) {
+        const { error } = await supabase
             .from('resources')
-            .insert([{
-                project_id: projectId,
-                ...resourceData,
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
-    },
-
-    async updateResource(resourceId, updates) {
-        const { data, error } = await supabase
-            .from('resources')
-            .update(updates)
-            .eq('id', resourceId)
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
+            .upsert(resourceToRow(resource));
+        if (error) console.error('[supabaseStore] upsertResource:', error);
     },
 
     async deleteResource(resourceId) {
@@ -182,41 +287,7 @@ export const supabaseStore = {
             .from('resources')
             .delete()
             .eq('id', resourceId);
-
-        if (error) throw error;
-    },
-
-    /* ---- TASK ASSIGNEES ---- */
-
-    async getTaskAssignees(taskId) {
-        const { data, error } = await supabase
-            .from('task_assignees')
-            .select('resource_id')
-            .eq('task_id', taskId);
-
-        if (error) {
-            console.error('[supabaseStore] getTaskAssignees:', error);
-            return [];
-        }
-        return (data || []).map(a => a.resource_id);
-    },
-
-    async addTaskAssignee(taskId, resourceId) {
-        const { error } = await supabase
-            .from('task_assignees')
-            .insert([{ task_id: taskId, resource_id: resourceId }]);
-
-        if (error && !error.message.includes('duplicate key')) throw error;
-    },
-
-    async removeTaskAssignee(taskId, resourceId) {
-        const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('resource_id', resourceId);
-
-        if (error) throw error;
+        if (error) console.error('[supabaseStore] deleteResource:', error);
     },
 
     /* ---- BASELINES ---- */
@@ -226,31 +297,23 @@ export const supabaseStore = {
             .from('baselines')
             .select('*')
             .eq('project_id', projectId);
-
         if (error) {
             console.error('[supabaseStore] getBaselines:', error);
             return [];
         }
-        return data || [];
+        return (data || []).map(rowToBaseline);
     },
 
-    async createBaseline(projectId, name, tasksSnapshot) {
+    async upsertBaseline(baseline) {
         const user = await auth.getUser();
-        if (!user) throw new Error('Non connecté');
-
-        const { data, error } = await supabase
-            .from('baselines')
-            .insert([{
-                project_id: projectId,
-                created_by: user.id,
-                name,
-                tasks_snapshot: tasksSnapshot,
-            }])
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
+        const { error } = await supabase.from('baselines').upsert({
+            id:             baseline.id,
+            project_id:     baseline.projectId,
+            created_by:     user?.id,
+            name:           baseline.name,
+            tasks_snapshot: baseline.tasks || [],
+        });
+        if (error) console.error('[supabaseStore] upsertBaseline:', error);
     },
 
     async deleteBaseline(baselineId) {
@@ -258,7 +321,6 @@ export const supabaseStore = {
             .from('baselines')
             .delete()
             .eq('id', baselineId);
-
-        if (error) throw error;
+        if (error) console.error('[supabaseStore] deleteBaseline:', error);
     },
 };
