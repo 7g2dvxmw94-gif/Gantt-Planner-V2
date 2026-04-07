@@ -45,6 +45,7 @@
             display: none;
             min-height: 100vh;
             animation: fadeIn 0.3s ease-in-out;
+            flex-direction: column;
         }
 
         .screen.active {
@@ -158,33 +159,72 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: var(--space-6);
+            padding: var(--space-6) var(--space-6);
             flex-direction: column;
             text-align: center;
-            gap: var(--space-6);
+            gap: var(--space-5);
+            background: linear-gradient(135deg, #F0F4FF 0%, #FFF5F8 100%);
         }
 
         .landing-hero h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: var(--space-4);
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 800;
+            line-height: 1.2;
             background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin: 0;
         }
 
         .landing-hero p {
-            font-size: 1.25rem;
+            font-size: clamp(1rem, 2vw, 1.3rem);
             color: var(--text-secondary);
-            max-width: 600px;
-            margin-bottom: var(--space-4);
+            max-width: 700px;
+            margin: 0;
+            line-height: 1.6;
         }
 
         .landing-cta {
             display: flex;
             gap: var(--space-4);
             justify-content: center;
+            flex-wrap: wrap;
+            margin-top: var(--space-4);
+        }
+
+        .landing-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-5);
+            margin-top: var(--space-6);
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-3);
+        }
+
+        .feature-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: var(--space-2);
+            color: var(--text-primary);
+        }
+
+        .feature-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
 
         /* ===== FORMS ===== */
@@ -682,11 +722,32 @@
             </div>
         </div>
         <div class="landing-hero">
-            <h1>Planifiez. Collaborez. Réussissez.</h1>
-            <p>Gérez vos projets avec des diagrammes de Gantt intuitifs et une collaboration en temps réel.</p>
-            <div class="landing-cta">
-                <button class="btn btn-primary" onclick="showScreen('register')">Créer un compte</button>
-                <button class="btn btn-secondary" onclick="showScreen('pricing')">Voir les tarifs</button>
+            <div style="max-width: 900px;">
+                <h1>Planifiez. Collaborez. Réussissez.</h1>
+                <p>Gérez vos projets avec des diagrammes de Gantt intuitifs et une collaboration en temps réel. Travaillez ensemble, atteignez vos objectifs plus vite.</p>
+                <div class="landing-cta">
+                    <button class="btn btn-primary" style="padding: var(--space-3) var(--space-6); font-size: 1rem;" onclick="showScreen('register')">Créer un compte gratuit</button>
+                    <button class="btn btn-secondary" style="padding: var(--space-3) var(--space-6); font-size: 1rem;" onclick="showScreen('pricing')">Voir les tarifs</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: var(--space-4);">✓ 14 jours d'essai gratuit · Pas de carte bancaire requise · Accès immédiat</p>
+            </div>
+
+            <div class="landing-features">
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <h3>Diagrammes Gantt</h3>
+                    <p>Visualisez vos projets avec des diagrammes interactifs et intuitifs</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">👥</div>
+                    <h3>Collaboration</h3>
+                    <p>Invitez des collaborateurs et travaillez ensemble en temps réel</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📈</div>
+                    <h3>Suivi avancé</h3>
+                    <p>Baselines, dépendances, critères personnalisés et bien plus</p>
+                </div>
             </div>
         </div>
     </div>
