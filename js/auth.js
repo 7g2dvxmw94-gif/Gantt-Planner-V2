@@ -5,6 +5,13 @@
 
 import { supabase } from './supabase-client.js';
 
+/* Calcule le base URL correct même en sous-dossier (ex: GitHub Pages /Gantt-Planner-V2/) */
+function getBaseUrl() {
+    const { origin, pathname } = window.location;
+    const dir = pathname.substring(0, pathname.lastIndexOf('/'));
+    return origin + dir;
+}
+
 export const auth = {
 
     /* ---- Récupérer la session courante ---- */
@@ -46,7 +53,7 @@ export const auth = {
             password,
             options: {
                 data: { full_name: fullName },
-                emailRedirectTo: `${window.location.origin}/auth.html?confirmed=1`,
+                emailRedirectTo: `${getBaseUrl()}/auth.html?confirmed=1`,
             },
         });
         if (error) throw error;
@@ -58,7 +65,7 @@ export const auth = {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/index.html`,
+                redirectTo: `${getBaseUrl()}/index.html`,
                 queryParams: { access_type: 'offline', prompt: 'consent' },
             },
         });
@@ -70,7 +77,7 @@ export const auth = {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'apple',
             options: {
-                redirectTo: `${window.location.origin}/index.html`,
+                redirectTo: `${getBaseUrl()}/index.html`,
             },
         });
         if (error) throw error;
@@ -79,7 +86,7 @@ export const auth = {
     /* ---- Mot de passe oublié ---- */
     async resetPassword(email) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/auth.html?reset=1`,
+            redirectTo: `${getBaseUrl()}/auth.html?reset=1`,
         });
         if (error) throw error;
     },
