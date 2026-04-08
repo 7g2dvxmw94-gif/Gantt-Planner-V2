@@ -3,6 +3,8 @@
    Gantt Planner Pro
    ======================================== */
 
+import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, isWeekend, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
