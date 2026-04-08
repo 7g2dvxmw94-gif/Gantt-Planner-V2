@@ -1105,6 +1105,7 @@ class Store {
         this._snapshot();
         const newResource = {
             id: generateId(),
+            projectId: this._data.settings.activeProjectId,
             ...resource,
         };
         this._data.resources.push(newResource);
