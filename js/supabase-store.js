@@ -285,17 +285,22 @@ export const supabaseStore = {
     },
 
     async upsertResource(resource) {
-        const { error } = await supabase
-            .from('resources')
-            .upsert(resourceToRow(resource));
+        const { error } = await supabase.rpc('upsert_resource', {
+            p_id:          resource.id,
+            p_project_id:  resource.projectId,
+            p_name:        resource.name,
+            p_role:        resource.role || '',
+            p_avatar:      resource.avatar || '',
+            p_color:       resource.color || '#6366F1',
+            p_hourly_rate: resource.hourlyRate || 0,
+        });
         if (error) console.error('[supabaseStore] upsertResource:', error);
     },
 
     async deleteResource(resourceId) {
-        const { error } = await supabase
-            .from('resources')
-            .delete()
-            .eq('id', resourceId);
+        const { error } = await supabase.rpc('delete_resource', {
+            p_resource_id: resourceId,
+        });
         if (error) console.error('[supabaseStore] deleteResource:', error);
     },
 
