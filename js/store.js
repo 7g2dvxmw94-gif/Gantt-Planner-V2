@@ -510,12 +510,10 @@ class Store {
         this._data.resources = resources;
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
-        // Reconstruire resourceIds depuis les assignees des tâches
+        // Reconstruire resourceIds depuis toutes les ressources du projet
         const project = this._data.projects.find(p => p.id === projectId);
         if (project) {
-            const assignedIds = new Set();
-            tasks.forEach(t => (t.assignees || []).forEach(id => assignedIds.add(id)));
-            project.resourceIds = [...assignedIds];
+            project.resourceIds = resources.map(r => r.id);
         }
     }
 
@@ -1165,6 +1163,13 @@ class Store {
             project.resourceIds.push(resourceId);
             this._save();
             this._emit('change', null);
+            // Sync : mettre à jour le project_id de la ressource
+            const resource = this._data.resources.find(r => r.id === resourceId);
+            if (resource) {
+                resource.projectId = projectId;
+                supabaseStore.upsertResource(resource)
+                    .catch(e => console.error('[store] sync addResourceToProject:', e));
+            }
         }
     }
 
