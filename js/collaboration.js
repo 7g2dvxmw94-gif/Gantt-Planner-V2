@@ -17,7 +17,7 @@ export const collaboration = {
                 role,
                 invited_at,
                 joined_at,
-                profiles (id, email, full_name, avatar_url)
+                profiles!project_members_user_id_fkey (id, email, full_name, avatar_url)
             `)
             .eq('project_id', projectId);
 
