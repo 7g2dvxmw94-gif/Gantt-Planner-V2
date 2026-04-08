@@ -61,46 +61,20 @@ export const collaboration = {
         const user = await auth.getUser();
         if (!user) throw new Error('Non connecté');
 
-        // Vérifier si l'utilisateur est déjà membre
-        const { data: existing } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', email)
-            .single();
-
-        if (existing) {
-            // L'utilisateur existe : l'ajouter directement comme membre
-            const { error } = await supabase
-                .from('project_members')
-                .upsert({
-                    project_id: projectId,
-                    user_id:    existing.id,
-                    role,
-                    invited_by: user.id,
-                    joined_at:  new Date().toISOString(),
-                });
-            if (error) throw error;
-            return { type: 'added', email };
-        }
-
-        // L'utilisateur n'existe pas encore : créer une invitation
-        const { data: invitation, error } = await supabase
-            .from('invitations')
-            .insert([{
-                project_id:  projectId,
-                invited_by:  user.id,
-                email:       email.toLowerCase().trim(),
-                role,
-            }])
-            .select()
-            .single();
+        // Utiliser la fonction RPC SECURITY DEFINER pour bypasser les deadlocks RLS
+        const { data, error } = await supabase.rpc('invite_to_project', {
+            p_project_id: projectId,
+            p_email:      email.toLowerCase().trim(),
+            p_role:       role,
+        });
 
         if (error) throw error;
 
-        // Envoyer l'email via Supabase Edge Function (si disponible)
-        // Sinon, retourner le lien d'invitation
-        const inviteLink = `${window.location.origin}/invite.html?token=${invitation.token}`;
-        return { type: 'invited', email, link: inviteLink, token: invitation.token };
+        if (data.type === 'invited') {
+            const inviteLink = `${window.location.origin}/invite.html?token=${data.token}`;
+            return { type: 'invited', email, link: inviteLink, token: data.token };
+        }
+        return { type: data.type, email };
     },
 
     async getPendingInvitations(projectId) {

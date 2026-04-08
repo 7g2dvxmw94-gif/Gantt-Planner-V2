@@ -7,6 +7,7 @@ import { collaboration } from './collaboration.js';
 import { store } from './store.js';
 import { auth } from './auth.js';
 import { supabaseStore } from './supabase-store.js';
+import { supabase } from './supabase-client.js';
 
 /* ---- Modal HTML injected once ---- */
 
@@ -288,15 +289,15 @@ export const collaborationUI = {
         this._currentUserId = user?.id || null;
         this._currentRole = await collaboration.getCurrentUserRole(projectId);
 
-        // If not a member yet, sync the project to Supabase and add self as owner
+        // If not a member yet, sync the project to Supabase then use RPC to add as owner
         if (!this._currentRole && user) {
             try {
                 const project = store.getActiveProject();
                 if (project && project.id === projectId) {
                     await supabaseStore.upsertProject(project, user.id);
-                    await supabaseStore.addProjectMember(projectId, user.id, 'owner');
-                    this._currentRole = 'owner';
                 }
+                const { data: role } = await supabase.rpc('ensure_project_owner', { p_project_id: projectId });
+                if (role) this._currentRole = role;
             } catch (e) {
                 console.error('[collaborationUI] sync project:', e);
             }
