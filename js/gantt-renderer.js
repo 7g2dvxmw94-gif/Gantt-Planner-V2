@@ -1009,6 +1009,6 @@ class GanttRenderer {
     }
 }
 
-const ganttRenderer = new GanttRenderer();
+export const ganttRenderer = new GanttRenderer();
 
 
