@@ -285,11 +285,9 @@ export const supabaseStore = {
     },
 
     async upsertResource(resource) {
-        const row = resourceToRow(resource);
-        console.log('[DEBUG] upsertResource row:', JSON.stringify(row));
         const { error } = await supabase
             .from('resources')
-            .upsert(row);
+            .upsert(resourceToRow(resource));
         if (error) console.error('[supabaseStore] upsertResource:', error);
     },
 
