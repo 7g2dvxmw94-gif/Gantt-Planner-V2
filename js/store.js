@@ -458,15 +458,25 @@ class Store {
             const user = await auth.getUser();
             if (!user) return;
 
-            // 1. Charger les projets de l'utilisateur
-            const projects = await supabaseStore.getProjects();
-            this._data.projects = projects;
+            // 1. Charger les projets de l'utilisateur depuis Supabase
+            let projects = await supabaseStore.getProjects();
+
+            // 2. Si Supabase est vide mais qu'il y a des projets locaux, les synchroniser
+            if (!projects.length && this._data.projects.length) {
+                for (const p of this._data.projects) {
+                    await supabaseStore.upsertProject(p, user.id).catch(() => {});
+                    await supabaseStore.addProjectMember(p.id, user.id, 'owner').catch(() => {});
+                }
+                projects = await supabaseStore.getProjects();
+            }
 
             if (!projects.length) {
                 this._data.settings.activeProjectId = null;
                 this._emit('change', {});
                 return;
             }
+
+            this._data.projects = projects;
 
             // 2. Restaurer le projet actif depuis localStorage (préférence UI)
             const savedActiveId = localStorage.getItem('gantt_active_project');

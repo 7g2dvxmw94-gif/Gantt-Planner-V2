@@ -264,6 +264,7 @@ export const collaborationUI = {
     _projectId: null,
     _currentUserId: null,
     _currentRole: null,
+    _overlayClickHandler: null,
 
     async open(projectId) {
         _injectModal();
@@ -273,11 +274,13 @@ export const collaborationUI = {
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
 
-        // Bind close
+        // Bind close — remove previous listener before re-adding to avoid accumulation
         document.getElementById('shareModalClose').onclick = () => this.close();
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) this.close();
-        });
+        if (this._overlayClickHandler) {
+            overlay.removeEventListener('click', this._overlayClickHandler);
+        }
+        this._overlayClickHandler = (e) => { if (e.target === overlay) this.close(); };
+        overlay.addEventListener('click', this._overlayClickHandler);
         document.addEventListener('keydown', this._onKeyDown);
 
         // Get current user role
@@ -316,7 +319,13 @@ export const collaborationUI = {
 
     close() {
         const overlay = document.getElementById(MODAL_ID);
-        if (overlay) overlay.style.display = 'none';
+        if (overlay) {
+            overlay.style.display = 'none';
+            if (this._overlayClickHandler) {
+                overlay.removeEventListener('click', this._overlayClickHandler);
+                this._overlayClickHandler = null;
+            }
+        }
         document.body.style.overflow = '';
         document.removeEventListener('keydown', this._onKeyDown);
     },
