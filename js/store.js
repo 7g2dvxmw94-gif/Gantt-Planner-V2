@@ -629,11 +629,10 @@ class Store {
         this._data.projects.push(newProject);
         this._save();
         this._emit('project:add', newProject);
-        // Sync Supabase en arrière-plan
+        // Sync Supabase en arrière-plan (upsertProject gère déjà l'ajout dans project_members)
         auth.getUser().then(user => {
             if (!user) return;
             supabaseStore.upsertProject(newProject, user.id)
-                .then(() => supabaseStore.addProjectMember(newProject.id, user.id, 'owner'))
                 .catch(e => console.error('[store] sync addProject:', e));
         });
         return newProject;
