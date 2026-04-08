@@ -6,6 +6,7 @@
 import { collaboration } from './collaboration.js';
 import { store } from './store.js';
 import { auth } from './auth.js';
+import { supabaseStore } from './supabase-store.js';
 
 /* ---- Modal HTML injected once ---- */
 
@@ -283,6 +284,20 @@ export const collaborationUI = {
         const user = await auth.getUser();
         this._currentUserId = user?.id || null;
         this._currentRole = await collaboration.getCurrentUserRole(projectId);
+
+        // If not a member yet, sync the project to Supabase and add self as owner
+        if (!this._currentRole && user) {
+            try {
+                const project = store.getActiveProject();
+                if (project && project.id === projectId) {
+                    await supabaseStore.upsertProject(project, user.id);
+                    await supabaseStore.addProjectMember(projectId, user.id, 'owner');
+                    this._currentRole = 'owner';
+                }
+            } catch (e) {
+                console.error('[collaborationUI] sync project:', e);
+            }
+        }
 
         const isOwnerOrEditor = this._currentRole === 'owner' || this._currentRole === 'editor';
 
