@@ -525,12 +525,13 @@ export const collaborationUI = {
                 emailInput.value = '';
                 await this._loadData();
             } else {
-                // Show invite link with copy button
                 const link = result.link;
-                _showMsg(msgEl, 'info',
-                    `Invitation envoyée à ${email}. Lien : <a href="${link}" target="_blank" style="color:inherit;font-weight:700;">copier</a>`
-                );
-                // Also show copy UI
+                const project = store.getActiveProject();
+                const projectName = project?.name || 'Gantt Planner';
+
+                _showMsg(msgEl, 'success', `Invitation créée pour ${email}.`);
+
+                // Copy row
                 const existing = document.getElementById('shareInviteCopyRow');
                 if (existing) existing.remove();
 
@@ -546,16 +547,28 @@ export const collaborationUI = {
 
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'share-copy-btn';
-                copyBtn.textContent = 'Copier';
+                copyBtn.textContent = 'Copier le lien';
                 copyBtn.addEventListener('click', () => {
                     navigator.clipboard.writeText(link).then(() => {
                         copyBtn.textContent = 'Copié !';
-                        setTimeout(() => { copyBtn.textContent = 'Copier'; }, 2000);
+                        setTimeout(() => { copyBtn.textContent = 'Copier le lien'; }, 2000);
                     });
                 });
 
+                // Send by email button (mailto)
+                const mailSubject = encodeURIComponent(`Invitation à collaborer sur "${projectName}"`);
+                const mailBody = encodeURIComponent(
+                    `Bonjour,\n\nVous avez été invité à collaborer sur le projet "${projectName}" dans Gantt Planner.\n\nCliquez sur le lien ci-dessous pour accepter l'invitation :\n${link}\n\nCe lien est valable 7 jours.\n\nCordialement`
+                );
+                const mailBtn = document.createElement('a');
+                mailBtn.href = `mailto:${email}?subject=${mailSubject}&body=${mailBody}`;
+                mailBtn.className = 'share-copy-btn';
+                mailBtn.textContent = 'Envoyer par email';
+                mailBtn.style.cssText = 'text-decoration:none; background:#6366F1; color:#fff; border-color:#6366F1;';
+
                 copyRow.appendChild(linkInput);
                 copyRow.appendChild(copyBtn);
+                copyRow.appendChild(mailBtn);
                 msgEl.after(copyRow);
 
                 emailInput.value = '';
