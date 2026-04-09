@@ -633,9 +633,11 @@ class Store {
         return this._data.projects.find(p => p.id === id) || this._data.projects[0];
     }
 
-    setActiveProject(projectId) {
+    async setActiveProject(projectId) {
         this._data.settings.activeProjectId = projectId;
         this._save();
+        // Charger les tâches/ressources depuis Supabase avant de notifier l'UI
+        await this._loadProjectData(projectId);
         this._emit('project:change', projectId);
     }
 
