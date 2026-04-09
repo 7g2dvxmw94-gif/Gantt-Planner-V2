@@ -12,24 +12,24 @@ import { supabase } from './supabase-client.js';
 import { store } from './store.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Display user name (or email as fallback)
-    try {
-        const user = await auth.getUser();
+    // Update display name when store loads or settings change
+    const updateDisplayName = async () => {
         const emailEl = document.getElementById('userEmail');
-        if (emailEl && user) {
-            const userName = store.getSettings().customization?.userName?.trim();
-            emailEl.textContent = userName || user.email;
+        if (!emailEl) return;
+        const userName = store.getSettings().customization?.userName?.trim();
+        if (userName) {
+            emailEl.textContent = userName;
+        } else {
+            try {
+                const user = await auth.getUser();
+                if (user) emailEl.textContent = user.email;
+            } catch (_) {}
         }
-    } catch (_) {}
+    };
 
-    // Update display name when settings change
-    store.on('settings:change', (settings) => {
-        const emailEl = document.getElementById('userEmail');
-        if (emailEl) {
-            const userName = settings.customization?.userName?.trim();
-            if (userName) emailEl.textContent = userName;
-        }
-    });
+    updateDisplayName();
+    store.on('change', updateDisplayName);
+    store.on('settings:change', updateDisplayName);
 
     // Wire sign-out button
     const signOutBtn = document.getElementById('signOutBtn');
