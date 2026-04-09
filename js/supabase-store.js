@@ -182,18 +182,13 @@ export const supabaseStore = {
 
     async upsertProject(project, ownerId) {
         const row = projectToRow(project, ownerId);
-        const { error } = await supabase.rpc('upsert_project', {
-            p_id:          row.id,
-            p_name:        row.name,
-            p_description: row.description || '',
-            p_start_date:  row.start_date  || null,
-            p_end_date:    row.end_date    || null,
-            p_budget:      row.budget      || 0,
-            p_budget_used: row.budget_used || 0,
-            p_color:       row.color       || null,
-            p_zoom_level:  row.zoom_level  || 'week',
-        });
-        if (error) console.error('[supabaseStore] upsertProject:', error);
+        const { error } = await supabase
+            .from('projects')
+            .upsert(row, { onConflict: 'id' });
+        if (error) {
+            console.error('[supabaseStore] upsertProject:', error);
+            throw error;
+        }
     },
 
     async addProjectMember(projectId, userId, role = 'owner') {
@@ -248,7 +243,10 @@ export const supabaseStore = {
         const { error } = await supabase
             .from('tasks')
             .upsert(taskToRow(task));
-        if (error) console.error('[supabaseStore] upsertTask:', error);
+        if (error) {
+            console.error('[supabaseStore] upsertTask:', error);
+            throw error;
+        }
     },
 
     async deleteTask(taskId) {
@@ -287,7 +285,10 @@ export const supabaseStore = {
         const { error } = await supabase
             .from('resources')
             .upsert(resourceToRow(resource));
-        if (error) console.error('[supabaseStore] upsertResource:', error);
+        if (error) {
+            console.error('[supabaseStore] upsertResource:', error);
+            throw error;
+        }
     },
 
     async deleteResource(resourceId) {

@@ -1630,27 +1630,36 @@ class Store {
                 this._data.settings.customization = { ...this._data.settings.customization, ...data.customization };
             }
             this._save();
-            this._emit('project:import', lastProjectId);
 
             // Sync imported projects and resources to Supabase
+            // NOTE: emit is deferred until AFTER Supabase sync to avoid race conditions
+            // (task upsert would fail if project doesn't exist in Supabase yet)
             const user = await auth.getUser();
+            console.log('[import] Supabase sync start, user:', user?.id);
             if (user) {
                 // 1. Projects first
                 for (const proj of data.projects) {
                     const mappedProj = this._data.projects.find(p => p.id === idMap[proj.id]);
+                    console.log('[import] syncing project:', mappedProj?.id, mappedProj?.name);
                     if (mappedProj) {
-                        const pErr = await supabaseStore.upsertProject(mappedProj, user.id).catch(e => e);
-                        if (pErr) console.error('[import] upsertProject error:', pErr);
+                        try {
+                            await supabaseStore.upsertProject(mappedProj, user.id);
+                            console.log('[import] project saved OK:', mappedProj.id);
+                        } catch (e) {
+                            console.error('[import] upsertProject FAILED:', e?.message || e, 'code:', e?.code);
+                        }
                     }
                 }
                 // 2. Resources with remapped projectId
                 for (const res of (data.resources || [])) {
                     const mappedRes = this._data.resources.find(r => r.id === idMap[res.id]);
                     if (mappedRes) {
-                        // Use the new project ID, not the old one from the JSON
                         const syncRes = { ...mappedRes, projectId: idMap[res.projectId] || mappedRes.projectId };
-                        const rErr = await supabaseStore.upsertResource(syncRes).catch(e => e);
-                        if (rErr) console.error('[import] upsertResource error:', rErr);
+                        try {
+                            await supabaseStore.upsertResource(syncRes);
+                        } catch (e) {
+                            console.error('[import] upsertResource FAILED:', e?.message || e);
+                        }
                     }
                 }
                 // 3. Tasks: parents first (null parentId), then children
@@ -1662,13 +1671,20 @@ class Store {
                 for (const task of sortedTasks) {
                     const newTask = this._data.tasks.find(t => t.id === idMap[task.id]);
                     if (newTask) {
-                        const tErr = await supabaseStore.upsertTask(newTask).catch(e => e);
-                        if (tErr) console.error('[import] upsertTask error:', tErr);
+                        try {
+                            await supabaseStore.upsertTask(newTask);
+                        } catch (e) {
+                            console.error('[import] upsertTask FAILED:', e?.message || e);
+                        }
                     }
                 }
+                console.log('[import] Supabase sync complete');
             } else {
                 console.warn('[import] no authenticated user, skipping Supabase sync');
             }
+
+            // Emit AFTER sync so _loadProjectData doesn't race against Supabase writes
+            this._emit('project:import', lastProjectId);
 
             return { count: data.projects.length };
         } catch (e) {
