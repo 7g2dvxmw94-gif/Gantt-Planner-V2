@@ -1517,7 +1517,7 @@ class Store {
         };
     }
 
-    importAllProjects(jsonData) {
+    async importAllProjects(jsonData) {
         this._snapshot();
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
