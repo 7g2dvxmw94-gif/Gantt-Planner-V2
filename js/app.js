@@ -3824,7 +3824,7 @@ tr:nth-child(even){background:#fafbfc}
                     try {
                         const parsed = JSON.parse(evt.target.result);
                         if (parsed.type === 'full-backup') {
-                            const result = store.importAllProjects(parsed);
+                            const result = await store.importAllProjects(parsed);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -4244,7 +4244,7 @@ tr:nth-child(even){background:#fafbfc}
                         btn.textContent = '...';
                         const data = await cloudBackup.loadBackup(id);
                         if (data.type === 'full-backup') {
-                            const result = store.importAllProjects(data);
+                            const result = await store.importAllProjects(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -4618,7 +4618,7 @@ tr:nth-child(even){background:#fafbfc}
                         btn.textContent = '...';
                         const data = await oneDriveBackup.loadBackup(id);
                         if (data.type === 'full-backup') {
-                            const result = store.importAllProjects(data);
+                            const result = await store.importAllProjects(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
