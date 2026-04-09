@@ -1520,6 +1520,44 @@ class Store {
 
                 this._data.settings.activeProjectId = newProjectId;
                 this._save();
+
+                // Sync to Supabase in background (project → resources → tasks)
+                auth.getUser().then(async user => {
+                    if (!user) return;
+                    try {
+                        await supabaseStore.upsertProject(newProject, user.id);
+                        console.log('[importProject] project saved:', newProjectId);
+                    } catch (e) {
+                        console.error('[importProject] upsertProject failed:', e?.message || e);
+                        return;
+                    }
+                    // Resources
+                    for (const r of (data.resources || [])) {
+                        const mappedRes = this._data.resources.find(res => res.id === idMap[r.id]);
+                        if (mappedRes) {
+                            const syncRes = { ...mappedRes, projectId: newProjectId };
+                            await supabaseStore.upsertResource(syncRes).catch(e =>
+                                console.error('[importProject] upsertResource failed:', e?.message || e)
+                            );
+                        }
+                    }
+                    // Tasks: parents first
+                    const sorted = [...data.tasks].sort((a, b) => {
+                        if (!a.parentId && b.parentId) return -1;
+                        if (a.parentId && !b.parentId) return 1;
+                        return 0;
+                    });
+                    for (const t of sorted) {
+                        const newTask = this._data.tasks.find(tk => tk.id === idMap[t.id]);
+                        if (newTask) {
+                            await supabaseStore.upsertTask(newTask).catch(e =>
+                                console.error('[importProject] upsertTask failed:', e?.message || e)
+                            );
+                        }
+                    }
+                    console.log('[importProject] Supabase sync complete');
+                });
+
                 this._emit('project:import', newProjectId);
                 return newProject;
             }
