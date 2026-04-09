@@ -478,6 +478,12 @@ class Store {
 
             this._data.projects = projects;
 
+            // Purge stale tasks/resources from localStorage that don't belong to known projects
+            const projectIds = new Set(projects.map(p => p.id));
+            this._data.tasks     = this._data.tasks.filter(t => projectIds.has(t.projectId));
+            this._data.resources = this._data.resources.filter(r => projectIds.has(r.projectId));
+            this._data.baselines = this._data.baselines.filter(b => projectIds.has(b.projectId));
+
             // 2. Restaurer le projet actif depuis localStorage (préférence UI)
             const savedActiveId = localStorage.getItem('gantt_active_project');
             const activeProject = projects.find(p => p.id === savedActiveId) || projects[0];
