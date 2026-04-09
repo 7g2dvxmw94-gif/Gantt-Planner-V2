@@ -1513,6 +1513,7 @@ class Store {
             projects,
             tasks: allTasks,
             resources: this.getResources(),
+            customization: this._data.settings.customization || {},
             exportedAt: new Date().toISOString(),
         };
     }
@@ -1582,6 +1583,10 @@ class Store {
 
             if (lastProjectId) {
                 this._data.settings.activeProjectId = lastProjectId;
+            }
+            // Restore customization (logo, avatar, etc.)
+            if (data.customization) {
+                this._data.settings.customization = { ...this._data.settings.customization, ...data.customization };
             }
             this._save();
             this._emit('project:import', lastProjectId);
