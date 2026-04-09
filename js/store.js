@@ -1592,22 +1592,27 @@ class Store {
                 for (const proj of data.projects) {
                     const mappedProj = this._data.projects.find(p => p.id === idMap[proj.id]);
                     if (mappedProj) {
-                        await supabaseStore.upsertProject(mappedProj, user.id).catch(() => {});
-                        await supabaseStore.addProjectMember(mappedProj.id, user.id, 'owner').catch(() => {});
+                        console.log('[import] syncing project', mappedProj.id, mappedProj.name);
+                        const pErr = await supabaseStore.upsertProject(mappedProj, user.id).catch(e => e);
+                        if (pErr) console.error('[import] upsertProject error:', pErr);
                     }
                 }
                 for (const res of (data.resources || [])) {
                     const mappedRes = this._data.resources.find(r => r.id === idMap[res.id]);
                     if (mappedRes) {
-                        await supabaseStore.upsertResource(mappedRes).catch(() => {});
+                        const rErr = await supabaseStore.upsertResource(mappedRes).catch(e => e);
+                        if (rErr) console.error('[import] upsertResource error:', rErr);
                     }
                 }
                 for (const task of data.tasks) {
                     const newTask = this._data.tasks.find(t => t.id === idMap[task.id]);
                     if (newTask) {
-                        await supabaseStore.upsertTask(newTask).catch(() => {});
+                        const tErr = await supabaseStore.upsertTask(newTask).catch(e => e);
+                        if (tErr) console.error('[import] upsertTask error:', tErr);
                     }
                 }
+            } else {
+                console.warn('[import] no authenticated user, skipping Supabase sync');
             }
 
             return { count: data.projects.length };
