@@ -1585,6 +1585,31 @@ class Store {
             }
             this._save();
             this._emit('project:import', lastProjectId);
+
+            // Sync imported projects and resources to Supabase
+            const user = await auth.getUser();
+            if (user) {
+                for (const proj of data.projects) {
+                    const mappedProj = this._data.projects.find(p => p.id === idMap[proj.id]);
+                    if (mappedProj) {
+                        await supabaseStore.upsertProject(mappedProj, user.id).catch(() => {});
+                        await supabaseStore.addProjectMember(mappedProj.id, user.id, 'owner').catch(() => {});
+                    }
+                }
+                for (const res of (data.resources || [])) {
+                    const mappedRes = this._data.resources.find(r => r.id === idMap[res.id]);
+                    if (mappedRes) {
+                        await supabaseStore.upsertResource(mappedRes).catch(() => {});
+                    }
+                }
+                for (const task of data.tasks) {
+                    const newTask = this._data.tasks.find(t => t.id === idMap[task.id]);
+                    if (newTask) {
+                        await supabaseStore.upsertTask(newTask).catch(() => {});
+                    }
+                }
+            }
+
             return { count: data.projects.length };
         } catch (e) {
             console.error('Import all projects failed:', e);
