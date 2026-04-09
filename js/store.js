@@ -511,16 +511,28 @@ class Store {
     }
 
     async _loadProjectData(projectId) {
-        const [tasks, resources, baselines] = await Promise.all([
+        const [supabaseTasks, resources, baselines] = await Promise.all([
             supabaseStore.getTasks(projectId),
             supabaseStore.getResources(projectId),
             supabaseStore.getBaselines(projectId),
         ]);
 
-        // Retirer les anciennes données de ce projet et injecter les nouvelles
-        this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId).concat(tasks);
+        // Tâches locales pour ce projet (pas encore synchées ou en attente)
+        const localTasks = this._data.tasks.filter(t => t.projectId === projectId);
+        const supabaseTaskIds = new Set(supabaseTasks.map(t => t.id));
+        const unsynced = localTasks.filter(t => !supabaseTaskIds.has(t.id));
+
+        // Remplacer avec les données Supabase + conserver les tâches locales non synchées
+        this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId)
+                                                .concat(supabaseTasks)
+                                                .concat(unsynced);
         this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
+
+        // Re-syncher les tâches locales non encore dans Supabase
+        for (const task of unsynced) {
+            supabaseStore.upsertTask(task).catch(e => console.error('[store] re-sync task:', e));
+        }
 
         // Reconstruire resourceIds depuis toutes les ressources du projet
         const project = this._data.projects.find(p => p.id === projectId);
@@ -639,10 +651,10 @@ class Store {
         this._data.projects.push(newProject);
         this._save();
         this._emit('project:add', newProject);
-        // Sync Supabase en arrière-plan (upsertProject gère déjà l'ajout dans project_members)
-        auth.getUser().then(user => {
+        // Sync Supabase - await pour éviter race condition lors de la création de tâches
+        auth.getUser().then(async user => {
             if (!user) return;
-            supabaseStore.upsertProject(newProject, user.id)
+            await supabaseStore.upsertProject(newProject, user.id)
                 .catch(e => console.error('[store] sync addProject:', e));
         });
         return newProject;
