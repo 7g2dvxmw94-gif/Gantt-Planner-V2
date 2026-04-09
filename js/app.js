@@ -3820,7 +3820,7 @@ tr:nth-child(even){background:#fafbfc}
 
             if (ext === 'json') {
                 const reader = new FileReader();
-                reader.onload = (evt) => {
+                reader.onload = async (evt) => {
                     try {
                         const parsed = JSON.parse(evt.target.result);
                         if (parsed.type === 'full-backup') {
