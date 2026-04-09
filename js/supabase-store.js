@@ -332,4 +332,24 @@ export const supabaseStore = {
             .eq('id', baselineId);
         if (error) console.error('[supabaseStore] deleteBaseline:', error);
     },
+
+    /* ---- USER SETTINGS ---- */
+
+    async getUserSettings() {
+        const { data, error } = await supabase
+            .from('user_settings')
+            .select('*')
+            .single();
+        if (error && error.code !== 'PGRST116') {
+            console.error('[supabaseStore] getUserSettings:', error);
+        }
+        return data?.customization || {};
+    },
+
+    async upsertUserSettings(customization) {
+        const { error } = await supabase.rpc('upsert_user_settings', {
+            p_customization: customization,
+        });
+        if (error) console.error('[supabaseStore] upsertUserSettings:', error);
+    },
 };

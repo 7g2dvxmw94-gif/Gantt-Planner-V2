@@ -486,7 +486,13 @@ class Store {
             // 3. Charger tâches, ressources et baselines du projet actif
             await this._loadProjectData(activeProject.id);
 
-            // 4. Restaurer les préférences UI depuis localStorage
+            // 4. Load customization from Supabase
+            const customization = await supabaseStore.getUserSettings();
+            if (customization && Object.keys(customization).length) {
+                this._data.settings.customization = { ...this._data.settings.customization, ...customization };
+            }
+
+            // 5. Restaurer les préférences UI depuis localStorage
             const savedSettings = this._loadSettingsFromStorage();
             if (savedSettings) {
                 this._data.settings = { ...this._data.settings, ...savedSettings };
@@ -1197,6 +1203,11 @@ class Store {
         this._data.settings = { ...this._data.settings, ...updates };
         this._save();
         this._emit('settings:change', this._data.settings);
+        // Sync customization to Supabase
+        if (updates.customization) {
+            supabaseStore.upsertUserSettings(updates.customization)
+                .catch(e => console.error('[store] sync customization:', e));
+        }
     }
 
     /* ---- Computed Data ---- */
