@@ -204,10 +204,9 @@ export const supabaseStore = {
     },
 
     async deleteProject(projectId) {
-        const { error } = await supabase
-            .from('projects')
-            .delete()
-            .eq('id', projectId);
+        const { error } = await supabase.rpc('delete_project', {
+            p_project_id: projectId,
+        });
         if (error) console.error('[supabaseStore] deleteProject:', error);
     },
 
