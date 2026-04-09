@@ -519,7 +519,7 @@ class Store {
 
         // Retirer les anciennes données de ce projet et injecter les nouvelles
         this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId).concat(tasks);
-        this._data.resources = resources;
+        this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
         // Reconstruire resourceIds depuis toutes les ressources du projet
@@ -1544,35 +1544,47 @@ class Store {
             const idMap = {};
             let lastProjectId = null;
 
-            // Remap resource IDs first
+            // 1. Préparer les IDs des ressources (sans les ajouter encore)
             if (data.resources) {
                 data.resources.forEach(r => {
                     const exists = this._data.resources.find(
                         existing => existing.name === r.name && existing.role === r.role
                     );
-                    if (!exists) {
-                        const newId = generateId();
-                        idMap[r.id] = newId;
-                        this._data.resources.push({ ...r, id: newId });
-                    } else {
-                        idMap[r.id] = exists.id;
-                    }
+                    idMap[r.id] = exists ? exists.id : generateId();
                 });
             }
 
-            // Import each project
+            // 2. Importer les projets (et remplir idMap pour les projets)
             data.projects.forEach(proj => {
                 const newProjectId = generateId();
                 idMap[proj.id] = newProjectId;
                 lastProjectId = newProjectId;
 
+                // Remap resourceIds du projet
+                const resourceIds = (proj.resourceIds || []).map(id => idMap[id] || id);
+
                 this._data.projects.push({
                     ...proj,
                     id: newProjectId,
+                    resourceIds,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 });
             });
+
+            // 3. Ajouter les ressources avec projectId remappé
+            if (data.resources) {
+                data.resources.forEach(r => {
+                    const exists = this._data.resources.find(res => res.id === idMap[r.id]);
+                    if (!exists) {
+                        this._data.resources.push({
+                            ...r,
+                            id: idMap[r.id],
+                            projectId: idMap[r.projectId] || r.projectId,
+                        });
+                    }
+                });
+            }
 
             // Remap task IDs
             data.tasks.forEach(t => {
