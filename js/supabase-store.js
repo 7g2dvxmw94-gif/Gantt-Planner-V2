@@ -338,11 +338,9 @@ export const supabaseStore = {
     async getUserSettings() {
         const { data, error } = await supabase
             .from('user_settings')
-            .select('*')
-            .single();
-        if (error && error.code !== 'PGRST116') {
-            console.error('[supabaseStore] getUserSettings:', error);
-        }
+            .select('customization')
+            .maybeSingle();
+        if (error) console.error('[supabaseStore] getUserSettings:', error);
         return data?.customization || {};
     },
 
