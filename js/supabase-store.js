@@ -380,4 +380,58 @@ export const supabaseStore = {
         });
         if (error) console.error('[supabaseStore] upsertUserSettings:', error);
     },
+
+    /* ---- NOTIFICATIONS ---- */
+
+    async getNotifications() {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (error) {
+            console.error('[supabaseStore] getNotifications:', error);
+            return [];
+        }
+        return (data || []).map(row => ({
+            id:          row.id,
+            projectId:   row.project_id,
+            actorName:   row.actor_name,
+            type:        row.type,
+            message:     row.message,
+            taskName:    row.task_name,
+            readAt:      row.read_at,
+            createdAt:   row.created_at,
+        }));
+    },
+
+    async markNotificationRead(notifId) {
+        await supabase
+            .from('notifications')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', notifId);
+    },
+
+    async deleteNotification(notifId) {
+        await supabase.from('notifications').delete().eq('id', notifId);
+    },
+
+    async notifyTaskDeleted(projectId, taskName) {
+        const { error } = await supabase.rpc('notify_task_deleted', {
+            p_project_id: projectId,
+            p_task_name:  taskName,
+        });
+        if (error) console.error('[supabaseStore] notifyTaskDeleted:', error);
+    },
+
+    subscribeToNotifications(callback) {
+        return supabase
+            .channel('notifications')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+            }, (payload) => callback(payload.new))
+            .subscribe();
+    },
 };

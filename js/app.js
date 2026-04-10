@@ -4,6 +4,7 @@
    ======================================== */
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
@@ -105,6 +106,30 @@ class App {
 
         // Initial role gating
         this._applyRoleGating();
+
+        // Charger les notifications Supabase et s'abonner au Realtime
+        this._supabaseNotifs = [];
+        supabaseStore.getNotifications().then(notifs => {
+            this._supabaseNotifs = notifs;
+            this._updateNotifications();
+        });
+        supabaseStore.subscribeToNotifications((row) => {
+            // Nouvelle notification en temps réel
+            const notif = {
+                id:        row.id,
+                projectId: row.project_id,
+                actorName: row.actor_name,
+                type:      row.type,
+                message:   row.message,
+                taskName:  row.task_name,
+                readAt:    row.read_at,
+                createdAt: row.created_at,
+            };
+            this._supabaseNotifs.unshift(notif);
+            this._updateNotifications();
+            // Toast discret
+            this._showToast(`🗑 ${notif.message}`, 'info');
+        });
 
         // Restore saved active view (persisted across refreshes)
         const savedView = store.getSettings().activeView;
@@ -2804,6 +2829,18 @@ thead{display:table-header-group}
         const notifications = [];
         const dismissed = this._getDismissedNotifs();
 
+        // Notifications Supabase (activité collaborateurs)
+        (this._supabaseNotifs || []).forEach(n => {
+            notifications.push({
+                type:      n.readAt ? 'info' : 'warning',
+                icon:      '🗑',
+                text:      n.message,
+                sub:       store.getProjects().find(p => p.id === n.projectId)?.name || '',
+                _supId:    n.id,
+                _supRead:  !!n.readAt,
+            });
+        });
+
         const projects = store.getProjects();
         projects.forEach(p => {
             const tasks = store.getTasks(p.id);
@@ -2942,7 +2979,13 @@ thead{display:table-header-group}
                     item.style.overflow = 'hidden';
                     setTimeout(() => {
                         item.remove();
-                        this._dismissNotification(this._notifKey(n));
+                        // Notification Supabase → supprimer en base
+                        if (n._supId) {
+                            supabaseStore.deleteNotification(n._supId);
+                            this._supabaseNotifs = this._supabaseNotifs.filter(s => s.id !== n._supId);
+                        } else {
+                            this._dismissNotification(this._notifKey(n));
+                        }
                         // If no more items, show empty state
                         if (!panel.querySelector('.notif-item')) {
                             const empty = document.createElement('div');

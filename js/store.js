@@ -965,9 +965,17 @@ class Store {
 
         this._save();
         this._emit('task:delete', taskId);
-        // Sync Supabase en arrière-plan
+        // Sync Supabase + notification aux owners si l'acteur est éditeur/invité
+        const projectId = task.projectId;
+        const taskName  = task.name;
         supabaseStore.deleteTask(taskId)
             .catch(e => console.error('[store] sync deleteTask:', e));
+        // Notifier les owners si l'acteur n'est pas owner lui-même
+        const role = this.getActiveProject()?._role;
+        if (role && role !== 'owner') {
+            supabaseStore.notifyTaskDeleted(projectId, taskName)
+                .catch(e => console.error('[store] notifyTaskDeleted:', e));
+        }
     }
 
     /**
