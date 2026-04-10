@@ -647,6 +647,7 @@ class App {
     /* ---- Resource View (Vue Ressources) ---- */
 
     _showResourceModal(resource = null) {
+        if (!store.canEdit()) return;  // Lecture seule
         const isEdit = !!resource;
         const RESOURCE_COLORS = [
             { name: 'Indigo',  value: '#6366F1' },
@@ -1341,7 +1342,10 @@ class App {
         const canEdit = role === 'owner' || role === 'editor';
 
         // Elements to disable for viewers
-        const editOnlyIds = ['addTaskBtn', 'importBtn', 'undoBtn', 'redoBtn', 'baselineBtn', 'criticalPathBtn'];
+        const editOnlyIds = [
+            'addTaskBtn', 'importBtn', 'undoBtn', 'redoBtn',
+            'baselineBtn', 'criticalPathBtn', 'addResourceBtn',
+        ];
         editOnlyIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -1351,6 +1355,18 @@ class App {
                 el.title = canEdit ? (el.title || '') : 'Accès lecture seule';
             }
         });
+
+        // Curseur "interdit" sur les barres Gantt pour les viewers
+        const style = document.getElementById('_readonlyStyle') || (() => {
+            const s = document.createElement('style');
+            s.id = '_readonlyStyle';
+            document.head.appendChild(s);
+            return s;
+        })();
+        style.textContent = canEdit ? '' : `
+            .gantt-bar, .gantt-bar-handle, .gantt-milestone, .gantt-permit { cursor: not-allowed !important; }
+            .gantt-bar:hover { opacity: 0.85; }
+        `;
 
         // Show viewer badge if read-only
         let badge = document.getElementById('viewerBadge');
@@ -4728,14 +4744,15 @@ tr:nth-child(even){background:#fafbfc}
         menu.style.top = y + 'px';
         menu.id = 'ctxMenu';
 
+        const canEdit = store.canEdit();
         const items = [
             { label: t('task.action.edit'), icon: 'edit', action: () => taskModal.openEdit(taskId) },
-            { label: t('task.action.duplicate'), icon: 'copy', action: () => this._duplicateTask(taskId) },
-            { label: 'divider' },
-            { label: t('task.action.markDone'), icon: 'check', action: () => this._markDone(taskId), hide: task.status === 'done' },
-            { label: t('task.action.markInProgress'), icon: 'play', action: () => this._markInProgress(taskId), hide: task.status === 'in_progress' },
-            { label: 'divider' },
-            { label: t('task.action.delete'), icon: 'trash', action: () => this._deleteTask(taskId), danger: true },
+            { label: t('task.action.duplicate'), icon: 'copy', action: () => this._duplicateTask(taskId), hide: !canEdit },
+            { label: 'divider', hide: !canEdit },
+            { label: t('task.action.markDone'), icon: 'check', action: () => this._markDone(taskId), hide: !canEdit || task.status === 'done' },
+            { label: t('task.action.markInProgress'), icon: 'play', action: () => this._markInProgress(taskId), hide: !canEdit || task.status === 'in_progress' },
+            { label: 'divider', hide: !canEdit },
+            { label: t('task.action.delete'), icon: 'trash', action: () => this._deleteTask(taskId), danger: true, hide: !canEdit },
         ];
 
         items.forEach(item => {
