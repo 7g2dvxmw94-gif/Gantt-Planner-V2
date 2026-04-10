@@ -685,12 +685,16 @@ class TaskModal {
         this._saveBtn.style.display   = readOnly ? 'none' : '';
         this._deleteBtn.style.display = readOnly ? 'none' : '';
 
-        // modal-body : pointer-events + opacité (header/footer non affectés car frères, pas enfants)
         const body = modal.querySelector('.modal-body');
         if (body) {
-            body.style.pointerEvents = readOnly ? 'none' : '';
-            body.style.opacity       = readOnly ? '0.6'  : '';
-            body.style.cursor        = readOnly ? 'not-allowed' : '';
+            // Griser visuellement le body sans bloquer le scroll
+            body.style.opacity = readOnly ? '0.6' : '';
+            // Bloquer uniquement les éléments interactifs (pas le body entier)
+            body.querySelectorAll(
+                'input, select, textarea, button, [role="button"], .color-swatch, .milestone-btn, .task-type-btn, .assignee-item'
+            ).forEach(el => {
+                el.style.pointerEvents = readOnly ? 'none' : '';
+            });
         }
 
         // Badge dans le header
