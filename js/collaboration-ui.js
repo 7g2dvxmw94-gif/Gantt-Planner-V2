@@ -523,6 +523,9 @@ export const collaborationUI = {
             if (result.type === 'added') {
                 _showMsg(msgEl, 'success', `${email} a été ajouté au projet.`);
                 emailInput.value = '';
+                // Notifier l'utilisateur ajouté en temps réel
+                supabaseStore.notifyProjectShared(this._projectId, email, roleSelect.value)
+                    .catch(e => console.error('[collab] notifyProjectShared:', e));
                 await this._loadData();
             } else {
                 const link = result.link;

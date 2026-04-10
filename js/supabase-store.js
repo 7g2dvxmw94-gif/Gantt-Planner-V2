@@ -424,6 +424,15 @@ export const supabaseStore = {
         if (error) console.error('[supabaseStore] notifyTaskDeleted:', error);
     },
 
+    async notifyProjectShared(projectId, email, role) {
+        const { error } = await supabase.rpc('notify_project_shared', {
+            p_project_id: projectId,
+            p_email:      email,
+            p_role:       role,
+        });
+        if (error) console.error('[supabaseStore] notifyProjectShared:', error);
+    },
+
     subscribeToNotifications(callback) {
         return supabase
             .channel('notifications')

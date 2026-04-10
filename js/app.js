@@ -127,8 +127,14 @@ class App {
             };
             this._supabaseNotifs.unshift(notif);
             this._updateNotifications();
-            // Toast discret
-            this._showToast(`🗑 ${notif.message}`, 'info');
+
+            if (notif.type === 'project_shared') {
+                // Popup spécial partage de projet
+                this._showProjectSharedPopup(notif);
+            } else {
+                // Toast discret pour les autres
+                this._showToast(`🗑 ${notif.message}`, 'info');
+            }
         });
 
         // Restore saved active view (persisted across refreshes)
@@ -2831,13 +2837,18 @@ thead{display:table-header-group}
 
         // Notifications Supabase (activité collaborateurs)
         (this._supabaseNotifs || []).forEach(n => {
+            const icon = n.type === 'project_shared' ? '📩' : '🗑';
+            const type = n.readAt ? 'info' : (n.type === 'project_shared' ? 'info' : 'warning');
+            const sub  = n.type === 'project_shared'
+                ? (n.taskName || '').split('|')[0]   // nom du projet
+                : store.getProjects().find(p => p.id === n.projectId)?.name || '';
             notifications.push({
-                type:      n.readAt ? 'info' : 'warning',
-                icon:      '🗑',
-                text:      n.message,
-                sub:       store.getProjects().find(p => p.id === n.projectId)?.name || '',
-                _supId:    n.id,
-                _supRead:  !!n.readAt,
+                type,
+                icon,
+                text:     n.message,
+                sub,
+                _supId:   n.id,
+                _supRead: !!n.readAt,
             });
         });
 
@@ -3014,6 +3025,48 @@ thead{display:table-header-group}
         }
 
         document.body.appendChild(panel);
+    }
+
+    _showProjectSharedPopup(notif) {
+        // Extraire projectName et role depuis task_name (format "ProjectName|role")
+        const parts = (notif.taskName || '').split('|');
+        const projectName = parts[0] || '';
+        const role        = parts[1] || '';
+        const roleLabel   = role === 'editor' ? '✏️ Écriture' : '👁 Lecture seule';
+        const roleColor   = role === 'editor' ? '#6366F1' : '#6B7280';
+
+        // Popup centré
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;';
+
+        box.innerHTML = `
+            <div style="font-size:2.5rem;margin-bottom:1rem;">📩</div>
+            <h2 style="margin:0 0 0.5rem;font-size:1.2rem;color:#111;">Projet partagé avec vous</h2>
+            <p style="margin:0 0 1.25rem;color:#555;font-size:0.95rem;">${notif.actorName} vous a donné accès au projet</p>
+            <div style="background:#F3F4F6;border-radius:10px;padding:1rem;margin-bottom:1.5rem;">
+                <div style="font-size:1.05rem;font-weight:700;color:#111;margin-bottom:0.4rem;">📁 ${projectName}</div>
+                <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.8rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.85rem;">${roleLabel}</div>
+            </div>
+            <button id="_sharedOkBtn" style="background:#6366F1;color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;">OK</button>
+        `;
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        const close = () => {
+            overlay.remove();
+            // Recharger les projets pour que le nouveau apparaisse
+            store.initFromSupabase().then(() => {
+                this._renderProjectName();
+                ganttRenderer.render();
+            });
+        };
+
+        box.querySelector('#_sharedOkBtn').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     }
 
     /* ---- Costs View (5e onglet) ---- */
