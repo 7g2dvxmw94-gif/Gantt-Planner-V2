@@ -681,37 +681,28 @@ class TaskModal {
         const modal = this._overlay.querySelector('.task-modal');
         if (!modal) return;
 
-        // Supprimer l'ancien overlay
-        const existing = modal.querySelector('.modal-readonly-shield');
-        if (existing) existing.remove();
-
         // Masquer/afficher les boutons footer
         this._saveBtn.style.display   = readOnly ? 'none' : '';
         this._deleteBtn.style.display = readOnly ? 'none' : '';
 
-        if (!readOnly) return;
-
-        // Overlay transparent qui bloque tout clic sur le body du modal
+        // modal-body : pointer-events + opacité (header/footer non affectés car frères, pas enfants)
         const body = modal.querySelector('.modal-body');
         if (body) {
-            body.style.position = 'relative';
-            const shield = document.createElement('div');
-            shield.className = 'modal-readonly-shield';
-            shield.style.cssText = [
-                'position:absolute', 'inset:0', 'z-index:10',
-                'cursor:not-allowed', 'border-radius:8px',
-                'background:rgba(255,255,255,0.45)',
-            ].join(';');
-            body.appendChild(shield);
+            body.style.pointerEvents = readOnly ? 'none' : '';
+            body.style.opacity       = readOnly ? '0.6'  : '';
+            body.style.cursor        = readOnly ? 'not-allowed' : '';
         }
 
-        // Badge lecture seule dans le header
-        if (!modal.querySelector('.modal-readonly-badge')) {
+        // Badge dans le header
+        const existing = modal.querySelector('.modal-readonly-badge');
+        if (readOnly && !existing) {
             const badge = document.createElement('span');
             badge.className = 'modal-readonly-badge';
             badge.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;background:#F3F4F6;color:#6B7280;border-radius:4px;font-size:0.75rem;font-weight:600;margin-left:0.5rem;vertical-align:middle;';
             badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Lecture seule';
             this._titleEl.appendChild(badge);
+        } else if (!readOnly && existing) {
+            existing.remove();
         }
     }
 
