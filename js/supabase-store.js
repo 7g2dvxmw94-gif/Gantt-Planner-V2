@@ -345,14 +345,27 @@ export const supabaseStore = {
 
     async upsertBaseline(baseline) {
         const user = await auth.getUser();
-        const { error } = await supabase.from('baselines').upsert({
+        const row = {
             id:             baseline.id,
             project_id:     baseline.projectId,
             created_by:     user?.id,
             name:           baseline.name,
             tasks_snapshot: baseline.tasks || [],
-        });
-        if (error) console.error('[supabaseStore] upsertBaseline:', error);
+        };
+        // Use insert vs update separately to avoid upsert RLS issues
+        // (PostgREST upsert requires both INSERT + UPDATE policies)
+        const { data: existing } = await supabase
+            .from('baselines').select('id').eq('id', baseline.id).maybeSingle();
+        if (existing) {
+            const { error } = await supabase
+                .from('baselines')
+                .update({ name: row.name, tasks_snapshot: row.tasks_snapshot })
+                .eq('id', baseline.id);
+            if (error) console.error('[supabaseStore] upsertBaseline update:', error);
+        } else {
+            const { error } = await supabase.from('baselines').insert(row);
+            if (error) console.error('[supabaseStore] upsertBaseline insert:', error);
+        }
     },
 
     async deleteBaseline(baselineId) {
