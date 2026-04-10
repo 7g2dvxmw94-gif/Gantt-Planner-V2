@@ -548,6 +548,11 @@ class Store {
         if (project) {
             project.resourceIds = resources.map(r => r.id);
         }
+
+        // Recalculate all phase dates/progress in memory so the Gantt
+        // always reflects the actual children, even if Supabase has stale phase data.
+        const phases = this._data.tasks.filter(t => t.projectId === projectId && t.isPhase);
+        phases.forEach(phase => this._recalculatePhase(phase.id));
     }
 
     _loadSettingsFromStorage() {
@@ -1164,6 +1169,10 @@ class Store {
         // Recalculate progress
         const totalProgress = children.reduce((sum, c) => sum + (c.progress || 0), 0);
         phase.progress = Math.round(totalProgress / children.length);
+
+        // Persist updated phase dates to Supabase
+        supabaseStore.upsertTask(phase)
+            .catch(e => console.error('[store] sync _recalculatePhase:', e));
     }
 
     /* ---- Resources ---- */
