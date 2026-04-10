@@ -794,6 +794,9 @@ class Store {
         const proj = this._data.projects.find(p => p.id === pid);
         if (proj) proj.activeBaselineId = baseline.id;
         this._save();
+        // Sync to Supabase
+        supabaseStore.upsertBaseline(baseline)
+            .catch(e => console.error('[store] sync createBaseline:', e));
         this._emit('baseline:create', baseline);
         return baseline;
     }
@@ -809,6 +812,9 @@ class Store {
             proj.activeBaselineId = remaining.length > 0 ? remaining[remaining.length - 1].id : null;
         }
         this._save();
+        // Sync to Supabase
+        supabaseStore.deleteBaseline(baselineId)
+            .catch(e => console.error('[store] sync deleteBaseline:', e));
         this._emit('baseline:delete', baselineId);
     }
 
@@ -817,6 +823,9 @@ class Store {
         if (idx === -1) return;
         this._data.baselines[idx].name = newName;
         this._save();
+        // Sync to Supabase
+        supabaseStore.upsertBaseline(this._data.baselines[idx])
+            .catch(e => console.error('[store] sync renameBaseline:', e));
         this._emit('baseline:update', this._data.baselines[idx]);
     }
 
