@@ -898,14 +898,19 @@ class Store {
         this._data.tasks.push(newTask);
         this._save();
         this._emit('task:add', newTask);
-        // Sync Supabase en arrière-plan
-        supabaseStore.upsertTask(newTask)
-            .then(() => {
-                if (newTask.assignees?.length) {
-                    return supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
-                }
-            })
-            .catch(e => console.error('[store] sync addTask:', e));
+        // Defer Supabase sync so applyPredecessorConstraints can adjust dates first
+        const taskId = newTask.id;
+        setTimeout(() => {
+            const latest = this._data.tasks.find(t => t.id === taskId);
+            if (!latest) return;
+            supabaseStore.upsertTask(latest)
+                .then(() => {
+                    if (latest.assignees?.length) {
+                        return supabaseStore.syncTaskAssignees(latest.id, latest.assignees);
+                    }
+                })
+                .catch(e => console.error('[store] sync addTask:', e));
+        }, 0);
         return newTask;
     }
 
@@ -934,16 +939,21 @@ class Store {
 
         this._save();
         this._emit('task:update', this._data.tasks[idx]);
-        // Sync Supabase en arrière-plan
-        const updatedTask = this._data.tasks[idx];
-        supabaseStore.upsertTask(updatedTask)
-            .then(() => {
-                if (updates.assignees !== undefined) {
-                    return supabaseStore.syncTaskAssignees(taskId, updatedTask.assignees || []);
-                }
-            })
-            .catch(e => console.error('[store] sync updateTask:', e));
-        return updatedTask;
+        // Defer Supabase sync so applyPredecessorConstraints (called by caller) can adjust dates first
+        const updatedTaskId = taskId;
+        const hasAssigneeUpdate = updates.assignees !== undefined;
+        setTimeout(() => {
+            const latest = this._data.tasks.find(t => t.id === updatedTaskId);
+            if (!latest) return;
+            supabaseStore.upsertTask(latest)
+                .then(() => {
+                    if (hasAssigneeUpdate) {
+                        return supabaseStore.syncTaskAssignees(updatedTaskId, latest.assignees || []);
+                    }
+                })
+                .catch(e => console.error('[store] sync updateTask:', e));
+        }, 0);
+        return this._data.tasks[idx];
     }
 
     deleteTask(taskId) {
