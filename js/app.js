@@ -106,6 +106,19 @@ class App {
         // Initial role gating
         this._applyRoleGating();
 
+        // Restore saved active view (persisted across refreshes)
+        const savedView = store.getSettings().activeView;
+        if (savedView && savedView !== 'timeline') {
+            this._activeView = savedView;
+            const tabs = $$('.tab[role="tab"]');
+            tabs.forEach(t => {
+                const active = t.dataset.view === savedView;
+                t.classList.toggle('active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            this._switchView(savedView);
+        }
+
         // Announce to screen readers
         this._announceToSR('Gantt Planner Pro');
 

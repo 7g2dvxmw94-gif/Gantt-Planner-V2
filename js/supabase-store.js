@@ -278,6 +278,27 @@ export const supabaseStore = {
 
     /* ---- RESOURCES ---- */
 
+    async getAllResources() {
+        // Charge toutes les ressources de tous les projets de l'utilisateur en une seule requête
+        const user = await auth.getUser();
+        if (!user) return [];
+        const { data: members } = await supabase
+            .from('project_members')
+            .select('project_id')
+            .eq('user_id', user.id);
+        if (!members?.length) return [];
+        const projectIds = members.map(m => m.project_id);
+        const { data, error } = await supabase
+            .from('resources')
+            .select('*')
+            .in('project_id', projectIds);
+        if (error) {
+            console.error('[supabaseStore] getAllResources:', error);
+            return [];
+        }
+        return (data || []).map(rowToResource);
+    },
+
     async getResources(projectId) {
         const { data, error } = await supabase
             .from('resources')

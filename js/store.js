@@ -483,13 +483,21 @@ class Store {
             const activeProject = projects.find(p => p.id === savedActiveId) || projects[0];
             this._data.settings.activeProjectId = activeProject.id;
 
-            // 3. Charger tâches, ressources et baselines du projet actif depuis Supabase
-            await this._loadProjectData(activeProject.id);
+            // 3. Charger tâches/baselines du projet actif + toutes les ressources (tous projets)
+            const [allResources] = await Promise.all([
+                supabaseStore.getAllResources(),
+                this._loadProjectData(activeProject.id),
+            ]);
+            // Toutes les ressources disponibles globalement
+            this._data.resources = allResources;
+            // Mettre à jour resourceIds pour chaque projet
+            this._data.projects.forEach(p => {
+                p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
+            });
 
             // 4. Purger les données locales orphelines (projets supprimés)
             const projectIds = new Set(projects.map(p => p.id));
             this._data.tasks     = this._data.tasks.filter(t => projectIds.has(t.projectId));
-            this._data.resources = this._data.resources.filter(r => projectIds.has(r.projectId));
             this._data.baselines = this._data.baselines.filter(b => projectIds.has(b.projectId));
 
             // 4. Load customization from Supabase
