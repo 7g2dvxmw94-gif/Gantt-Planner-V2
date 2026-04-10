@@ -1033,6 +1033,9 @@ class Store {
             this.propagateDependencies(taskId);
             this._save();
             this._emit('task:update', task);
+            // Sync dates ajustées vers Supabase
+            supabaseStore.upsertTask(task)
+                .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
         }
     }
 
@@ -1111,6 +1114,9 @@ class Store {
             succ.endDate = ne;
 
             if (succ.parentId) this._recalculatePhase(succ.parentId);
+            // Sync dates ajustées vers Supabase
+            supabaseStore.upsertTask(succ)
+                .catch(e => console.error('[store] sync propagateDependencies:', e));
             // Recursively propagate to this successor's own successors
             this.propagateDependencies(succ.id, visited);
         });
