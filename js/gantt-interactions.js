@@ -109,6 +109,12 @@ class GanttInteractions {
         const targetBar = permit || milestone || (handle ? handle.closest('.gantt-bar') : bar);
         if (!targetBar || !targetBar.dataset.taskId) return;
 
+        // Bloc drag/resize pour les lecteurs — les clics simples restent autorisés
+        if (!store.canEdit() && (handle || e.buttons !== 0)) {
+            // Only block actual drag attempts (handle = resize, or any non-left click)
+            if (handle) return;
+        }
+
         e.preventDefault();
 
         const task = store.getTask(targetBar.dataset.taskId);
@@ -122,6 +128,9 @@ class GanttInteractions {
         // Get the source row for vertical drag
         const sourceRow = targetBar.closest('.gantt-row');
         const wrapper = this._container.closest('.gantt-wrapper');
+
+        // Lecture seule : pas de drag/resize
+        if (!store.canEdit()) return;
 
         this._isDragging = true;
         this._justDragged = false;

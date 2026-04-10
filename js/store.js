@@ -631,6 +631,13 @@ class Store {
     canUndo() { return this._undoStack.length > 0; }
     canRedo() { return this._redoStack.length > 0; }
 
+    /** Retourne true si l'utilisateur peut modifier le projet actif */
+    canEdit() {
+        const project = this.getActiveProject();
+        const role = project?._role || 'owner';
+        return role === 'owner' || role === 'editor';
+    }
+
     /* ---- Projects ---- */
 
     getProjects() {
@@ -859,6 +866,7 @@ class Store {
     }
 
     addTask(task) {
+        if (!this.canEdit()) { console.warn('[store] addTask: read-only project'); return null; }
         this._snapshot();
         const tasks = this.getTasks();
         const newTask = {
@@ -902,6 +910,7 @@ class Store {
     }
 
     updateTask(taskId, updates) {
+        if (!this.canEdit()) { console.warn('[store] updateTask: read-only project'); return null; }
         if (!this._batchingUndo) this._snapshot();
         const idx = this._data.tasks.findIndex(t => t.id === taskId);
         if (idx === -1) return null;
@@ -938,6 +947,7 @@ class Store {
     }
 
     deleteTask(taskId) {
+        if (!this.canEdit()) { console.warn('[store] deleteTask: read-only project'); return; }
         if (!this._batchingUndo) this._snapshot();
         const task = this.getTask(taskId);
         if (!task) return;
@@ -1135,6 +1145,7 @@ class Store {
     }
 
     addResource(resource) {
+        if (!this.canEdit()) { console.warn('[store] addResource: read-only project'); return null; }
         this._snapshot();
         const newResource = {
             id: generateId(),
@@ -1151,6 +1162,7 @@ class Store {
     }
 
     updateResource(resourceId, updates) {
+        if (!this.canEdit()) { console.warn('[store] updateResource: read-only project'); return null; }
         this._snapshot();
         const idx = this._data.resources.findIndex(r => r.id === resourceId);
         if (idx === -1) return null;
@@ -1164,6 +1176,7 @@ class Store {
     }
 
     deleteResource(resourceId) {
+        if (!this.canEdit()) { console.warn('[store] deleteResource: read-only project'); return; }
         this._snapshot();
         this._data.resources = this._data.resources.filter(r => r.id !== resourceId);
         // Unassign from tasks

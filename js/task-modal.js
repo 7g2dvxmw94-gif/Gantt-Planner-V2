@@ -669,8 +669,37 @@ class TaskModal {
         this._populateParents(task.parentId);
         this._parentId = task.parentId;
 
+        // Mode lecture seule pour les viewers
+        const readOnly = !store.canEdit();
+        this._setReadOnly(readOnly);
+
         this._show();
         this._taskName.focus();
+    }
+
+    _setReadOnly(readOnly) {
+        // Inputs
+        const inputs = this._overlay.querySelectorAll('input, select, textarea');
+        inputs.forEach(el => { el.disabled = readOnly; });
+        // Boutons d'action
+        this._saveBtn.style.display  = readOnly ? 'none' : '';
+        this._deleteBtn.style.display = readOnly ? 'none' : '';
+        // Boutons de type de tâche, couleur, etc.
+        this._overlay.querySelectorAll('button:not(.modal-close)').forEach(btn => {
+            btn.disabled = readOnly;
+            btn.style.pointerEvents = readOnly ? 'none' : '';
+        });
+        // Badge lecture seule
+        let badge = this._overlay.querySelector('.modal-readonly-badge');
+        if (readOnly && !badge) {
+            badge = document.createElement('span');
+            badge.className = 'modal-readonly-badge';
+            badge.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;background:#F3F4F6;color:#6B7280;border-radius:4px;font-size:0.75rem;font-weight:600;margin-left:0.5rem;';
+            badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Lecture seule';
+            this._titleEl.appendChild(badge);
+        } else if (!readOnly && badge) {
+            badge.remove();
+        }
     }
 
     close() {
