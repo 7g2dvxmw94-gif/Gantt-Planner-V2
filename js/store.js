@@ -484,8 +484,9 @@ class Store {
             this._data.settings.activeProjectId = activeProject.id;
 
             // 3. Charger tâches/baselines du projet actif + toutes les ressources (tous projets)
+            // Passer user.id pour éviter des appels auth.getUser() concurrents (warning lock)
             const [allResources] = await Promise.all([
-                supabaseStore.getAllResources(),
+                supabaseStore.getAllResources(user.id),
                 this._loadProjectData(activeProject.id),
             ]);
             // Toutes les ressources disponibles globalement
