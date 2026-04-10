@@ -862,7 +862,15 @@ class Store {
                 .sort((a, b) => a.order - b.order)
                 .map(buildTree),
         });
-        return roots.map(buildTree);
+        const trees = roots.map(buildTree);
+        // Sort roots by the minimum order in their subtree so a phase appears
+        // at the position of its earliest child, not at its own creation order.
+        const minSubtreeOrder = (node) => {
+            if (!node.children || node.children.length === 0) return node.order;
+            return Math.min(node.order, ...node.children.map(minSubtreeOrder));
+        };
+        trees.sort((a, b) => minSubtreeOrder(a) - minSubtreeOrder(b));
+        return trees;
     }
 
     addTask(task) {
