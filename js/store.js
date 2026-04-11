@@ -794,9 +794,11 @@ class Store {
         const proj = this._data.projects.find(p => p.id === pid);
         if (proj) proj.activeBaselineId = baseline.id;
         this._save();
-        // Sync to Supabase
+        // Sync to Supabase + history
         supabaseStore.upsertBaseline(baseline)
             .catch(e => console.error('[store] sync createBaseline:', e));
+        supabaseStore.logHistory(pid, 'a créé la baseline', 'baseline', baseline.name)
+            .catch(() => {});
         this._emit('baseline:create', baseline);
         return baseline;
     }
@@ -812,9 +814,11 @@ class Store {
             proj.activeBaselineId = remaining.length > 0 ? remaining[remaining.length - 1].id : null;
         }
         this._save();
-        // Sync to Supabase
+        // Sync to Supabase + history
         supabaseStore.deleteBaseline(baselineId)
             .catch(e => console.error('[store] sync deleteBaseline:', e));
+        supabaseStore.logHistory(bl.projectId, 'a supprimé la baseline', 'baseline', bl.name)
+            .catch(() => {});
         this._emit('baseline:delete', baselineId);
     }
 
@@ -920,6 +924,9 @@ class Store {
         this._data.tasks.push(newTask);
         this._save();
         this._emit('task:add', newTask);
+        // Log history
+        supabaseStore.logHistory(newTask.projectId, 'a créé la tâche', newTask.isPhase ? 'phase' : 'task', newTask.name)
+            .catch(() => {});
         // Defer Supabase sync so applyPredecessorConstraints can adjust dates first
         const taskId = newTask.id;
         setTimeout(() => {
@@ -1002,6 +1009,9 @@ class Store {
         const taskName  = task.name;
         supabaseStore.deleteTask(taskId)
             .catch(e => console.error('[store] sync deleteTask:', e));
+        // Log history
+        supabaseStore.logHistory(projectId, 'a supprimé la tâche', task.isPhase ? 'phase' : 'task', taskName)
+            .catch(() => {});
         // Notifier les owners si l'acteur n'est pas owner lui-même
         const role = this.getActiveProject()?._role;
         if (role && role !== 'owner') {
@@ -1205,9 +1215,11 @@ class Store {
         this._data.resources.push(newResource);
         this._save();
         this._emit('resource:add', newResource);
-        // Sync Supabase en arrière-plan
+        // Sync Supabase + history
         supabaseStore.upsertResource(newResource)
             .catch(e => console.error('[store] sync addResource:', e));
+        supabaseStore.logHistory(newResource.projectId, 'a ajouté la ressource', 'resource', newResource.name)
+            .catch(() => {});
         return newResource;
     }
 
@@ -1228,6 +1240,7 @@ class Store {
     deleteResource(resourceId) {
         if (!this.canEdit()) { console.warn('[store] deleteResource: read-only project'); return; }
         this._snapshot();
+        const resource = this._data.resources.find(r => r.id === resourceId);
         this._data.resources = this._data.resources.filter(r => r.id !== resourceId);
         // Unassign from tasks
         this._data.tasks.forEach(t => {
@@ -1238,9 +1251,13 @@ class Store {
         });
         this._save();
         this._emit('resource:delete', resourceId);
-        // Sync Supabase en arrière-plan
+        // Sync Supabase + history
         supabaseStore.deleteResource(resourceId)
             .catch(e => console.error('[store] sync deleteResource:', e));
+        if (resource) {
+            supabaseStore.logHistory(resource.projectId, 'a supprimé la ressource', 'resource', resource.name)
+                .catch(() => {});
+        }
     }
 
     /* ---- Resource ↔ Project membership ---- */

@@ -4,6 +4,7 @@
    ======================================== */
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays, TASK_COLORS, getCurrencySymbol } from './utils.js';
 
 class TaskModal {
@@ -1127,7 +1128,14 @@ class TaskModal {
             store.applyPredecessorConstraints(newTask.id);
         } else {
             data.parentId = selectedParent;
+            const existingTask = store.getTask(this._editingTaskId);
             store.updateTask(this._editingTaskId, data);
+            // Log history for explicit user edits
+            if (existingTask) {
+                const pid = store.getSettings().activeProjectId;
+                supabaseStore.logHistory(pid, 'a modifié la tâche', existingTask.isPhase ? 'phase' : 'task', data.name || existingTask.name)
+                    .catch(() => {});
+            }
 
             // Apply predecessor constraints (adjusts dates based on predecessors)
             store.applyPredecessorConstraints(this._editingTaskId);

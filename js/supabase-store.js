@@ -446,6 +446,42 @@ export const supabaseStore = {
         if (error) console.error('[supabaseStore] notifyProjectShared:', error);
     },
 
+    /* ---- PROJECT HISTORY ---- */
+
+    async getProjectHistory(projectId) {
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+            .from('project_history')
+            .select('*')
+            .eq('project_id', projectId)
+            .gte('created_at', since)
+            .order('created_at', { ascending: false })
+            .limit(200);
+        if (error) {
+            console.error('[supabaseStore] getProjectHistory:', error);
+            return [];
+        }
+        return (data || []).map(row => ({
+            id:         row.id,
+            actorName:  row.actor_name,
+            action:     row.action,
+            entityType: row.entity_type,
+            entityName: row.entity_name,
+            createdAt:  row.created_at,
+        }));
+    },
+
+    async logHistory(projectId, action, entityType = null, entityName = null) {
+        if (!projectId) return;
+        const { error } = await supabase.rpc('log_project_history', {
+            p_project_id:  projectId,
+            p_action:      action,
+            p_entity_type: entityType,
+            p_entity_name: entityName,
+        });
+        if (error) console.error('[supabaseStore] logHistory:', error);
+    },
+
     async notifyProjectRemoved(projectId, userId, role) {
         const { error } = await supabase.rpc('notify_project_removed', {
             p_project_id: projectId,

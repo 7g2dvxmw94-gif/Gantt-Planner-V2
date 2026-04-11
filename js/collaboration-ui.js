@@ -418,9 +418,11 @@ export const collaborationUI = {
                     removeBtn.disabled = true;
                     try {
                         await collaboration.removeMember(this._projectId, m.userId);
-                        // Notify the removed user
+                        // Notify the removed user + log history
                         supabaseStore.notifyProjectRemoved(this._projectId, m.userId, m.role)
                             .catch(e => console.error('[collab] notifyProjectRemoved FAILED — SQL migration 011 may not have been run:', e));
+                        supabaseStore.logHistory(this._projectId, `a retiré ${m.name} du projet`, 'share', m.name)
+                            .catch(() => {});
                         row.remove();
                     } catch {
                         removeBtn.disabled = false;
@@ -529,6 +531,8 @@ export const collaborationUI = {
                 // Notifier l'utilisateur ajouté en temps réel
                 supabaseStore.notifyProjectShared(this._projectId, email, roleSelect.value)
                     .catch(e => console.error('[collab] notifyProjectShared:', e));
+                supabaseStore.logHistory(this._projectId, `a partagé le projet avec ${email}`, 'share', email)
+                    .catch(() => {});
                 await this._loadData();
             } else {
                 const link = result.link;

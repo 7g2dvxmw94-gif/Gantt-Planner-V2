@@ -88,6 +88,7 @@ class App {
         this._bindProjectSelector();
         this._bindNotifications();
         this._buildFilterBar();
+        this._bindHistoryBtn();
 
         // Render stats
         this._renderStats();
@@ -2937,6 +2938,101 @@ thead{display:table-header-group}
         } else {
             badge.style.display = 'none';
         }
+    }
+
+    _bindHistoryBtn() {
+        const btn = $('#historyBtn');
+        if (!btn) return;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._showHistoryPanel();
+        });
+    }
+
+    async _showHistoryPanel() {
+        // Remove existing panel
+        const existing = document.getElementById('_historyPanel');
+        if (existing) { existing.remove(); return; }
+
+        const projectId = store.getSettings().activeProjectId;
+        if (!projectId) return;
+
+        const panel = document.createElement('div');
+        panel.id = '_historyPanel';
+        panel.style.cssText = [
+            'position:fixed', 'top:56px', 'right:8px', 'width:340px', 'max-height:calc(100vh - 80px)',
+            'background:var(--bg-primary,#fff)', 'border:1px solid var(--border,#e5e7eb)',
+            'border-radius:12px', 'box-shadow:0 8px 32px rgba(0,0,0,0.15)',
+            'z-index:2000', 'display:flex', 'flex-direction:column', 'overflow:hidden',
+        ].join(';');
+
+        panel.innerHTML = `
+            <div style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary,#111);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Journal du projet
+                </span>
+                <button id="_historyClose" style="background:none;border:none;cursor:pointer;color:var(--text-secondary,#6b7280);font-size:1.1rem;line-height:1;">✕</button>
+            </div>
+            <div id="_historyBody" style="overflow-y:auto;padding:0.5rem 0;flex:1;">
+                <div style="text-align:center;padding:2rem;color:var(--text-secondary,#9ca3af);font-size:0.85rem;">Chargement…</div>
+            </div>
+            <div style="padding:0.6rem 1rem;border-top:1px solid var(--border,#e5e7eb);font-size:0.75rem;color:var(--text-secondary,#9ca3af);text-align:center;">
+                7 derniers jours · purge automatique
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        panel.querySelector('#_historyClose').addEventListener('click', () => panel.remove());
+        const onOutside = (e) => { if (!panel.contains(e.target) && e.target.id !== 'historyBtn') { panel.remove(); document.removeEventListener('click', onOutside); } };
+        setTimeout(() => document.addEventListener('click', onOutside), 10);
+
+        // Load history
+        const entries = await supabaseStore.getProjectHistory(projectId);
+        const body = panel.querySelector('#_historyBody');
+
+        if (!entries.length) {
+            body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary,#9ca3af);font-size:0.85rem;">Aucune activité ces 7 derniers jours</div>';
+            return;
+        }
+
+        // Group by day
+        const groups = {};
+        const today = new Date(); today.setHours(0,0,0,0);
+        const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+        entries.forEach(e => {
+            const d = new Date(e.createdAt); d.setHours(0,0,0,0);
+            let label;
+            if (d.getTime() === today.getTime()) label = "Aujourd'hui";
+            else if (d.getTime() === yesterday.getTime()) label = 'Hier';
+            else label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+            if (!groups[label]) groups[label] = [];
+            groups[label].push(e);
+        });
+
+        const entityIcon = { task: '📋', phase: '📁', resource: '👤', baseline: '📊', share: '🔗' };
+
+        body.innerHTML = Object.entries(groups).map(([day, items]) => `
+            <div style="padding:0.5rem 1.25rem 0.25rem;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#9ca3af);">${day}</div>
+            ${items.map(e => {
+                const time = new Date(e.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const initials = (e.actorName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                const icon = entityIcon[e.entityType] || '•';
+                return `
+                <div style="display:flex;align-items:flex-start;gap:0.625rem;padding:0.5rem 1.25rem;transition:background .15s;" onmouseover="this.style.background='var(--bg-secondary,#f9fafb)'" onmouseout="this.style.background=''">
+                    <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#6366F1;color:#fff;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.82rem;color:var(--text-primary,#111);line-height:1.35;">
+                            <strong>${e.actorName}</strong> ${e.action}
+                            ${e.entityName ? `<span style="color:#6366F1;font-weight:600;"> "${e.entityName}"</span>` : ''}
+                            <span style="margin-left:4px;">${icon}</span>
+                        </div>
+                        <div style="font-size:0.7rem;color:var(--text-secondary,#9ca3af);margin-top:1px;">${time}</div>
+                    </div>
+                </div>`;
+            }).join('')}
+        `).join('');
     }
 
     _bindNotifications() {
