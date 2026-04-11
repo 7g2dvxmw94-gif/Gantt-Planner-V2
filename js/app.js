@@ -112,6 +112,12 @@ class App {
         supabaseStore.getNotifications().then(notifs => {
             this._supabaseNotifs = notifs;
             this._updateNotifications();
+            // Show popup for any unread project_shared notifications (missed while page was closed)
+            const unreadShared = notifs.filter(n => n.type === 'project_shared' && !n.readAt);
+            if (unreadShared.length > 0) {
+                // Show only the most recent one; the others are visible in the bell menu
+                this._showProjectSharedPopup(unreadShared[0]);
+            }
         });
         supabaseStore.subscribeToNotifications((row) => {
             // Nouvelle notification en temps réel
@@ -3058,6 +3064,13 @@ thead{display:table-header-group}
 
         const close = () => {
             overlay.remove();
+            // Mark as read so the popup doesn't reappear on next page load
+            if (notif.id) {
+                supabaseStore.markNotificationRead(notif.id).catch(() => {});
+                const local = this._supabaseNotifs.find(n => n.id === notif.id);
+                if (local) local.readAt = new Date().toISOString();
+                this._updateNotifications();
+            }
             // Recharger les projets pour que le nouveau apparaisse
             store.initFromSupabase().then(() => {
                 this._renderProjectName();
