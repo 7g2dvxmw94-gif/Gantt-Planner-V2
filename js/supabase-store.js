@@ -486,15 +486,17 @@ export const supabaseStore = {
             this._actorName = (profile?.full_name || profile?.email || user.email || 'Quelqu\'un').trim() || 'Quelqu\'un';
         }
 
-        const { error } = await supabase.from('project_history').insert({
-            project_id:  projectId,
-            actor_id:    user.id,
-            actor_name:  this._actorName,
-            action,
-            entity_type: entityType || null,
-            entity_name: entityName || null,
+        // SECURITY DEFINER RPC bypasses RLS — actor passed explicitly to avoid
+        // auth.uid()=NULL issues inside SECURITY DEFINER context (migration 014).
+        const { error } = await supabase.rpc('log_project_history', {
+            p_project_id:  projectId,
+            p_actor_id:    user.id,
+            p_actor_name:  this._actorName,
+            p_action:      action,
+            p_entity_type: entityType || null,
+            p_entity_name: entityName || null,
         });
-        if (error) console.error('[supabaseStore] logHistory ERROR:', error);
+        if (error) console.error('[supabaseStore] logHistory ERROR (run migration 014):', error);
     },
 
     async notifyProjectRemoved(projectId, userId, role) {

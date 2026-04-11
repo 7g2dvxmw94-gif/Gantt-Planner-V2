@@ -2968,8 +2968,8 @@ thead{display:table-header-group}
 
         panel.innerHTML = `
             <div style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between;">
-                <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary,#111);">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span style="font-weight:700;font-size:0.95rem;color:var(--text-primary,#111);display:flex;align-items:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     Journal du projet
                 </span>
                 <button id="_historyClose" style="background:none;border:none;cursor:pointer;color:var(--text-secondary,#6b7280);font-size:1.1rem;line-height:1;">✕</button>
