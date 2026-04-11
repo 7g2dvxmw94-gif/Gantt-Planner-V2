@@ -1129,11 +1129,26 @@ class TaskModal {
         } else {
             data.parentId = selectedParent;
             const existingTask = store.getTask(this._editingTaskId);
+
+            // Check critical path BEFORE update to detect date changes on critical tasks
+            const datesChanged = existingTask && !existingTask.isPhase && (
+                (data.startDate !== undefined && data.startDate !== existingTask.startDate) ||
+                (data.endDate   !== undefined && data.endDate   !== existingTask.endDate)
+            );
+            const criticalIds = datesChanged ? store.getCriticalPath() : [];
+            const isOnCriticalPath = criticalIds.includes(this._editingTaskId);
+
             store.updateTask(this._editingTaskId, data);
+
             // Log history for explicit user edits
             if (existingTask) {
                 const pid = store.getSettings().activeProjectId;
-                supabaseStore.logHistory(pid, 'a modifié la tâche', existingTask.isPhase ? 'phase' : 'task', data.name || existingTask.name)
+                let action = existingTask.isPhase ? 'a modifié la phase' : 'a modifié la tâche';
+                if (isOnCriticalPath) {
+                    const typeLabel = existingTask.isMilestone ? 'jalon' : 'tâche';
+                    action = `a modifié un ${typeLabel} (⚠️ chemin critique)`;
+                }
+                supabaseStore.logHistory(pid, action, existingTask.isPhase ? 'phase' : 'task', data.name || existingTask.name)
                     .catch(() => {});
             }
 

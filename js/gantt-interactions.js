@@ -4,6 +4,7 @@
    ======================================== */
 
 import { store } from './store.js';
+import { supabaseStore } from './supabase-store.js';
 import { formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
@@ -730,7 +731,24 @@ class GanttInteractions {
                 }
             }
 
+            // Check critical path BEFORE update so we capture pre-change state
+            const taskBeforeDrag = store.getTask(d.taskId);
+            const criticalIds = (taskBeforeDrag && !taskBeforeDrag.isPhase)
+                ? store.getCriticalPath() : [];
+            const isOnCriticalPath = criticalIds.includes(d.taskId);
+
             store.updateTask(d.taskId, updates);
+
+            // Log critical path alert for user-initiated drag changes
+            if (isOnCriticalPath && taskBeforeDrag) {
+                const typeLabel = taskBeforeDrag.isMilestone ? 'jalon' : 'tâche';
+                supabaseStore.logHistory(
+                    taskBeforeDrag.projectId,
+                    `a déplacé un ${typeLabel} (⚠️ chemin critique)`,
+                    taskBeforeDrag.isMilestone ? 'milestone' : 'task',
+                    taskBeforeDrag.name
+                ).catch(() => {});
+            }
 
             if (this._onUpdate) this._onUpdate();
         }
