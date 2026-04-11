@@ -473,13 +473,28 @@ export const supabaseStore = {
 
     async logHistory(projectId, action, entityType = null, entityName = null) {
         if (!projectId) return;
-        const { error } = await supabase.rpc('log_project_history', {
-            p_project_id:  projectId,
-            p_action:      action,
-            p_entity_type: entityType,
-            p_entity_name: entityName,
+        const user = await auth.getUser();
+        if (!user) return;
+
+        // Cache actor name for the session to avoid a profile lookup on every call
+        if (!this._actorName) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, email')
+                .eq('id', user.id)
+                .maybeSingle();
+            this._actorName = (profile?.full_name || profile?.email || user.email || 'Quelqu\'un').trim() || 'Quelqu\'un';
+        }
+
+        const { error } = await supabase.from('project_history').insert({
+            project_id:  projectId,
+            actor_id:    user.id,
+            actor_name:  this._actorName,
+            action,
+            entity_type: entityType || null,
+            entity_name: entityName || null,
         });
-        if (error) console.error('[supabaseStore] logHistory ERROR (SQL migration 012 may be missing):', error);
+        if (error) console.error('[supabaseStore] logHistory ERROR:', error);
     },
 
     async notifyProjectRemoved(projectId, userId, role) {
