@@ -458,8 +458,8 @@ export const supabaseStore = {
             .order('created_at', { ascending: false })
             .limit(200);
         if (error) {
-            console.error('[supabaseStore] getProjectHistory:', error);
-            return [];
+            console.error('[supabaseStore] getProjectHistory error:', error);
+            return { error };   // return error object so panel can show it
         }
         return (data || []).map(row => ({
             id:         row.id,
@@ -479,7 +479,7 @@ export const supabaseStore = {
             p_entity_type: entityType,
             p_entity_name: entityName,
         });
-        if (error) console.error('[supabaseStore] logHistory:', error);
+        if (error) console.error('[supabaseStore] logHistory ERROR (SQL migration 012 may be missing):', error);
     },
 
     async notifyProjectRemoved(projectId, userId, role) {

@@ -2989,9 +2989,21 @@ thead{display:table-header-group}
         setTimeout(() => document.addEventListener('click', onOutside), 10);
 
         // Load history
-        const entries = await supabaseStore.getProjectHistory(projectId);
+        const result = await supabaseStore.getProjectHistory(projectId);
         const body = panel.querySelector('#_historyBody');
 
+        // If getProjectHistory returned an error object instead of an array
+        if (result && result.error) {
+            const code = result.error.code || '';
+            const msg  = result.error.message || JSON.stringify(result.error);
+            const hint = code === '42P01'
+                ? 'La table project_history n\'existe pas — exécutez la migration SQL 012 dans Supabase.'
+                : 'Vérifiez la console pour plus de détails.';
+            body.innerHTML = `<div style="padding:1rem 1.25rem;color:#ef4444;font-size:0.82rem;"><strong>Erreur :</strong> ${msg}<br><br><em>${hint}</em></div>`;
+            return;
+        }
+
+        const entries = Array.isArray(result) ? result : [];
         if (!entries.length) {
             body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary,#9ca3af);font-size:0.85rem;">Aucune activité ces 7 derniers jours</div>';
             return;
