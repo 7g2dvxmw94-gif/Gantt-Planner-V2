@@ -112,11 +112,16 @@ class App {
         supabaseStore.getNotifications().then(notifs => {
             this._supabaseNotifs = notifs;
             this._updateNotifications();
-            // Show popup for any unread project_shared notifications (missed while page was closed)
-            const unreadShared = notifs.filter(n => n.type === 'project_shared' && !n.readAt);
-            if (unreadShared.length > 0) {
-                // Show only the most recent one; the others are visible in the bell menu
-                this._showProjectSharedPopup(unreadShared[0]);
+            // Show popup for any unread project_shared/project_removed notifications
+            // (missed while page was closed). Use a short delay so the page is
+            // fully rendered before the overlay is injected.
+            const shown = JSON.parse(localStorage.getItem('_shownNotifPopups') || '[]');
+            const pending = notifs.filter(n =>
+                (n.type === 'project_shared' || n.type === 'project_removed') &&
+                !shown.includes(n.id)
+            );
+            if (pending.length > 0) {
+                setTimeout(() => this._showProjectSharedPopup(pending[0]), 600);
             }
         });
         supabaseStore.subscribeToNotifications((row) => {
@@ -134,8 +139,7 @@ class App {
             this._supabaseNotifs.unshift(notif);
             this._updateNotifications();
 
-            if (notif.type === 'project_shared') {
-                // Popup spécial partage de projet
+            if (notif.type === 'project_shared' || notif.type === 'project_removed') {
                 this._showProjectSharedPopup(notif);
             } else {
                 // Toast discret pour les autres
@@ -2843,9 +2847,9 @@ thead{display:table-header-group}
 
         // Notifications Supabase (activité collaborateurs)
         (this._supabaseNotifs || []).forEach(n => {
-            const icon = n.type === 'project_shared' ? '📩' : '🗑';
-            const type = n.readAt ? 'info' : (n.type === 'project_shared' ? 'info' : 'warning');
-            const sub  = n.type === 'project_shared'
+            const icon = n.type === 'project_shared' ? '📩' : n.type === 'project_removed' ? '🚫' : '🗑';
+            const type = n.readAt ? 'info' : (n.type === 'project_shared' || n.type === 'project_removed' ? 'info' : 'warning');
+            const sub  = (n.type === 'project_shared' || n.type === 'project_removed')
                 ? (n.taskName || '').split('|')[0]   // nom du projet
                 : store.getProjects().find(p => p.id === n.projectId)?.name || '';
             notifications.push({
@@ -3038,8 +3042,28 @@ thead{display:table-header-group}
         const parts = (notif.taskName || '').split('|');
         const projectName = parts[0] || '';
         const role        = parts[1] || '';
-        const roleLabel   = role === 'editor' ? '✏️ Écriture' : '👁 Lecture seule';
-        const roleColor   = role === 'editor' ? '#6366F1' : '#6B7280';
+        const isRemoved   = notif.type === 'project_removed';
+
+        const roleLabel = role === 'editor' ? '✏️ Écriture' : '👁 Lecture seule';
+        const roleColor = role === 'editor' ? '#6366F1' : '#6B7280';
+
+        const emoji   = isRemoved ? '🚫' : '📩';
+        const title   = isRemoved ? 'Retiré d\'un projet' : 'Projet partagé avec vous';
+        const bodyTxt = isRemoved
+            ? `${notif.actorName || ''} vous a retiré du projet`
+            : `${notif.actorName || ''} vous a donné accès au projet`;
+        const accentColor = isRemoved ? '#EF4444' : '#6366F1';
+
+        // Mark in localStorage BEFORE showing so even if JS throws later, we won't loop
+        if (notif.id) {
+            const shown = JSON.parse(localStorage.getItem('_shownNotifPopups') || '[]');
+            if (!shown.includes(notif.id)) {
+                shown.push(notif.id);
+                // Keep only last 100 entries
+                if (shown.length > 100) shown.splice(0, shown.length - 100);
+                localStorage.setItem('_shownNotifPopups', JSON.stringify(shown));
+            }
+        }
 
         // Popup centré
         const overlay = document.createElement('div');
@@ -3049,14 +3073,14 @@ thead{display:table-header-group}
         box.style.cssText = 'background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;';
 
         box.innerHTML = `
-            <div style="font-size:2.5rem;margin-bottom:1rem;">📩</div>
-            <h2 style="margin:0 0 0.5rem;font-size:1.2rem;color:#111;">Projet partagé avec vous</h2>
-            <p style="margin:0 0 1.25rem;color:#555;font-size:0.95rem;">${notif.actorName} vous a donné accès au projet</p>
+            <div style="font-size:2.5rem;margin-bottom:1rem;">${emoji}</div>
+            <h2 style="margin:0 0 0.5rem;font-size:1.2rem;color:#111;">${title}</h2>
+            <p style="margin:0 0 1.25rem;color:#555;font-size:0.95rem;">${bodyTxt}</p>
             <div style="background:#F3F4F6;border-radius:10px;padding:1rem;margin-bottom:1.5rem;">
                 <div style="font-size:1.05rem;font-weight:700;color:#111;margin-bottom:0.4rem;">📁 ${projectName}</div>
-                <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.8rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.85rem;">${roleLabel}</div>
+                ${!isRemoved ? `<div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.8rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.85rem;">${roleLabel}</div>` : ''}
             </div>
-            <button id="_sharedOkBtn" style="background:#6366F1;color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;">OK</button>
+            <button id="_sharedOkBtn" style="background:${accentColor};color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;">OK</button>
         `;
 
         overlay.appendChild(box);
@@ -3064,21 +3088,30 @@ thead{display:table-header-group}
 
         const close = () => {
             overlay.remove();
-            // Mark as read so the popup doesn't reappear on next page load
+            // Mark as read in Supabase
             if (notif.id) {
                 supabaseStore.markNotificationRead(notif.id).catch(() => {});
                 const local = this._supabaseNotifs.find(n => n.id === notif.id);
                 if (local) local.readAt = new Date().toISOString();
                 this._updateNotifications();
             }
-            // Recharger les projets pour que le nouveau apparaisse
-            store.initFromSupabase().then(() => {
-                this._renderProjectName();
-                ganttRenderer.render();
-            });
+            // Reload projects so added/removed project reflects immediately
+            if (!isRemoved) {
+                store.initFromSupabase().then(() => {
+                    this._renderProjectName();
+                    ganttRenderer.render();
+                });
+            } else {
+                // For removal: reload so the removed project disappears from the list
+                store.initFromSupabase().then(() => {
+                    this._renderProjectName();
+                    ganttRenderer.render();
+                });
+            }
         };
 
-        box.querySelector('#_sharedOkBtn').addEventListener('click', close);
+        const okBtn = box.querySelector('#_sharedOkBtn');
+        if (okBtn) okBtn.addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     }
 

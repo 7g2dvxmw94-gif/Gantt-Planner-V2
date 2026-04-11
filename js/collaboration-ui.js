@@ -418,6 +418,9 @@ export const collaborationUI = {
                     removeBtn.disabled = true;
                     try {
                         await collaboration.removeMember(this._projectId, m.userId);
+                        // Notify the removed user
+                        supabaseStore.notifyProjectRemoved(this._projectId, m.userId, m.role)
+                            .catch(e => console.error('[collab] notifyProjectRemoved:', e));
                         row.remove();
                     } catch {
                         removeBtn.disabled = false;

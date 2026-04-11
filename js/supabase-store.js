@@ -446,13 +446,27 @@ export const supabaseStore = {
         if (error) console.error('[supabaseStore] notifyProjectShared:', error);
     },
 
-    subscribeToNotifications(callback) {
+    async notifyProjectRemoved(projectId, userId, role) {
+        const { error } = await supabase.rpc('notify_project_removed', {
+            p_project_id: projectId,
+            p_user_id:    userId,
+            p_role:       role,
+        });
+        if (error) console.error('[supabaseStore] notifyProjectRemoved:', error);
+    },
+
+    async subscribeToNotifications(callback) {
+        // Use a user-specific channel name + explicit filter so the Realtime
+        // event is only delivered to the correct recipient (respects RLS).
+        const user = await auth.getUser();
+        if (!user) return null;
         return supabase
-            .channel('notifications')
+            .channel(`notifications-${user.id}`)
             .on('postgres_changes', {
-                event: 'INSERT',
+                event:  'INSERT',
                 schema: 'public',
-                table: 'notifications',
+                table:  'notifications',
+                filter: `recipient_id=eq.${user.id}`,
             }, (payload) => callback(payload.new))
             .subscribe();
     },
