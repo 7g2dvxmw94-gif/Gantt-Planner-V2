@@ -420,7 +420,7 @@ export const collaborationUI = {
                         await collaboration.removeMember(this._projectId, m.userId);
                         // Notify the removed user
                         supabaseStore.notifyProjectRemoved(this._projectId, m.userId, m.role)
-                            .catch(e => console.error('[collab] notifyProjectRemoved:', e));
+                            .catch(e => console.error('[collab] notifyProjectRemoved FAILED — SQL migration 011 may not have been run:', e));
                         row.remove();
                     } catch {
                         removeBtn.disabled = false;

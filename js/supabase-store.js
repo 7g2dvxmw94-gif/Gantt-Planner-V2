@@ -452,7 +452,10 @@ export const supabaseStore = {
             p_user_id:    userId,
             p_role:       role,
         });
-        if (error) console.error('[supabaseStore] notifyProjectRemoved:', error);
+        if (error) {
+            console.error('[supabaseStore] notifyProjectRemoved error:', error);
+            throw error;
+        }
     },
 
     async subscribeToNotifications(callback) {
