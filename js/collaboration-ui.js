@@ -90,13 +90,13 @@ function _injectStyles() {
     style.textContent = `
     .share-modal-overlay {
         position: fixed; inset: 0; z-index: 1000;
-        background: rgba(15, 23, 42, 0.45);
+        background: var(--bg-overlay);
         display: flex; align-items: center; justify-content: center;
         padding: 1rem;
     }
     .share-modal {
-        background: var(--bg-primary, #fff);
-        border: 1px solid var(--border-color, #E5E7EB);
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-default);
         border-radius: 12px;
         width: 100%; max-width: 520px;
         max-height: 90vh; overflow-y: auto;
@@ -115,21 +115,21 @@ function _injectStyles() {
     .share-modal-title {
         display: flex; align-items: center; gap: 0.5rem;
         font-size: 1rem; font-weight: 700;
-        color: var(--text-primary, #1F2937);
+        color: var(--text-primary);
         margin: 0;
     }
     .share-modal-close {
         background: none; border: none; cursor: pointer; padding: 0.25rem;
-        color: var(--text-muted, #9CA3AF); border-radius: 6px;
+        color: var(--text-muted); border-radius: 6px;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.15s, color 0.15s;
     }
-    .share-modal-close:hover { background: var(--bg-muted, #F3F4F6); color: var(--text-primary, #1F2937); }
+    .share-modal-close:hover { background: var(--bg-muted); color: var(--text-primary); }
     .share-modal-body { padding: 1.25rem 1.5rem 1.5rem; }
     .share-section { margin-bottom: 1.25rem; }
     .share-label {
         display: block; font-size: 0.8rem; font-weight: 600;
-        color: var(--text-secondary, #6B7280); text-transform: uppercase;
+        color: var(--text-secondary); text-transform: uppercase;
         letter-spacing: 0.05em; margin-bottom: 0.6rem;
     }
     .share-invite-row {
@@ -137,107 +137,107 @@ function _injectStyles() {
     }
     .share-input {
         flex: 1; padding: 0.55rem 0.75rem; border-radius: 8px;
-        border: 1px solid var(--border-color, #E5E7EB);
+        border: 1px solid var(--border-default);
         font-size: 0.875rem; font-family: inherit;
-        background: var(--bg-primary, #fff);
-        color: var(--text-primary, #1F2937);
+        background: var(--bg-elevated);
+        color: var(--text-primary);
         outline: none; min-width: 0;
     }
-    .share-input:focus { border-color: #6366F1; box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
+    .share-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(99,102,241,0.12); }
     .share-select {
         padding: 0.55rem 0.5rem; border-radius: 8px;
-        border: 1px solid var(--border-color, #E5E7EB);
+        border: 1px solid var(--border-default);
         font-size: 0.875rem; font-family: inherit;
-        background: var(--bg-primary, #fff);
-        color: var(--text-primary, #1F2937);
+        background: var(--bg-elevated);
+        color: var(--text-primary);
         outline: none; cursor: pointer;
     }
-    .share-select:focus { border-color: #6366F1; }
+    .share-select:focus { border-color: var(--color-primary); }
     .share-btn-invite {
-        padding: 0.55rem 1rem; background: #6366F1; color: white;
+        padding: 0.55rem 1rem; background: var(--color-primary); color: white;
         border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600;
         cursor: pointer; font-family: inherit; white-space: nowrap;
         transition: background 0.15s;
     }
-    .share-btn-invite:hover { background: #4F46E5; }
+    .share-btn-invite:hover { background: var(--color-primary-hover); }
     .share-btn-invite:disabled { opacity: 0.6; cursor: not-allowed; }
     .share-invite-msg {
         margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 6px;
         font-size: 0.825rem; font-weight: 500;
     }
-    .share-invite-msg.success { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
-    .share-invite-msg.error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
-    .share-invite-msg.info    { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
-    .share-divider { height: 1px; background: var(--border-color, #E5E7EB); margin: 1.25rem 0; }
+    .share-invite-msg.success { background: var(--color-success-light); color: var(--color-success-dark); border: 1px solid var(--color-success); }
+    .share-invite-msg.error   { background: var(--color-error-light); color: var(--color-error-dark); border: 1px solid var(--color-error); }
+    .share-invite-msg.info    { background: var(--color-info-light); color: var(--color-info-dark); border: 1px solid var(--color-info); }
+    .share-divider { height: 1px; background: var(--border-default); margin: 1.25rem 0; }
     .share-members-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .share-member-row {
         display: flex; align-items: center; gap: 0.75rem;
         padding: 0.6rem 0.75rem; border-radius: 8px;
-        background: var(--bg-muted, #F9FAFB);
+        background: var(--bg-muted);
         border: 1px solid transparent;
     }
-    .share-member-row:hover { border-color: var(--border-color, #E5E7EB); }
+    .share-member-row:hover { border-color: var(--border-default); }
     .share-avatar {
         width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.8rem; font-weight: 700; color: white;
-        background: linear-gradient(135deg, #6366F1, #EC4899);
+        background: linear-gradient(135deg, var(--color-primary), var(--color-info));
     }
     .share-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
     .share-member-info { flex: 1; min-width: 0; }
     .share-member-name {
         font-size: 0.875rem; font-weight: 600;
-        color: var(--text-primary, #1F2937);
+        color: var(--text-primary);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .share-member-email {
-        font-size: 0.775rem; color: var(--text-muted, #9CA3AF);
+        font-size: 0.775rem; color: var(--text-muted);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .share-role-badge {
         font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem;
         border-radius: 4px; white-space: nowrap; flex-shrink: 0;
     }
-    .share-role-badge.owner  { background: #FEF3C7; color: #92400E; }
-    .share-role-badge.editor { background: #DBEAFE; color: #1D4ED8; }
-    .share-role-badge.viewer { background: #F3F4F6; color: #374151; }
+    .share-role-badge.owner  { background: var(--color-warning-light); color: var(--color-warning-dark); }
+    .share-role-badge.editor { background: var(--color-info-light); color: var(--color-info-dark); }
+    .share-role-badge.viewer { background: var(--bg-muted); color: var(--text-primary); }
     .share-member-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
     .share-action-btn {
         background: none; border: none; cursor: pointer; padding: 0.25rem;
-        color: var(--text-muted, #9CA3AF); border-radius: 4px;
+        color: var(--text-muted); border-radius: 4px;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.12s, color 0.12s;
         font-size: 0.8rem;
     }
-    .share-action-btn:hover { background: var(--border-color, #E5E7EB); color: var(--text-primary, #1F2937); }
-    .share-action-btn.danger:hover { background: #FEF2F2; color: #DC2626; }
-    .share-loading { font-size: 0.85rem; color: var(--text-muted, #9CA3AF); padding: 0.5rem 0; text-align: center; }
+    .share-action-btn:hover { background: var(--border-default); color: var(--text-primary); }
+    .share-action-btn.danger:hover { background: var(--color-error-light); color: var(--color-error-dark); }
+    .share-loading { font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0; text-align: center; }
     .share-pending-row {
         display: flex; align-items: center; gap: 0.75rem;
         padding: 0.6rem 0.75rem; border-radius: 8px;
-        background: #FFFBEB; border: 1px solid #FDE68A;
+        background: var(--color-warning-light); border: 1px solid var(--color-warning);
     }
-    .share-pending-email { flex: 1; font-size: 0.875rem; color: #92400E; font-weight: 500; }
-    .share-pending-meta { font-size: 0.775rem; color: #B45309; }
+    .share-pending-email { flex: 1; font-size: 0.875rem; color: var(--color-warning-dark); font-weight: 500; }
+    .share-pending-meta { font-size: 0.775rem; color: var(--color-warning-dark); }
     .share-copy-row {
         display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;
     }
     .share-link-input {
         flex: 1; padding: 0.45rem 0.65rem; border-radius: 6px;
-        border: 1px solid var(--border-color, #E5E7EB);
-        font-size: 0.8rem; color: var(--text-secondary, #6B7280);
-        background: var(--bg-muted, #F9FAFB); font-family: monospace;
+        border: 1px solid var(--border-default);
+        font-size: 0.8rem; color: var(--text-secondary);
+        background: var(--bg-muted); font-family: monospace;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         min-width: 0;
     }
     .share-copy-btn {
-        padding: 0.45rem 0.75rem; background: var(--bg-muted, #F3F4F6);
-        border: 1px solid var(--border-color, #E5E7EB); border-radius: 6px;
+        padding: 0.45rem 0.75rem; background: var(--bg-muted);
+        border: 1px solid var(--border-default); border-radius: 6px;
         font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit;
-        color: var(--text-primary, #1F2937); white-space: nowrap;
+        color: var(--text-primary); white-space: nowrap;
         transition: background 0.12s;
     }
-    .share-copy-btn:hover { background: var(--border-color, #E5E7EB); }
+    .share-copy-btn:hover { background: var(--border-default); }
     `;
     document.head.appendChild(style);
 }
