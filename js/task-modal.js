@@ -193,10 +193,13 @@ class TaskModal {
         this._milestoneBtnPending.classList.add('active');
         [this._milestoneBtnPending, this._milestoneBtnDone].forEach(btn => {
             btn.addEventListener('click', () => {
-                this._milestoneBtnPending.classList.toggle('active', btn === this._milestoneBtnPending);
-                this._milestoneBtnDone.classList.toggle('active', btn === this._milestoneBtnDone);
+                const isDone = btn === this._milestoneBtnDone;
+                this._milestoneBtnPending.classList.toggle('active', !isDone);
+                this._milestoneBtnDone.classList.toggle('active', isDone);
                 this._progressInput.value = btn.dataset.value;
                 this._progressLabel.textContent = btn.dataset.value + '%';
+                // Keep status field in sync so board view badge stays consistent
+                this._statusSelect.value = isDone ? 'done' : 'todo';
             });
         });
         this._milestoneStatusToggle.appendChild(this._milestoneBtnPending);

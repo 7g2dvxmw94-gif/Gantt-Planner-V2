@@ -101,6 +101,10 @@ class App {
             this._renderStats();
             this._renderProjectName();
             this._applyRoleGating();
+            // Keep board view in sync when it's visible
+            if (document.getElementById('boardView')?.style.display !== 'none') {
+                this._renderBoardView();
+            }
         });
 
         store.on('project:change', () => this._applyRoleGating());
@@ -649,11 +653,17 @@ class App {
             }
             row.appendChild(tdAssignees);
 
-            // Status
+            // Status — milestones use "Franchi"/"Non franchi" based on progress, not status
             const tdStatus = document.createElement('td');
             const statusBadge = document.createElement('span');
-            statusBadge.className = `badge-status-${task.status}`;
-            statusBadge.textContent = statusLabels[task.status] || task.status;
+            if (task.isMilestone) {
+                const franchi = task.progress >= 100;
+                statusBadge.className = franchi ? 'badge-status-done' : 'badge-status-todo';
+                statusBadge.textContent = franchi ? t('gantt.milestone.reached') : t('gantt.milestone.pending');
+            } else {
+                statusBadge.className = `badge-status-${task.status}`;
+                statusBadge.textContent = statusLabels[task.status] || task.status;
+            }
             tdStatus.appendChild(statusBadge);
             if (isCritical) {
                 const critBadge = document.createElement('span');
