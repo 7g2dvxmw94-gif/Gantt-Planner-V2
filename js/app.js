@@ -3087,12 +3087,56 @@ thead{display:table-header-group}
         panel.style.top = (rect.bottom + 6) + 'px';
         panel.addEventListener('click', (e) => e.stopPropagation());
 
+        // Header: title + "Tout supprimer" button
+        // Absorb the padding/border-bottom from .notif-panel-title into the wrapper
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border-default,#E2E8F0);';
+
         const title = document.createElement('div');
         title.className = 'notif-panel-title';
+        // Remove padding/border already applied by the wrapper
+        title.style.cssText = 'padding:0;border:none;margin:0;';
         title.textContent = t('notif.title');
-        panel.appendChild(title);
+        header.appendChild(title);
 
         const notifs = this._getNotifications();
+
+        if (notifs.length > 0) {
+            const clearAllBtn = document.createElement('button');
+            clearAllBtn.textContent = 'Tout supprimer';
+            clearAllBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:0.75rem;color:#9ca3af;padding:0;margin:0;transition:color .15s;';
+            clearAllBtn.addEventListener('mouseenter', () => { clearAllBtn.style.color = '#EF4444'; });
+            clearAllBtn.addEventListener('mouseleave', () => { clearAllBtn.style.color = '#9ca3af'; });
+            clearAllBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Delete all Supabase notifications
+                const supIds = notifs.filter(n => n._supId).map(n => n._supId);
+                supIds.forEach(id => {
+                    supabaseStore.deleteNotification(id).catch(() => {});
+                });
+                this._supabaseNotifs = this._supabaseNotifs.filter(s => !supIds.includes(s.id));
+
+                // Dismiss all local notifications
+                notifs.filter(n => !n._supId).forEach(n => {
+                    const dismissed = this._getDismissedNotifs();
+                    dismissed.add(this._notifKey(n));
+                    localStorage.setItem('gantt_dismissed_notifs', JSON.stringify([...dismissed]));
+                });
+                this._updateNotifications();
+
+                // Replace list with empty state
+                panel.querySelectorAll('.notif-item').forEach(el => el.remove());
+                const empty = document.createElement('div');
+                empty.className = 'notif-empty';
+                empty.textContent = t('notif.noAlerts');
+                panel.appendChild(empty);
+                clearAllBtn.remove();
+            });
+            header.appendChild(clearAllBtn);
+        }
+
+        panel.appendChild(header);
+
         if (notifs.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'notif-empty';
@@ -3126,12 +3170,13 @@ thead{display:table-header-group}
                         } else {
                             this._dismissNotification(this._notifKey(n));
                         }
-                        // If no more items, show empty state
+                        // If no more items, show empty state + hide clear-all button
                         if (!panel.querySelector('.notif-item')) {
                             const empty = document.createElement('div');
                             empty.className = 'notif-empty';
                             empty.textContent = t('notif.noAlerts');
                             panel.appendChild(empty);
+                            panel.querySelector('button[data-clearall]')?.remove();
                         }
                     }, 200);
                 });
