@@ -148,6 +148,7 @@ class TaskModal {
 
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
+        this._statusGroup = statusGroup;
         statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, t('task.status')));
         this._statusSelect = createElement('select', { className: 'select', id: 'taskStatus' });
         [['todo', t('task.status.todo')], ['in_progress', t('task.status.inProgress')], ['done', t('task.status.done')]].forEach(([val, lbl]) => {
@@ -158,7 +159,8 @@ class TaskModal {
 
         // Progress
         const progressGroup = createElement('div', { className: 'form-group' });
-        progressGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskProgress' }, t('task.progress')));
+        this._progressGroupLabel = createElement('label', { className: 'form-label', for: 'taskProgress' }, t('task.progress'));
+        progressGroup.appendChild(this._progressGroupLabel);
         const progressWrap = createElement('div', { className: 'progress-input-wrap' });
         this._progressInput = createElement('input', {
             className: 'input',
@@ -495,12 +497,19 @@ class TaskModal {
             this._durationInput.disabled = true;
             this._progressWrap.style.display = 'none';
             this._milestoneStatusToggle.style.display = '';
+            // Hide status dropdown — milestone uses Franchi/Non franchi toggle instead
+            this._statusGroup.style.display = 'none';
+            // Rename progress group label to "Statut"
+            this._progressGroupLabel.textContent = t('task.status');
         } else {
             this._taskEnd.disabled = false;
             this._durationInput.disabled = false;
             this._updateDurationFromDates();
             this._progressWrap.style.display = '';
             this._milestoneStatusToggle.style.display = 'none';
+            // Restore status dropdown and original progress label
+            this._statusGroup.style.display = '';
+            this._progressGroupLabel.textContent = t('task.progress');
         }
 
         // For permits, auto-update deadlines
