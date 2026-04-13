@@ -122,9 +122,14 @@ class App {
                 !shown.includes(n.id)
             );
             if (pending.length > 0) {
-                setTimeout(() => this._showProjectSharedPopup(pending[0]), 600);
+                setTimeout(() => this._showProjectSharedPopup(pending), 600);
             }
         });
+        // Buffer for realtime project_shared/removed notifications — collect for
+        // 800 ms so multiple simultaneous shares appear in a single popup.
+        this._realtimePopupBuffer = [];
+        this._realtimePopupTimer  = null;
+
         supabaseStore.subscribeToNotifications((row) => {
             // Nouvelle notification en temps réel
             const notif = {
@@ -141,7 +146,13 @@ class App {
             this._updateNotifications();
 
             if (notif.type === 'project_shared' || notif.type === 'project_removed') {
-                this._showProjectSharedPopup(notif);
+                // Batch notifications that arrive within 800 ms into a single popup
+                this._realtimePopupBuffer.push(notif);
+                clearTimeout(this._realtimePopupTimer);
+                this._realtimePopupTimer = setTimeout(() => {
+                    const batch = this._realtimePopupBuffer.splice(0);
+                    if (batch.length > 0) this._showProjectSharedPopup(batch);
+                }, 800);
             } else {
                 // Toast discret pour les autres
                 this._showToast(`🗑 ${notif.message}`, 'info');
@@ -3145,50 +3156,97 @@ thead{display:table-header-group}
         document.body.appendChild(panel);
     }
 
-    _showProjectSharedPopup(notif) {
-        // Extraire projectName et role depuis task_name (format "ProjectName|role")
-        const parts = (notif.taskName || '').split('|');
-        const projectName = parts[0] || '';
-        const role        = parts[1] || '';
-        const isRemoved   = notif.type === 'project_removed';
+    _showProjectSharedPopup(notifOrArray) {
+        // Accept a single notification or an array
+        const notifs = Array.isArray(notifOrArray) ? notifOrArray : [notifOrArray];
+        if (notifs.length === 0) return;
 
-        const roleLabel = role === 'editor' ? '✏️ Écriture' : '👁 Lecture seule';
-        const roleColor = role === 'editor' ? '#6366F1' : '#6B7280';
+        // Mark ALL notifications in localStorage BEFORE showing so we never loop
+        const shown = JSON.parse(localStorage.getItem('_shownNotifPopups') || '[]');
+        notifs.forEach(n => {
+            if (n.id && !shown.includes(n.id)) shown.push(n.id);
+        });
+        if (shown.length > 100) shown.splice(0, shown.length - 100);
+        localStorage.setItem('_shownNotifPopups', JSON.stringify(shown));
 
-        const emoji   = isRemoved ? '🚫' : '📩';
-        const title   = isRemoved ? 'Retiré d\'un projet' : 'Projet partagé avec vous';
-        const bodyTxt = isRemoved
-            ? `${notif.actorName || ''} vous a retiré du projet`
-            : `${notif.actorName || ''} vous a donné accès au projet`;
-        const accentColor = isRemoved ? '#EF4444' : '#6366F1';
+        // Split by type
+        const sharedNotifs  = notifs.filter(n => n.type === 'project_shared');
+        const removedNotifs = notifs.filter(n => n.type === 'project_removed');
 
-        // Mark in localStorage BEFORE showing so even if JS throws later, we won't loop
-        if (notif.id) {
-            const shown = JSON.parse(localStorage.getItem('_shownNotifPopups') || '[]');
-            if (!shown.includes(notif.id)) {
-                shown.push(notif.id);
-                // Keep only last 100 entries
-                if (shown.length > 100) shown.splice(0, shown.length - 100);
-                localStorage.setItem('_shownNotifPopups', JSON.stringify(shown));
+        // Determine dominant type for layout
+        const hasShared  = sharedNotifs.length  > 0;
+        const hasRemoved = removedNotifs.length > 0;
+        const mixedTypes = hasShared && hasRemoved;
+
+        // Helper: build project row HTML
+        const projectRow = (n, forceRemoved = false) => {
+            const parts       = (n.taskName || '').split('|');
+            const projectName = parts[0] || '(projet)';
+            const role        = parts[1] || '';
+            const isRemoved   = forceRemoved || n.type === 'project_removed';
+            if (isRemoved) {
+                return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;border-radius:8px;background:#FEF2F2;margin-bottom:0.4rem;">
+                    <span style="font-size:1rem;">🚫</span>
+                    <span style="font-weight:600;color:#111;flex:1;text-align:left;">${projectName}</span>
+                </div>`;
             }
+            const roleLabel = role === 'editor' ? '✏️ Écriture' : '👁 Lecture';
+            const roleColor = role === 'editor' ? '#6366F1' : '#6B7280';
+            return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;border-radius:8px;background:#F3F4F6;margin-bottom:0.4rem;">
+                <span style="font-size:1rem;">📁</span>
+                <span style="font-weight:600;color:#111;flex:1;text-align:left;">${projectName}</span>
+                <span style="padding:0.2rem 0.6rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.78rem;white-space:nowrap;">${roleLabel}</span>
+            </div>`;
+        };
+
+        // Build header
+        let emoji, title, bodyTxt, accentColor;
+        if (mixedTypes) {
+            emoji       = '📬';
+            title       = 'Mises à jour de projets';
+            const actorName = notifs[0]?.actorName || '';
+            bodyTxt     = actorName ? `Modifications par ${actorName}` : 'Vous avez des mises à jour';
+            accentColor = '#6366F1';
+        } else if (hasRemoved) {
+            const count   = removedNotifs.length;
+            const actorName = removedNotifs[0]?.actorName || '';
+            emoji       = '🚫';
+            title       = count > 1 ? `Retiré de ${count} projets` : 'Retiré d\'un projet';
+            bodyTxt     = actorName ? `${actorName} vous a retiré de ces projets` : 'Vous avez été retiré de ces projets';
+            accentColor = '#EF4444';
+        } else {
+            const count     = sharedNotifs.length;
+            const actorName = sharedNotifs[0]?.actorName || '';
+            emoji       = '📩';
+            title       = count > 1 ? `${count} projets partagés avec vous` : 'Projet partagé avec vous';
+            bodyTxt     = actorName
+                ? (count > 1 ? `${actorName} vous a donné accès à ces projets` : `${actorName} vous a donné accès au projet`)
+                : 'Vous avez été ajouté à des projets';
+            accentColor = '#6366F1';
         }
 
-        // Popup centré
+        // Build projects list HTML
+        let projectsHtml = '';
+        if (mixedTypes) {
+            if (sharedNotifs.length)  projectsHtml += `<div style="font-size:0.75rem;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.35rem;">Ajoutés</div>` + sharedNotifs.map(n => projectRow(n)).join('');
+            if (removedNotifs.length) projectsHtml += `<div style="font-size:0.75rem;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin:0.6rem 0 0.35rem;">Retirés</div>` + removedNotifs.map(n => projectRow(n)).join('');
+        } else {
+            projectsHtml = notifs.map(n => projectRow(n)).join('');
+        }
+
+        // Popup
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
 
         const box = document.createElement('div');
-        box.style.cssText = 'background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;';
+        box.style.cssText = 'background:#fff;border-radius:16px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;max-height:80vh;display:flex;flex-direction:column;';
 
         box.innerHTML = `
-            <div style="font-size:2.5rem;margin-bottom:1rem;">${emoji}</div>
-            <h2 style="margin:0 0 0.5rem;font-size:1.2rem;color:#111;">${title}</h2>
-            <p style="margin:0 0 1.25rem;color:#555;font-size:0.95rem;">${bodyTxt}</p>
-            <div style="background:#F3F4F6;border-radius:10px;padding:1rem;margin-bottom:1.5rem;">
-                <div style="font-size:1.05rem;font-weight:700;color:#111;margin-bottom:0.4rem;">📁 ${projectName}</div>
-                ${!isRemoved ? `<div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.8rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.85rem;">${roleLabel}</div>` : ''}
-            </div>
-            <button id="_sharedOkBtn" style="background:${accentColor};color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;">OK</button>
+            <div style="font-size:2.5rem;margin-bottom:0.75rem;">${emoji}</div>
+            <h2 style="margin:0 0 0.4rem;font-size:1.15rem;color:#111;">${title}</h2>
+            <p style="margin:0 0 1rem;color:#555;font-size:0.9rem;">${bodyTxt}</p>
+            <div style="overflow-y:auto;flex:1;margin-bottom:1.25rem;">${projectsHtml}</div>
+            <button id="_sharedOkBtn" style="background:${accentColor};color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;flex-shrink:0;">OK</button>
         `;
 
         overlay.appendChild(box);
@@ -3196,30 +3254,23 @@ thead{display:table-header-group}
 
         const close = () => {
             overlay.remove();
-            // Mark as read in Supabase
-            if (notif.id) {
-                supabaseStore.markNotificationRead(notif.id).catch(() => {});
-                const local = this._supabaseNotifs.find(n => n.id === notif.id);
-                if (local) local.readAt = new Date().toISOString();
-                this._updateNotifications();
-            }
-            // Reload projects so added/removed project reflects immediately
-            if (!isRemoved) {
-                store.initFromSupabase().then(() => {
-                    this._renderProjectName();
-                    ganttRenderer.render();
-                });
-            } else {
-                // For removal: reload so the removed project disappears from the list
-                store.initFromSupabase().then(() => {
-                    this._renderProjectName();
-                    ganttRenderer.render();
-                });
-            }
+            // Mark all as read in Supabase
+            notifs.forEach(n => {
+                if (n.id) {
+                    supabaseStore.markNotificationRead(n.id).catch(() => {});
+                    const local = this._supabaseNotifs.find(x => x.id === n.id);
+                    if (local) local.readAt = new Date().toISOString();
+                }
+            });
+            this._updateNotifications();
+            // Reload projects to reflect additions/removals
+            store.initFromSupabase().then(() => {
+                this._renderProjectName();
+                ganttRenderer.render();
+            });
         };
 
-        const okBtn = box.querySelector('#_sharedOkBtn');
-        if (okBtn) okBtn.addEventListener('click', close);
+        box.querySelector('#_sharedOkBtn').addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     }
 
