@@ -3544,6 +3544,7 @@ thead{display:table-header-group}
         }
         const projects = filterId === 'all' ? allProjects : allProjects.filter(p => p.id === filterId);
         const allNotifs = this._getNotifications().filter(n => filterId === 'all' || n.projectId === filterId);
+        this._dashboardNotifs = allNotifs; // keep reference for dismiss handlers
         const today = formatDateISO(new Date());
 
         // Global KPIs across filtered projects
@@ -3645,14 +3646,18 @@ thead{display:table-header-group}
 
             <!-- Alerts -->
             <div class="dashboard-card">
-                <h3>${t('dashboard.alerts', { count: allNotifs.length })}</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <h3 style="margin:0;">${t('dashboard.alerts', { count: allNotifs.length })}</h3>
+                    ${allNotifs.length > 0 ? `<button id="dashClearAllAlerts" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:#9ca3af;padding:0;transition:color .15s;" onmouseenter="this.style.color='#EF4444'" onmouseleave="this.style.color='#9ca3af'">Tout supprimer</button>` : ''}
+                </div>
                 ${allNotifs.length === 0
                     ? `<div class="notif-empty">${t('dashboard.noAlerts')}</div>`
-                    : `<ul class="dashboard-alert-list">${allNotifs.slice(0, 15).map(n => {
+                    : `<ul id="dashAlertList" class="dashboard-alert-list">${allNotifs.slice(0, 15).map((n, idx) => {
                         const dotColor = n.type === 'danger' ? 'red' : n.type === 'warning' ? 'orange' : 'blue';
-                        return `<li class="dashboard-alert-item">
-                            <span class="dashboard-alert-dot ${dotColor}"></span>
-                            <span>${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
+                        return `<li class="dashboard-alert-item" data-notif-idx="${idx}" style="display:flex;align-items:center;gap:0.5rem;">
+                            <span class="dashboard-alert-dot ${dotColor}" style="flex-shrink:0;"></span>
+                            <span style="flex:1;">${n.text}${n.sub ? ` <span style="color:var(--text-tertiary);font-size:11px;">- ${n.sub}</span>` : ''}</span>
+                            <button class="dash-alert-dismiss" data-notif-idx="${idx}" title="Supprimer" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1rem;line-height:1;padding:0 0 0 4px;flex-shrink:0;">&times;</button>
                         </li>`;
                     }).join('')}${allNotifs.length > 15 ? `<li class="dashboard-alert-item" style="color:var(--text-tertiary);">${t('dashboard.moreAlerts', { count: allNotifs.length - 15 })}</li>` : ''}</ul>`}
             </div>
@@ -3704,6 +3709,45 @@ thead{display:table-header-group}
                 });
             });
         });
+
+        // Dashboard alerts: individual dismiss + clear-all
+        const _dismissDashNotif = (idx) => {
+            const n = this._dashboardNotifs[idx];
+            if (!n) return;
+            if (n._supId) {
+                supabaseStore.deleteNotification(n._supId).catch(() => {});
+                this._supabaseNotifs = this._supabaseNotifs.filter(s => s.id !== n._supId);
+            } else {
+                this._dismissNotification(this._notifKey(n));
+            }
+            this._updateNotifications();
+            this._renderDashboard();
+        };
+
+        container.querySelectorAll('.dash-alert-dismiss').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                _dismissDashNotif(parseInt(btn.dataset.notifIdx, 10));
+            });
+        });
+
+        const clearAllBtn = container.querySelector('#dashClearAllAlerts');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', () => {
+                (this._dashboardNotifs || []).forEach(n => {
+                    if (n._supId) {
+                        supabaseStore.deleteNotification(n._supId).catch(() => {});
+                        this._supabaseNotifs = this._supabaseNotifs.filter(s => s.id !== n._supId);
+                    } else {
+                        const dismissed = this._getDismissedNotifs();
+                        dismissed.add(this._notifKey(n));
+                        localStorage.setItem('gantt_dismissed_notifs', JSON.stringify([...dismissed]));
+                    }
+                });
+                this._updateNotifications();
+                this._renderDashboard();
+            });
+        }
 
         // Project filter dropdown
         const filterSelect = container.querySelector('#dashboardProjectFilter');
