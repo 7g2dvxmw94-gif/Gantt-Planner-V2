@@ -149,8 +149,17 @@ class TaskModal {
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
         this._statusGroup = statusGroup;
-        statusGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskStatus' }, t('task.status')));
+        const statusLabelEl = createElement('label', { className: 'form-label', for: 'taskStatus', style: 'display:flex;align-items:center;gap:5px;' }, t('task.status'));
+        const statusInfoIcon = createElement('span', {
+            title: 'Le statut est automatiquement calculé depuis la progression : 0 % → À faire · 1–99 % → En cours · 100 % → Terminé',
+            style: 'cursor:help;color:#94a3b8;line-height:1;flex-shrink:0;',
+        });
+        statusInfoIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        statusLabelEl.appendChild(statusInfoIcon);
+        statusGroup.appendChild(statusLabelEl);
         this._statusSelect = createElement('select', { className: 'select', id: 'taskStatus' });
+        this._statusSelect.disabled = true;
+        this._statusSelect.style.cssText = 'opacity:0.65;cursor:not-allowed;pointer-events:none;';
         [['todo', t('task.status.todo')], ['in_progress', t('task.status.inProgress')], ['done', t('task.status.done')]].forEach(([val, lbl]) => {
             this._statusSelect.appendChild(createElement('option', { value: val }, lbl));
         });
@@ -173,7 +182,9 @@ class TaskModal {
         });
         this._progressLabel = createElement('span', { className: 'progress-input-label' }, '0%');
         this._progressInput.addEventListener('input', () => {
-            this._progressLabel.textContent = this._progressInput.value + '%';
+            const pct = parseInt(this._progressInput.value, 10);
+            this._progressLabel.textContent = pct + '%';
+            this._syncStatusFromProgress(pct);
         });
         progressWrap.appendChild(this._progressInput);
         progressWrap.appendChild(this._progressLabel);
@@ -520,6 +531,14 @@ class TaskModal {
 
     /* ---- Events ---- */
 
+    /* Derive status value from a progress percentage (0-100). */
+    _syncStatusFromProgress(pct) {
+        const n = parseInt(pct, 10);
+        if (n <= 0) this._statusSelect.value = 'todo';
+        else if (n >= 100) this._statusSelect.value = 'done';
+        else this._statusSelect.value = 'in_progress';
+    }
+
     _bindEvents() {
         // Close on overlay click
         this._overlay.addEventListener('click', (e) => {
@@ -588,9 +607,9 @@ class TaskModal {
         this._taskEnd.value = formatDateISO(addDays(today, 7));
         this._taskEnd.disabled = false;
         this._prioritySelect.value = 'medium';
-        this._statusSelect.value = 'todo';
         this._progressInput.value = 0;
         this._progressLabel.textContent = '0%';
+        this._syncStatusFromProgress(0);
         // Type
         this._setTaskType('task');
 
@@ -639,9 +658,9 @@ class TaskModal {
         this._taskEnd.value = task.endDate;
         this._taskEnd.disabled = task.isMilestone;
         this._prioritySelect.value = task.priority;
-        this._statusSelect.value = task.status;
         this._progressInput.value = task.progress;
         this._progressLabel.textContent = task.progress + '%';
+        this._syncStatusFromProgress(task.progress);
         const isDone = task.progress >= 100;
         this._milestoneBtnPending.classList.toggle('active', !isDone);
         this._milestoneBtnDone.classList.toggle('active', isDone);
