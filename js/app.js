@@ -3422,7 +3422,7 @@ thead{display:table-header-group}
                     <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
                 </tr>`;
 
-                if (isCollapsed) return; // skip child rows
+                if (isCollapsed) continue; // skip child rows for this phase
             }
 
             group.items.forEach(tc => {
