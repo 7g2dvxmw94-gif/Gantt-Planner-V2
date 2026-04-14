@@ -681,23 +681,28 @@ class App {
             tdPriority.appendChild(priorityBadge);
             row.appendChild(tdPriority);
 
-            // Progress
+            // Progress — milestones don't have meaningful progress (Franchi/Non franchi only)
             const tdProgress = document.createElement('td');
-            const progressWrap = document.createElement('div');
-            progressWrap.className = 'table-progress';
-            const track = document.createElement('div');
-            track.className = 'table-progress-track';
-            const bar = document.createElement('div');
-            bar.className = 'table-progress-bar';
-            bar.style.width = task.progress + '%';
-            bar.style.background = task.color;
-            track.appendChild(bar);
-            progressWrap.appendChild(track);
-            const label = document.createElement('span');
-            label.className = 'table-progress-label';
-            label.textContent = task.progress + '%';
-            progressWrap.appendChild(label);
-            tdProgress.appendChild(progressWrap);
+            if (task.isMilestone) {
+                tdProgress.textContent = '—';
+                tdProgress.style.color = 'var(--text-muted)';
+            } else {
+                const progressWrap = document.createElement('div');
+                progressWrap.className = 'table-progress';
+                const track = document.createElement('div');
+                track.className = 'table-progress-track';
+                const bar = document.createElement('div');
+                bar.className = 'table-progress-bar';
+                bar.style.width = task.progress + '%';
+                bar.style.background = task.color;
+                track.appendChild(bar);
+                progressWrap.appendChild(track);
+                const label = document.createElement('span');
+                label.className = 'table-progress-label';
+                label.textContent = task.progress + '%';
+                progressWrap.appendChild(label);
+                tdProgress.appendChild(progressWrap);
+            }
             row.appendChild(tdProgress);
 
             tbody.appendChild(row);
