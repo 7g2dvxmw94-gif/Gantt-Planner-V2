@@ -45,6 +45,7 @@ function taskToRow(t) {
         collapsed:            t.collapsed    || false,
         dependencies:         t.dependencies || [],
         fixed_costs:          t.fixedCosts   || [],
+        actual_cost:          typeof t.actualCost === 'number' ? t.actualCost : null,
         // Permit fields
         permit_type:              t.permitType              || null,
         permit_status:            t.permitStatus            || null,
@@ -112,6 +113,7 @@ function rowToTask(row) {
         collapsed:    row.collapsed    || false,
         dependencies: row.dependencies || [],
         fixedCosts:   row.fixed_costs  || [],
+        actualCost:   typeof row.actual_cost === 'number' ? row.actual_cost : null,
         assignees:    [],   // rechargé séparément via task_assignees
         assignee:     null,
         // Permit fields
