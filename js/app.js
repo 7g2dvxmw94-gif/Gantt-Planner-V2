@@ -3340,6 +3340,9 @@ thead{display:table-header-group}
         const container = $('#costsView');
         if (!container) return;
 
+        // Persist collapsed phase state across re-renders
+        if (!this._collapsedCostPhases) this._collapsedCostPhases = new Set();
+
         const allProjects = store.getProjects();
         if (this._costsFilterProjectId === null) {
             const active = store.getActiveProject();
@@ -3390,7 +3393,11 @@ thead{display:table-header-group}
             grouped.get(key).items.push(tc);
         });
 
-        // Build table rows with phase grouping
+        // Check if any phases exist (to show/hide the collapse toolbar)
+        const hasPhases = [...grouped.values()].some(g => g.phase);
+        const allCollapsed = hasPhases && [...grouped.keys()].filter(k => k !== '__none__').every(k => this._collapsedCostPhases.has(k));
+
+        // Build table rows with phase grouping + collapse support
         let tableRows = '';
         for (const [key, group] of grouped) {
             const groupEstimated = group.items.reduce((s, tc) => s + tc.cost, 0);
@@ -3399,14 +3406,23 @@ thead{display:table-header-group}
             const gvColor = groupVariance < 0 ? '#EF4444' : groupVariance < groupEstimated * 0.1 ? '#F59E0B' : '#10B981';
 
             if (group.phase) {
+                const isCollapsed = this._collapsedCostPhases.has(key);
                 const groupFixed = group.items.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
-                tableRows += `<tr class="costs-phase-row">
-                    <td colspan="4" class="costs-phase-name">${group.phase.name}</td>
+                const chevron = isCollapsed
+                    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`
+                    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`;
+                tableRows += `<tr class="costs-phase-row costs-phase-toggle-row" data-phase-key="${key}" style="cursor:pointer;">
+                    <td colspan="4" class="costs-phase-name">
+                        <span class="costs-phase-chevron" style="display:inline-flex;align-items:center;margin-right:6px;opacity:0.7;vertical-align:middle;">${chevron}</span>${group.phase.name}
+                        <span style="margin-left:8px;font-size:0.75rem;font-weight:400;color:var(--text-muted);">(${group.items.length})</span>
+                    </td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupEstimated)}</td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupActual)}</td>
                     <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
                 </tr>`;
+
+                if (isCollapsed) return; // skip child rows
             }
 
             group.items.forEach(tc => {
@@ -3439,12 +3455,17 @@ thead{display:table-header-group}
         container.innerHTML = `
         <div class="costs-header">
             <h2 class="costs-title">${t('costs.title')}</h2>
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
                 <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('costs.filterLabel')}</label>
                 <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
                     ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
                 </select>
+                ${hasPhases ? `<button id="costsToggleAllPhases" style="margin-left:auto;background:none;border:1px solid var(--border-default);border-radius:6px;padding:4px 12px;font-size:0.8rem;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:5px;">
+                    ${allCollapsed
+                        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> Tout développer`
+                        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg> Tout réduire`}
+                </button>` : ''}
             </div>
             <div class="costs-kpi-grid">
                 <div class="costs-kpi">
@@ -3496,6 +3517,32 @@ thead{display:table-header-group}
                 </tfoot>
             </table>
         </div>`;
+
+        // Phase row collapse/expand
+        container.querySelectorAll('.costs-phase-toggle-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const key = row.dataset.phaseKey;
+                if (this._collapsedCostPhases.has(key)) {
+                    this._collapsedCostPhases.delete(key);
+                } else {
+                    this._collapsedCostPhases.add(key);
+                }
+                this._renderCostsView();
+            });
+        });
+
+        // Tout réduire / Tout développer
+        const toggleAllBtn = container.querySelector('#costsToggleAllPhases');
+        if (toggleAllBtn) {
+            toggleAllBtn.addEventListener('click', () => {
+                if (allCollapsed) {
+                    this._collapsedCostPhases.clear();
+                } else {
+                    [...grouped.keys()].filter(k => k !== '__none__').forEach(k => this._collapsedCostPhases.add(k));
+                }
+                this._renderCostsView();
+            });
+        }
 
         // Bind project filter
         const costsFilterSelect = container.querySelector('#costsProjectFilter');
