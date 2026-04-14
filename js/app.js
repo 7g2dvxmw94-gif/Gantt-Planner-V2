@@ -2033,6 +2033,14 @@ ${assignLines.join('\n')}
                         <div class="pdf-export-option-desc">${t('pdf.dialog.resources.desc')}</div>
                     </div>
                 </label>
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="costs" checked>
+                    <span class="pdf-export-option-icon">€</span>
+                    <div>
+                        <div class="pdf-export-option-label">Coûts</div>
+                        <div class="pdf-export-option-desc">Tableau des coûts estimés, réels et écarts par tâche.</div>
+                    </div>
+                </label>
             </div>
             <div class="pdf-export-date-section" id="pdfDateSection">
                 <div class="pdf-export-date-label">${t('pdf.dialog.dateLabel')}</div>
@@ -2189,6 +2197,11 @@ thead{display:table-header-group}
         if (sections.includes('resources')) {
             if (sections.includes('table') || sections.includes('timeline')) html += `<div class="page-break"></div>`;
             html += this._pdfResourceSection(tasks, resources, statusLabels);
+        }
+
+        if (sections.includes('costs')) {
+            if (sections.length > 1) html += `<div class="page-break"></div>`;
+            html += this._pdfCostsSection(project);
         }
 
         html += `<div class="footer">${t('pdf.footer', { name: project.name, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
@@ -2350,6 +2363,109 @@ thead{display:table-header-group}
             html += headerHtml;
             html += `</div>`;
         }
+        return html;
+    }
+
+    _pdfCostsSection(project) {
+        const costs = store.getTaskCosts(project.id);
+        const allTasks = store.getTasks(project.id);
+        const fmt = (v) => formatCurrency(v);
+
+        const totalEstimated = costs.tasks.reduce((s, tc) => s + tc.cost, 0);
+        const totalActual = costs.tasks.reduce((s, tc) => s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone), 0);
+        const variance = totalEstimated - totalActual;
+        const pctConsumed = totalEstimated > 0 ? Math.round((totalActual / totalEstimated) * 100) : 0;
+        const varianceColor = variance < 0 ? '#ef4444' : variance < totalEstimated * 0.1 ? '#f59e0b' : '#10b981';
+
+        // Build phase map
+        const phaseMap = new Map();
+        allTasks.filter(t => t.isPhase).forEach(ph => phaseMap.set(ph.id, ph));
+
+        // Group tasks by phase
+        const grouped = new Map();
+        costs.tasks.forEach(tc => {
+            const key = tc.task.parentId && phaseMap.has(tc.task.parentId) ? tc.task.parentId : '__none__';
+            if (!grouped.has(key)) grouped.set(key, { phase: key !== '__none__' ? phaseMap.get(key) : null, items: [] });
+            grouped.get(key).items.push(tc);
+        });
+
+        let html = `<h2>Coûts</h2>`;
+
+        // KPI summary boxes
+        html += `<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">`;
+        html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #6366F1;">
+            <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Coût estimé total</div>
+            <div style="font-size:16px;font-weight:700;color:#6366F1;">${fmt(totalEstimated)}</div>
+        </div>`;
+        html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #10b981;">
+            <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Coût réel</div>
+            <div style="font-size:16px;font-weight:700;color:#10b981;">${fmt(totalActual)}</div>
+        </div>`;
+        html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid ${varianceColor};">
+            <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Écart</div>
+            <div style="font-size:16px;font-weight:700;color:${varianceColor};">${variance >= 0 ? '+' : ''}${fmt(variance)}</div>
+        </div>`;
+        html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #f59e0b;">
+            <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Consommé</div>
+            <div style="font-size:16px;font-weight:700;color:#f59e0b;">${pctConsumed}%</div>
+        </div>`;
+        html += `</div>`;
+
+        // Cost table
+        html += `<table>
+<thead><tr>
+<th>Tâche</th>
+<th>Ressource(s)</th>
+<th style="text-align:center;">Durée</th>
+<th style="text-align:right;">Coût fixe</th>
+<th style="text-align:right;">Coût estimé</th>
+<th style="text-align:right;">Coût réel</th>
+<th style="text-align:right;">Écart</th>
+</tr></thead><tbody>`;
+
+        for (const [key, group] of grouped) {
+            if (group.phase) {
+                const gEst = group.items.reduce((s, tc) => s + tc.cost, 0);
+                const gActual = group.items.reduce((s, tc) => s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone), 0);
+                const gFixed = group.items.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
+                const gVar = gEst - gActual;
+                const gVarColor = gVar < 0 ? '#ef4444' : gVar < gEst * 0.1 ? '#f59e0b' : '#10b981';
+                html += `<tr class="phase-row">
+<td colspan="3">${group.phase.name} <span style="font-weight:400;font-size:9px;color:#64748b;">(${group.items.length} tâche${group.items.length !== 1 ? 's' : ''})</span></td>
+<td style="text-align:right;">${gFixed > 0 ? fmt(gFixed) : '—'}</td>
+<td style="text-align:right;">${fmt(gEst)}</td>
+<td style="text-align:right;">${fmt(gActual)}</td>
+<td style="text-align:right;color:${gVarColor};">${gVar >= 0 ? '+' : ''}${fmt(gVar)}</td>
+</tr>`;
+            }
+
+            group.items.forEach(tc => {
+                const resNames = tc.assignedResources.map(r => r.name).join(', ') || '—';
+                const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
+                const ecart = tc.cost - actual;
+                const ecartColor = ecart < 0 ? '#ef4444' : ecart < tc.cost * 0.1 ? '#f59e0b' : '#10b981';
+                const indent = group.phase ? '&nbsp;&nbsp;&nbsp;' : '';
+                html += `<tr>
+<td>${indent}${tc.task.name}</td>
+<td>${resNames}</td>
+<td style="text-align:center;">${tc.durationDays} j</td>
+<td style="text-align:right;">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
+<td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
+<td style="text-align:right;">${fmt(actual)}</td>
+<td style="text-align:right;color:${ecartColor};font-weight:500;">${ecart >= 0 ? '+' : ''}${fmt(ecart)}</td>
+</tr>`;
+            });
+        }
+
+        // Total row
+        html += `<tr style="background:#f1f5f9;font-weight:700;border-top:2px solid #e2e8f0;">
+<td colspan="4">Total</td>
+<td style="text-align:right;">${fmt(totalEstimated)}</td>
+<td style="text-align:right;">${fmt(totalActual)}</td>
+<td style="text-align:right;color:${varianceColor};">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
+</tr>`;
+
+        html += `</tbody></table>`;
         return html;
     }
 
