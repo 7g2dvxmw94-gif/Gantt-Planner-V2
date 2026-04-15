@@ -2462,9 +2462,19 @@ thead{display:table-header-group}
 
     _pdfResourceSection(tasks, resources, statusLabels) {
         const nonPhaseTasks = tasks.filter(t => !t.isPhase);
+
+        // Only show resources actually assigned to a task in this project
+        const projectResources = resources.filter(r =>
+            nonPhaseTasks.some(t => (t.assignees || []).includes(r.id) || t.assignee === r.id)
+        );
+
+        if (projectResources.length === 0) {
+            return `<h2>Ressources</h2><p style="color:#94a3b8;font-size:11px">Aucune ressource assignée à ce projet.</p>`;
+        }
+
         let html = `<h2>Ressources</h2><div class="resource-section">`;
 
-        resources.forEach(resource => {
+        projectResources.forEach(resource => {
             const assignedTasks = nonPhaseTasks.filter(t =>
                 (t.assignees || []).includes(resource.id) || t.assignee === resource.id
             );
