@@ -92,6 +92,7 @@ const I18N = {
         'settings.currency.label': 'Devise affichée',
         'settings.display.title': 'Affichage',
         'settings.display.showLinks': 'Afficher les liens (dépendances)',
+        'settings.resources.title': 'Ressources',
         'settings.costs.excludeWeekends': 'Exclure les week-ends du calcul des coûts',
         'settings.costs.excludeWeekends.tooltip': "Activé par défaut : seuls les jours ouvrés (lun.–ven.) sont pris en compte pour calculer le coût des ressources. Désactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi être configurée individuellement (case \"Travaille le week-end\" dans sa fiche).",
 
@@ -742,6 +743,7 @@ const I18N = {
         'settings.currency.label': 'Display currency',
         'settings.display.title': 'Display',
         'settings.display.showLinks': 'Show links (dependencies)',
+        'settings.resources.title': 'Resources',
         'settings.costs.excludeWeekends': 'Exclude weekends from cost calculation',
         'settings.costs.excludeWeekends.tooltip': 'Enabled by default: only working days (Mon–Fri) are used to calculate resource costs. Disable if your project includes weekend work. Each resource can also be configured individually via the "Works weekends" option in its profile.',
 

@@ -356,6 +356,16 @@ class SettingsPanel {
                                 <span class="settings-toggle-slider"></span>
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                        <h3>${t('settings.resources.title')}</h3>
+                    </div>
+                    <div class="settings-identity-fields">
                         <div class="settings-field settings-field-toggle">
                             <span class="settings-field-label" style="display:flex;align-items:center;gap:6px;">
                                 ${t('settings.costs.excludeWeekends')}
