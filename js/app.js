@@ -2160,14 +2160,60 @@ ${assignLines.join('\n')}
                     });
                     ganttTasks.filter(tk => !tk.parentId).forEach(tk => ganttRows.push({ isPhase: false, task: tk }));
 
-                    const months = [];
-                    const mcur = new Date(rangeStartDate);
-                    while (mcur <= rangeEndDate) {
-                        const mEnd = new Date(mcur.getFullYear(), mcur.getMonth() + 1, 0);
-                        const days = Math.min(daysBetween(formatDateISO(mcur), formatDateISO(mEnd)) + 1, totalDays);
-                        months.push({ label: mcur.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), days });
-                        mcur.setMonth(mcur.getMonth() + 1);
+                    // Build header columns matching current Gantt zoom level
+                    const zoomLevel = store.getSettings().zoomLevel || 'month';
+                    const headerCols = [];
+
+                    if (zoomLevel === 'day') {
+                        const cur = new Date(rangeStartDate);
+                        while (cur <= rangeEndDate) {
+                            headerCols.push({
+                                label: cur.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                                days: 1,
+                            });
+                            cur.setDate(cur.getDate() + 1);
+                        }
+                    } else if (zoomLevel === 'week') {
+                        // Align to Monday at or before rangeStartDate
+                        const cur = new Date(rangeStartDate);
+                        const dow = cur.getDay();
+                        cur.setDate(cur.getDate() - (dow === 0 ? 6 : dow - 1));
+                        while (cur <= rangeEndDate) {
+                            const wEnd = new Date(cur); wEnd.setDate(wEnd.getDate() + 6);
+                            const clampStart = cur < rangeStartDate ? rangeStartDate : cur;
+                            const clampEnd   = wEnd > rangeEndDate  ? rangeEndDate  : wEnd;
+                            const days = Math.max(1, daysBetween(formatDateISO(clampStart), formatDateISO(clampEnd)) + 1);
+                            headerCols.push({
+                                label: cur.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                                days,
+                            });
+                            cur.setDate(cur.getDate() + 7);
+                        }
+                    } else if (zoomLevel === 'quarter') {
+                        const cur = new Date(rangeStartDate);
+                        cur.setMonth(Math.floor(cur.getMonth() / 3) * 3, 1);
+                        while (cur <= rangeEndDate) {
+                            const qEnd = new Date(cur.getFullYear(), cur.getMonth() + 3, 0);
+                            const clampStart = cur < rangeStartDate ? rangeStartDate : cur;
+                            const clampEnd   = qEnd > rangeEndDate  ? rangeEndDate  : qEnd;
+                            const days = Math.max(1, daysBetween(formatDateISO(clampStart), formatDateISO(clampEnd)) + 1);
+                            const q = Math.floor(cur.getMonth() / 3) + 1;
+                            headerCols.push({ label: `T${q} ${cur.getFullYear()}`, days });
+                            cur.setMonth(cur.getMonth() + 3);
+                        }
+                    } else {
+                        // month (default)
+                        const mcur = new Date(rangeStartDate);
+                        while (mcur <= rangeEndDate) {
+                            const mEnd = new Date(mcur.getFullYear(), mcur.getMonth() + 1, 0);
+                            const days = Math.min(daysBetween(formatDateISO(mcur), formatDateISO(mEnd)) + 1, totalDays);
+                            headerCols.push({ label: mcur.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), days });
+                            mcur.setMonth(mcur.getMonth() + 1);
+                        }
                     }
+
+                    // Font size adapts to column density
+                    const hdrFontSize = zoomLevel === 'day' ? 6 : zoomLevel === 'week' ? 7 : 8;
 
                     const todayOffset = daysBetween(formatDateISO(rangeStartDate), formatDateISO(new Date()));
                     const totalChunks = Math.ceil(ganttRows.length / MAX_R) || 1;
@@ -2179,11 +2225,11 @@ ${assignLines.join('\n')}
                         addHeader(sl, t('export.ppt.ganttSlide') + gtLabel);
 
                         let mxOffset = 0;
-                        months.forEach(m => {
-                            const mw = (m.days / totalDays) * TLW;
-                            sl.addShape('rect', { x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH, fill: { color: 'f1f5f9' }, line: { color: 'cbd5e1', pt: 0.5 } });
-                            sl.addText(m.label, { x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH, fontSize: 8, color: DARK, align: 'center', valign: 'middle', fontFace: ff });
-                            mxOffset += mw;
+                        headerCols.forEach(col => {
+                            const cw = (col.days / totalDays) * TLW;
+                            sl.addShape('rect', { x: ML + LEFT + mxOffset, y: HDR_H, w: cw, h: TH, fill: { color: 'f1f5f9' }, line: { color: 'cbd5e1', pt: 0.5 } });
+                            sl.addText(col.label, { x: ML + LEFT + mxOffset, y: HDR_H, w: cw, h: TH, fontSize: hdrFontSize, color: DARK, align: 'center', valign: 'middle', fontFace: ff });
+                            mxOffset += cw;
                         });
 
                         chunk.forEach((row, ri) => {
