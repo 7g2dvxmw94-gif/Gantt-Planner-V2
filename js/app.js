@@ -1,6 +1,6 @@
 /* ========================================
    APP - Main Entry Point
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES } from './store.js';
@@ -180,7 +180,7 @@ class App {
         }
 
         // Announce to screen readers
-        this._announceToSR('Gantt Planner Pro');
+        this._announceToSR('Gantly');
 
         // Onboarding for new users
         onboarding.tryAutoStart();
@@ -4754,7 +4754,7 @@ tr:nth-child(even){background:#fafbfc}
             </div>`;
         });
 
-        html += `<div class="footer">Gantt Planner Pro — Récapitulatif Permis — Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
+        html += `<div class="footer">Gantly — Récapitulatif Permis — Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</div>
 </body></html>`;
 
         const printWindow = window.open('', '_blank');

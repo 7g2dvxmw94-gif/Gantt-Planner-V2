@@ -1,6 +1,6 @@
 /* ========================================
    GANTT INTERACTIONS - Drag, Resize, Click
-   Gantt Planner Pro - Step 2
+   Gantly - Step 2
    ======================================== */
 
 import { store } from './store.js';

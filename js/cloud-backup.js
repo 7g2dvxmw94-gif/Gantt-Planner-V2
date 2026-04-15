@@ -1,6 +1,6 @@
 /* ========================================
    CLOUD BACKUP - Google Drive Integration
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 const GDRIVE_CONFIG_KEY = 'gantt-planner-gdrive-token';

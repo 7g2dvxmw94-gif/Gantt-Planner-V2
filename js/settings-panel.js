@@ -1,6 +1,6 @@
 /* ========================================
    SETTINGS PANEL - Side Panel
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 import { store, PLAN_PRICES } from './store.js';

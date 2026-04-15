@@ -1,6 +1,6 @@
 /* ========================================
    TASK MODAL - Create / Edit / Delete Tasks
-   Gantt Planner Pro - Step 2
+   Gantly - Step 2
    ======================================== */
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';

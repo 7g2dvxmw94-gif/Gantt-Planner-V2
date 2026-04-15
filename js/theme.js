@@ -1,6 +1,6 @@
 /* ========================================
    THEME MANAGER - Day/Night Mode
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 import { store } from './store.js';

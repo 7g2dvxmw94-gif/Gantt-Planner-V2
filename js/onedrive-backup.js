@@ -1,6 +1,6 @@
 /* ========================================
    CLOUD BACKUP - OneDrive Integration
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 const ONEDRIVE_CONFIG_KEY = 'gantt-planner-onedrive-token';

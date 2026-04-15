@@ -1,6 +1,6 @@
 /* ========================================
    GANTT CHART RENDERER
-   Gantt Planner Pro
+   Gantly
    ======================================== */
 
 import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';

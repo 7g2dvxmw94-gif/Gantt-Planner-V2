@@ -1,5 +1,5 @@
 /* ========================================
-   DATA STORE - Gantt Planner Pro
+   DATA STORE - Gantly
    Reactive store with localStorage persistence
    ======================================== */
 
