@@ -2186,11 +2186,6 @@ ${assignLines.join('\n')}
                             mxOffset += mw;
                         });
 
-                        if (todayOffset >= 0 && todayOffset <= totalDays) {
-                            const tx = ML + LEFT + (todayOffset / totalDays) * TLW;
-                            sl.addShape('line', { x: tx, y: HDR_H, w: 0, h: 7.5 - HDR_H, line: { color: 'ef4444', pt: 1.2, dashType: 'dash' } });
-                        }
-
                         chunk.forEach((row, ri) => {
                             const ry = HDR_H + TH + ri * RH;
                             const bgC = row.isPhase ? 'f1f5f9' : (ri % 2 === 0 ? 'FFFFFF' : 'fafafa');
@@ -2208,7 +2203,7 @@ ${assignLines.join('\n')}
                                 const pDur = daysBetween(formatDateISO(pStart), formatDateISO(pEnd)) + 1;
                                 const bx = ML + LEFT + (pOff / totalDays) * TLW;
                                 const bw = Math.max(0.04, (pDur / totalDays) * TLW);
-                                sl.addShape('rect', { x: bx, y: ry + 0.06, w: bw, h: RH - 0.14, fill: { color: AC + '55' }, line: { color: AC, pt: 0.5 } });
+                                sl.addShape('rect', { x: bx, y: ry + 0.06, w: bw, h: RH - 0.14, fill: { color: AC, transparency: 60 }, line: { color: AC, pt: 0.7 } });
                             } else {
                                 const task = row.task;
                                 const tOff = Math.max(0, daysBetween(formatDateISO(rangeStartDate), task.startDate));
@@ -2216,14 +2211,20 @@ ${assignLines.join('\n')}
                                 const bx = ML + LEFT + (tOff / totalDays) * TLW;
                                 const bw = Math.max(0.04, (tDur / totalDays) * TLW);
                                 const tc = (task.color || '#6366F1').replace('#', '');
-                                // Soft background: task color at ~25% opacity
-                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: tc + '40' }, line: { color: tc, pt: 0.5 } });
+                                // Soft background: task color at ~75% transparency
+                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: tc, transparency: 75 }, line: { color: tc, pt: 0.5 } });
                                 // Progress fill: task color solid
                                 if ((task.progress || 0) > 0) {
                                     sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: tc } });
                                 }
                             }
                         });
+
+                        // Today line drawn LAST so it appears on top of all bars
+                        if (todayOffset >= 0 && todayOffset <= totalDays) {
+                            const tx = ML + LEFT + (todayOffset / totalDays) * TLW;
+                            sl.addShape('line', { x: tx, y: HDR_H, w: 0, h: 7.5 - HDR_H, line: { color: 'ef4444', pt: 1.5, dashType: 'dash' } });
+                        }
                     }
                 }
             }
