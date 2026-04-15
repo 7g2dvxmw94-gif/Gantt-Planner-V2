@@ -2403,7 +2403,7 @@ thead{display:table-header-group}
         </div>`;
         html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid ${varianceColor};">
             <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Écart</div>
-            <div style="font-size:16px;font-weight:700;color:${varianceColor};">${variance >= 0 ? '+' : ''}${fmt(variance)}</div>
+            <div style="font-size:16px;font-weight:700;color:${varianceColor};">${-variance > 0 ? '+' : ''}${fmt(-variance)}</div>
         </div>`;
         html += `<div style="flex:1;min-width:120px;padding:10px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #f59e0b;">
             <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Consommé</div>
@@ -2435,7 +2435,7 @@ thead{display:table-header-group}
 <td style="text-align:right;">${gFixed > 0 ? fmt(gFixed) : '—'}</td>
 <td style="text-align:right;">${fmt(gEst)}</td>
 <td style="text-align:right;">${fmt(gActual)}</td>
-<td style="text-align:right;color:${gVarColor};">${gVar >= 0 ? '+' : ''}${fmt(gVar)}</td>
+<td style="text-align:right;color:${gVarColor};">${-gVar > 0 ? '+' : ''}${fmt(-gVar)}</td>
 </tr>`;
             }
 
@@ -2452,7 +2452,7 @@ thead{display:table-header-group}
 <td style="text-align:right;">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
 <td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
 <td style="text-align:right;">${fmt(actual)}</td>
-<td style="text-align:right;color:${ecartColor};font-weight:500;">${ecart >= 0 ? '+' : ''}${fmt(ecart)}</td>
+<td style="text-align:right;color:${ecartColor};font-weight:500;">${-ecart > 0 ? '+' : ''}${fmt(-ecart)}</td>
 </tr>`;
             });
         }
@@ -2462,7 +2462,7 @@ thead{display:table-header-group}
 <td colspan="4">Total</td>
 <td style="text-align:right;">${fmt(totalEstimated)}</td>
 <td style="text-align:right;">${fmt(totalActual)}</td>
-<td style="text-align:right;color:${varianceColor};">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
+<td style="text-align:right;color:${varianceColor};">${-variance > 0 ? '+' : ''}${fmt(-variance)}</td>
 </tr>`;
 
         html += `</tbody></table>`;
@@ -3535,7 +3535,7 @@ thead{display:table-header-group}
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupEstimated)}</td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${fmt(groupActual)}</td>
-                    <td style="text-align:right;font-weight:600;color:${gvColor}">${groupVariance >= 0 ? '+' : ''}${fmt(groupVariance)}</td>
+                    <td style="text-align:right;font-weight:600;color:${gvColor}">${-groupVariance > 0 ? '+' : ''}${fmt(-groupVariance)}</td>
                 </tr>`;
 
                 if (isCollapsed) continue; // skip child rows for this phase
@@ -3561,7 +3561,7 @@ thead{display:table-header-group}
                             min="0" step="1" title="Coût réel (éditable)" />
                     </td>
                     <td style="text-align:right;color:${ecartColor};font-weight:500;white-space:nowrap;">
-                        ${ecart >= 0 ? '+' : ''}${fmt(ecart)}
+                        ${-ecart > 0 ? '+' : ''}${fmt(-ecart)}
                     </td>
                 </tr>`;
             });
@@ -3595,7 +3595,7 @@ thead{display:table-header-group}
                 <div class="costs-kpi">
                     <div class="costs-kpi-label">${t('costs.kpi.variance')}</div>
                     <div class="costs-kpi-value" style="color:${varianceColor}">
-                        <span>${varianceIcon}</span> ${variance >= 0 ? '+' : ''}${fmt(variance)}
+                        <span>${varianceIcon}</span> ${-variance > 0 ? '+' : ''}${fmt(-variance)}
                     </div>
                 </div>
                 <div class="costs-kpi costs-kpi-progress">
@@ -3628,7 +3628,7 @@ thead{display:table-header-group}
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(allCostTasks.reduce((s, tc) => s + (tc.fixedCost || 0), 0))}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalEstimated)}</td>
                         <td style="text-align:right;font-weight:700;white-space:nowrap;">${fmt(totalActual)}</td>
-                        <td style="text-align:right;font-weight:700;color:${varianceColor};white-space:nowrap;">${variance >= 0 ? '+' : ''}${fmt(variance)}</td>
+                        <td style="text-align:right;font-weight:700;color:${varianceColor};white-space:nowrap;">${-variance > 0 ? '+' : ''}${fmt(-variance)}</td>
                     </tr>
                 </tfoot>
             </table>
