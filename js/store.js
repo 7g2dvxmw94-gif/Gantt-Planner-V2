@@ -2295,4 +2295,4 @@ class Store {
 
 // Singleton export
 export const store = new Store();
-export { PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_LIMITS, STRIPE_PRICES, PLAN_PRICES };
+export { PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };
