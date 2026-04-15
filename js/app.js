@@ -3663,8 +3663,16 @@ thead{display:table-header-group}
         // Bind project filter
         const costsFilterSelect = container.querySelector('#costsProjectFilter');
         if (costsFilterSelect) {
-            costsFilterSelect.addEventListener('change', () => {
-                this._costsFilterProjectId = costsFilterSelect.value;
+            costsFilterSelect.addEventListener('change', async () => {
+                const selected = costsFilterSelect.value;
+                this._costsFilterProjectId = selected;
+                // Ensure data is loaded for the selected project (may not be in memory
+                // if it was never the active project this session).
+                if (selected === 'all') {
+                    await Promise.all(store.getProjects().map(p => store.ensureProjectLoaded(p.id)));
+                } else {
+                    await store.ensureProjectLoaded(selected);
+                }
                 this._renderCostsView();
             });
         }

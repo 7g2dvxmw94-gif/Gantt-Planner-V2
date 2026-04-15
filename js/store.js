@@ -381,6 +381,8 @@ class Store {
         this._redoStack = [];
         this._maxHistory = 50;
         this._batchingUndo = false;
+        // Track which projects have had their data fully loaded from Supabase
+        this._loadedProjectIds = new Set();
     }
 
     /* ---- Persistence ---- */
@@ -553,6 +555,18 @@ class Store {
         // always reflects the actual children, even if Supabase has stale phase data.
         const phases = this._data.tasks.filter(t => t.projectId === projectId && t.isPhase);
         phases.forEach(phase => this._recalculatePhase(phase.id));
+
+        this._loadedProjectIds.add(projectId);
+    }
+
+    /**
+     * Ensures a project's tasks/resources are loaded in memory.
+     * Returns a Promise that resolves once data is available.
+     * Safe to call multiple times — skips the fetch if already loaded.
+     */
+    async ensureProjectLoaded(projectId) {
+        if (!projectId || projectId === 'all' || this._loadedProjectIds.has(projectId)) return;
+        await this._loadProjectData(projectId);
     }
 
     _loadSettingsFromStorage() {
