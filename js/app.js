@@ -2215,10 +2215,12 @@ ${assignLines.join('\n')}
                                 const tDur = daysBetween(task.startDate, task.endDate) + 1;
                                 const bx = ML + LEFT + (tOff / totalDays) * TLW;
                                 const bw = Math.max(0.04, (tDur / totalDays) * TLW);
-                                const sc = STATUS_CLR[task.status] || 'cbd5e1';
-                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: sc + '40' }, line: { color: sc, pt: 0.5 } });
+                                const tc = (task.color || '#6366F1').replace('#', '');
+                                // Soft background: task color at ~25% opacity
+                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: tc + '40' }, line: { color: tc, pt: 0.5 } });
+                                // Progress fill: task color solid
                                 if ((task.progress || 0) > 0) {
-                                    sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: sc } });
+                                    sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: tc } });
                                 }
                             }
                         });
