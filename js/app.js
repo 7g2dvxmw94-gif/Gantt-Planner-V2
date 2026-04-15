@@ -1769,6 +1769,7 @@ class App {
             { label: 'CSV', icon: 'CSV', desc: t('export.csv.desc'), tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
             { label: 'XML', icon: 'XML', desc: t('export.xml.desc'), tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
             { label: 'PDF', icon: 'PDF', desc: t('export.pdf.desc'), tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
+            { label: 'PPT', icon: 'PPT', desc: t('export.ppt.desc'), tooltip: 'Génère une présentation PowerPoint (.pptx) avec couverture, statistiques, liste des tâches et diagramme de Gantt visuel.', action: () => this._exportPPT() },
         ];
 
         formats.forEach(f => {
@@ -2012,6 +2013,272 @@ ${assignLines.join('\n')}
             return '"' + str.replace(/"/g, '""') + '"';
         }
         return str;
+    }
+
+    async _exportPPT() {
+        this._showToast(t('toast.pptGenerating'), 'info');
+        try {
+            const { default: PptxGenJS } = await import('https://esm.sh/pptxgenjs');
+            const project  = store.getActiveProject();
+            const allTasks = store.getTasks();
+            const resources = store.getResources();
+            const stats    = store.getProjectStats();
+
+            const pptx = new PptxGenJS();
+            pptx.layout  = 'LAYOUT_WIDE';   // 13.33" × 7.5"
+            pptx.author  = 'Gantt Planner';
+            pptx.title   = project.name;
+            pptx.subject = project.description || '';
+
+            const AC   = '6366F1';   // accent indigo
+            const DARK = '1e293b';
+            const GRAY = '64748b';
+            const STATUS_CLR = { todo: 'cbd5e1', in_progress: '3b82f6', done: '10b981' };
+            const STATUS_LBL = { todo: t('task.status.todo'), in_progress: t('task.status.inProgress'), done: t('task.status.done') };
+            const ff = 'Segoe UI';
+
+            // ── Slide 1 : Couverture ──────────────────────────────────────
+            const s1 = pptx.addSlide();
+            s1.background = { color: DARK };
+            s1.addShape('rect', { x: 0, y: 0, w: 0.1, h: 7.5, fill: { color: AC } });
+            s1.addText(project.name, {
+                x: 0.5, y: 2.2, w: 12.3, h: 1.4,
+                fontSize: 38, bold: true, color: 'FFFFFF', fontFace: ff,
+            });
+            if (project.description) {
+                s1.addText(project.description, {
+                    x: 0.5, y: 3.7, w: 12.3, h: 0.55,
+                    fontSize: 16, color: '94a3b8', fontFace: ff,
+                });
+            }
+            const prog = stats.progress || 0;
+            s1.addText(`${prog}% ${t('pdf.stats.progress')}`, {
+                x: 0.5, y: 6.5, w: 4, h: 0.4,
+                fontSize: 13, color: 'FFFFFF', fontFace: ff,
+            });
+            s1.addShape('rect', { x: 0.5, y: 7.0, w: 12.3, h: 0.14, fill: { color: '334155' } });
+            if (prog > 0) s1.addShape('rect', { x: 0.5, y: 7.0, w: 12.3 * prog / 100, h: 0.14, fill: { color: AC } });
+            s1.addText(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }), {
+                x: 9, y: 6.5, w: 4, h: 0.4,
+                fontSize: 11, color: '475569', align: 'right', fontFace: ff,
+            });
+
+            // ── Slide 2 : Statistiques ────────────────────────────────────
+            const s2 = pptx.addSlide();
+            s2.background = { color: 'FFFFFF' };
+            s2.addShape('rect', { x: 0, y: 0, w: 13.33, h: 0.75, fill: { color: AC } });
+            s2.addText(t('pdf.stats.title'), {
+                x: 0.4, y: 0, w: 12, h: 0.75,
+                fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
+            });
+            const kpis = [
+                { label: t('pdf.stats.totalTasks'),  value: String(stats.totalTasks  || 0), color: AC },
+                { label: t('pdf.stats.done'),        value: String(stats.doneTasks   || 0), color: '10b981' },
+                { label: t('pdf.stats.inProgress'),  value: String(stats.inProgressTasks || 0), color: '3b82f6' },
+                { label: t('pdf.stats.progress'),    value: `${prog}%`,                    color: 'f59e0b' },
+            ];
+            kpis.forEach((kpi, i) => {
+                const x = 0.5 + i * 3.2;
+                s2.addShape('rect', { x, y: 1.1, w: 2.9, h: 1.9, fill: { color: 'f8fafc' }, line: { color: 'e2e8f0', pt: 1 } });
+                s2.addShape('rect', { x, y: 1.1, w: 2.9, h: 0.1, fill: { color: kpi.color } });
+                s2.addText(kpi.value, { x, y: 1.4, w: 2.9, h: 0.9, fontSize: 34, bold: true, color: kpi.color, align: 'center', fontFace: ff });
+                s2.addText(kpi.label, { x, y: 2.5, w: 2.9, h: 0.4, fontSize: 12, color: GRAY, align: 'center', fontFace: ff });
+            });
+
+            // ── Slide 3+ : Liste des tâches ───────────────────────────────
+            const nonPhase = allTasks.filter(t => !t.isPhase && !t.isMilestone);
+            const phases   = allTasks.filter(t => t.isPhase);
+            const orderedRows = [];
+            phases.forEach(ph => {
+                orderedRows.push({ isPhase: true, task: ph });
+                nonPhase.filter(t => t.parentId === ph.id).forEach(t => orderedRows.push({ isPhase: false, task: t }));
+            });
+            nonPhase.filter(t => !t.parentId).forEach(t => orderedRows.push({ isPhase: false, task: t }));
+
+            const PAGE = 18;
+            for (let ci = 0; ci < Math.ceil(orderedRows.length / PAGE); ci++) {
+                const chunk = orderedRows.slice(ci * PAGE, (ci + 1) * PAGE);
+                const sl = pptx.addSlide();
+                sl.background = { color: 'FFFFFF' };
+                sl.addShape('rect', { x: 0, y: 0, w: 13.33, h: 0.75, fill: { color: AC } });
+                const pageLabel = Math.ceil(orderedRows.length / PAGE) > 1 ? ` (${ci + 1}/${Math.ceil(orderedRows.length / PAGE)})` : '';
+                sl.addText(t('export.ppt.tasksSlide') + pageLabel, {
+                    x: 0.4, y: 0, w: 12, h: 0.75,
+                    fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
+                });
+                const hdrOpts = { bold: true, color: 'FFFFFF', fill: { color: AC }, valign: 'middle', fontSize: 10, fontFace: ff };
+                const hdr = [
+                    { text: t('task.name'),          options: { ...hdrOpts, align: 'left'   } },
+                    { text: t('task.startDate'),     options: { ...hdrOpts, align: 'center' } },
+                    { text: t('task.endDate'),       options: { ...hdrOpts, align: 'center' } },
+                    { text: t('task.status.label'),  options: { ...hdrOpts, align: 'center' } },
+                    { text: '%',                     options: { ...hdrOpts, align: 'center' } },
+                    { text: t('task.assignees'),     options: { ...hdrOpts, align: 'left'   } },
+                ];
+                const tableRows = [hdr, ...chunk.map(row => {
+                    const task = row.task;
+                    if (row.isPhase) {
+                        const ph = { bold: true, color: DARK, fill: { color: 'e2e8f0' }, fontSize: 10, fontFace: ff };
+                        return [
+                            { text: task.name, options: { ...ph, align: 'left' } },
+                            { text: '', options: ph }, { text: '', options: ph },
+                            { text: '', options: ph }, { text: '', options: ph },
+                            { text: '', options: ph },
+                        ];
+                    }
+                    const assignees = (task.assignees || []).map(id => {
+                        const r = resources.find(r => r.id === id);
+                        return r ? r.name.split(' ').map(w => w[0]).join('') : '';
+                    }).filter(Boolean).join(', ');
+                    const sc = STATUS_CLR[task.status] || 'cbd5e1';
+                    const base = { fontSize: 9, fontFace: ff };
+                    return [
+                        { text: '  ' + task.name,                   options: { ...base, color: DARK,    align: 'left'   } },
+                        { text: formatDateDisplay(task.startDate),   options: { ...base, color: GRAY,    align: 'center' } },
+                        { text: formatDateDisplay(task.endDate),     options: { ...base, color: GRAY,    align: 'center' } },
+                        { text: STATUS_LBL[task.status] || task.status,
+                                                                     options: { ...base, color: 'FFFFFF', fill: { color: sc }, align: 'center', bold: true } },
+                        { text: `${task.progress || 0}%`,            options: { ...base, color: DARK,    align: 'center' } },
+                        { text: assignees,                           options: { ...base, color: GRAY,    align: 'left'   } },
+                    ];
+                })];
+                sl.addTable(tableRows, {
+                    x: 0.3, y: 0.9, w: 12.7,
+                    colW: [4.4, 1.5, 1.5, 1.9, 0.8, 2.6],
+                    rowH: 0.27,
+                    border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
+                    autoPage: false,
+                });
+            }
+
+            // ── Slide 4+ : Gantt visuel ───────────────────────────────────
+            const ganttTasks = nonPhase.filter(t => t.startDate && t.endDate);
+            if (ganttTasks.length > 0) {
+                const allDates = ganttTasks.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
+                const rangeStart = new Date(Math.min(...allDates.map(d => d.getTime())));
+                const rangeEnd   = new Date(Math.max(...allDates.map(d => d.getTime())));
+                rangeStart.setDate(1);
+                rangeEnd.setMonth(rangeEnd.getMonth() + 1); rangeEnd.setDate(0);
+                const totalDays = Math.max(1, daysBetween(formatDateISO(rangeStart), formatDateISO(rangeEnd)));
+
+                const LEFT  = 2.9;   // task name col width
+                const ML    = 0.15;  // left margin
+                const TLW   = 13.33 - LEFT - ML - 0.15;  // timeline width
+                const HDR_H = 0.75;
+                const TH    = 0.38;  // timeline header height
+                const RH    = 0.27;  // row height
+                const MAX_R = Math.floor((7.5 - HDR_H - TH - 0.3) / RH);
+
+                // Build Gantt rows (phases + their tasks)
+                const ganttRows = [];
+                phases.forEach(ph => {
+                    const children = ganttTasks.filter(t => t.parentId === ph.id);
+                    if (children.length === 0) return;
+                    ganttRows.push({ isPhase: true, task: ph, children });
+                    children.forEach(t => ganttRows.push({ isPhase: false, task: t }));
+                });
+                ganttTasks.filter(t => !t.parentId).forEach(t => ganttRows.push({ isPhase: false, task: t }));
+
+                // Build month labels for the header
+                const months = [];
+                const cur = new Date(rangeStart);
+                while (cur <= rangeEnd) {
+                    const mStart = new Date(cur);
+                    const mEnd   = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+                    const days   = Math.min(
+                        daysBetween(formatDateISO(mStart), formatDateISO(mEnd)) + 1,
+                        totalDays
+                    );
+                    months.push({ label: cur.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), days });
+                    cur.setMonth(cur.getMonth() + 1);
+                }
+
+                const todayStr  = formatDateISO(new Date());
+                const todayOffset = daysBetween(formatDateISO(rangeStart), todayStr);
+
+                const totalChunks = Math.ceil(ganttRows.length / MAX_R);
+                for (let ci = 0; ci < totalChunks; ci++) {
+                    const chunk = ganttRows.slice(ci * MAX_R, (ci + 1) * MAX_R);
+                    const sl = pptx.addSlide();
+                    sl.background = { color: 'FFFFFF' };
+
+                    // Header bar
+                    sl.addShape('rect', { x: 0, y: 0, w: 13.33, h: HDR_H, fill: { color: AC } });
+                    const gtLabel = totalChunks > 1 ? ` (${ci + 1}/${totalChunks})` : '';
+                    sl.addText(t('export.ppt.ganttSlide') + gtLabel, {
+                        x: 0.4, y: 0, w: 12, h: HDR_H,
+                        fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
+                    });
+
+                    // Month headers
+                    let mxOffset = 0;
+                    months.forEach(m => {
+                        const mw = (m.days / totalDays) * TLW;
+                        sl.addShape('rect', {
+                            x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH,
+                            fill: { color: 'f1f5f9' }, line: { color: 'cbd5e1', pt: 0.5 },
+                        });
+                        sl.addText(m.label, {
+                            x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH,
+                            fontSize: 8, color: DARK, align: 'center', valign: 'middle', fontFace: ff,
+                        });
+                        mxOffset += mw;
+                    });
+
+                    // Today line
+                    if (todayOffset >= 0 && todayOffset <= totalDays) {
+                        const tx = ML + LEFT + (todayOffset / totalDays) * TLW;
+                        sl.addShape('line', { x: tx, y: HDR_H, w: 0, h: 7.5 - HDR_H, line: { color: 'ef4444', pt: 1.2, dashType: 'dash' } });
+                    }
+
+                    // Rows
+                    chunk.forEach((row, ri) => {
+                        const ry  = HDR_H + TH + ri * RH;
+                        const bgC = row.isPhase ? 'f1f5f9' : (ri % 2 === 0 ? 'FFFFFF' : 'fafafa');
+                        sl.addShape('rect', { x: ML, y: ry, w: 13.33 - ML - 0.1, h: RH, fill: { color: bgC }, line: { color: 'f1f5f9', pt: 0.3 } });
+
+                        // Task name
+                        const indent = row.isPhase ? '' : '   ';
+                        sl.addText(indent + row.task.name, {
+                            x: ML + 0.05, y: ry + 0.02, w: LEFT - 0.1, h: RH - 0.04,
+                            fontSize: row.isPhase ? 9 : 8, bold: row.isPhase,
+                            color: row.isPhase ? DARK : '334155', fontFace: ff, valign: 'middle',
+                        });
+
+                        if (row.isPhase) {
+                            // Phase span bar
+                            const pDates  = row.children.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
+                            const pStart  = new Date(Math.min(...pDates.map(d => d.getTime())));
+                            const pEnd    = new Date(Math.max(...pDates.map(d => d.getTime())));
+                            const pOff    = Math.max(0, daysBetween(formatDateISO(rangeStart), formatDateISO(pStart)));
+                            const pDur    = daysBetween(formatDateISO(pStart), formatDateISO(pEnd)) + 1;
+                            const bx = ML + LEFT + (pOff / totalDays) * TLW;
+                            const bw = Math.max(0.04, (pDur / totalDays) * TLW);
+                            sl.addShape('rect', { x: bx, y: ry + 0.06, w: bw, h: RH - 0.14, fill: { color: AC + '55' }, line: { color: AC, pt: 0.5 } });
+                        } else {
+                            const task   = row.task;
+                            const tOff   = Math.max(0, daysBetween(formatDateISO(rangeStart), task.startDate));
+                            const tDur   = daysBetween(task.startDate, task.endDate) + 1;
+                            const bx = ML + LEFT + (tOff / totalDays) * TLW;
+                            const bw = Math.max(0.04, (tDur / totalDays) * TLW);
+                            const sc = STATUS_CLR[task.status] || 'cbd5e1';
+                            // Background bar
+                            sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: sc + '40' }, line: { color: sc, pt: 0.5 } });
+                            // Progress fill
+                            if ((task.progress || 0) > 0) {
+                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: sc } });
+                            }
+                        }
+                    });
+                }
+            }
+
+            await pptx.writeFile({ fileName: `${project.name}.pptx` });
+            this._showToast(t('toast.pptReady'), 'success');
+        } catch (err) {
+            console.error('[export PPT]', err);
+            this._showToast(t('toast.pptError'), 'error');
+        }
     }
 
     _showPDFExportDialog() {

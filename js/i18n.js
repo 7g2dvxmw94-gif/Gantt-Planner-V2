@@ -156,6 +156,9 @@ const I18N = {
         'task.phase.label': 'Phase parente',
         'task.description.label': 'Description',
         'task.description.placeholder': 'Description optionnelle...',
+        'task.name': 'Tâche',
+        'task.status.label': 'Statut',
+        'task.assignees': 'Ressources',
         'task.startDate': 'Date de début',
         'task.endDate': 'Date de fin',
         'task.duration': 'Durée (jours)',
@@ -343,6 +346,9 @@ const I18N = {
         'toast.projectExportedCSV': 'Projet exporté en CSV (compatible MS Project)',
         'toast.projectExportedXML': 'Projet exporté en XML MS Project',
         'toast.pdfPrintReady': 'Impression PDF prête',
+        'toast.pptGenerating': 'Génération du PowerPoint en cours...',
+        'toast.pptReady': 'PowerPoint exporté avec succès',
+        'toast.pptError': 'Erreur lors de la génération du PowerPoint',
         'toast.selectAtLeastOneView': 'Sélectionnez au moins une vue',
         'toast.permitExportPdfReady': 'Export PDF des permis prêt',
         'toast.projectRenamed': 'Projet renommé',
@@ -426,7 +432,10 @@ const I18N = {
 
         // PDF export
         'pdf.exportedOn': 'Exporté le {date}',
+        'pdf.stats.title': 'Vue d\'ensemble',
         'pdf.stats.tasks': 'Tâches',
+        'pdf.stats.totalTasks': 'Total tâches',
+        'pdf.stats.inProgress': 'En cours',
         'pdf.stats.progress': 'Progression',
         'pdf.stats.daysRemaining': 'Jours restants',
         'pdf.stats.done': 'Terminées',
@@ -583,6 +592,9 @@ const I18N = {
         'export.csv.desc': 'MS Project / Excel / Tableur',
         'export.xml.desc': 'MS Project (recommandé)',
         'export.pdf.desc': 'Impression',
+        'export.ppt.desc': 'Présentation PowerPoint',
+        'export.ppt.tasksSlide': 'Liste des tâches',
+        'export.ppt.ganttSlide': 'Diagramme de Gantt',
 
         // CSV headers
         'csv.col.level': 'Niveau hiérarchique',
@@ -807,6 +819,9 @@ const I18N = {
         'task.phase.label': 'Parent Phase',
         'task.description.label': 'Description',
         'task.description.placeholder': 'Optional description...',
+        'task.name': 'Task',
+        'task.status.label': 'Status',
+        'task.assignees': 'Resources',
         'task.startDate': 'Start Date',
         'task.endDate': 'End Date',
         'task.duration': 'Duration (days)',
@@ -994,6 +1009,9 @@ const I18N = {
         'toast.projectExportedCSV': 'Project exported as CSV (MS Project compatible)',
         'toast.projectExportedXML': 'Project exported as MS Project XML',
         'toast.pdfPrintReady': 'PDF print ready',
+        'toast.pptGenerating': 'Generating PowerPoint...',
+        'toast.pptReady': 'PowerPoint exported successfully',
+        'toast.pptError': 'Error generating PowerPoint',
         'toast.selectAtLeastOneView': 'Select at least one view',
         'toast.permitExportPdfReady': 'Permit PDF export ready',
         'toast.projectRenamed': 'Project renamed',
@@ -1077,7 +1095,10 @@ const I18N = {
 
         // PDF export
         'pdf.exportedOn': 'Exported on {date}',
+        'pdf.stats.title': 'Overview',
         'pdf.stats.tasks': 'Tasks',
+        'pdf.stats.totalTasks': 'Total tasks',
+        'pdf.stats.inProgress': 'In progress',
         'pdf.stats.progress': 'Progress',
         'pdf.stats.daysRemaining': 'Days remaining',
         'pdf.stats.done': 'Completed',
@@ -1234,6 +1255,9 @@ const I18N = {
         'export.csv.desc': 'MS Project / Excel / Spreadsheet',
         'export.xml.desc': 'MS Project (recommended)',
         'export.pdf.desc': 'Print',
+        'export.ppt.desc': 'PowerPoint Presentation',
+        'export.ppt.tasksSlide': 'Task List',
+        'export.ppt.ganttSlide': 'Gantt Chart',
 
         // CSV headers
         'csv.col.level': 'Hierarchical level',
