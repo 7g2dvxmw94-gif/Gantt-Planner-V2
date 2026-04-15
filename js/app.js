@@ -274,6 +274,11 @@ class App {
                 if (costsView) {
                     costsView.style.display = '';
                     this._renderCostsView();
+                    // Preload all other projects in background so the filter
+                    // dropdown works without a visible delay on first selection
+                    store.getProjects().forEach(p =>
+                        store.ensureProjectLoaded(p.id).catch(() => {})
+                    );
                 }
                 break;
         }
@@ -3666,12 +3671,20 @@ thead{display:table-header-group}
             costsFilterSelect.addEventListener('change', async () => {
                 const selected = costsFilterSelect.value;
                 this._costsFilterProjectId = selected;
-                // Ensure data is loaded for the selected project (may not be in memory
-                // if it was never the active project this session).
-                if (selected === 'all') {
-                    await Promise.all(store.getProjects().map(p => store.ensureProjectLoaded(p.id)));
-                } else {
-                    await store.ensureProjectLoaded(selected);
+                // Show a loading state on the select while data is fetching
+                costsFilterSelect.disabled = true;
+                costsFilterSelect.style.opacity = '0.6';
+                try {
+                    if (selected === 'all') {
+                        await Promise.all(store.getProjects().map(p => store.ensureProjectLoaded(p.id)));
+                    } else {
+                        await store.ensureProjectLoaded(selected);
+                    }
+                } catch (e) {
+                    console.error('[costs filter] failed to load project data:', e);
+                } finally {
+                    costsFilterSelect.disabled = false;
+                    costsFilterSelect.style.opacity = '';
                 }
                 this._renderCostsView();
             });
