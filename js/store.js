@@ -3,7 +3,7 @@
    Reactive store with localStorage persistence
    ======================================== */
 
-import { generateId, daysBetween, addDays, formatDateISO } from './utils.js';
+import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -133,6 +133,7 @@ function createDefaultProject(resources) {
         budget: 0,
         budgetUsed: 0,
         resourceIds: [],
+        excludeWeekends: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };
@@ -447,6 +448,12 @@ class Store {
                     });
                     // Migrate: add showBaseline to settings
                     if (!('showBaseline' in parsed.settings)) parsed.settings.showBaseline = true;
+                    // Migrate: add excludeWeekends to existing projects
+                    if (Array.isArray(parsed.projects)) {
+                        parsed.projects.forEach(p => {
+                            if (!('excludeWeekends' in p)) p.excludeWeekends = true;
+                        });
+                    }
                     return parsed;
                 }
             }
@@ -1397,8 +1404,9 @@ class Store {
 
     /**
      * Compute costs for each task based on assigned resources' rates + fixed costs.
-     * For hourly resources: duration_days × 8h × hourlyRate
-     * For daily resources (TJM): duration_days × dailyRate
+     * For hourly resources: billable_days × 8h × hourlyRate
+     * For daily resources (TJM): billable_days × dailyRate
+     * billable_days = working days (Mon–Fri) unless project.excludeWeekends=false OR resource.worksWeekends=true
      * Total cost = resource cost + fixedCost
      * Returns { tasks: [{task, durationDays, assignedResources, resourceCost, fixedCost, cost, costDone}], totalCost, totalCostDone }
      */
@@ -1407,6 +1415,10 @@ class Store {
         const tasks = this.getTasks(pid).filter(t => !t.isPhase && !t.isMilestone);
         const resources = this.getResources();
         const HOURS_PER_DAY = 8;
+
+        // Whether the project excludes weekends by default (true if not set)
+        const project = this._data.projects.find(p => p.id === pid);
+        const projectExcludesWeekends = project?.excludeWeekends !== false;
 
         const result = [];
         let totalCost = 0;
@@ -1418,15 +1430,24 @@ class Store {
                 .map(id => resources.find(r => r.id === id))
                 .filter(Boolean);
 
-            const durationDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
+            // Calendar days used for display; working days computed per resource for billing
+            const calendarDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
+            const workingDays  = countWorkingDays(task.startDate, task.endDate);
+
             let resourceCost = 0;
             for (const r of assignedResources) {
+                // Resource works weekends if: project doesn't exclude them OR resource override is set
+                const billableDays = (projectExcludesWeekends && !r.worksWeekends)
+                    ? workingDays
+                    : calendarDays;
                 if (r.rateType === 'daily' && r.dailyRate) {
-                    resourceCost += durationDays * r.dailyRate;
+                    resourceCost += billableDays * r.dailyRate;
                 } else {
-                    resourceCost += durationDays * HOURS_PER_DAY * (r.hourlyRate || 0);
+                    resourceCost += billableDays * HOURS_PER_DAY * (r.hourlyRate || 0);
                 }
             }
+
+            const durationDays = calendarDays; // kept for display
             // Support both new fixedCosts array and legacy fixedCost number
             const fixedCosts = Array.isArray(task.fixedCosts) ? task.fixedCosts : [];
             const fixedCost = fixedCosts.length > 0

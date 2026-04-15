@@ -299,6 +299,7 @@ class SettingsPanel {
         const currency  = this._getCustomization('currency')  || 'EUR';
         const showLinks = this._getCustomization('showLinks') !== false;
         const currentLang = getCurrentLang();
+        const excludeWeekends = store.getActiveProject()?.excludeWeekends !== false;
 
         return `
             <div class="settings-section">
@@ -352,6 +353,18 @@ class SettingsPanel {
                             <label class="settings-field-label" for="settingsShowLinks">${t('settings.display.showLinks')}</label>
                             <label class="settings-toggle">
                                 <input type="checkbox" id="settingsShowLinks" ${showLinks ? 'checked' : ''}>
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-field settings-field-toggle">
+                            <span class="settings-field-label" style="display:flex;align-items:center;gap:6px;">
+                                ${t('settings.costs.excludeWeekends')}
+                                <span title="${t('settings.costs.excludeWeekends.tooltip')}" style="display:inline-flex;cursor:help;color:var(--text-muted,#94a3b8);">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                </span>
+                            </span>
+                            <label class="settings-toggle">
+                                <input type="checkbox" id="settingsExcludeWeekends" ${excludeWeekends ? 'checked' : ''}>
                                 <span class="settings-toggle-slider"></span>
                             </label>
                         </div>
@@ -908,6 +921,17 @@ class SettingsPanel {
             showLinksCheckbox.addEventListener('change', () => {
                 this._saveCustomization('showLinks', showLinksCheckbox.checked);
                 document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+            });
+        }
+
+        const excludeWeekendsCheckbox = this._panel.querySelector('#settingsExcludeWeekends');
+        if (excludeWeekendsCheckbox) {
+            excludeWeekendsCheckbox.addEventListener('change', () => {
+                const project = store.getActiveProject();
+                if (project) {
+                    store.updateProject(project.id, { excludeWeekends: excludeWeekendsCheckbox.checked });
+                    document.dispatchEvent(new CustomEvent('costs-settings-changed'));
+                }
             });
         }
     }

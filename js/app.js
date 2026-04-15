@@ -925,6 +925,43 @@ class App {
         colorGroup.appendChild(colorPicker);
         body.appendChild(colorGroup);
 
+        // Weekend option
+        const weekendGroup = document.createElement('div');
+        weekendGroup.className = 'form-group';
+        const weekendRow = document.createElement('label');
+        weekendRow.className = 'res-weekend-row';
+        weekendRow.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;';
+
+        const weekendCheckbox = document.createElement('input');
+        weekendCheckbox.type = 'checkbox';
+        weekendCheckbox.id = 'resWorksWeekends';
+        weekendCheckbox.checked = isEdit ? !!resource.worksWeekends : false;
+        weekendCheckbox.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--accent,#6366F1);flex-shrink:0;';
+
+        const weekendLabelText = document.createElement('span');
+        weekendLabelText.style.cssText = 'font-size:13px;color:var(--text-primary,#1e293b);';
+        weekendLabelText.textContent = t('resource.worksWeekends.label');
+
+        // Info icon with tooltip
+        const infoIcon = document.createElement('span');
+        infoIcon.style.cssText = 'display:inline-flex;align-items:center;cursor:help;color:var(--text-muted,#94a3b8);flex-shrink:0;';
+        infoIcon.title = t('resource.worksWeekends.tooltip');
+        infoIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+
+        weekendRow.appendChild(weekendCheckbox);
+        weekendRow.appendChild(weekendLabelText);
+        weekendRow.appendChild(infoIcon);
+        weekendGroup.appendChild(weekendRow);
+
+        // Hint shown below
+        const weekendHint = document.createElement('p');
+        weekendHint.className = 'form-hint';
+        weekendHint.style.cssText = 'margin-top:4px;margin-left:24px;';
+        weekendHint.textContent = t('resource.worksWeekends.hint');
+        weekendGroup.appendChild(weekendHint);
+
+        body.appendChild(weekendGroup);
+
         modal.appendChild(body);
 
         // ---- Footer ----
@@ -983,12 +1020,13 @@ class App {
             const rateType = currentRateType;
             const hourlyRate = rateType === 'hourly' ? rateValue : null;
             const dailyRate = rateType === 'daily' ? rateValue : null;
+            const worksWeekends = weekendCheckbox.checked;
 
             if (isEdit) {
-                store.updateResource(resource.id, { name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
+                store.updateResource(resource.id, { name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate, worksWeekends });
                 this._showToast(t('toast.resourceUpdated'), 'success');
             } else {
-                store.addResource({ name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate });
+                store.addResource({ name, role, avatar, color: selectedColor, rateType, hourlyRate, dailyRate, worksWeekends });
                 this._showToast(t('toast.resourceCreated'), 'success');
             }
             close();

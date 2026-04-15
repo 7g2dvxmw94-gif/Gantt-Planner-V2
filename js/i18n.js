@@ -92,6 +92,8 @@ const I18N = {
         'settings.currency.label': 'Devise affichée',
         'settings.display.title': 'Affichage',
         'settings.display.showLinks': 'Afficher les liens (dépendances)',
+        'settings.costs.excludeWeekends': 'Exclure les week-ends du calcul des coûts',
+        'settings.costs.excludeWeekends.tooltip': "Activé par défaut : seuls les jours ouvrés (lun.–ven.) sont pris en compte pour calculer le coût des ressources. Désactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi être configurée individuellement (case \"Travaille le week-end\" dans sa fiche).",
 
         // Settings - Profile
         'settings.identity': 'Identité',
@@ -257,6 +259,9 @@ const I18N = {
         'resource.rate.label': 'Tarification',
         'resource.rate.hourly': 'Taux horaire',
         'resource.rate.daily': 'TJM',
+        'resource.worksWeekends.label': 'Travaille le week-end',
+        'resource.worksWeekends.hint': 'Les samedis et dimanches seront comptés dans le calcul des coûts.',
+        'resource.worksWeekends.tooltip': "Par défaut, seuls les jours ouvrés (lun.–ven.) sont facturés. Cochez cette case si cette ressource facture aussi le week-end (ex. freelance, astreinte). Son coût sera alors calculé sur 7 jours/semaine au lieu de 5.",
         'resource.edit.btn': 'Modifier',
         'resource.delete.btn': 'Supprimer',
         'resource.workload.label': 'Charge de travail',
@@ -737,6 +742,8 @@ const I18N = {
         'settings.currency.label': 'Display currency',
         'settings.display.title': 'Display',
         'settings.display.showLinks': 'Show links (dependencies)',
+        'settings.costs.excludeWeekends': 'Exclude weekends from cost calculation',
+        'settings.costs.excludeWeekends.tooltip': 'Enabled by default: only working days (Mon–Fri) are used to calculate resource costs. Disable if your project includes weekend work. Each resource can also be configured individually via the "Works weekends" option in its profile.',
 
         // Settings - Profile
         'settings.identity': 'Identity',
@@ -902,6 +909,9 @@ const I18N = {
         'resource.rate.label': 'Billing',
         'resource.rate.hourly': 'Hourly rate',
         'resource.rate.daily': 'Daily rate',
+        'resource.worksWeekends.label': 'Works weekends',
+        'resource.worksWeekends.hint': 'Saturdays and Sundays will be counted in cost calculations.',
+        'resource.worksWeekends.tooltip': 'By default, only working days (Mon–Fri) are billed. Check this if the resource also bills on weekends (e.g. freelancer, on-call). Their cost will be calculated over 7 days/week instead of 5.',
         'resource.edit.btn': 'Edit',
         'resource.delete.btn': 'Delete',
         'resource.workload.label': 'Workload',

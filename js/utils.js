@@ -81,6 +81,25 @@ export function daysBetween(start, end) {
 }
 
 /**
+ * Count working days (Mon–Fri) between two dates, inclusive.
+ * Returns at least 1.
+ */
+export function countWorkingDays(start, end) {
+    const s = new Date(start);
+    const e = new Date(end);
+    s.setHours(0, 0, 0, 0);
+    e.setHours(0, 0, 0, 0);
+    let count = 0;
+    const cur = new Date(s);
+    while (cur <= e) {
+        const day = cur.getDay();
+        if (day !== 0 && day !== 6) count++;
+        cur.setDate(cur.getDate() + 1);
+    }
+    return Math.max(1, count);
+}
+
+/**
  * Add days to a date
  */
 export function addDays(date, days) {
