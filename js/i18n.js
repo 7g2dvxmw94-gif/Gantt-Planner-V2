@@ -584,6 +584,7 @@ const I18N = {
         'pdf.dialog.to': 'Au',
         'pdf.dialog.cancel': 'Annuler',
         'pdf.dialog.generate': 'Générer le PDF',
+        'ppt.dialog.generate': 'Générer le PPT',
 
         // Export menu
         'export.json.desc': 'Réimportable',
@@ -1247,6 +1248,7 @@ const I18N = {
         'pdf.dialog.to': 'To',
         'pdf.dialog.cancel': 'Cancel',
         'pdf.dialog.generate': 'Generate PDF',
+        'ppt.dialog.generate': 'Generate PPT',
 
         // Export menu
         'export.json.desc': 'Re-importable',

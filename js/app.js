@@ -2471,7 +2471,7 @@ ${assignLines.join('\n')}
                 <button class="btn btn-secondary pdf-export-cancel">${t('pdf.dialog.cancel')}</button>
                 <button class="btn btn-primary pdf-export-confirm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 9l6 6 6-6"/></svg>
-                    ${t('pdf.dialog.generate')}
+                    ${mode === 'ppt' ? t('ppt.dialog.generate') : t('pdf.dialog.generate')}
                 </button>
             </div>`;
 
