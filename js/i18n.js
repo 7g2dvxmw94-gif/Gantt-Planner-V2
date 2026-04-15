@@ -94,7 +94,7 @@ const I18N = {
         'settings.display.showLinks': 'Afficher les liens (dépendances)',
         'settings.resources.title': 'Ressources',
         'settings.costs.excludeWeekends': 'Exclure les week-ends du calcul des coûts',
-        'settings.costs.excludeWeekends.tooltip': 'Seuls les jours ouvres (lun.-ven.) sont pris en compte pour calculer le cout des ressources. Desactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi etre configuree individuellement.',
+        'settings.costs.excludeWeekends.tooltip': 'Seuls les jours ouvrés (lun.-ven.) sont pris en compte pour calculer le coût des ressources. Désactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi être configurée individuellement.',
 
         // Settings - Profile
         'settings.identity': 'Identité',
