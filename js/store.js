@@ -9,6 +9,26 @@ import { auth } from './auth.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
+/* ---- Plan / Subscription constants ---- */
+export const PLAN_LIMITS = {
+    free:  { projects: 1,        tasks: 50,       collaborators: 1        },
+    pro:   { projects: Infinity, tasks: Infinity,  collaborators: 5        },
+    team:  { projects: Infinity, tasks: Infinity,  collaborators: Infinity },
+};
+
+// Stripe Price IDs — remplacez par vos vrais IDs après création sur stripe.com
+export const STRIPE_PRICES = {
+    pro_monthly:  'price_PRO_MONTHLY_PLACEHOLDER',
+    pro_yearly:   'price_PRO_YEARLY_PLACEHOLDER',
+    team_monthly: 'price_TEAM_MONTHLY_PLACEHOLDER',
+    team_yearly:  'price_TEAM_YEARLY_PLACEHOLDER',
+};
+
+export const PLAN_PRICES = {
+    pro:  { monthly: 29, yearly: 278 },
+    team: { monthly: 99, yearly: 950 },
+};
+
 /* ---- Building Permit Constants ---- */
 
 const PERMIT_TYPES = {
@@ -383,6 +403,8 @@ class Store {
         this._batchingUndo = false;
         // Track which projects have had their data fully loaded from Supabase
         this._loadedProjectIds = new Set();
+        // Subscription plan info (loaded from profiles table after login)
+        this._planInfo = { plan: 'free', planStatus: 'active', trialEndsAt: null };
     }
 
     /* ---- Persistence ---- */
@@ -515,7 +537,18 @@ class Store {
                 this._data.settings = { ...this._data.settings, ...savedSettings };
             }
 
+            // 6. Charger les infos de plan/abonnement depuis le profil
+            const profile = await auth.getProfile(user.id);
+            if (profile) {
+                this._planInfo = {
+                    plan:        profile.plan        || 'free',
+                    planStatus:  profile.plan_status  || 'active',
+                    trialEndsAt: profile.trial_ends_at || null,
+                };
+            }
+
             this._emit('change', {});
+            this._emit('plan:loaded', this._planInfo);
         } catch (e) {
             console.error('[store] initFromSupabase:', e);
         }
@@ -2197,6 +2230,62 @@ class Store {
 
     /* ---- Reset ---- */
 
+    /* ---- Plan / Subscription helpers ---- */
+
+    /** Retourne le plan effectif : 'pro' pendant l'essai, sinon le plan réel */
+    getEffectivePlan() {
+        const { plan, planStatus, trialEndsAt } = this._planInfo;
+        if (planStatus === 'trialing' && trialEndsAt && new Date(trialEndsAt) > new Date()) {
+            return 'pro';
+        }
+        if (planStatus === 'canceled' || planStatus === 'past_due') return 'free';
+        return plan;
+    }
+
+    getPlanInfo() {
+        return { ...this._planInfo };
+    }
+
+    /** Nombre de jours restants dans l'essai (0 si expiré ou non en essai) */
+    getTrialDaysLeft() {
+        const { planStatus, trialEndsAt } = this._planInfo;
+        if (planStatus !== 'trialing' || !trialEndsAt) return 0;
+        const diff = Math.ceil((new Date(trialEndsAt) - new Date()) / 86400000);
+        return Math.max(0, diff);
+    }
+
+    isTrialing() {
+        return this._planInfo.planStatus === 'trialing' && this.getTrialDaysLeft() > 0;
+    }
+
+    canAddProject() {
+        const limit = PLAN_LIMITS[this.getEffectivePlan()].projects;
+        return this._data.projects.length < limit;
+    }
+
+    canAddTask(projectId) {
+        const pid = projectId || this._data.settings.activeProjectId;
+        const limit = PLAN_LIMITS[this.getEffectivePlan()].tasks;
+        if (limit === Infinity) return true;
+        const count = this._data.tasks.filter(t => t.projectId === pid && !t.isPhase).length;
+        return count < limit;
+    }
+
+    canAddCollaborator(projectId) {
+        const pid = projectId || this._data.settings.activeProjectId;
+        const limit = PLAN_LIMITS[this.getEffectivePlan()].collaborators;
+        if (limit === Infinity) return true;
+        const project = this._data.projects.find(p => p.id === pid);
+        const count = (project?.resourceIds || []).length;
+        return count < limit;
+    }
+
+    /** Met à jour les infos de plan localement (après paiement ou changement webhook) */
+    updatePlanInfo(updates) {
+        this._planInfo = { ...this._planInfo, ...updates };
+        this._emit('plan:loaded', this._planInfo);
+    }
+
     reset() {
         this._data = this._createDefaults();
         this._save();
@@ -2206,4 +2295,4 @@ class Store {
 
 // Singleton export
 export const store = new Store();
-export { PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines };
+export { PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_LIMITS, STRIPE_PRICES, PLAN_PRICES };

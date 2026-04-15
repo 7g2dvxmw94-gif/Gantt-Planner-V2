@@ -3,7 +3,7 @@
    Gantt Planner Pro
    ======================================== */
 
-import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
@@ -108,6 +108,9 @@ class App {
         });
 
         store.on('project:change', () => this._applyRoleGating());
+
+        // Render trial banner when plan info is loaded
+        store.on('plan:loaded', () => this._renderTrialBanner());
 
         // Initial role gating
         this._applyRoleGating();
@@ -1725,6 +1728,10 @@ class App {
     }
 
     _showAddTaskDialog() {
+        if (!store.canAddTask()) {
+            this._showUpgradeModal('tasks');
+            return;
+        }
         taskModal.openCreate();
     }
 
@@ -5928,6 +5935,10 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _createNewProject() {
+        if (!store.canAddProject()) {
+            this._showUpgradeModal('projects');
+            return;
+        }
         const name = prompt('Nom du nouveau projet:');
         if (!name || !name.trim()) return;
 
@@ -6083,6 +6094,243 @@ tr:nth-child(even){background:#fafbfc}
             announcer.textContent = message;
         });
     }
+
+    /* ---- Trial Banner ---- */
+
+    _renderTrialBanner() {
+        const existingBanner = document.getElementById('trialBanner');
+        if (existingBanner) existingBanner.remove();
+
+        const info = store.getPlanInfo();
+        const daysLeft = store.getTrialDaysLeft();
+
+        // Show banner only during active trial OR when trial just expired (plan still free)
+        const isTrialing = store.isTrialing();
+        const trialExpired = info.planStatus === 'trialing' && daysLeft === 0;
+        if (!isTrialing && !trialExpired && info.plan !== 'free') return;
+
+        const banner = document.createElement('div');
+        banner.id = 'trialBanner';
+        banner.style.cssText = `
+            position:fixed;top:0;left:0;right:0;z-index:9999;
+            background:${trialExpired ? '#EF4444' : '#6366F1'};
+            color:#fff;font-size:13px;font-weight:500;
+            display:flex;align-items:center;justify-content:center;gap:12px;
+            padding:7px 16px;text-align:center;
+        `;
+
+        if (trialExpired) {
+            banner.innerHTML = `
+                <span>${t('plan.trial.expired')}</span>
+                <button onclick="window.app._showUpgradeModal('trial')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:3px 12px;font-size:12px;cursor:pointer;font-weight:600;">
+                    ${t('plan.trial.cta')}
+                </button>
+            `;
+        } else if (isTrialing) {
+            const s = daysLeft > 1 ? 's' : '';
+            banner.innerHTML = `
+                <span>${t('plan.trial.banner', { days: daysLeft, s })}</span>
+                <button onclick="window.app._showUpgradeModal('trial')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:6px;padding:3px 12px;font-size:12px;cursor:pointer;font-weight:600;">
+                    ${t('plan.trial.cta')}
+                </button>
+            `;
+        } else {
+            // Free plan, no trial — subtle upgrade nudge
+            return;
+        }
+
+        document.body.prepend(banner);
+        // Push header down to avoid overlap
+        const header = document.querySelector('.header');
+        if (header) header.style.top = banner.offsetHeight + 'px';
+    }
+
+    /* ---- Upgrade Modal ---- */
+
+    _showUpgradeModal(reason = 'generic') {
+        const existing = document.getElementById('upgradeModalOverlay');
+        if (existing) { existing.remove(); return; }
+
+        const info = store.getPlanInfo();
+        const effectivePlan = store.getEffectivePlan();
+        const isTrialing = store.isTrialing();
+
+        // Build reason message
+        let reasonMsg = '';
+        if (reason === 'projects') {
+            const lim = 1; const s = lim > 1 ? 's' : '';
+            reasonMsg = `<div class="upgrade-reason">${t('plan.limit.projects', { limit: lim, s })}</div>`;
+        } else if (reason === 'tasks') {
+            const lim = 50; const s = '';
+            reasonMsg = `<div class="upgrade-reason">${t('plan.limit.tasks', { limit: lim, s })}</div>`;
+        } else if (reason === 'collaborators') {
+            const lim = effectivePlan === 'pro' ? 5 : 1; const s = lim > 1 ? 's' : '';
+            reasonMsg = `<div class="upgrade-reason">${t('plan.limit.collaborators', { limit: lim, s, plan: t('plan.' + effectivePlan) })}</div>`;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'upgradeModalOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+        overlay.innerHTML = `
+        <div style="background:var(--surface-primary,#fff);border-radius:16px;max-width:700px;width:100%;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.2);position:relative;">
+            <button id="upgradeModalClose" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;color:var(--text-secondary,#64748b);font-size:20px;" aria-label="Fermer">✕</button>
+
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-primary,#1e293b);margin-bottom:6px;">${t('plan.upgrade.title')}</h2>
+            <p style="color:var(--text-secondary,#64748b);margin-bottom:20px;">${t('plan.upgrade.subtitle')}</p>
+            ${reasonMsg}
+
+            <!-- Billing toggle -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;justify-content:center;">
+                <button id="upgradeBillingMonthly" class="upgrade-billing-btn active" style="padding:6px 18px;border-radius:20px;border:1px solid #6366F1;font-size:13px;cursor:pointer;background:#6366F1;color:#fff;font-weight:600;">${t('plan.upgrade.monthly')}</button>
+                <button id="upgradeBillingYearly" class="upgrade-billing-btn" style="padding:6px 18px;border-radius:20px;border:1px solid #e2e8f0;font-size:13px;cursor:pointer;background:none;color:var(--text-secondary,#64748b);display:flex;align-items:center;gap:6px;">
+                    ${t('plan.upgrade.yearly')} <span style="background:#10B981;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;">${t('plan.upgrade.saving')}</span>
+                </button>
+            </div>
+
+            <!-- Plan cards -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" id="upgradePlanGrid">
+                ${this._upgradePlanCard('free',  effectivePlan, 'monthly')}
+                ${this._upgradePlanCard('pro',   effectivePlan, 'monthly')}
+                ${this._upgradePlanCard('team',  effectivePlan, 'monthly')}
+            </div>
+
+            <div style="text-align:center;">
+                <button id="upgradeModalSkip" style="background:none;border:none;color:var(--text-secondary,#64748b);font-size:13px;cursor:pointer;text-decoration:underline;">${t('plan.upgrade.close')}</button>
+            </div>
+        </div>`;
+
+        document.body.appendChild(overlay);
+
+        // Billing toggle
+        let billing = 'monthly';
+        const btnMonthly = overlay.querySelector('#upgradeBillingMonthly');
+        const btnYearly  = overlay.querySelector('#upgradeBillingYearly');
+        const grid       = overlay.querySelector('#upgradePlanGrid');
+
+        const switchBilling = (b) => {
+            billing = b;
+            const activeStyle  = 'background:#6366F1;color:#fff;border-color:#6366F1;font-weight:600;';
+            const inactiveStyle = 'background:none;color:var(--text-secondary,#64748b);border-color:#e2e8f0;';
+            btnMonthly.style.cssText = 'padding:6px 18px;border-radius:20px;font-size:13px;cursor:pointer;' + (b === 'monthly' ? activeStyle : inactiveStyle);
+            btnYearly.style.cssText  = 'padding:6px 18px;border-radius:20px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;' + (b === 'yearly' ? activeStyle : inactiveStyle);
+            if (b === 'yearly') btnYearly.innerHTML = `${t('plan.upgrade.yearly')} <span style="background:#10B981;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;">${t('plan.upgrade.saving')}</span>`;
+            grid.innerHTML = `${this._upgradePlanCard('free', effectivePlan, b)}${this._upgradePlanCard('pro', effectivePlan, b)}${this._upgradePlanCard('team', effectivePlan, b)}`;
+            this._bindUpgradePlanButtons(overlay, billing);
+        };
+        btnMonthly.addEventListener('click', () => switchBilling('monthly'));
+        btnYearly.addEventListener('click',  () => switchBilling('yearly'));
+
+        this._bindUpgradePlanButtons(overlay, billing);
+
+        overlay.querySelector('#upgradeModalClose').addEventListener('click', () => overlay.remove());
+        overlay.querySelector('#upgradeModalSkip').addEventListener('click',  () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    _upgradePlanCard(plan, currentPlan, billing) {
+        const isCurrent = plan === currentPlan;
+        const price = plan === 'free' ? 0 : (billing === 'monthly' ? PLAN_PRICES[plan].monthly : PLAN_PRICES[plan].yearly);
+        const perLabel = plan === 'free' ? '' : billing === 'monthly' ? t('plan.upgrade.perMonth') : t('plan.upgrade.perYear');
+        const billedNote = (plan !== 'free' && billing === 'yearly') ? `<div style="font-size:11px;color:#10B981;margin-top:2px;">${t('plan.upgrade.billed')}</div>` : '';
+
+        const features = {
+            free:  ['1 projet', '50 tâches', '1 utilisateur', 'Export JSON/CSV'],
+            pro:   ['Projets illimités', '5 collaborateurs', 'Export PDF', 'Baselines', 'Historique'],
+            team:  ['Tout Pro inclus', 'Collaborateurs illimités', 'Audit log', 'Rôles avancés'],
+        };
+
+        const btnLabel = isCurrent ? t('plan.upgrade.current')
+            : plan === 'free' ? ''
+            : plan === 'pro'  ? (currentPlan === 'free' && !store.isTrialing() ? t('plan.upgrade.startTrial') : t('plan.upgrade.choosePro'))
+            : t('plan.upgrade.chooseTeam');
+
+        const highlight = plan === 'pro' && !isCurrent;
+
+        return `
+        <div class="upgrade-plan-card" data-plan="${plan}" style="
+            border:2px solid ${highlight ? '#6366F1' : (isCurrent ? '#10B981' : 'var(--border-default,#e2e8f0)')};
+            border-radius:12px;padding:20px;text-align:center;position:relative;
+            background:${isCurrent ? '#f0fdf4' : 'var(--surface-primary,#fff)'};
+        ">
+            ${highlight ? `<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#6366F1;color:#fff;font-size:11px;font-weight:700;padding:2px 12px;border-radius:10px;">Recommandé</div>` : ''}
+            ${isCurrent ? `<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#10B981;color:#fff;font-size:11px;font-weight:700;padding:2px 12px;border-radius:10px;">${t('plan.upgrade.current')}</div>` : ''}
+            <div style="font-size:1rem;font-weight:700;color:var(--text-primary,#1e293b);margin-bottom:8px;">${t('plan.' + plan)}</div>
+            <div style="font-size:2rem;font-weight:800;color:#6366F1;">${plan === 'free' ? '0 €' : price + ' €'}<span style="font-size:0.85rem;font-weight:500;color:var(--text-secondary,#64748b);">${perLabel}</span></div>
+            ${billedNote}
+            <ul style="text-align:left;margin:16px 0;padding:0;list-style:none;font-size:13px;color:var(--text-secondary,#64748b);">
+                ${features[plan].map(f => `<li style="padding:3px 0;">✓ ${f}</li>`).join('')}
+            </ul>
+            ${btnLabel ? `<button class="upgrade-plan-btn" data-plan="${plan}" data-billing="${billing}" style="
+                width:100%;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+                background:${highlight ? '#6366F1' : 'var(--surface-secondary,#f1f5f9)'};
+                color:${highlight ? '#fff' : 'var(--text-primary,#1e293b)'};
+                border:${highlight ? 'none' : '1px solid var(--border-default,#e2e8f0)'};
+                ${isCurrent ? 'opacity:0.5;cursor:default;' : ''}
+            " ${isCurrent ? 'disabled' : ''}>${btnLabel}</button>` : ''}
+        </div>`;
+    }
+
+    _bindUpgradePlanButtons(overlay, billing) {
+        overlay.querySelectorAll('.upgrade-plan-btn:not([disabled])').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const plan = btn.dataset.plan;
+                this._startCheckout(plan, billing);
+            });
+        });
+    }
+
+    /** Ouvre le portail Stripe pour gérer l'abonnement (factures, annulation) */
+    async _openBillingPortal() {
+        try {
+            const { supabase } = await import('./supabase-client.js');
+            const { data: { session: s } } = await supabase.auth.getSession();
+            const resp = await fetch(`${supabase.supabaseUrl}/functions/v1/create-portal-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${s?.access_token}`,
+                },
+                body: JSON.stringify({ returnUrl: window.location.href }),
+            });
+            const { url, error } = await resp.json();
+            if (error) throw new Error(error);
+            window.location.href = url;
+        } catch (e) {
+            console.error('[portal]', e);
+            this._showToast('Erreur lors de l\'ouverture du portail de facturation.', 'error');
+        }
+    }
+
+    /** Lance la session Stripe Checkout via l'Edge Function */
+    async _startCheckout(plan, billing) {
+        if (plan === 'free') return;
+        const priceKey = `${plan}_${billing}`;
+        const priceId  = STRIPE_PRICES[priceKey];
+
+        if (priceId.includes('PLACEHOLDER')) {
+            this._showToast('Stripe non encore configuré — ajoutez vos Price IDs dans store.js', 'warning');
+            return;
+        }
+
+        try {
+            const { data: { session: supabaseSession } } = await (await import('./supabase-client.js')).supabase.auth.getSession();
+            const resp = await fetch(`${(await import('./supabase-client.js')).supabase.supabaseUrl}/functions/v1/create-checkout-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseSession?.access_token}`,
+                },
+                body: JSON.stringify({ priceId, billing }),
+            });
+            const { url, error } = await resp.json();
+            if (error) throw new Error(error);
+            window.location.href = url;
+        } catch (e) {
+            console.error('[checkout]', e);
+            this._showToast('Erreur lors de la création de la session de paiement.', 'error');
+        }
+    }
 }
 
 /* ---- Bootstrap ---- */
@@ -6105,5 +6353,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await store.initFromSupabase();
 
     const app = new App();
+    window.app = app; // Expose globally for trial banner inline handlers
     app.init();
 });

@@ -3,7 +3,7 @@
    Gantt Planner Pro
    ======================================== */
 
-import { store } from './store.js';
+import { store, PLAN_PRICES } from './store.js';
 import { CURRENCIES } from './utils.js';
 
 const COLOR_PRESETS = [
@@ -100,6 +100,10 @@ class SettingsPanel {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>
                     ${t('settings.tab.help')}
                 </button>
+                <button class="settings-tab" data-tab="abonnement" aria-label="${t('settings.tab.billing')}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    ${t('settings.tab.billing')}
+                </button>
             </div>
 
             <div class="settings-panel-body">
@@ -122,9 +126,10 @@ class SettingsPanel {
             case 'profil':    return this._renderProfilTab();
             case 'apparence': return this._renderApparenceTab();
             case 'general':   return this._renderGeneralTab();
-            case 'synchro':   return this._renderSynchroTab();
-            case 'aide':      return this._renderAideTab();
-            default:          return '';
+            case 'synchro':      return this._renderSynchroTab();
+            case 'aide':         return this._renderAideTab();
+            case 'abonnement':   return this._renderAbonnementTab();
+            default:             return '';
         }
     }
 
@@ -398,6 +403,77 @@ class SettingsPanel {
         `;
     }
 
+    _renderAbonnementTab() {
+        const info        = store.getPlanInfo();
+        const effective   = store.getEffectivePlan();
+        const daysLeft    = store.getTrialDaysLeft();
+        const isTrialing  = store.isTrialing();
+
+        const statusKey   = `billing.status.${info.planStatus}`;
+        const statusLabel = t(statusKey);
+        const planLabel   = t('plan.' + effective);
+
+        const statusColor = {
+            active:   '#10B981',
+            trialing: '#6366F1',
+            canceled: '#EF4444',
+            past_due: '#F59E0B',
+        }[info.planStatus] || '#64748b';
+
+        const trialDate = info.trialEndsAt
+            ? new Date(info.trialEndsAt).toLocaleDateString()
+            : null;
+
+        const isPaidPlan = info.plan !== 'free' && info.planStatus === 'active';
+
+        return `
+        <div class="settings-section">
+            <div class="settings-group" style="border-top:none;padding-top:0;">
+                <!-- Current plan badge -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                    <div>
+                        <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;color:var(--text-muted,#94a3b8);letter-spacing:.05em;margin-bottom:4px;">${t('billing.currentPlan')}</div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.4rem;font-weight:800;color:var(--text-primary,#1e293b);">${planLabel}</span>
+                            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;">${statusLabel}</span>
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary,#64748b);margin-top:4px;">${t('billing.features.' + effective)}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${effective !== 'free' ? `<div style="font-size:1.5rem;font-weight:800;color:#6366F1;">${PLAN_PRICES[effective]?.monthly ?? 0} €<span style="font-size:0.8rem;font-weight:500;color:var(--text-secondary,#64748b);">/mois</span></div>` : '<div style="font-size:1.5rem;font-weight:800;color:#10B981;">0 €</div>'}
+                    </div>
+                </div>
+
+                <!-- Trial or renewal info -->
+                ${isTrialing ? `
+                <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;color:#4338ca;">${t('billing.status.trialing')} — <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> restant${daysLeft > 1 ? 's' : ''}</div>
+                        ${trialDate ? `<div style="font-size:0.75rem;color:#6366F1;">${t('billing.trialEnds')} : ${trialDate}</div>` : ''}
+                    </div>
+                </div>` : ''}
+
+                ${info.plan === 'free' && !isTrialing ? `
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+                    <div style="font-size:0.85rem;color:#166534;">${t('billing.freePitch')}</div>
+                </div>` : ''}
+
+                <!-- CTA buttons -->
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    ${(effective === 'free' || isTrialing) ? `
+                    <button id="billingUpgradeBtn" class="btn btn-primary" style="justify-content:center;">
+                        ${t('billing.upgradeBtn')}
+                    </button>` : ''}
+                    ${isPaidPlan ? `
+                    <button id="billingManageBtn" class="btn btn-secondary" style="justify-content:center;">
+                        ${t('billing.manageBtn')}
+                    </button>` : ''}
+                </div>
+            </div>
+        </div>`;
+    }
+
     _renderAideTab() {
         const changelog = [
             { version: '4.4', date: '2026-03-30', label: 'Correctif', entries: [
@@ -598,8 +674,37 @@ class SettingsPanel {
             case 'profil':    this._bindProfilEvents();    break;
             case 'apparence': this._bindApparenceEvents(); break;
             case 'general':   this._bindGeneralEvents();   break;
-            case 'synchro':   this._bindSynchroEvents();   break;
-            case 'aide':      this._bindAideEvents();      break;
+            case 'synchro':     this._bindSynchroEvents();      break;
+            case 'aide':        this._bindAideEvents();         break;
+            case 'abonnement':  this._bindAbonnementEvents();   break;
+        }
+    }
+
+    _bindAbonnementEvents() {
+        const upgradeBtn = this._panel.querySelector('#billingUpgradeBtn');
+        if (upgradeBtn) {
+            upgradeBtn.addEventListener('click', () => {
+                this.close();
+                // Delegate to app's upgrade modal
+                if (window.app?._showUpgradeModal) window.app._showUpgradeModal('generic');
+            });
+        }
+        const manageBtn = this._panel.querySelector('#billingManageBtn');
+        if (manageBtn) {
+            manageBtn.addEventListener('click', async () => {
+                manageBtn.disabled = true;
+                manageBtn.textContent = '…';
+                try {
+                    if (window.app?._openBillingPortal) {
+                        await window.app._openBillingPortal();
+                    } else {
+                        alert('Portail Stripe non encore configuré.');
+                    }
+                } finally {
+                    manageBtn.disabled = false;
+                    manageBtn.textContent = t('billing.manageBtn');
+                }
+            });
         }
     }
 
