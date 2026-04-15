@@ -1769,7 +1769,7 @@ class App {
             { label: 'CSV', icon: 'CSV', desc: t('export.csv.desc'), tooltip: 'Exporte les tâches au format CSV (valeurs séparées par des virgules). Compatible avec Excel, Google Sheets, LibreOffice Calc et MS Project.', action: () => this._exportCSV() },
             { label: 'XML', icon: 'XML', desc: t('export.xml.desc'), tooltip: 'Exporte au format XML compatible Microsoft Project. Format recommandé pour une importation fidèle dans MS Project avec les dépendances et les ressources.', action: () => this._exportMSProjectXML() },
             { label: 'PDF', icon: 'PDF', desc: t('export.pdf.desc'), tooltip: 'Génère un document PDF du diagramme de Gantt, prêt à imprimer ou à partager. Vous pouvez personnaliser les options d\'impression.', action: () => this._showPDFExportDialog() },
-            { label: 'PPT', icon: 'PPT', desc: t('export.ppt.desc'), tooltip: 'Génère une présentation PowerPoint (.pptx) avec couverture, statistiques, liste des tâches et diagramme de Gantt visuel.', action: () => this._exportPPT() },
+            { label: 'PPT', icon: 'PPT', desc: t('export.ppt.desc'), tooltip: 'Génère une présentation PowerPoint (.pptx) avec les mêmes sections que le PDF.', action: () => this._showPDFExportDialog('ppt') },
         ];
 
         formats.forEach(f => {
@@ -2015,7 +2015,7 @@ ${assignLines.join('\n')}
         return str;
     }
 
-    async _exportPPT() {
+    async _exportPPT(sections = ['table', 'timeline', 'resources', 'costs'], tlStart, tlEnd) {
         this._showToast(t('toast.pptGenerating'), 'info');
         try {
             const { default: PptxGenJS } = await import('https://esm.sh/pptxgenjs');
@@ -2063,214 +2063,326 @@ ${assignLines.join('\n')}
                 fontSize: 11, color: '475569', align: 'right', fontFace: ff,
             });
 
-            // ── Slide 2 : Statistiques ────────────────────────────────────
-            const s2 = pptx.addSlide();
-            s2.background = { color: 'FFFFFF' };
-            s2.addShape('rect', { x: 0, y: 0, w: 13.33, h: 0.75, fill: { color: AC } });
-            s2.addText(t('pdf.stats.title'), {
-                x: 0.4, y: 0, w: 12, h: 0.75,
-                fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
-            });
-            const kpis = [
-                { label: t('pdf.stats.totalTasks'),  value: String(stats.totalTasks  || 0), color: AC },
-                { label: t('pdf.stats.done'),        value: String(stats.doneTasks   || 0), color: '10b981' },
-                { label: t('pdf.stats.inProgress'),  value: String(stats.inProgressTasks || 0), color: '3b82f6' },
-                { label: t('pdf.stats.progress'),    value: `${prog}%`,                    color: 'f59e0b' },
-            ];
-            kpis.forEach((kpi, i) => {
-                const x = 0.5 + i * 3.2;
-                s2.addShape('rect', { x, y: 1.1, w: 2.9, h: 1.9, fill: { color: 'f8fafc' }, line: { color: 'e2e8f0', pt: 1 } });
-                s2.addShape('rect', { x, y: 1.1, w: 2.9, h: 0.1, fill: { color: kpi.color } });
-                s2.addText(kpi.value, { x, y: 1.4, w: 2.9, h: 0.9, fontSize: 34, bold: true, color: kpi.color, align: 'center', fontFace: ff });
-                s2.addText(kpi.label, { x, y: 2.5, w: 2.9, h: 0.4, fontSize: 12, color: GRAY, align: 'center', fontFace: ff });
-            });
+            const nonPhase = allTasks.filter(tk => !tk.isPhase && !tk.isMilestone);
+            const phases   = allTasks.filter(tk => tk.isPhase);
 
-            // ── Slide 3+ : Liste des tâches ───────────────────────────────
-            const nonPhase = allTasks.filter(t => !t.isPhase && !t.isMilestone);
-            const phases   = allTasks.filter(t => t.isPhase);
-            const orderedRows = [];
-            phases.forEach(ph => {
-                orderedRows.push({ isPhase: true, task: ph });
-                nonPhase.filter(t => t.parentId === ph.id).forEach(t => orderedRows.push({ isPhase: false, task: t }));
-            });
-            nonPhase.filter(t => !t.parentId).forEach(t => orderedRows.push({ isPhase: false, task: t }));
-
-            const PAGE = 18;
-            for (let ci = 0; ci < Math.ceil(orderedRows.length / PAGE); ci++) {
-                const chunk = orderedRows.slice(ci * PAGE, (ci + 1) * PAGE);
-                const sl = pptx.addSlide();
+            // ── Helper: slide header bar ──────────────────────────────────
+            const addHeader = (sl, title) => {
                 sl.background = { color: 'FFFFFF' };
                 sl.addShape('rect', { x: 0, y: 0, w: 13.33, h: 0.75, fill: { color: AC } });
-                const pageLabel = Math.ceil(orderedRows.length / PAGE) > 1 ? ` (${ci + 1}/${Math.ceil(orderedRows.length / PAGE)})` : '';
-                sl.addText(t('export.ppt.tasksSlide') + pageLabel, {
-                    x: 0.4, y: 0, w: 12, h: 0.75,
-                    fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
+                sl.addText(title, { x: 0.4, y: 0, w: 12.5, h: 0.75, fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle' });
+            };
+
+            // ── SECTION : Tableau des tâches ──────────────────────────────
+            if (sections.includes('table')) {
+                const orderedRows = [];
+                phases.forEach(ph => {
+                    orderedRows.push({ isPhase: true, task: ph });
+                    nonPhase.filter(tk => tk.parentId === ph.id).forEach(tk => orderedRows.push({ isPhase: false, task: tk }));
                 });
-                const hdrOpts = { bold: true, color: 'FFFFFF', fill: { color: AC }, valign: 'middle', fontSize: 10, fontFace: ff };
-                const hdr = [
-                    { text: t('task.name'),          options: { ...hdrOpts, align: 'left'   } },
-                    { text: t('task.startDate'),     options: { ...hdrOpts, align: 'center' } },
-                    { text: t('task.endDate'),       options: { ...hdrOpts, align: 'center' } },
-                    { text: t('task.status.label'),  options: { ...hdrOpts, align: 'center' } },
-                    { text: '%',                     options: { ...hdrOpts, align: 'center' } },
-                    { text: t('task.assignees'),     options: { ...hdrOpts, align: 'left'   } },
-                ];
-                const tableRows = [hdr, ...chunk.map(row => {
-                    const task = row.task;
-                    if (row.isPhase) {
-                        const ph = { bold: true, color: DARK, fill: { color: 'e2e8f0' }, fontSize: 10, fontFace: ff };
-                        return [
-                            { text: task.name, options: { ...ph, align: 'left' } },
-                            { text: '', options: ph }, { text: '', options: ph },
-                            { text: '', options: ph }, { text: '', options: ph },
-                            { text: '', options: ph },
-                        ];
-                    }
-                    const assignees = (task.assignees || []).map(id => {
-                        const r = resources.find(r => r.id === id);
-                        return r ? r.name.split(' ').map(w => w[0]).join('') : '';
-                    }).filter(Boolean).join(', ');
-                    const sc = STATUS_CLR[task.status] || 'cbd5e1';
-                    const base = { fontSize: 9, fontFace: ff };
-                    return [
-                        { text: '  ' + task.name,                   options: { ...base, color: DARK,    align: 'left'   } },
-                        { text: formatDateDisplay(task.startDate),   options: { ...base, color: GRAY,    align: 'center' } },
-                        { text: formatDateDisplay(task.endDate),     options: { ...base, color: GRAY,    align: 'center' } },
-                        { text: STATUS_LBL[task.status] || task.status,
-                                                                     options: { ...base, color: 'FFFFFF', fill: { color: sc }, align: 'center', bold: true } },
-                        { text: `${task.progress || 0}%`,            options: { ...base, color: DARK,    align: 'center' } },
-                        { text: assignees,                           options: { ...base, color: GRAY,    align: 'left'   } },
+                nonPhase.filter(tk => !tk.parentId).forEach(tk => orderedRows.push({ isPhase: false, task: tk }));
+
+                const PAGE = 17;
+                const totalPages = Math.ceil(orderedRows.length / PAGE) || 1;
+                for (let ci = 0; ci < totalPages; ci++) {
+                    const chunk = orderedRows.slice(ci * PAGE, (ci + 1) * PAGE);
+                    const sl = pptx.addSlide();
+                    const pageLabel = totalPages > 1 ? ` (${ci + 1}/${totalPages})` : '';
+                    addHeader(sl, t('pdf.table.title') + pageLabel);
+
+                    const hOpts = { bold: true, color: 'FFFFFF', fill: { color: AC }, valign: 'middle', fontSize: 10, fontFace: ff };
+                    const hdr = [
+                        { text: t('pdf.table.task'),      options: { ...hOpts, align: 'left'   } },
+                        { text: t('pdf.table.start'),     options: { ...hOpts, align: 'center' } },
+                        { text: t('pdf.table.end'),       options: { ...hOpts, align: 'center' } },
+                        { text: t('pdf.table.assignees'), options: { ...hOpts, align: 'left'   } },
+                        { text: t('pdf.table.status'),    options: { ...hOpts, align: 'center' } },
+                        { text: t('pdf.table.priority'),  options: { ...hOpts, align: 'center' } },
+                        { text: '%',                      options: { ...hOpts, align: 'center' } },
                     ];
-                })];
-                sl.addTable(tableRows, {
-                    x: 0.3, y: 0.9, w: 12.7,
-                    colW: [4.4, 1.5, 1.5, 1.9, 0.8, 2.6],
-                    rowH: 0.27,
-                    border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
-                    autoPage: false,
-                });
+                    const PRIO_CLR = { high: 'ef4444', medium: 'f59e0b', low: '10b981' };
+                    const PRIO_LBL = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
+
+                    const tableRows = [hdr, ...chunk.map(row => {
+                        const task = row.task;
+                        if (row.isPhase) {
+                            const ph = { bold: true, color: DARK, fill: { color: 'e2e8f0' }, fontSize: 10, fontFace: ff, align: 'left' };
+                            return Array(7).fill(0).map((_, i) => ({ text: i === 0 ? task.name : '', options: ph }));
+                        }
+                        const assigneeNames = (task.assignees || []).map(id => {
+                            const r = resources.find(r => r.id === id);
+                            return r ? r.name : '';
+                        }).filter(Boolean).join(', ') || '—';
+                        const sc = STATUS_CLR[task.status] || 'cbd5e1';
+                        const pc = PRIO_CLR[task.priority] || 'cbd5e1';
+                        const base = { fontSize: 9, fontFace: ff };
+                        return [
+                            { text: '  ' + task.name,                        options: { ...base, color: DARK, align: 'left' } },
+                            { text: formatDateDisplay(task.startDate),        options: { ...base, color: GRAY, align: 'center' } },
+                            { text: formatDateDisplay(task.endDate),          options: { ...base, color: GRAY, align: 'center' } },
+                            { text: assigneeNames,                            options: { ...base, color: GRAY, align: 'left' } },
+                            { text: STATUS_LBL[task.status] || task.status,   options: { ...base, color: 'FFFFFF', fill: { color: sc }, align: 'center', bold: true } },
+                            { text: PRIO_LBL[task.priority] || task.priority, options: { ...base, color: 'FFFFFF', fill: { color: pc }, align: 'center', bold: true } },
+                            { text: `${task.progress || 0}%`,                 options: { ...base, color: DARK, align: 'center' } },
+                        ];
+                    })];
+                    sl.addTable(tableRows, {
+                        x: 0.3, y: 0.9, w: 12.7,
+                        colW: [3.5, 1.4, 1.4, 2.5, 1.7, 1.4, 0.8],
+                        rowH: 0.27,
+                        border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
+                        autoPage: false,
+                    });
+                }
             }
 
-            // ── Slide 4+ : Gantt visuel ───────────────────────────────────
-            const ganttTasks = nonPhase.filter(t => t.startDate && t.endDate);
-            if (ganttTasks.length > 0) {
-                const allDates = ganttTasks.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
-                const rangeStart = new Date(Math.min(...allDates.map(d => d.getTime())));
-                const rangeEnd   = new Date(Math.max(...allDates.map(d => d.getTime())));
-                rangeStart.setDate(1);
-                rangeEnd.setMonth(rangeEnd.getMonth() + 1); rangeEnd.setDate(0);
-                const totalDays = Math.max(1, daysBetween(formatDateISO(rangeStart), formatDateISO(rangeEnd)));
+            // ── SECTION : Timeline (Gantt visuel) ─────────────────────────
+            if (sections.includes('timeline')) {
+                const ganttTasks = nonPhase.filter(tk => tk.startDate && tk.endDate);
+                if (ganttTasks.length > 0) {
+                    const rangeStartDate = tlStart ? new Date(tlStart) : new Date(Math.min(...ganttTasks.map(tk => new Date(tk.startDate).getTime())));
+                    const rangeEndDate   = tlEnd   ? new Date(tlEnd)   : new Date(Math.max(...ganttTasks.map(tk => new Date(tk.endDate).getTime())));
+                    rangeStartDate.setDate(1);
+                    rangeEndDate.setMonth(rangeEndDate.getMonth() + 1); rangeEndDate.setDate(0);
+                    const totalDays = Math.max(1, daysBetween(formatDateISO(rangeStartDate), formatDateISO(rangeEndDate)));
 
-                const LEFT  = 2.9;   // task name col width
-                const ML    = 0.15;  // left margin
-                const TLW   = 13.33 - LEFT - ML - 0.15;  // timeline width
-                const HDR_H = 0.75;
-                const TH    = 0.38;  // timeline header height
-                const RH    = 0.27;  // row height
-                const MAX_R = Math.floor((7.5 - HDR_H - TH - 0.3) / RH);
+                    const LEFT = 2.9; const ML = 0.15;
+                    const TLW = 13.33 - LEFT - ML - 0.15;
+                    const HDR_H = 0.75; const TH = 0.38; const RH = 0.27;
+                    const MAX_R = Math.floor((7.5 - HDR_H - TH - 0.3) / RH);
 
-                // Build Gantt rows (phases + their tasks)
-                const ganttRows = [];
-                phases.forEach(ph => {
-                    const children = ganttTasks.filter(t => t.parentId === ph.id);
-                    if (children.length === 0) return;
-                    ganttRows.push({ isPhase: true, task: ph, children });
-                    children.forEach(t => ganttRows.push({ isPhase: false, task: t }));
-                });
-                ganttTasks.filter(t => !t.parentId).forEach(t => ganttRows.push({ isPhase: false, task: t }));
-
-                // Build month labels for the header
-                const months = [];
-                const cur = new Date(rangeStart);
-                while (cur <= rangeEnd) {
-                    const mStart = new Date(cur);
-                    const mEnd   = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
-                    const days   = Math.min(
-                        daysBetween(formatDateISO(mStart), formatDateISO(mEnd)) + 1,
-                        totalDays
-                    );
-                    months.push({ label: cur.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), days });
-                    cur.setMonth(cur.getMonth() + 1);
-                }
-
-                const todayStr  = formatDateISO(new Date());
-                const todayOffset = daysBetween(formatDateISO(rangeStart), todayStr);
-
-                const totalChunks = Math.ceil(ganttRows.length / MAX_R);
-                for (let ci = 0; ci < totalChunks; ci++) {
-                    const chunk = ganttRows.slice(ci * MAX_R, (ci + 1) * MAX_R);
-                    const sl = pptx.addSlide();
-                    sl.background = { color: 'FFFFFF' };
-
-                    // Header bar
-                    sl.addShape('rect', { x: 0, y: 0, w: 13.33, h: HDR_H, fill: { color: AC } });
-                    const gtLabel = totalChunks > 1 ? ` (${ci + 1}/${totalChunks})` : '';
-                    sl.addText(t('export.ppt.ganttSlide') + gtLabel, {
-                        x: 0.4, y: 0, w: 12, h: HDR_H,
-                        fontSize: 20, bold: true, color: 'FFFFFF', fontFace: ff, valign: 'middle',
+                    const ganttRows = [];
+                    phases.forEach(ph => {
+                        const children = ganttTasks.filter(tk => tk.parentId === ph.id);
+                        if (children.length === 0) return;
+                        ganttRows.push({ isPhase: true, task: ph, children });
+                        children.forEach(tk => ganttRows.push({ isPhase: false, task: tk }));
                     });
+                    ganttTasks.filter(tk => !tk.parentId).forEach(tk => ganttRows.push({ isPhase: false, task: tk }));
 
-                    // Month headers
-                    let mxOffset = 0;
-                    months.forEach(m => {
-                        const mw = (m.days / totalDays) * TLW;
-                        sl.addShape('rect', {
-                            x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH,
-                            fill: { color: 'f1f5f9' }, line: { color: 'cbd5e1', pt: 0.5 },
-                        });
-                        sl.addText(m.label, {
-                            x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH,
-                            fontSize: 8, color: DARK, align: 'center', valign: 'middle', fontFace: ff,
-                        });
-                        mxOffset += mw;
-                    });
-
-                    // Today line
-                    if (todayOffset >= 0 && todayOffset <= totalDays) {
-                        const tx = ML + LEFT + (todayOffset / totalDays) * TLW;
-                        sl.addShape('line', { x: tx, y: HDR_H, w: 0, h: 7.5 - HDR_H, line: { color: 'ef4444', pt: 1.2, dashType: 'dash' } });
+                    const months = [];
+                    const mcur = new Date(rangeStartDate);
+                    while (mcur <= rangeEndDate) {
+                        const mEnd = new Date(mcur.getFullYear(), mcur.getMonth() + 1, 0);
+                        const days = Math.min(daysBetween(formatDateISO(mcur), formatDateISO(mEnd)) + 1, totalDays);
+                        months.push({ label: mcur.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), days });
+                        mcur.setMonth(mcur.getMonth() + 1);
                     }
 
-                    // Rows
-                    chunk.forEach((row, ri) => {
-                        const ry  = HDR_H + TH + ri * RH;
-                        const bgC = row.isPhase ? 'f1f5f9' : (ri % 2 === 0 ? 'FFFFFF' : 'fafafa');
-                        sl.addShape('rect', { x: ML, y: ry, w: 13.33 - ML - 0.1, h: RH, fill: { color: bgC }, line: { color: 'f1f5f9', pt: 0.3 } });
+                    const todayOffset = daysBetween(formatDateISO(rangeStartDate), formatDateISO(new Date()));
+                    const totalChunks = Math.ceil(ganttRows.length / MAX_R) || 1;
 
-                        // Task name
-                        const indent = row.isPhase ? '' : '   ';
-                        sl.addText(indent + row.task.name, {
-                            x: ML + 0.05, y: ry + 0.02, w: LEFT - 0.1, h: RH - 0.04,
-                            fontSize: row.isPhase ? 9 : 8, bold: row.isPhase,
-                            color: row.isPhase ? DARK : '334155', fontFace: ff, valign: 'middle',
+                    for (let ci = 0; ci < totalChunks; ci++) {
+                        const chunk = ganttRows.slice(ci * MAX_R, (ci + 1) * MAX_R);
+                        const sl = pptx.addSlide();
+                        const gtLabel = totalChunks > 1 ? ` (${ci + 1}/${totalChunks})` : '';
+                        addHeader(sl, t('export.ppt.ganttSlide') + gtLabel);
+
+                        let mxOffset = 0;
+                        months.forEach(m => {
+                            const mw = (m.days / totalDays) * TLW;
+                            sl.addShape('rect', { x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH, fill: { color: 'f1f5f9' }, line: { color: 'cbd5e1', pt: 0.5 } });
+                            sl.addText(m.label, { x: ML + LEFT + mxOffset, y: HDR_H, w: mw, h: TH, fontSize: 8, color: DARK, align: 'center', valign: 'middle', fontFace: ff });
+                            mxOffset += mw;
                         });
 
-                        if (row.isPhase) {
-                            // Phase span bar
-                            const pDates  = row.children.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
-                            const pStart  = new Date(Math.min(...pDates.map(d => d.getTime())));
-                            const pEnd    = new Date(Math.max(...pDates.map(d => d.getTime())));
-                            const pOff    = Math.max(0, daysBetween(formatDateISO(rangeStart), formatDateISO(pStart)));
-                            const pDur    = daysBetween(formatDateISO(pStart), formatDateISO(pEnd)) + 1;
-                            const bx = ML + LEFT + (pOff / totalDays) * TLW;
-                            const bw = Math.max(0.04, (pDur / totalDays) * TLW);
-                            sl.addShape('rect', { x: bx, y: ry + 0.06, w: bw, h: RH - 0.14, fill: { color: AC + '55' }, line: { color: AC, pt: 0.5 } });
-                        } else {
-                            const task   = row.task;
-                            const tOff   = Math.max(0, daysBetween(formatDateISO(rangeStart), task.startDate));
-                            const tDur   = daysBetween(task.startDate, task.endDate) + 1;
-                            const bx = ML + LEFT + (tOff / totalDays) * TLW;
-                            const bw = Math.max(0.04, (tDur / totalDays) * TLW);
-                            const sc = STATUS_CLR[task.status] || 'cbd5e1';
-                            // Background bar
-                            sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: sc + '40' }, line: { color: sc, pt: 0.5 } });
-                            // Progress fill
-                            if ((task.progress || 0) > 0) {
-                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: sc } });
-                            }
+                        if (todayOffset >= 0 && todayOffset <= totalDays) {
+                            const tx = ML + LEFT + (todayOffset / totalDays) * TLW;
+                            sl.addShape('line', { x: tx, y: HDR_H, w: 0, h: 7.5 - HDR_H, line: { color: 'ef4444', pt: 1.2, dashType: 'dash' } });
                         }
+
+                        chunk.forEach((row, ri) => {
+                            const ry = HDR_H + TH + ri * RH;
+                            const bgC = row.isPhase ? 'f1f5f9' : (ri % 2 === 0 ? 'FFFFFF' : 'fafafa');
+                            sl.addShape('rect', { x: ML, y: ry, w: 13.33 - ML - 0.1, h: RH, fill: { color: bgC }, line: { color: 'f1f5f9', pt: 0.3 } });
+                            sl.addText((row.isPhase ? '' : '   ') + row.task.name, {
+                                x: ML + 0.05, y: ry + 0.02, w: LEFT - 0.1, h: RH - 0.04,
+                                fontSize: row.isPhase ? 9 : 8, bold: row.isPhase,
+                                color: row.isPhase ? DARK : '334155', fontFace: ff, valign: 'middle',
+                            });
+                            if (row.isPhase) {
+                                const pDates = row.children.flatMap(tk => [new Date(tk.startDate), new Date(tk.endDate)]);
+                                const pStart = new Date(Math.min(...pDates.map(d => d.getTime())));
+                                const pEnd   = new Date(Math.max(...pDates.map(d => d.getTime())));
+                                const pOff = Math.max(0, daysBetween(formatDateISO(rangeStartDate), formatDateISO(pStart)));
+                                const pDur = daysBetween(formatDateISO(pStart), formatDateISO(pEnd)) + 1;
+                                const bx = ML + LEFT + (pOff / totalDays) * TLW;
+                                const bw = Math.max(0.04, (pDur / totalDays) * TLW);
+                                sl.addShape('rect', { x: bx, y: ry + 0.06, w: bw, h: RH - 0.14, fill: { color: AC + '55' }, line: { color: AC, pt: 0.5 } });
+                            } else {
+                                const task = row.task;
+                                const tOff = Math.max(0, daysBetween(formatDateISO(rangeStartDate), task.startDate));
+                                const tDur = daysBetween(task.startDate, task.endDate) + 1;
+                                const bx = ML + LEFT + (tOff / totalDays) * TLW;
+                                const bw = Math.max(0.04, (tDur / totalDays) * TLW);
+                                const sc = STATUS_CLR[task.status] || 'cbd5e1';
+                                sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw, h: RH - 0.12, fill: { color: sc + '40' }, line: { color: sc, pt: 0.5 } });
+                                if ((task.progress || 0) > 0) {
+                                    sl.addShape('rect', { x: bx, y: ry + 0.05, w: bw * task.progress / 100, h: RH - 0.12, fill: { color: sc } });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+
+            // ── SECTION : Ressources ──────────────────────────────────────
+            if (sections.includes('resources')) {
+                const projectResources = resources.filter(r =>
+                    nonPhase.some(tk => (tk.assignees || []).includes(r.id) || tk.assignee === r.id)
+                );
+                const sl = pptx.addSlide();
+                addHeader(sl, t('pdf.dialog.resources.label') || 'Ressources');
+
+                if (projectResources.length === 0) {
+                    sl.addText('Aucune ressource assignée à ce projet.', { x: 0.4, y: 1.5, w: 12.5, h: 0.5, fontSize: 13, color: '94a3b8', fontFace: ff });
+                } else {
+                    const hOpts = { bold: true, color: 'FFFFFF', fill: { color: AC }, valign: 'middle', fontSize: 10, fontFace: ff };
+                    const hdr = [
+                        { text: 'Ressource',  options: { ...hOpts, align: 'left'   } },
+                        { text: 'Rôle',       options: { ...hOpts, align: 'left'   } },
+                        { text: 'Charge',     options: { ...hOpts, align: 'center' } },
+                        { text: 'Tâches assignées', options: { ...hOpts, align: 'left' } },
+                    ];
+
+                    const PAGE_R = 15;
+                    const totalPR = Math.ceil(projectResources.length / PAGE_R) || 1;
+                    for (let pi = 0; pi < totalPR; pi++) {
+                        const slR = pi === 0 ? sl : pptx.addSlide();
+                        if (pi > 0) addHeader(slR, `${t('pdf.dialog.resources.label') || 'Ressources'} (${pi + 1}/${totalPR})`);
+                        const chunk = projectResources.slice(pi * PAGE_R, (pi + 1) * PAGE_R);
+
+                        const tableRows = [hdr, ...chunk.map(resource => {
+                            const assignedTasks = nonPhase.filter(tk =>
+                                (tk.assignees || []).includes(resource.id) || tk.assignee === resource.id
+                            );
+                            const workload = this._calculateResourceWorkload(resource, assignedTasks);
+                            const wColor = workload.percent > 100 ? 'ef4444' : workload.percent > 80 ? 'f59e0b' : '10b981';
+                            const taskNames = assignedTasks.map(tk => tk.name).join(', ') || '—';
+                            const base = { fontSize: 9, fontFace: ff };
+                            return [
+                                { text: resource.name,                         options: { ...base, color: DARK, bold: true, align: 'left' } },
+                                { text: resource.role || '—',                  options: { ...base, color: GRAY, align: 'left' } },
+                                { text: `${workload.percent}%${workload.percent > 100 ? ' ⚠' : ''}`,
+                                                                               options: { ...base, color: wColor, bold: workload.percent > 100, align: 'center' } },
+                                { text: taskNames,                             options: { ...base, color: GRAY, align: 'left' } },
+                            ];
+                        })];
+                        slR.addTable(tableRows, {
+                            x: 0.3, y: 0.9, w: 12.7,
+                            colW: [2.8, 2.2, 1.4, 6.3],
+                            rowH: 0.3,
+                            border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
+                            autoPage: false,
+                        });
+                    }
+                }
+            }
+
+            // ── SECTION : Coûts ───────────────────────────────────────────
+            if (sections.includes('costs')) {
+                const costs = store.getTaskCosts(project.id);
+                const fmt = v => formatCurrency(v);
+
+                const totalEstimated = costs.tasks.reduce((s, tc) => s + tc.cost, 0);
+                const totalActual    = costs.tasks.reduce((s, tc) => s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone), 0);
+                const variance       = totalEstimated - totalActual;
+                const pctConsumed    = totalEstimated > 0 ? Math.round((totalActual / totalEstimated) * 100) : 0;
+                const varColor       = variance < 0 ? 'ef4444' : variance < totalEstimated * 0.1 ? 'f59e0b' : '10b981';
+
+                const phaseMap = new Map();
+                allTasks.filter(tk => tk.isPhase).forEach(ph => phaseMap.set(ph.id, ph));
+                const grouped = new Map();
+                costs.tasks.forEach(tc => {
+                    const key = tc.task.parentId && phaseMap.has(tc.task.parentId) ? tc.task.parentId : '__none__';
+                    if (!grouped.has(key)) grouped.set(key, { phase: key !== '__none__' ? phaseMap.get(key) : null, items: [] });
+                    grouped.get(key).items.push(tc);
+                });
+
+                const slC = pptx.addSlide();
+                addHeader(slC, 'Coûts');
+
+                // KPI boxes
+                const kpiDefs = [
+                    { label: 'Coût estimé',   value: fmt(totalEstimated), color: AC },
+                    { label: 'Coût réel',     value: fmt(totalActual),    color: '10b981' },
+                    { label: 'Écart',         value: (-variance > 0 ? '+' : '') + fmt(-variance), color: varColor },
+                    { label: 'Consommé',      value: `${pctConsumed}%`,   color: 'f59e0b' },
+                ];
+                kpiDefs.forEach((kpi, i) => {
+                    const x = 0.4 + i * 3.15;
+                    slC.addShape('rect', { x, y: 0.9, w: 2.9, h: 1.4, fill: { color: 'f8fafc' }, line: { color: 'e2e8f0', pt: 1 } });
+                    slC.addShape('rect', { x, y: 0.9, w: 2.9, h: 0.08, fill: { color: kpi.color } });
+                    slC.addText(kpi.value, { x, y: 1.1, w: 2.9, h: 0.7, fontSize: 24, bold: true, color: kpi.color, align: 'center', fontFace: ff });
+                    slC.addText(kpi.label, { x, y: 1.9, w: 2.9, h: 0.3, fontSize: 10, color: GRAY, align: 'center', fontFace: ff });
+                });
+
+                // Cost table
+                const hOpts = { bold: true, color: 'FFFFFF', fill: { color: AC }, valign: 'middle', fontSize: 9, fontFace: ff };
+                const costHdr = [
+                    { text: 'Tâche',          options: { ...hOpts, align: 'left'   } },
+                    { text: 'Ressource(s)',    options: { ...hOpts, align: 'left'   } },
+                    { text: 'Durée',          options: { ...hOpts, align: 'center' } },
+                    { text: 'Coût fixe',      options: { ...hOpts, align: 'right'  } },
+                    { text: 'Coût estimé',    options: { ...hOpts, align: 'right'  } },
+                    { text: 'Coût réel',      options: { ...hOpts, align: 'right'  } },
+                    { text: 'Écart',          options: { ...hOpts, align: 'right'  } },
+                ];
+                const costRows = [costHdr];
+                for (const [, group] of grouped) {
+                    if (group.phase) {
+                        const gEst    = group.items.reduce((s, tc) => s + tc.cost, 0);
+                        const gActual = group.items.reduce((s, tc) => s + (typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone), 0);
+                        const gFixed  = group.items.reduce((s, tc) => s + (tc.fixedCost || 0), 0);
+                        const gVar    = gEst - gActual;
+                        const gVC     = gVar < 0 ? 'ef4444' : gVar < gEst * 0.1 ? 'f59e0b' : '10b981';
+                        const ph = { bold: true, color: DARK, fill: { color: 'e2e8f0' }, fontSize: 9, fontFace: ff };
+                        costRows.push([
+                            { text: group.phase.name, options: { ...ph, align: 'left' } },
+                            { text: '',               options: ph },
+                            { text: '',               options: ph },
+                            { text: gFixed > 0 ? fmt(gFixed) : '—', options: { ...ph, align: 'right' } },
+                            { text: fmt(gEst),        options: { ...ph, align: 'right' } },
+                            { text: fmt(gActual),     options: { ...ph, align: 'right' } },
+                            { text: (-gVar > 0 ? '+' : '') + fmt(-gVar), options: { ...ph, color: gVC, align: 'right' } },
+                        ]);
+                    }
+                    group.items.forEach(tc => {
+                        const resNames = tc.assignedResources.map(r => r.name).join(', ') || '—';
+                        const actual   = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
+                        const ecart    = tc.cost - actual;
+                        const eC       = ecart < 0 ? 'ef4444' : ecart < tc.cost * 0.1 ? 'f59e0b' : '10b981';
+                        const base = { fontSize: 9, fontFace: ff };
+                        const indent = group.phase ? '   ' : '';
+                        costRows.push([
+                            { text: indent + tc.task.name,                      options: { ...base, color: DARK, align: 'left' } },
+                            { text: resNames,                                    options: { ...base, color: GRAY, align: 'left' } },
+                            { text: `${tc.durationDays} j`,                     options: { ...base, color: GRAY, align: 'center' } },
+                            { text: tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—', options: { ...base, color: GRAY, align: 'right' } },
+                            { text: fmt(tc.cost),                               options: { ...base, color: DARK, bold: true, align: 'right' } },
+                            { text: fmt(actual),                                options: { ...base, color: DARK, align: 'right' } },
+                            { text: (-ecart > 0 ? '+' : '') + fmt(-ecart),      options: { ...base, color: eC, bold: true, align: 'right' } },
+                        ]);
                     });
                 }
+                // Total row
+                costRows.push([
+                    { text: 'Total', options: { bold: true, color: DARK, fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff, align: 'left' } },
+                    { text: '',      options: { fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff } },
+                    { text: '',      options: { fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff } },
+                    { text: '',      options: { fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff } },
+                    { text: fmt(totalEstimated), options: { bold: true, color: DARK, fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff, align: 'right' } },
+                    { text: fmt(totalActual),    options: { bold: true, color: DARK, fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff, align: 'right' } },
+                    { text: (-variance > 0 ? '+' : '') + fmt(-variance), options: { bold: true, color: varColor, fill: { color: 'f1f5f9' }, fontSize: 9, fontFace: ff, align: 'right' } },
+                ]);
+
+                slC.addTable(costRows, {
+                    x: 0.3, y: 2.45, w: 12.7,
+                    colW: [3.2, 2.4, 0.9, 1.4, 1.6, 1.6, 1.6],
+                    rowH: 0.26,
+                    border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
+                    autoPage: true,
+                });
             }
 
             await pptx.writeFile({ fileName: `${project.name}.pptx` });
@@ -2281,7 +2393,7 @@ ${assignLines.join('\n')}
         }
     }
 
-    _showPDFExportDialog() {
+    _showPDFExportDialog(mode = 'pdf') {
         const existing = document.getElementById('pdfExportDialog');
         if (existing) existing.remove();
 
@@ -2300,7 +2412,7 @@ ${assignLines.join('\n')}
 
         dialog.innerHTML = `
             <div class="pdf-export-header">
-                <h3>Export PDF</h3>
+                <h3>${mode === 'ppt' ? 'Export PowerPoint' : 'Export PDF'}</h3>
                 <button class="pdf-export-close" aria-label="Fermer">&times;</button>
             </div>
             <p class="pdf-export-desc">${t('pdf.dialog.desc')}</p>
@@ -2390,7 +2502,8 @@ ${assignLines.join('\n')}
             const tlStart = document.getElementById('pdfDateStart').value;
             const tlEnd = document.getElementById('pdfDateEnd').value;
             close();
-            this._exportPDF(sections, tlStart, tlEnd);
+            if (mode === 'ppt') this._exportPPT(sections, tlStart, tlEnd);
+            else this._exportPDF(sections, tlStart, tlEnd);
         });
 
         setTimeout(() => dialog.querySelector('.pdf-export-confirm').focus(), 50);
