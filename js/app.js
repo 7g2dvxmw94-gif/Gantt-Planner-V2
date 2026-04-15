@@ -1562,6 +1562,7 @@ class App {
                 item.dataset.blId = bl.id;
                 // Clicking anywhere on the row activates/deactivates this baseline
                 item.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     store.setActiveBaseline(isActive ? null : bl.id);
                     this._updateBaselineBtnState();
                 });
