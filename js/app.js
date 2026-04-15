@@ -1490,7 +1490,6 @@ class App {
         store.on('baseline:delete', () => { this._renderBaselinePopover(); ganttRenderer.render(); this._renderBoardView(); });
         store.on('baseline:update', () => this._renderBaselinePopover());
         store.on('baseline:activate', () => { this._renderBaselinePopover(); ganttRenderer.render(); this._renderBoardView(); });
-        store.on('baseline:toggle', () => { this._renderBaselinePopover(); ganttRenderer.render(); });
 
         this._updateBaselineBtnState();
     }
@@ -1526,8 +1525,7 @@ class App {
         const btn = document.getElementById('baselineBtn');
         if (!btn) return;
         const active = store.getActiveBaseline();
-        const show = store.getSettings().showBaseline;
-        btn.classList.toggle('baseline-has-active', !!active && show);
+        btn.classList.toggle('baseline-has-active', !!active);
     }
 
     _renderBaselinePopover() {
@@ -1536,7 +1534,6 @@ class App {
 
         const baselines = store.getBaselines();
         const active = store.getActiveBaseline();
-        const settings = store.getSettings();
         const MAX = 5;
 
         popover.innerHTML = '';
@@ -1703,25 +1700,6 @@ class App {
             createRow.appendChild(createBtn);
             footer.appendChild(createRow);
         }
-
-        // Toggle show/hide
-        const toggleRow = document.createElement('div');
-        toggleRow.className = 'bl-toggle-row';
-        const toggleLabel = document.createElement('label');
-        toggleLabel.className = 'bl-toggle-label';
-        const toggleInput = document.createElement('input');
-        toggleInput.type = 'checkbox';
-        toggleInput.className = 'bl-toggle-cb';
-        toggleInput.checked = settings.showBaseline;
-        toggleInput.addEventListener('change', (e) => {
-            e.stopPropagation();
-            store.toggleShowBaseline();
-            this._updateBaselineBtnState();
-        });
-        toggleLabel.appendChild(toggleInput);
-        toggleLabel.appendChild(document.createTextNode(' Afficher sur le Gantt'));
-        toggleRow.appendChild(toggleLabel);
-        footer.appendChild(toggleRow);
 
         popover.appendChild(footer);
         this._updateBaselineBtnState();

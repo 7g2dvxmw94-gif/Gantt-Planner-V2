@@ -104,8 +104,7 @@ class GanttRenderer {
         const tree = store.getTaskTree();
         this._timelineRange = store.getTimelineRange(this._zoomLevel);
         // Cache baseline state for this render pass
-        const settings = store.getSettings();
-        this._activeBaseline = (settings.showBaseline) ? store.getActiveBaseline() : null;
+        this._activeBaseline = store.getActiveBaseline();
 
         // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
