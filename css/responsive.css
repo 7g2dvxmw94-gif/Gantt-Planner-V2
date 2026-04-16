@@ -90,13 +90,13 @@
         display: none;
     }
 
-    /* Hide user name and sign-out in header on mobile */
+    /* Hide user name and sign-out — !important to override inline styles */
     #userEmail {
-        display: none;
+        display: none !important;
     }
 
     #signOutBtn {
-        display: none;
+        display: none !important;
     }
 
     .toolbar {
@@ -119,6 +119,17 @@
 
     .toolbar-actions .btn {
         padding: var(--space-2);
+    }
+
+    /* Hide non-essential toolbar items on mobile */
+    #criticalPathBtn,
+    .baseline-wrap,
+    #importBtn,
+    #exportBtn,
+    #historyBtn,
+    #shareBtn,
+    #viewerBadge {
+        display: none !important;
     }
 
     .tabs {
@@ -150,14 +161,6 @@
     }
 
     .undo-redo-group {
-        display: none;
-    }
-
-    #historyBtn {
-        display: none;
-    }
-
-    #shareBtn {
         display: none;
     }
 }
