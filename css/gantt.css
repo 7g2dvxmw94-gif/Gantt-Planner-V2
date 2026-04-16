@@ -1505,9 +1505,16 @@ tr.critical-path:hover {
     background: var(--bg-base);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
     position: relative;
     z-index: 100;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.filter-bar::-webkit-scrollbar {
+    display: none;
 }
 
 .filter-bar-icon {

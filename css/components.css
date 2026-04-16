@@ -916,6 +916,15 @@ textarea.input {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+}
+
+.filter-bar::-webkit-scrollbar {
+    display: none;
 }
 
 .filter-select {
