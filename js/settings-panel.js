@@ -1016,7 +1016,7 @@ class SettingsPanel {
     _applyBrandName(name) {
         const logoText = document.querySelector('.logo > span');
         if (logoText) {
-            logoText.textContent = name && name.trim() ? name.trim() : 'Gantt Planner';
+            logoText.textContent = name && name.trim() ? name.trim() : 'Gantly';
         }
     }
 
@@ -1230,7 +1230,7 @@ class SettingsPanel {
         } else {
             this._applyUserInitials(userName || '');
         }
-        if (brandName)   this._applyBrandName(brandName);
+        this._applyBrandName(brandName || '');
         this._applyLogo(this._getCustomization('logoData') || '');
         this._applyFavicon(faviconData || '');
 
