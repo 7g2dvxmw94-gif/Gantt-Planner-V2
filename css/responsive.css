@@ -2,14 +2,14 @@
    RESPONSIVE STYLES
    ======================================== */
 
-/* ---- Wide Desktop (1700px) — hide secondary labels early to prevent overflow ---- */
+/* ---- Wide Desktop (1700px) — hide zoom label ---- */
 @media (max-width: 1700px) {
     .zoom-label {
         display: none;
     }
 }
 
-/* ---- Laptop Large (1600px) ---- */
+/* ---- Laptop Large (1600px) — hide secondary btn text ---- */
 @media (max-width: 1600px) {
     .toolbar-actions .btn-secondary span {
         display: none;
@@ -17,6 +17,17 @@
 
     .toolbar-actions .btn-secondary {
         padding: var(--space-2);
+    }
+
+    .toolbar-actions {
+        gap: var(--space-2);
+    }
+}
+
+/* ---- Laptop Medium (1400px) — hide tab labels to prevent overflow ---- */
+@media (max-width: 1400px) {
+    .tab span {
+        display: none;
     }
 
     .toolbar-actions {
@@ -35,34 +46,40 @@
     }
 
     .toolbar-actions {
-        gap: var(--space-2);
+        gap: var(--space-1);
     }
 
-    .tab span {
-        display: none;
+    .search-box {
+        width: 180px;
     }
 }
 
 /* ---- Tablet (1024px) ---- */
 @media (max-width: 1024px) {
     .search-box {
-        width: 180px;
+        width: 160px;
     }
 
     :root {
-        --gantt-task-col-width: 220px;
+        --gantt-task-col-width: 200px;
     }
 
     .toolbar {
         padding: 0 var(--space-3);
         gap: var(--space-2);
     }
+
+    /* Hide history btn to save space */
+    #historyBtn {
+        display: none;
+    }
 }
 
 /* ---- Mobile Landscape / Small Tablet (768px) ---- */
 @media (max-width: 768px) {
     .header {
-        padding: 0 var(--space-4);
+        padding: 0 var(--space-3);
+        gap: var(--space-2);
     }
 
     .search-box {
@@ -73,17 +90,27 @@
         display: none;
     }
 
+    /* Hide user name and sign-out in header on mobile */
+    #userEmail {
+        display: none;
+    }
+
+    #signOutBtn {
+        display: none;
+    }
+
     .toolbar {
-        padding: 0 var(--space-3);
-        gap: var(--space-2);
+        padding: 0 var(--space-2);
+        gap: var(--space-1);
+        overflow-x: auto;
+        overflow-y: visible;
     }
 
-    .tabs {
-        display: none;
-    }
-
-    .tab span {
-        display: none;
+    /* Prevent toolbar actions from wrapping — scroll instead */
+    .toolbar-actions {
+        gap: var(--space-1);
+        flex-wrap: nowrap;
+        flex-shrink: 0;
     }
 
     .toolbar-actions .btn span {
@@ -94,14 +121,16 @@
         padding: var(--space-2);
     }
 
-    .toolbar-actions {
-        gap: var(--space-1);
-        flex-wrap: wrap;
-        justify-content: flex-end;
+    .tabs {
+        display: none;
+    }
+
+    .tab span {
+        display: none;
     }
 
     .gantt-wrapper {
-        padding: var(--space-3);
+        padding: var(--space-2);
     }
 
     .mobile-nav {
@@ -113,7 +142,7 @@
     }
 
     :root {
-        --gantt-task-col-width: 180px;
+        --gantt-task-col-width: 160px;
     }
 
     .zoom-controls {
@@ -123,21 +152,45 @@
     .undo-redo-group {
         display: none;
     }
+
+    #historyBtn {
+        display: none;
+    }
+
+    #shareBtn {
+        display: none;
+    }
 }
 
 /* ---- Mobile Portrait (480px) ---- */
 @media (max-width: 480px) {
     :root {
-        --gantt-task-col-width: 150px;
+        --gantt-task-col-width: 140px;
         --header-height: 48px;
+    }
+
+    .header {
+        padding: 0 var(--space-3);
+        gap: var(--space-2);
+        overflow: hidden;
+    }
+
+    /* Keep header as a single row — hide overflow items */
+    .header-spacer {
+        display: none;
     }
 
     .gantt-container {
         border-radius: var(--radius-md);
+        margin: var(--space-2);
     }
 
     .task-meta {
         display: none;
+    }
+
+    .header-actions {
+        gap: var(--space-1);
     }
 
     .header-actions .icon-btn:not(#themeToggle) {
@@ -170,7 +223,7 @@
     }
 
     .toolbar-actions #notifBtn {
-        display: none;
+        display: inline-flex;
     }
 
     .toolbar-actions .btn-primary span {
