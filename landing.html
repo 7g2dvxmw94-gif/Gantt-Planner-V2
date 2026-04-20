@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gantly - Le Gantt intuitif pour toutes les équipes">
+    <title>Gantly - Planifiez. Collaborez. Présentez.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #6366F1;
+            --color-primary-hover: #4F46E5;
+            --color-primary-dark: #4338CA;
+            --color-success: #10B981;
+            --color-warning: #F59E0B;
+            --color-error: #EF4444;
+            --bg-base: #FFFFFF;
+            --bg-subtle: #F8FAFC;
+            --bg-muted: #F1F5F9;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --border-default: #E2E8F0;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+            --space-8: 64px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--text-primary);
+            background: var(--bg-base);
+            line-height: 1.6;
+        }
+
+        /* ---- Navigation ---- */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-5) var(--space-8);
+            background: var(--bg-base);
+            border-bottom: 1px solid var(--border-default);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--color-primary);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--color-primary), #EC4899);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: var(--space-6);
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 150ms ease-out;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-primary);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease-out;
+            font-size: 0.9375rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        /* ---- Hero Section ---- */
+        .hero {
+            padding: var(--space-8) var(--space-8) var(--space-7);
+            text-align: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: var(--space-5);
+            justify-content: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .hero-visual {
+            margin-top: var(--space-8);
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            background: linear-gradient(135deg, var(--color-primary) 0%, #EC4899 100%);
+            border-radius: var(--radius-lg);
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.125rem;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .hero-visual svg {
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+        }
+
+        /* ---- Features Section ---- */
+        .features {
+            padding: var(--space-8) var(--space-8) var(--space-7);
+            background: var(--bg-subtle);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--space-8);
+            color: var(--text-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-6);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-base);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-default);
+            transition: all 150ms ease-out;
+        }
+
+        .feature-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--color-primary), #EC4899);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .feature-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-3);
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.6;
+        }
+
+        /* ---- Highlight Section ---- */
+        .highlight {
+            padding: var(--space-8) var(--space-8) var(--space-7);
+        }
+
+        .highlight-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-8);
+            align-items: center;
+        }
+
+        .highlight-visual {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #EC4899 100%);
+            border-radius: var(--radius-lg);
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.125rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .highlight-text h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            color: var(--text-primary);
+        }
+
+        .highlight-text p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-5);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        /* ---- Pricing Section ---- */
+        .pricing {
+            padding: var(--space-8) var(--space-8) var(--space-7);
+            background: var(--bg-subtle);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-6);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--bg-base);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--border-default);
+            transition: all 150ms ease-out;
+            position: relative;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--color-primary);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-3);
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .pricing-period {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            margin-bottom: var(--space-5);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: var(--space-6);
+        }
+
+        .pricing-features li {
+            padding: var(--space-3) 0;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            border-bottom: 1px solid var(--border-default);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .pricing-features li:before {
+            content: "✓";
+            color: var(--color-success);
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        /* ---- FAQ Section ---- */
+        .faq {
+            padding: var(--space-8) var(--space-8) var(--space-7);
+        }
+
+        .faq-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            margin-bottom: var(--space-5);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: var(--space-5);
+            background: var(--bg-subtle);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 150ms ease-out;
+        }
+
+        .faq-question:hover {
+            background: var(--bg-muted);
+        }
+
+        .faq-question.active {
+            background: var(--bg-base);
+            color: var(--color-primary);
+        }
+
+        .faq-answer {
+            padding: 0 var(--space-5);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 300ms ease-out, padding 300ms ease-out;
+            color: var(--text-secondary);
+        }
+
+        .faq-answer.active {
+            padding: var(--space-5);
+            max-height: 500px;
+        }
+
+        /* ---- CTA Section ---- */
+        .cta-section {
+            padding: var(--space-8);
+            background: linear-gradient(135deg, var(--color-primary) 0%, #EC4899 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+        }
+
+        .cta-section p {
+            font-size: 1.125rem;
+            margin-bottom: var(--space-6);
+            opacity: 0.95;
+        }
+
+        /* ---- Footer ---- */
+        footer {
+            padding: var(--space-8);
+            background: var(--bg-muted);
+            border-top: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        footer p {
+            margin-bottom: var(--space-4);
+        }
+
+        footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+            margin: 0 var(--space-3);
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 768px) {
+            nav {
+                padding: var(--space-4);
+            }
+
+            .nav-links {
+                gap: var(--space-4);
+                font-size: 0.875rem;
+            }
+
+            .hero h1 {
+                font-size: 1.875rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-visual {
+                height: 250px;
+            }
+
+            .highlight-content {
+                grid-template-columns: 1fr;
+            }
+
+            .highlight-visual {
+                height: 200px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <div class="logo-icon">G</div>
+            Gantly
+        </div>
+        <div class="nav-links">
+            <a href="#features">Fonctionnalités</a>
+            <a href="#pricing">Tarifs</a>
+            <a href="index.html" class="btn btn-primary">Se connecter</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Planifiez. Collaborez. Présentez.</h1>
+        <p>Le Gantt intuitif pour toutes les équipes — du freelance au chantier BTP.</p>
+        <div class="hero-ctas">
+            <a href="index.html" class="btn btn-primary">Essayer gratuitement</a>
+            <a href="#features" class="btn btn-secondary">En savoir plus</a>
+        </div>
+        <div class="hero-visual">
+            <span>📊 Diagramme de Gantt interactif</span>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title">Fonctionnalités phares</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Gantt interactif</h3>
+                <p>Drag & drop intuitif, chemin critique, jalons. Planifiez avec précision.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Suivi des coûts</h3>
+                <p>Ressources, charges horaires, budgets. Maîtrisez vos dépenses.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Vue analytique</h3>
+                <p>Kanban, tableau des ressources, rapports détaillés. Pilotez vos projets.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Baselines & Versions</h3>
+                <p>Comparez les plans, suivez l'évolution. Justifiez vos décisions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Collaboration temps réel</h3>
+                <p>Partage par lien, notifications, historique. Travaillez ensemble.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Export PowerPoint</h3>
+                <p>Présentations pro en 1 clic. Impressionnez vos clients.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BTP Highlight -->
+    <section class="highlight">
+        <div class="highlight-content">
+            <div class="highlight-visual">
+                🏗️ Dédié au BTP
+            </div>
+            <div class="highlight-text">
+                <h2>Spécifiquement pensé pour le BTP</h2>
+                <p>Suivi des permis de construire, phases de chantier, calendriers règlementaires. Gantly s'adapte aux contraintes uniques des projets de construction.</p>
+                <ul style="list-style: none; gap: var(--space-3);">
+                    <li style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); color: var(--text-secondary);"><span style="color: var(--color-success); font-weight: 700;">✓</span> Gestion des permis</li>
+                    <li style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); color: var(--text-secondary);"><span style="color: var(--color-success); font-weight: 700;">✓</span> Phases de chantier</li>
+                    <li style="display: flex; align-items: center; gap: var(--space-3); color: var(--text-secondary);"><span style="color: var(--color-success); font-weight: 700;">✓</span> Dates règlementaires</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <h2 class="section-title">Tarifs simples et transparents</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>Gratuit</h3>
+                <div class="pricing-price">0€</div>
+                <div class="pricing-period">Pour toujours</div>
+                <ul class="pricing-features">
+                    <li>1 projet</li>
+                    <li>50 tâches</li>
+                    <li>1 collaborateur</li>
+                    <li>Export PDF</li>
+                </ul>
+                <a href="index.html" class="btn btn-secondary" style="width: 100%;">Commencer</a>
+            </div>
+            <div class="pricing-card featured">
+                <h3>Pro</h3>
+                <div class="pricing-price">29€</div>
+                <div class="pricing-period">par mois</div>
+                <ul class="pricing-features">
+                    <li>Projets illimités</li>
+                    <li>Tâches illimitées</li>
+                    <li>5 collaborateurs</li>
+                    <li>Export PDF & PPT</li>
+                    <li>Baselines & versions</li>
+                    <li>Chemin critique</li>
+                </ul>
+                <a href="index.html" class="btn btn-primary" style="width: 100%;">Essayer 14 jours</a>
+            </div>
+            <div class="pricing-card">
+                <h3>Team</h3>
+                <div class="pricing-price">∞</div>
+                <div class="pricing-period">Collaborateurs illimités</div>
+                <ul class="pricing-features">
+                    <li>Tout illimité</li>
+                    <li>Collaborateurs ∞</li>
+                    <li>Support prioritaire</li>
+                    <li>Intégrations custom</li>
+                    <li>Données on-premise</li>
+                </ul>
+                <a href="mailto:contact@gantly.com" class="btn btn-secondary" style="width: 100%;">Nous contacter</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+        <h2 class="section-title">Questions fréquentes</h2>
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Puis-je utiliser Gantly hors ligne?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Gantly est une application web cloud. Une connexion Internet est nécessaire, mais vos données sont sauvegardées en temps réel et synchronisées partout.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Puis-je importer mes données existantes?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Oui! Gantly supporte l'import de fichiers CSV et Excel. Vous pouvez migrer vos projets existants en quelques clics.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Quelle est la durée du trial Pro?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Vous avez 14 jours gratuits du plan Pro. Aucune carte de crédit requise pour commencer.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Comment puis-je exporter mes projets?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Gantly exporte en PDF et PowerPoint. Vous pouvez aussi télécharger vos données brutes au format JSON à tout moment.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Prêt à démarrer?</h2>
+        <p>Essayez Gantly gratuitement — pas de carte de crédit nécessaire.</p>
+        <a href="index.html" class="btn btn-secondary" style="border-color: white; color: white;">Créer un compte</a>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Gantly. Tous droits réservés.</p>
+        <div>
+            <a href="#">Conditions</a>
+            <a href="#">Confidentialité</a>
+            <a href="mailto:contact@gantly.com">Contact</a>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFAQ(element) {
+            const question = element;
+            const answer = element.nextElementSibling;
+
+            question.classList.toggle('active');
+            answer.classList.toggle('active');
+
+            // Close other FAQs
+            document.querySelectorAll('.faq-question').forEach(q => {
+                if (q !== question && q.classList.contains('active')) {
+                    q.classList.remove('active');
+                    q.nextElementSibling.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
