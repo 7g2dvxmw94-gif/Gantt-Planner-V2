@@ -15,7 +15,7 @@
     align-items: center;
     flex-wrap: nowrap;
     overflow: hidden;
-    padding: 0 var(--space-5);
+    padding: 0 var(--space-5) 0 var(--space-2);
     gap: var(--space-4);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
