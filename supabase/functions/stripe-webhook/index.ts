@@ -26,6 +26,12 @@ const WEBHOOK_SECRET       = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 const SUPABASE_URL         = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+/** SHA-256 hash d'un identifiant Stripe pour les lookups (migration 017) */
+async function hashStripeId(id: string): Promise<string> {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 /** Mappe un statut Stripe vers notre statut interne */
@@ -78,15 +84,21 @@ Deno.serve(async (req: Request) => {
                 const userId  = session.metadata?.supabase_user_id;
                 if (!userId || !session.subscription) break;
 
-                const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+                const sub     = await stripe.subscriptions.retrieve(session.subscription as string);
                 const priceId = sub.items.data[0]?.price.id ?? '';
 
+                // Stocker les hashs pour les lookups futurs (migration 017)
+                const customerHash     = await hashStripeId(sub.customer as string);
+                const subscriptionHash = await hashStripeId(sub.id);
+
                 await supabase.from('profiles').update({
-                    plan:                    planFromPriceId(priceId),
-                    plan_status:             mapStatus(sub.status),
-                    trial_ends_at:           sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-                    stripe_subscription_id:  sub.id,
-                    stripe_customer_id:      sub.customer as string,
+                    plan:                         planFromPriceId(priceId),
+                    plan_status:                  mapStatus(sub.status),
+                    trial_ends_at:                sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+                    stripe_customer_id:           sub.customer as string,
+                    stripe_customer_id_hash:      customerHash,
+                    stripe_subscription_id:       sub.id,
+                    stripe_subscription_id_hash:  subscriptionHash,
                 }).eq('id', userId);
                 break;
             }
@@ -96,11 +108,12 @@ Deno.serve(async (req: Request) => {
                 const sub    = event.data.object as Stripe.Subscription;
                 const userId = sub.metadata?.supabase_user_id;
                 if (!userId) {
-                    // Fallback : retrouver l'user via stripe_customer_id
+                    // Fallback : lookup via hash SHA-256 (migration 017)
+                    const customerHash = await hashStripeId(sub.customer as string);
                     const { data } = await supabase
                         .from('profiles')
                         .select('id')
-                        .eq('stripe_customer_id', sub.customer as string)
+                        .eq('stripe_customer_id_hash', customerHash)
                         .single();
                     if (!data) break;
                     await updateProfileFromSub(data.id, sub);
@@ -112,28 +125,31 @@ Deno.serve(async (req: Request) => {
 
             // ── Abonnement annulé / expiré ──────────────────────────────
             case 'customer.subscription.deleted': {
-                const sub = event.data.object as Stripe.Subscription;
+                const sub             = event.data.object as Stripe.Subscription;
+                const subscriptionHash = await hashStripeId(sub.id);
                 const { data } = await supabase
                     .from('profiles')
                     .select('id')
-                    .eq('stripe_subscription_id', sub.id)
+                    .eq('stripe_subscription_id_hash', subscriptionHash)
                     .single();
                 if (!data) break;
                 await supabase.from('profiles').update({
-                    plan:                   'free',
-                    plan_status:            'canceled',
-                    stripe_subscription_id: null,
+                    plan:                        'free',
+                    plan_status:                 'canceled',
+                    stripe_subscription_id:      null,
+                    stripe_subscription_id_hash: null,
                 }).eq('id', data.id);
                 break;
             }
 
             // ── Paiement échoué ─────────────────────────────────────────
             case 'invoice.payment_failed': {
-                const invoice = event.data.object as Stripe.Invoice;
+                const invoice      = event.data.object as Stripe.Invoice;
+                const customerHash = await hashStripeId(invoice.customer as string);
                 const { data } = await supabase
                     .from('profiles')
                     .select('id')
-                    .eq('stripe_customer_id', invoice.customer as string)
+                    .eq('stripe_customer_id_hash', customerHash)
                     .single();
                 if (data) {
                     await supabase.from('profiles')
