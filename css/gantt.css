@@ -5,6 +5,8 @@
 .gantt-wrapper {
     flex: 1;
     overflow: auto;
+    position: relative;
+    z-index: 1;  /* Create stacking context below filters */
 }
 
 .gantt-container {
@@ -1499,7 +1501,7 @@ tr.critical-path:hover {
 
 .filter-bar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;  /* Changed to flex-start to allow dropdown to overflow below */
     gap: var(--space-3);
     padding: var(--space-2) var(--space-5);
     background: var(--bg-base);
@@ -1558,6 +1560,7 @@ tr.critical-path:hover {
 /* Multi-select filter dropdown */
 .filter-multi {
     position: relative;
+    overflow: visible !important;  /* Ensure dropdown isn't clipped */
 }
 
 .filter-multi-toggle {
@@ -1627,7 +1630,7 @@ tr.critical-path:hover {
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
-    z-index: 100;
+    z-index: var(--z-modal);  /* Increased from 100 to ensure it's above everything */
     padding: var(--space-1) 0;
 }
 
