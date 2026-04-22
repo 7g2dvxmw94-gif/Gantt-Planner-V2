@@ -5931,10 +5931,15 @@ tr:nth-child(even){background:#fafbfc}
         resetBtn.addEventListener('click', () => this._resetFilters());
         filterBar.appendChild(resetBtn);
 
-        // Close multi-filter dropdowns on outside click
+        // Close multi-filter dropdowns on outside click + return dropdown to wrapper
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.filter-multi')) {
-                document.querySelectorAll('.filter-multi.open').forEach(el => el.classList.remove('open'));
+            if (!e.target.closest('.filter-multi') && !e.target.closest('.filter-multi-dropdown')) {
+                document.querySelectorAll('.filter-multi.open').forEach(el => {
+                    el.classList.remove('open');
+                    const dd = el.querySelector('.filter-multi-dropdown') ||
+                        document.body.querySelector(`.filter-multi-dropdown[data-filter="${el.dataset.filter}"]`);
+                    if (dd && dd.parentNode === document.body) el.appendChild(dd);
+                });
             }
         });
 
@@ -5994,17 +5999,22 @@ tr:nth-child(even){background:#fafbfc}
             e.stopPropagation();
             const isOpen = wrapper.classList.contains('open');
 
-            // Close all open dropdowns
+            // Close all open dropdowns and detach them from body
             document.querySelectorAll('.filter-multi.open').forEach(el => {
                 el.classList.remove('open');
+                const dd = el.querySelector('.filter-multi-dropdown');
+                if (dd && dd.parentNode === document.body) {
+                    el.appendChild(dd);  // Move back into wrapper
+                }
             });
 
             if (!isOpen) {
                 wrapper.classList.add('open');
-                // Position dropdown using fixed coords to escape overflow:hidden parents
+                // Move dropdown to <body> to escape all stacking contexts
                 const rect = toggle.getBoundingClientRect();
                 const dropdown = wrapper.querySelector('.filter-multi-dropdown');
                 if (dropdown) {
+                    document.body.appendChild(dropdown);
                     dropdown.style.top  = (rect.bottom + 4) + 'px';
                     dropdown.style.left = rect.left + 'px';
                 }

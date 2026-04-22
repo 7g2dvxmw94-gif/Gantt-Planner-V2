@@ -1628,7 +1628,7 @@ tr.critical-path:hover {
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
-    z-index: var(--z-modal);
+    z-index: 99999;
     padding: var(--space-1) 0;
 }
 
