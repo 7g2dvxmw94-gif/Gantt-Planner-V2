@@ -5992,11 +5992,23 @@ tr:nth-child(even){background:#fafbfc}
 
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Close other open multi-filters
+            const isOpen = wrapper.classList.contains('open');
+
+            // Close all open dropdowns
             document.querySelectorAll('.filter-multi.open').forEach(el => {
-                if (el !== wrapper) el.classList.remove('open');
+                el.classList.remove('open');
             });
-            wrapper.classList.toggle('open');
+
+            if (!isOpen) {
+                wrapper.classList.add('open');
+                // Position dropdown using fixed coords to escape overflow:hidden parents
+                const rect = toggle.getBoundingClientRect();
+                const dropdown = wrapper.querySelector('.filter-multi-dropdown');
+                if (dropdown) {
+                    dropdown.style.top  = (rect.bottom + 4) + 'px';
+                    dropdown.style.left = rect.left + 'px';
+                }
+            }
         });
 
         return group;

@@ -1620,9 +1620,7 @@ tr.critical-path:hover {
 
 .filter-multi-dropdown {
     display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
+    position: fixed;
     min-width: 180px;
     max-height: 240px;
     overflow-y: auto;
@@ -1630,7 +1628,7 @@ tr.critical-path:hover {
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
-    z-index: var(--z-modal);  /* Increased from 100 to ensure it's above everything */
+    z-index: var(--z-modal);
     padding: var(--space-1) 0;
 }
 
