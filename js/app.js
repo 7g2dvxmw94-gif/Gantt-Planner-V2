@@ -5999,12 +5999,14 @@ tr:nth-child(even){background:#fafbfc}
             e.stopPropagation();
             const isOpen = wrapper.classList.contains('open');
 
-            // Close all open dropdowns and detach them from body
+            // Close all open dropdowns and return them to their wrapper
             document.querySelectorAll('.filter-multi.open').forEach(el => {
                 el.classList.remove('open');
-                const dd = el.querySelector('.filter-multi-dropdown');
-                if (dd && dd.parentNode === document.body) {
-                    el.appendChild(dd);  // Move back into wrapper
+                const dd = document.body.querySelector('.filter-multi-dropdown[data-owner="' + el.id + '"]')
+                        || el.querySelector('.filter-multi-dropdown');
+                if (dd) {
+                    dd.style.display = 'none';
+                    if (dd.parentNode === document.body) el.appendChild(dd);
                 }
             });
 
@@ -6014,9 +6016,11 @@ tr:nth-child(even){background:#fafbfc}
                 const rect = toggle.getBoundingClientRect();
                 const dropdown = wrapper.querySelector('.filter-multi-dropdown');
                 if (dropdown) {
+                    dropdown.dataset.owner = wrapper.id;
                     document.body.appendChild(dropdown);
-                    dropdown.style.top  = (rect.bottom + 4) + 'px';
-                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.top     = (rect.bottom + 4) + 'px';
+                    dropdown.style.left    = rect.left + 'px';
+                    dropdown.style.display = 'block';
                 }
             }
         });
