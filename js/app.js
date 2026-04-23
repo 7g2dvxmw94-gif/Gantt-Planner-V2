@@ -5931,15 +5931,10 @@ tr:nth-child(even){background:#fafbfc}
         resetBtn.addEventListener('click', () => this._resetFilters());
         filterBar.appendChild(resetBtn);
 
-        // Close multi-filter dropdowns on outside click + return dropdown to wrapper
+        // Close multi-filter dropdowns on outside click
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.filter-multi') && !e.target.closest('.filter-multi-dropdown')) {
-                document.querySelectorAll('.filter-multi.open').forEach(el => {
-                    el.classList.remove('open');
-                    const dd = el.querySelector('.filter-multi-dropdown') ||
-                        document.body.querySelector(`.filter-multi-dropdown[data-filter="${el.dataset.filter}"]`);
-                    if (dd && dd.parentNode === document.body) el.appendChild(dd);
-                });
+            if (!e.target.closest('.filter-multi')) {
+                document.querySelectorAll('.filter-multi.open').forEach(el => el.classList.remove('open'));
             }
         });
 
@@ -5997,44 +5992,18 @@ tr:nth-child(even){background:#fafbfc}
 
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = wrapper.classList.contains('open');
-
-            // Close all open dropdowns and return them to their wrapper
+            // Close other open filters
             document.querySelectorAll('.filter-multi.open').forEach(el => {
-                el.classList.remove('open');
-                const dd = document.body.querySelector('.filter-multi-dropdown[data-owner="' + el.id + '"]')
-                        || el.querySelector('.filter-multi-dropdown');
-                if (dd) {
-                    dd.style.display = 'none';
-                    if (dd.parentNode === document.body) el.appendChild(dd);
-                }
+                if (el !== wrapper) el.classList.remove('open');
             });
-
-            if (!isOpen) {
-                wrapper.classList.add('open');
-                // Move dropdown to <body> to escape all stacking contexts
-                const rect = toggle.getBoundingClientRect();
-                const dropdown = wrapper.querySelector('.filter-multi-dropdown');
-                if (dropdown) {
-                    dropdown.dataset.owner = wrapper.id;
-                    document.body.appendChild(dropdown);
-                    dropdown.style.top     = (rect.bottom + 4) + 'px';
-                    dropdown.style.left    = rect.left + 'px';
-                    dropdown.style.display = 'block';
-                }
-            }
+            wrapper.classList.toggle('open');
         });
 
         return group;
     }
 
     _onMultiFilterChange(wrapper, allLabel) {
-        // Find checkboxes in dropdown whether it's in wrapper or body
-        const dropdown = wrapper.querySelector('.filter-multi-dropdown')
-                      || document.body.querySelector('.filter-multi-dropdown[data-owner="' + wrapper.id + '"]');
-        if (!dropdown) return;
-
-        const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+        const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
         const checked = [...checkboxes].filter(cb => cb.checked);
         const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
         const badge = wrapper.querySelector('.filter-multi-badge');
