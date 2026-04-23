@@ -101,6 +101,7 @@ class App {
             this._renderStats();
             this._renderProjectName();
             this._applyRoleGating();
+            this._refreshPhaseFilter();
             // Keep board view in sync when it's visible
             if (document.getElementById('boardView')?.style.display !== 'none') {
                 this._renderBoardView();
