@@ -6029,7 +6029,12 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _onMultiFilterChange(wrapper, allLabel) {
-        const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
+        // Find checkboxes in dropdown whether it's in wrapper or body
+        const dropdown = wrapper.querySelector('.filter-multi-dropdown')
+                      || document.body.querySelector('.filter-multi-dropdown[data-owner="' + wrapper.id + '"]');
+        if (!dropdown) return;
+
+        const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
         const checked = [...checkboxes].filter(cb => cb.checked);
         const toggleText = wrapper.querySelector('.filter-multi-toggle-text');
         const badge = wrapper.querySelector('.filter-multi-badge');
