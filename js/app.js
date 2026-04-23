@@ -5934,7 +5934,11 @@ tr:nth-child(even){background:#fafbfc}
         // Close multi-filter dropdowns on outside click
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.filter-multi')) {
-                document.querySelectorAll('.filter-multi.open').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.filter-multi.open').forEach(el => {
+                    el.classList.remove('open');
+                    const dd = el.querySelector('.filter-multi-dropdown');
+                    if (dd) dd.style.display = 'none';
+                });
             }
         });
 
@@ -5992,11 +5996,25 @@ tr:nth-child(even){background:#fafbfc}
 
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Close other open filters
+            const isOpen = wrapper.classList.contains('open');
+
+            // Close all open dropdowns
             document.querySelectorAll('.filter-multi.open').forEach(el => {
-                if (el !== wrapper) el.classList.remove('open');
+                el.classList.remove('open');
+                const dd = el.querySelector('.filter-multi-dropdown');
+                if (dd) dd.style.display = 'none';
             });
-            wrapper.classList.toggle('open');
+
+            if (!isOpen) {
+                wrapper.classList.add('open');
+                const rect = toggle.getBoundingClientRect();
+                const dropdown = wrapper.querySelector('.filter-multi-dropdown');
+                if (dropdown) {
+                    dropdown.style.top     = (rect.bottom + 4) + 'px';
+                    dropdown.style.left    = rect.left + 'px';
+                    dropdown.style.display = 'block';
+                }
+            }
         });
 
         return group;
