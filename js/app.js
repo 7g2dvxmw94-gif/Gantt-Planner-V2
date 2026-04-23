@@ -68,6 +68,7 @@ class App {
             onUpdate: () => {
                 ganttRenderer.render();
                 this._renderStats();
+                this._applyFiltersToTimeline();
             },
             getColWidth: () => ganttRenderer.effectiveColWidth || 50,
             getZoomLevel: () => ganttRenderer.zoomLevel,
@@ -102,6 +103,11 @@ class App {
             this._renderProjectName();
             this._applyRoleGating();
             this._refreshPhaseFilter();
+            this._refreshAssigneeFilter();
+            // Re-apply timeline filter after gantt re-renders (ganttRenderer.render fires first)
+            if (this._activeView === 'timeline') {
+                this._applyFiltersToTimeline();
+            }
             // Keep board view in sync when it's visible
             if (document.getElementById('boardView')?.style.display !== 'none') {
                 this._renderBoardView();
@@ -326,7 +332,7 @@ class App {
             if (status.length > 0 && !status.includes(task.status)) return false;
 
             if (assignee.length > 0) {
-                const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+                const assigneeIds = (task.assignees && task.assignees.length > 0) ? task.assignees : (task.assignee ? [task.assignee] : []);
                 if (assignee.includes('none')) {
                     if (assigneeIds.length > 0 && !assignee.some(a => a !== 'none' && assigneeIds.includes(a))) return false;
                 } else {
@@ -6086,10 +6092,47 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     _getAssigneeOptions() {
-        const resources = store.getResources();
+        const activeProjectId = store.getActiveProject()?.id;
+        const resources = store.getResources().filter(r => !activeProjectId || r.projectId === activeProjectId);
         const options = [{ value: 'none', label: 'Non assigné' }];
         resources.forEach(r => options.push({ value: r.id, label: r.name }));
         return options;
+    }
+
+    _refreshAssigneeFilter() {
+        const wrapper = document.getElementById('filterAssignee');
+        if (!wrapper) return;
+        const dropdown = wrapper.querySelector('.filter-multi-dropdown');
+        if (!dropdown) return;
+
+        const options = this._getAssigneeOptions();
+        const currentOptionValues = new Set([...dropdown.querySelectorAll('input[type="checkbox"]')].map(cb => cb.value));
+        const newOptionValues = new Set(options.map(o => o.value));
+
+        // Skip rebuild if the option set hasn't changed
+        if (currentOptionValues.size === newOptionValues.size &&
+            [...newOptionValues].every(v => currentOptionValues.has(v))) return;
+
+        const selectedValues = new Set([...dropdown.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value));
+
+        dropdown.innerHTML = '';
+        options.forEach(opt => {
+            const item = document.createElement('label');
+            item.className = 'filter-multi-option';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = opt.value;
+            if (selectedValues.has(opt.value)) {
+                cb.checked = true;
+                item.classList.add('selected');
+            }
+            cb.addEventListener('change', () => this._onMultiFilterChange(wrapper, t('filter.all.f')));
+            item.appendChild(cb);
+            const span = document.createElement('span');
+            span.textContent = opt.label;
+            item.appendChild(span);
+            dropdown.appendChild(item);
+        });
     }
 
     _getMultiFilterValues(filterId) {

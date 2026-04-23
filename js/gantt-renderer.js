@@ -169,6 +169,16 @@ class GanttRenderer {
             this._flatNodes.forEach(({ node, depth }) => {
                 body.appendChild(this._renderRow(node, depth));
             });
+
+            // Re-apply visibility filter if active
+            if (this._visibleTaskIds) {
+                body.querySelectorAll('.gantt-row').forEach(row => {
+                    const taskId = row.dataset.taskId;
+                    if (taskId && !this._visibleTaskIds.has(taskId)) {
+                        row.style.display = 'none';
+                    }
+                });
+            }
         }
 
         // Set min-width on container so the timeline never collapses when rows are filtered
