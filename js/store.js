@@ -1358,6 +1358,20 @@ class Store {
             updatedAt: new Date().toISOString(),
         };
 
+        /* CORRECTIF INDISPENSABLE : la ligne ci-dessus REMPLACE l'objet
+           dans le tableau (nouvelle reference), sans changer ni la
+           reference du tableau ni sa longueur. Les deux gardes de
+           _ensureTaskIndex() ne detectent donc RIEN, et l'index conserve
+           l'ANCIEN objet — sans les modifications qu'on vient d'ecrire.
+           getTask() renvoyait alors une tache perimee : les dependances
+           ajoutees semblaient ignorees et les taches restaient figees
+           dans le Gantt.
+           On met l'entree a jour chirurgicalement plutot que de
+           reconstruire tout l'index : updateTask est appele tres souvent. */
+        if (this._taskIndex) {
+            this._taskIndex.set(taskId, this._data.tasks[idx]);
+        }
+
         // Recalculate phase dates and progress
         const task = this._data.tasks[idx];
         if (task.parentId) {
