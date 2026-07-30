@@ -104,40 +104,33 @@ export const collaboration = {
     /* ---- Accepter une invitation via token ---- */
 
     async acceptInvitation(token) {
-        // 1. Récupérer l'invitation
-        const { data: inv, error: fetchError } = await supabase
-            .from('invitations')
-            .select('*')
-            .eq('token', token)
-            .is('accepted_at', null)
-            .single();
+        /* Passe desormais par la RPC accept_invitation (migration 021).
+           L'ancienne version faisait un upsert direct sur project_members,
+           ce que la politique RLS refusait : l'invite n'est pas encore
+           membre du projet, donc can_edit_project() renvoyait false. La
+           fonctionnalite ne pouvait donc PAS fonctionner.
 
-        if (fetchError || !inv) throw new Error('Invitation introuvable ou expirée.');
-        if (new Date(inv.expires_at) < new Date()) throw new Error('Cette invitation a expiré.');
+           La RPC, en SECURITY DEFINER, verifie cote serveur :
+             - existence et validite du token
+             - date d'expiration
+             - correspondance avec l'email destinataire (l'invitation est
+               nominative : un token vole est inutilisable par un tiers)
+             - quota de collaborateurs de l'offre du proprietaire
+             - non-reutilisation (verrou FOR UPDATE anti-concurrence)
 
-        const user = await auth.getUser();
-        if (!user) throw new Error('Vous devez être connecté pour accepter cette invitation.');
+           Retour : { project_id, role } */
+        const { data, error } = await supabase.rpc('accept_invitation', {
+            p_token: token,
+        });
 
-        // 2. Ajouter l'utilisateur comme membre
-        const { error: memberError } = await supabase
-            .from('project_members')
-            .upsert({
-                project_id: inv.project_id,
-                user_id:    user.id,
-                role:       inv.role,
-                invited_by: inv.invited_by,
-                joined_at:  new Date().toISOString(),
-            });
+        if (error) {
+            /* Les messages leves par RAISE EXCEPTION cote SQL sont deja
+               rediges pour l'utilisateur final et remontent dans
+               error.message. */
+            throw new Error(error.message || "Impossible d'accepter cette invitation.");
+        }
 
-        if (memberError) throw memberError;
-
-        // 3. Marquer l'invitation comme acceptée
-        await supabase
-            .from('invitations')
-            .update({ accepted_at: new Date().toISOString() })
-            .eq('id', inv.id);
-
-        return inv;
+        return data;
     },
 
     /* ---- Rôle courant sur un projet ---- */
