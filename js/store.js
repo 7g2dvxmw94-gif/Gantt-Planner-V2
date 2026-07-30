@@ -789,7 +789,19 @@ class Store {
              * rechargement. Cela ne fonctionnait pas davantage avant —
              * une vraie mise en commun demanderait une table de liaison
              * project_resources. */
-            this._rebuildProjectResourceIds();
+            /* Charger les rattachements partages (migration 027). En cas
+               d'echec on repli sur resource.projectId : mieux vaut une
+               vue restreinte qu'un onglet vide. */
+            let liensPartages = null;
+            try {
+                if (typeof supabaseStore.getProjectResourceLinks === 'function') {
+                    liensPartages = await supabaseStore.getProjectResourceLinks();
+                }
+            } catch (err) {
+                console.warn('[store] liens projet/ressource indisponibles :',
+                             err?.message || err);
+            }
+            this._rebuildProjectResourceIds(liensPartages);
             // Mettre à jour resourceIds pour chaque projet
             this._data.projects.forEach(p => {
                 p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
@@ -2039,8 +2051,21 @@ class Store {
     /** Reconstitue project.resourceIds a partir de resource.projectId.
      *  Necessaire car resourceIds n'est pas persiste (voir le commentaire
      *  dans initFromSupabase). */
-    _rebuildProjectResourceIds() {
+    _rebuildProjectResourceIds(liens = null) {
         const parProjet = new Map();
+
+        /* Source privilegiee : la table de liaison project_resources
+           (migration 027), qui exprime le PARTAGE entre projets. */
+        if (Array.isArray(liens)) {
+            for (const l of liens) {
+                if (!l || !l.projectId || !l.resourceId) continue;
+                if (!parProjet.has(l.projectId)) parProjet.set(l.projectId, []);
+                parProjet.get(l.projectId).push(l.resourceId);
+            }
+        }
+
+        /* Repli : projet proprietaire. Couvre les ressources creees hors
+           ligne, pas encore synchronisees. */
         for (const r of this._data.resources) {
             if (!r.projectId) continue;
             if (!parProjet.has(r.projectId)) parProjet.set(r.projectId, []);
@@ -2064,9 +2089,19 @@ class Store {
             this._save();
             this._emit('change', null);
             // Sync : mettre à jour le project_id de la ressource
-            const resource = this._data.resources.find(r => r.id === resourceId);
+            /* Persister le rattachement dans project_resources.
+               Avant la migration 027, project.resourceIds n'etait stocke
+               NULLE PART : il etait remis a zero a chaque rechargement,
+               et l'onglet Ressources apparaissait vide. */
+            supabaseStore.linkResourceToProject?.(projectId, resourceId)
+                .catch(e => console.error('[store] sync linkResourceToProject:', e));
+
+            const resource = this.getResource(resourceId);
             if (resource) {
-                resource.projectId = projectId;
+                /* On ne touche PLUS a resource.projectId : il designe le
+                   projet PROPRIETAIRE, et l'ecraser transfererait la
+                   propriete au lieu de partager. C'est la table de liaison
+                   qui exprime l'emprunt. */
                 supabaseStore.upsertResource(resource)
                     .catch(e => console.error('[store] sync addResourceToProject:', e));
             }
@@ -2078,6 +2113,13 @@ class Store {
         if (!project || !project.resourceIds) return;
         this._snapshot();
         project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+
+        /* Detacher aussi en base, sinon le rattachement revenait au
+           prochain rechargement : _rebuildProjectResourceIds() le
+           relisait depuis project_resources. */
+        supabaseStore.unlinkResourceFromProject?.(projectId, resourceId)
+            .catch(e => console.error('[store] sync unlinkResourceFromProject:', e));
+
         this._save();
         this._emit('change', null);
     }
