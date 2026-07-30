@@ -79,6 +79,123 @@ export const PLAN_LIMITS = {
     team:  { projects: Infinity, tasks: Infinity,  collaborators: Infinity },
 };
 
+/* ============================================================
+   Detection de cycles dans le graphe de dependances
+   ------------------------------------------------------------
+   Convention du modele : task.dependencies[] contient les
+   PREDECESSEURS de la tache. L'arete logique va donc du
+   predecesseur vers la tache.
+
+   Un cycle existe si, en remontant les predecesseurs depuis une
+   tache, on revient sur elle-meme.
+
+   Contraintes de performance : un planning industriel peut
+   compter plusieurs milliers de taches, et la verification tourne
+   a CHAQUE enregistrement de tache. Les deux fonctions sont donc
+   en O(V+E), sans copie de tableau ni recursion (une chaine de
+   5000 taches provoquerait un debordement de pile).
+   ============================================================ */
+
+/** Index taskId -> [ids des predecesseurs].
+ *  overrideTaskId/overrideDeps permettent de simuler une
+ *  modification avant de l'ecrire. */
+export function buildPredecessorIndex(tasks, overrideTaskId = null, overrideDeps = null) {
+    const index = new Map();
+    for (const t of tasks) {
+        const deps = (overrideTaskId && t.id === overrideTaskId)
+            ? (overrideDeps || [])
+            : (t.dependencies || []);
+        index.set(t.id, deps.map(d => d && d.taskId).filter(Boolean));
+    }
+    if (overrideTaskId && !index.has(overrideTaskId)) {
+        index.set(overrideTaskId, (overrideDeps || []).map(d => d && d.taskId).filter(Boolean));
+    }
+    return index;
+}
+
+/** Cherche un cycle passant par startId. Retourne le chemin ou null.
+ *  Parcours en profondeur iteratif avec carte de parents : aucune
+ *  copie de tableau, donc lineaire. */
+export function findCyclePath(index, startId) {
+    const parent  = new Map();
+    const visited = new Set([startId]);
+    const stack   = [startId];
+
+    while (stack.length) {
+        const current = stack.pop();
+        for (const pred of index.get(current) || []) {
+            if (pred === startId) {
+                // Reconstruire startId -> ... -> current -> startId
+                const chain = [current];
+                let n = parent.get(current);
+                while (n !== undefined) { chain.push(n); n = parent.get(n); }
+                chain.reverse();
+                chain.push(startId);
+                return chain;
+            }
+            if (visited.has(pred) || !index.has(pred)) continue;
+            visited.add(pred);
+            parent.set(pred, current);
+            stack.push(pred);
+        }
+    }
+    return null;
+}
+
+/** La modification creerait-elle un cycle ? Retourne le chemin ou null. */
+export function wouldCreateCycle(tasks, taskId, newDeps) {
+    const ids = (newDeps || []).map(d => d && d.taskId);
+    if (ids.includes(taskId)) return [taskId, taskId];      // auto-dependance
+    return findCyclePath(buildPredecessorIndex(tasks, taskId, newDeps), taskId);
+}
+
+/** Detecte TOUS les cycles deja presents dans les donnees.
+ *  Rien n'empechait leur creation jusqu'ici : un planning existant
+ *  peut donc en contenir.
+ *
+ *  Parcours en profondeur colore (blanc/gris/noir) : une arriere-arete
+ *  vers un noeud gris signale un cycle. Un seul passage, O(V+E). */
+export function findAllCycles(tasks) {
+    const index = buildPredecessorIndex(tasks);
+    const BLANC = 0, GRIS = 1, NOIR = 2;
+    const couleur = new Map();
+    for (const id of index.keys()) couleur.set(id, BLANC);
+
+    const cycles = [];
+
+    for (const racine of index.keys()) {
+        if (couleur.get(racine) !== BLANC) continue;
+
+        couleur.set(racine, GRIS);
+        const chemin = [racine];
+        const pile   = [{ noeud: racine, i: 0 }];
+
+        while (pile.length) {
+            const sommet = pile[pile.length - 1];
+            const preds  = index.get(sommet.noeud) || [];
+
+            if (sommet.i < preds.length) {
+                const pred = preds[sommet.i++];
+                if (!index.has(pred)) continue;              // predecesseur fantome
+                const c = couleur.get(pred);
+                if (c === GRIS) {
+                    const debut = chemin.indexOf(pred);      // rare, cout acceptable
+                    if (debut !== -1) cycles.push([...chemin.slice(debut), pred]);
+                } else if (c === BLANC) {
+                    couleur.set(pred, GRIS);
+                    chemin.push(pred);
+                    pile.push({ noeud: pred, i: 0 });
+                }
+            } else {
+                couleur.set(sommet.noeud, NOIR);
+                pile.pop();
+                chemin.pop();
+            }
+        }
+    }
+    return cycles;
+}
+
 // Stripe Price IDs — remplacez par vos vrais IDs après création sur stripe.com
 export const STRIPE_PRICES = {
     pro_monthly:  'price_PRO_MONTHLY_PLACEHOLDER',
@@ -1107,6 +1224,28 @@ class Store {
 
     updateTask(taskId, updates) {
         if (!this.canEdit()) { console.warn('[store] updateTask: read-only project'); return null; }
+
+        /* Refus des cycles de dependances.
+         *
+         * Avant ce controle, rien n'empechait de creer A -> B -> C -> A.
+         * propagateDependencies() ne faisait que se proteger de la
+         * recursion infinie (« if (visited.has(taskId)) return »), ce qui
+         * laissait le graphe cyclique en place : les dates devenaient
+         * instables, differentes selon la tache modifiee en premier, et
+         * SANS aucun message d'erreur. Pour un outil de planification,
+         * des dates silencieusement fausses sont le pire des defauts.
+         *
+         * On valide donc AVANT ecriture, et on refuse. */
+        if (updates && Object.prototype.hasOwnProperty.call(updates, 'dependencies')) {
+            const cycle = wouldCreateCycle(this._data.tasks, taskId, updates.dependencies);
+            if (cycle) {
+                const noms = cycle.map(id => this.getTask(id)?.name || id).join(' → ');
+                console.warn(`[store] updateTask refuse : cycle de dependances ${noms}`);
+                this._emit('dependency:cycle', { taskId, cycle, path: noms });
+                return null;
+            }
+        }
+
         if (!this._batchingUndo) this._snapshot();
         const idx = this._data.tasks.findIndex(t => t.id === taskId);
         if (idx === -1) return null;
@@ -1241,6 +1380,33 @@ class Store {
             supabaseStore.upsertTask(task)
                 .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
         }
+    }
+
+    /* ---- Cycles de dependances ---- */
+
+    /** Verifie une modification de dependances SANS l'appliquer.
+     *  A appeler depuis l'interface avant d'enregistrer, pour afficher
+     *  un message clair au lieu d'un echec silencieux.
+     *  @returns {{valid: boolean, cycle: string[]|null, message: string}} */
+    validateDependencies(taskId, dependencies) {
+        const cycle = wouldCreateCycle(this._data.tasks, taskId, dependencies);
+        if (!cycle) return { valid: true, cycle: null, message: '' };
+        const noms = cycle.map(id => this.getTask(id)?.name || id).join(' → ');
+        return {
+            valid: false,
+            cycle,
+            message: `Dependance circulaire : ${noms}`,
+        };
+    }
+
+    /** Liste les cycles DEJA presents dans le projet courant.
+     *  Utile car rien n'empechait leur creation auparavant : un
+     *  planning existant peut en contenir. */
+    findDependencyCycles() {
+        return findAllCycles(this._data.tasks).map(cycle => ({
+            ids: cycle,
+            path: cycle.map(id => this.getTask(id)?.name || id).join(' → '),
+        }));
     }
 
     /**
