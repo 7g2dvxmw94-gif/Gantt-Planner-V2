@@ -1325,61 +1325,156 @@ class Store {
      * Apply predecessor constraints to a task.
      * Adjusts task dates based on its predecessors, then cascades to successors.
      */
-    applyPredecessorConstraints(taskId) {
-        const task = this.getTask(taskId);
-        if (!task || !task.dependencies || !task.dependencies.length) return;
+    /* ---- Contraintes de planification ---- */
+
+    /** Dates imposees a `task` par ses predecesseurs.
+     *
+     * Ce calcul est LE point unique de verite. Auparavant la logique
+     * etait dupliquee dans applyPredecessorConstraints() et
+     * propagateDependencies(), et les deux copies ne se comportaient
+     * PAS de la meme facon :
+     *
+     *   - applyPredecessorConstraints ne deplacait la tache que si la
+     *     contrainte la repoussait (« if (ns > task.startDate) »)
+     *   - propagateDependencies affectait les dates sans condition
+     *
+     * Consequence : un ecart cree au glisser-deposer etait conserve,
+     * puis disparaissait des qu'on touchait au predecesseur. L'ecart
+     * n'etait donc ni respecte ni refuse, mais instable — le pire des
+     * trois comportements, et sans aucun avertissement.
+     *
+     * Le decalage (`lag`, en jours, negatif autorise) permet desormais
+     * d'exprimer un delai VOLONTAIRE, qui suit le predecesseur quand
+     * celui-ci glisse. C'est le besoin central d'un planning de permis
+     * de construire (delai d'instruction) ou de chantier (sechage,
+     * livraison).
+     *
+     * @returns {{startDate: string, endDate: string}|null}
+     */
+    _computeConstrainedDates(task) {
+        if (!task || !task.dependencies || !task.dependencies.length) return null;
 
         const duration = daysBetween(task.startDate, task.endDate);
         let latestStart = null;
-        let latestEnd = null;
+        let latestEnd   = null;
 
-        task.dependencies.forEach(dep => {
+        for (const dep of task.dependencies) {
             const pred = this.getTask(dep.taskId);
-            if (!pred) return;
+            if (!pred) continue;
 
+            const lag       = Number(dep.lag) || 0;   // absent ou invalide => 0
             const predStart = new Date(pred.startDate);
-            const predEnd = new Date(pred.endDate);
+            const predEnd   = new Date(pred.endDate);
 
             if (dep.type === 'FS') {
-                const candidate = addDays(predEnd, 1);
-                if (!latestStart || candidate > latestStart) latestStart = candidate;
+                const c = addDays(predEnd, 1 + lag);
+                if (!latestStart || c > latestStart) latestStart = c;
             } else if (dep.type === 'SS') {
-                if (!latestStart || predStart > latestStart) latestStart = predStart;
+                const c = addDays(predStart, lag);
+                if (!latestStart || c > latestStart) latestStart = c;
             } else if (dep.type === 'FF') {
-                if (!latestEnd || predEnd > latestEnd) latestEnd = predEnd;
+                const c = addDays(predEnd, lag);
+                if (!latestEnd || c > latestEnd) latestEnd = c;
             } else if (dep.type === 'SF') {
-                if (!latestEnd || predStart > latestEnd) latestEnd = predStart;
+                const c = addDays(predStart, lag);
+                if (!latestEnd || c > latestEnd) latestEnd = c;
             }
-        });
+        }
 
-        let changed = false;
+        let newStart = null;
+        let newEnd   = null;
 
         if (latestStart) {
-            const ns = formatDateISO(latestStart);
-            if (new Date(ns) > new Date(task.startDate)) {
-                task.startDate = ns;
-                task.endDate = formatDateISO(addDays(latestStart, duration));
-                changed = true;
-            }
+            newStart = latestStart;
+            newEnd   = addDays(latestStart, duration);
         }
-        if (latestEnd) {
-            const ne = formatDateISO(latestEnd);
-            if (new Date(ne) > new Date(task.endDate)) {
-                task.endDate = ne;
-                task.startDate = formatDateISO(addDays(latestEnd, -duration));
-                changed = true;
+        if (latestEnd && (!newEnd || latestEnd > newEnd)) {
+            newEnd   = latestEnd;                       // FF/SF plus tardive prime
+            newStart = addDays(latestEnd, -duration);
+        }
+        if (!newStart) return null;
+
+        return { startDate: formatDateISO(newStart), endDate: formatDateISO(newEnd) };
+    }
+
+    /** Repositionne une tache selon ses predecesseurs.
+     *  Application STRICTE : la tache est placee exactement ou ses
+     *  contraintes l'exigent. Pour introduire un ecart, il faut un
+     *  decalage sur le lien — pas un deplacement a la souris, qui
+     *  serait perdu au premier mouvement du predecesseur. */
+    applyPredecessorConstraints(taskId) {
+        const task = this.getTask(taskId);
+        if (!task) return;
+
+        const cible = this._computeConstrainedDates(task);
+        if (!cible) return;
+        if (cible.startDate === task.startDate && cible.endDate === task.endDate) return;
+
+        const avant = { startDate: task.startDate, endDate: task.endDate };
+
+        task.startDate = cible.startDate;
+        task.endDate   = cible.endDate;
+
+        if (task.parentId) this._recalculatePhase(task.parentId);
+        this.propagateDependencies(taskId);
+        this._save();
+        this._emit('task:update', task);
+
+        /* Informer l'interface : sans ce signal, l'utilisateur voit sa
+           tache sauter sans comprendre pourquoi. */
+        this._emit('task:constrained', {
+            taskId,
+            from: avant,
+            to: { startDate: task.startDate, endDate: task.endDate },
+            predecessors: (task.dependencies || []).map(d => ({
+                name: this.getTask(d.taskId)?.name || d.taskId,
+                type: d.type,
+                lag:  Number(d.lag) || 0,
+            })),
+        });
+
+        supabaseStore.upsertTask(task)
+            .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
+    }
+
+    /** Convertit les ecarts DEJA presents en decalage explicite.
+     *
+     * A lancer UNE FOIS apres la mise en place du mode strict, sinon
+     * les ecarts saisis a la souris dans les plannings existants
+     * seraient ecrases au premier recalcul.
+     *
+     * A executer depuis la console : store.migrateGapsToLag()
+     * @returns {number} nombre de liens dont le decalage a ete renseigne
+     */
+    migrateGapsToLag() {
+        let modifies = 0;
+
+        for (const task of this._data.tasks) {
+            if (!task.dependencies || !task.dependencies.length) continue;
+
+            for (const dep of task.dependencies) {
+                if (dep.lag !== undefined && dep.lag !== null) continue;
+                const pred = this.getTask(dep.taskId);
+                if (!pred) { dep.lag = 0; continue; }
+
+                let attendu = null;
+                if (dep.type === 'FS')      attendu = addDays(new Date(pred.endDate), 1);
+                else if (dep.type === 'SS') attendu = new Date(pred.startDate);
+
+                if (attendu) {
+                    const ecart = daysBetween(formatDateISO(attendu), task.startDate);
+                    dep.lag = ecart;
+                    if (ecart !== 0) modifies++;
+                } else {
+                    dep.lag = 0;
+                }
             }
+            supabaseStore.upsertTask(task).catch(() => {});
         }
 
-        if (changed) {
-            if (task.parentId) this._recalculatePhase(task.parentId);
-            this.propagateDependencies(taskId);
-            this._save();
-            this._emit('task:update', task);
-            // Sync dates ajustées vers Supabase
-            supabaseStore.upsertTask(task)
-                .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
-        }
+        if (modifies) { this._save(); this._emit('change', {}); }
+        console.info(`[store] migrateGapsToLag : ${modifies} decalage(s) renseigne(s)`);
+        return modifies;
     }
 
     /* ---- Cycles de dependances ---- */
@@ -1455,69 +1550,32 @@ class Store {
      * This correctly handles tasks with multiple predecessors (critical path logic).
      */
     propagateDependencies(taskId, visited = new Set()) {
-        if (visited.has(taskId)) return; // prevent cycles
+        /* Le garde `visited` reste une protection contre la recursion
+           infinie, mais il n'est plus la seule ligne de defense : les
+           cycles sont desormais refuses a la creation (updateTask +
+           validateDependencyChanges). On le conserve par prudence, pour
+           des donnees anterieures au correctif. */
+        if (visited.has(taskId)) return;
         visited.add(taskId);
 
         const task = this.getTask(taskId);
         if (!task) return;
 
-        const successors = this.getSuccessors(taskId);
-        successors.forEach(succ => {
-            const succDuration = daysBetween(succ.startDate, succ.endDate);
+        this.getSuccessors(taskId).forEach(succ => {
+            /* MEME calcul que applyPredecessorConstraints : c'est ce qui
+               garantit qu'un ecart ne se comporte pas differemment selon
+               qu'on deplace le predecesseur ou le successeur. */
+            const cible = this._computeConstrainedDates(succ);
+            if (!cible) return;
+            if (cible.startDate === succ.startDate && cible.endDate === succ.endDate) return;
 
-            // Compute the tightest constraint from ALL predecessors of this successor
-            let latestStart = null;
-            let latestEnd = null;
-
-            succ.dependencies.forEach(dep => {
-                const pred = this.getTask(dep.taskId);
-                if (!pred) return;
-                const predStart = new Date(pred.startDate);
-                const predEnd = new Date(pred.endDate);
-
-                if (dep.type === 'FS') {
-                    const candidate = addDays(predEnd, 1);
-                    if (!latestStart || candidate > latestStart) latestStart = candidate;
-                } else if (dep.type === 'SS') {
-                    if (!latestStart || predStart > latestStart) latestStart = predStart;
-                } else if (dep.type === 'FF') {
-                    if (!latestEnd || predEnd > latestEnd) latestEnd = predEnd;
-                } else if (dep.type === 'SF') {
-                    if (!latestEnd || predStart > latestEnd) latestEnd = predStart;
-                }
-            });
-
-            // Resolve latestStart / latestEnd into concrete new dates
-            let newStartDate = null;
-            let newEndDate = null;
-
-            if (latestStart) {
-                newStartDate = latestStart;
-                newEndDate = addDays(latestStart, succDuration);
-            }
-            if (latestEnd) {
-                // FF/SF constraint overrides if it pushes the end further out
-                if (!newEndDate || latestEnd > newEndDate) {
-                    newEndDate = latestEnd;
-                    newStartDate = addDays(latestEnd, -succDuration);
-                }
-            }
-
-            if (!newStartDate) return; // no applicable constraints
-
-            const ns = formatDateISO(newStartDate);
-            const ne = formatDateISO(newEndDate);
-
-            if (ns === succ.startDate && ne === succ.endDate) return; // no change
-
-            succ.startDate = ns;
-            succ.endDate = ne;
+            succ.startDate = cible.startDate;
+            succ.endDate   = cible.endDate;
 
             if (succ.parentId) this._recalculatePhase(succ.parentId);
-            // Sync dates ajustées vers Supabase
             supabaseStore.upsertTask(succ)
                 .catch(e => console.error('[store] sync propagateDependencies:', e));
-            // Recursively propagate to this successor's own successors
+
             this.propagateDependencies(succ.id, visited);
         });
 
