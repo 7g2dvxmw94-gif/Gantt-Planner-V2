@@ -402,3 +402,184 @@ export function debounce(fn, ms = 300) {
 export function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
+
+/* ============================================================
+   Calendrier ouvré — jours ouvrables et jours féries francais
+   ------------------------------------------------------------
+   Le moteur de planification ignorait totalement les week-ends :
+   une tache finissant vendredi voyait son successeur demarrer
+   samedi. Les fonctions isWeekend() et businessDaysBetween()
+   existaient dans utils.js mais n'etaient JAMAIS appelees par
+   store.js — seul gantt-renderer.js s'en servait pour griser les
+   colonnes. D'ou l'incoherence visible : des taches posees sur
+   des colonnes grisees.
+
+   PIEGE DE FUSEAU HORAIRE : new Date('2026-05-01') est interprete
+   en UTC, alors que new Date(2026, 4, 1) l'est en heure locale.
+   Melanger les deux decale les dates d'un jour pour les
+   utilisateurs a l'ouest de Greenwich. Tout ce module construit
+   et lit les dates en LOCAL, exclusivement.
+   ============================================================ */
+
+/** Analyse 'AAAA-MM-JJ' en date LOCALE (jamais UTC). */
+export function parseISO(value) {
+    if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return new Date(NaN);
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+/* NOTE : formatDateISO() existe deja plus haut dans ce fichier et lit
+   bien les composantes LOCALES (getFullYear/getMonth/getDate) : on la
+   reutilise plutot que d'ajouter un doublon. */
+
+/** Dimanche de Paques (algorithme gregorien anonyme, Meeus). */
+export function easterSunday(year) {
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const mois = Math.floor((h + l - 7 * m + 114) / 31);      // 3 = mars, 4 = avril
+    const jour = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, mois - 1, jour);
+}
+
+/** Jours feries francais (metropole) pour une annee, en 'AAAA-MM-JJ'. */
+export function frenchHolidays(year, { alsaceMoselle = false } = {}) {
+    const paques = easterSunday(year);
+    const decale = n => { const d = new Date(paques); d.setDate(d.getDate() + n); return d; };
+
+    const jours = [
+        new Date(year, 0, 1),    // Jour de l'an
+        decale(1),               // Lundi de Paques
+        new Date(year, 4, 1),    // Fete du Travail
+        new Date(year, 4, 8),    // Victoire 1945
+        decale(39),              // Ascension
+        decale(50),              // Lundi de Pentecote
+        new Date(year, 6, 14),   // Fete nationale
+        new Date(year, 7, 15),   // Assomption
+        new Date(year, 10, 1),   // Toussaint
+        new Date(year, 10, 11),  // Armistice
+        new Date(year, 11, 25),  // Noel
+    ];
+    if (alsaceMoselle) {
+        jours.push(decale(-2));            // Vendredi saint
+        jours.push(new Date(year, 11, 26)); // Saint Etienne
+    }
+    return jours.map(formatDateISO).sort();
+}
+
+/** Calendrier par defaut : lundi-vendredi + feries francais. */
+export function defaultCalendar() {
+    return { workingDays: [1, 2, 3, 4, 5], holidays: [], useFrenchHolidays: true };
+}
+
+/* ── Memoisation ──────────────────────────────────────────────
+   Sans cache, isWorkingDay() recalculait les feries de trois annees
+   a CHAQUE appel — dont le dimanche de Paques. Or le moteur de
+   planification appelle cette fonction des milliers de fois par
+   recalcul : 2000 x addWorkingDays(200) prenait 8,5 secondes.
+   Avec memoisation par annee, on tombe sous les 50 ms. */
+const _feriesParAnnee = new Map();          // cle: "annee|flags" -> Set
+const _feriesPerso    = new WeakMap();      // objet calendrier -> Set
+
+function feriesFrancaisAnnee(calendar, annee) {
+    const cle = `${annee}|${calendar.useFrenchHolidays ? 1 : 0}|${calendar.alsaceMoselle ? 1 : 0}`;
+    let set = _feriesParAnnee.get(cle);
+    if (!set) {
+        set = new Set(calendar.useFrenchHolidays ? frenchHolidays(annee, calendar) : []);
+        _feriesParAnnee.set(cle, set);
+    }
+    return set;
+}
+
+function feriesPersonnalises(calendar) {
+    let set = _feriesPerso.get(calendar);
+    if (!set) {
+        set = new Set(calendar.holidays || []);
+        _feriesPerso.set(calendar, set);
+    }
+    return set;
+}
+
+/** Vide les caches. A appeler si le calendrier d'un projet change. */
+export function resetCalendarCache() {
+    _feriesParAnnee.clear();
+}
+
+/** Le jour est-il ouvre ? */
+export function isWorkingDay(date, calendar = defaultCalendar()) {
+    const d = parseISO(date);
+    if (isNaN(d.getTime())) return false;
+
+    const jours = calendar.workingDays && calendar.workingDays.length
+        ? calendar.workingDays : [1, 2, 3, 4, 5];
+    if (!jours.includes(d.getDay())) return false;
+
+    const iso = formatDateISO(d);
+    if (feriesPersonnalises(calendar).has(iso)) return false;
+    return !feriesFrancaisAnnee(calendar, d.getFullYear()).has(iso);
+}
+
+/** Premier jour ouvre a partir de `date` (incluse). */
+export function nextWorkingDay(date, calendar = defaultCalendar()) {
+    const d = parseISO(date);
+    let garde = 0;
+    while (!isWorkingDay(d, calendar)) {
+        d.setDate(d.getDate() + 1);
+        if (++garde > 400) return d;   // calendrier sans aucun jour ouvre
+    }
+    return d;
+}
+
+/** Dernier jour ouvre jusqu'a `date` (incluse), en reculant. */
+export function previousWorkingDay(date, calendar = defaultCalendar()) {
+    const d = parseISO(date);
+    let garde = 0;
+    while (!isWorkingDay(d, calendar)) {
+        d.setDate(d.getDate() - 1);
+        if (++garde > 400) return d;
+    }
+    return d;
+}
+
+/** Ajoute `n` jours OUVRES a une date. n peut etre negatif.
+ *  n = 0 renvoie le jour ouvre courant (avance si necessaire). */
+export function addWorkingDays(date, n, calendar = defaultCalendar()) {
+    const pas = n < 0 ? -1 : 1;
+    let restant = Math.abs(Math.trunc(n));
+    const d = pas > 0 ? nextWorkingDay(date, calendar) : previousWorkingDay(date, calendar);
+
+    let garde = 0;
+    while (restant > 0) {
+        d.setDate(d.getDate() + pas);
+        if (isWorkingDay(d, calendar)) restant--;
+        if (++garde > 100000) break;
+    }
+    return d;
+}
+
+/** Nombre de jours OUVRES entre deux dates, bornes incluses.
+ *  Une tache d'un seul jour ouvre renvoie 1. */
+export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
+    const s = parseISO(start);
+    const e = parseISO(end);
+    if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return 0;
+    let n = 0;
+    const cur = new Date(s);
+    let garde = 0;
+    while (cur <= e) {
+        if (isWorkingDay(cur, calendar)) n++;
+        cur.setDate(cur.getDate() + 1);
+        if (++garde > 100000) break;
+    }
+    return n;
+}
