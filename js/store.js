@@ -1185,6 +1185,15 @@ class Store {
     addTask(task) {
         if (!this.canEdit()) { console.warn('[store] addTask: read-only project'); return null; }
         this._snapshot();
+
+        /* Recalage sur jours ouvres a la creation.
+           updateTask() le fait pour les modifications ; sans l'equivalent
+           ici, une tache pouvait naitre un samedi. */
+        if (task && !task.isPhase && task.startDate && task.endDate) {
+            const cale = this._snapToWorkingDays(task.startDate, task.endDate);
+            task = { ...task, startDate: cale.startDate, endDate: cale.endDate };
+        }
+
         const tasks = this.getTasks();
         const newTask = {
             id: generateId(),
@@ -1383,6 +1392,12 @@ class Store {
     /** Calendrier ouvre du projet, avec repli sur lundi-vendredi. */
     _getCalendar() {
         return this._data.settings.calendar || defaultCalendar();
+    }
+
+    /** Version publique : le modal en a besoin pour convertir une duree
+     *  saisie en jours ouvres vers une date de fin. */
+    getCalendar() {
+        return this._getCalendar();
     }
 
     /** Recale une paire de dates sur des jours ouvres, duree ouvree
