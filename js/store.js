@@ -3,7 +3,9 @@
    Reactive store with localStorage persistence
    ======================================== */
 
-import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO } from './utils.js';
+import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO,
+         parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
+         workingDaysBetween, defaultCalendar } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -660,6 +662,16 @@ class Store {
                 zoomLevel: 'week',
                 theme: null,
                 showBaseline: true,
+                /* Calendrier ouvre. Les durees se comptent en jours
+                   OUVRES et aucune tache ne tombe sur un jour non
+                   ouvre. workingDays : 0 = dimanche ... 6 = samedi.
+                   Un chantier travaillant le samedi met [1,2,3,4,5,6]. */
+                calendar: {
+                    workingDays: [1, 2, 3, 4, 5],
+                    holidays: [],
+                    useFrenchHolidays: true,
+                    alsaceMoselle: false,
+                },
             },
         };
     }
@@ -1250,6 +1262,23 @@ class Store {
         const idx = this._data.tasks.findIndex(t => t.id === taskId);
         if (idx === -1) return null;
 
+        /* Recalage sur jours ouvres a la saisie manuelle.
+         *
+         * Sans cela, l'utilisateur pourrait poser une tache un samedi en
+         * tapant la date a la main, alors que le moteur ne l'y placerait
+         * jamais. Le planning afficherait des barres sur des colonnes
+         * grisees : incoherent, et faussant le calcul de couts qui
+         * compte en jours ouvres. */
+        const modifieDates = updates
+            && (updates.startDate !== undefined || updates.endDate !== undefined)
+            && !this._data.tasks[idx].isPhase;
+        if (modifieDates) {
+            const debut = updates.startDate ?? this._data.tasks[idx].startDate;
+            const fin   = updates.endDate   ?? this._data.tasks[idx].endDate;
+            const cale  = this._snapToWorkingDays(debut, fin);
+            updates = { ...updates, startDate: cale.startDate, endDate: cale.endDate };
+        }
+
         this._data.tasks[idx] = {
             ...this._data.tasks[idx],
             ...updates,
@@ -1351,32 +1380,72 @@ class Store {
      *
      * @returns {{startDate: string, endDate: string}|null}
      */
+    /** Calendrier ouvre du projet, avec repli sur lundi-vendredi. */
+    _getCalendar() {
+        return this._data.settings.calendar || defaultCalendar();
+    }
+
+    /** Recale une paire de dates sur des jours ouvres, duree ouvree
+     *  preservee. Utilise a la saisie manuelle comme au recalcul. */
+    _snapToWorkingDays(startDate, endDate) {
+        const cal  = this._getCalendar();
+        const span = Math.max(1, workingDaysBetween(startDate, endDate, cal) || 1);
+        const s    = nextWorkingDay(startDate, cal);
+        const e    = addWorkingDays(s, span - 1, cal);
+        return { startDate: formatDateISO(s), endDate: formatDateISO(e) };
+    }
+
+    /** Dates imposees a `task` par ses predecesseurs, en JOURS OUVRES.
+     *
+     * Ce calcul est LE point unique de verite : applyPredecessorConstraints()
+     * et propagateDependencies() l'utilisent tous deux. Auparavant la
+     * logique etait dupliquee et les deux copies se comportaient
+     * differemment — un ecart cree a la souris survivait, puis
+     * disparaissait des qu'on touchait au predecesseur.
+     *
+     * JOURS OUVRES : le moteur ignorait totalement les week-ends. Une
+     * tache finissant vendredi voyait son successeur demarrer samedi,
+     * alors meme que gantt-renderer.js grisait la colonne. Les feries
+     * francais sont pris en compte, Paques comprise.
+     *
+     * DECALAGE (lag) : compte en jours CALENDAIRES, car le besoin reel
+     * est un delai d'instruction de permis ou un temps de sechage, qui
+     * courent week-ends compris. Le resultat est ensuite recale sur le
+     * jour ouvre suivant.
+     *
+     * @returns {{startDate: string, endDate: string}|null}
+     */
     _computeConstrainedDates(task) {
         if (!task || !task.dependencies || !task.dependencies.length) return null;
 
-        const duration = daysBetween(task.startDate, task.endDate);
+        const cal  = this._getCalendar();
+        const span = Math.max(1, workingDaysBetween(task.startDate, task.endDate, cal) || 1);
+
+        const decalerCalendaire = (date, n) => {
+            const d = parseISO(date);
+            d.setDate(d.getDate() + n);
+            return d;
+        };
+
         let latestStart = null;
         let latestEnd   = null;
 
         for (const dep of task.dependencies) {
             const pred = this.getTask(dep.taskId);
             if (!pred) continue;
-
-            const lag       = Number(dep.lag) || 0;   // absent ou invalide => 0
-            const predStart = new Date(pred.startDate);
-            const predEnd   = new Date(pred.endDate);
+            const lag = Number(dep.lag) || 0;   // absent ou invalide => 0
 
             if (dep.type === 'FS') {
-                const c = addDays(predEnd, 1 + lag);
+                const c = nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), cal);
                 if (!latestStart || c > latestStart) latestStart = c;
             } else if (dep.type === 'SS') {
-                const c = addDays(predStart, lag);
+                const c = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
                 if (!latestStart || c > latestStart) latestStart = c;
             } else if (dep.type === 'FF') {
-                const c = addDays(predEnd, lag);
+                const c = nextWorkingDay(decalerCalendaire(pred.endDate, lag), cal);
                 if (!latestEnd || c > latestEnd) latestEnd = c;
             } else if (dep.type === 'SF') {
-                const c = addDays(predStart, lag);
+                const c = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
                 if (!latestEnd || c > latestEnd) latestEnd = c;
             }
         }
@@ -1386,11 +1455,11 @@ class Store {
 
         if (latestStart) {
             newStart = latestStart;
-            newEnd   = addDays(latestStart, duration);
+            newEnd   = addWorkingDays(latestStart, span - 1, cal);
         }
         if (latestEnd && (!newEnd || latestEnd > newEnd)) {
-            newEnd   = latestEnd;                       // FF/SF plus tardive prime
-            newStart = addDays(latestEnd, -duration);
+            newEnd   = latestEnd;                        // FF/SF plus tardive prime
+            newStart = addWorkingDays(latestEnd, -(span - 1), cal);
         }
         if (!newStart) return null;
 
@@ -1435,6 +1504,76 @@ class Store {
 
         supabaseStore.upsertTask(task)
             .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
+    }
+
+    /** Aperçu de l'impact du passage en jours ouvres, SANS rien modifier.
+     *
+     * A lancer avant migrateToWorkingDays() : les durees passant de
+     * jours calendaires a jours ouvres, une tache de 5 jours devient
+     * 5 jours OUVRES, donc 7 jours calendaires. Tous les plannings
+     * s'allongent. Mieux vaut le voir avant.
+     *
+     * A executer depuis la console : store.previewWorkingDaysImpact()
+     */
+    previewWorkingDaysImpact() {
+        const cal = this._getCalendar();
+        const impacts = [];
+
+        for (const task of this._data.tasks) {
+            if (task.isPhase) continue;
+            const cible = this._snapToWorkingDays(task.startDate, task.endDate);
+            const bouge = cible.startDate !== task.startDate || cible.endDate !== task.endDate;
+            if (!bouge) continue;
+            impacts.push({
+                nom:      task.name,
+                avant:    `${task.startDate} → ${task.endDate}`,
+                apres:    `${cible.startDate} → ${cible.endDate}`,
+                surNonOuvre: !isWorkingDay(task.startDate, cal) || !isWorkingDay(task.endDate, cal),
+            });
+        }
+
+        console.info(`[store] ${impacts.length} tache(s) sur ${this._data.tasks.length} seraient deplacees`);
+        if (impacts.length) console.table(impacts);
+        return impacts;
+    }
+
+    /** Recale toutes les taches du projet sur des jours ouvres, puis
+     *  repropage les contraintes. Operation UNIQUE, a lancer apres
+     *  avoir verifie previewWorkingDaysImpact().
+     *
+     *  A executer depuis la console : store.migrateToWorkingDays()
+     */
+    migrateToWorkingDays() {
+        let deplacees = 0;
+
+        // 1. Recaler chaque tache non-phase sur des jours ouvres
+        for (const task of this._data.tasks) {
+            if (task.isPhase) continue;
+            const cible = this._snapToWorkingDays(task.startDate, task.endDate);
+            if (cible.startDate === task.startDate && cible.endDate === task.endDate) continue;
+            task.startDate = cible.startDate;
+            task.endDate   = cible.endDate;
+            deplacees++;
+            supabaseStore.upsertTask(task).catch(() => {});
+        }
+
+        // 2. Repropager les contraintes depuis les taches sans predecesseur
+        for (const task of this._data.tasks) {
+            if (task.isPhase) continue;
+            if (!task.dependencies || !task.dependencies.length) {
+                this.propagateDependencies(task.id);
+            }
+        }
+
+        // 3. Recalculer les phases
+        for (const phase of this._data.tasks.filter(t => t.isPhase)) {
+            this._recalculatePhase(phase.id);
+        }
+
+        this._save();
+        this._emit('change', {});
+        console.info(`[store] migrateToWorkingDays : ${deplacees} tache(s) recalee(s)`);
+        return deplacees;
     }
 
     /** Convertit les ecarts DEJA presents en decalage explicite.
