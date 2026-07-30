@@ -292,6 +292,10 @@ class TaskModal {
         const predGroup = createElement('div', { className: 'form-group' });
         predGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.predecessors')));
         this._predList = createElement('div', { className: 'dep-list' });
+        /* Des que l'utilisateur corrige sa selection, le message
+           d'erreur disparait : il ne doit pas rester affiche alors
+           qu'il ne correspond plus a l'etat du formulaire. */
+        this._predList.addEventListener('change', () => this._clearDependencyError());
         predGroup.appendChild(this._predList);
         depRow.appendChild(predGroup);
 
@@ -834,6 +838,9 @@ class TaskModal {
     }
 
     _populatePredecessors(taskId, currentDeps) {
+        /* Toute reconstruction de la liste efface un message precedent :
+           il ne doit pas survivre a une reouverture du modal. */
+        this._clearDependencyError();
         this._predList.innerHTML = '';
         const deps = currentDeps || [];
         const tasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
@@ -875,25 +882,42 @@ class TaskModal {
     }
 
     /** Affiche une erreur de dependance sous la liste des predecesseurs.
-     *  Reprend le motif de validation du champ « nom » : surlignage
-     *  temporaire, message explicite, retrait automatique. */
+     *
+     * CHOIX DE CONCEPTION : le message NE disparait PAS tout seul.
+     * Une premiere version le retirait au bout de 6 secondes, comme le
+     * surlignage du champ « nom ». Mauvaise idee : une dependance
+     * circulaire demande a l'utilisateur de comprendre puis de corriger
+     * un enchainement de taches. S'il regarde ailleurs, ou si le message
+     * est hors de la zone visible, il le manque — et un minuteur en
+     * attente peut retirer le surlignage d'une tentative suivante.
+     *
+     * Le message reste donc affiche jusqu'a ce que l'utilisateur modifie
+     * sa selection de predecesseurs, ou ferme le modal. */
     _showDependencyError(message) {
-        const existant = this._predList.parentNode.querySelector('.dep-error');
-        if (existant) existant.remove();
+        this._clearDependencyError();
 
         const alerte = createElement('div', {
             className: 'dep-error',
-            style: 'color:#dc2626;font-size:.8rem;margin-top:.4rem;line-height:1.4',
+            style: 'color:#dc2626;font-size:.8rem;margin-top:.4rem;line-height:1.4;'
+                 + 'padding:.5rem .6rem;background:rgba(220,38,38,.08);'
+                 + 'border-radius:6px;border:1px solid rgba(220,38,38,.25)',
         }, message);
 
         this._predList.parentNode.appendChild(alerte);
         this._predList.classList.add('input-error');
-        this._predList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        alerte.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        setTimeout(() => {
-            this._predList.classList.remove('input-error');
-            alerte.remove();
-        }, 6000);
+        /* Trace systematique : si l'affichage echoue pour une raison
+           quelconque, la console garde l'information. */
+        console.warn('[task-modal] ' + message);
+    }
+
+    /** Retire le message et le surlignage. */
+    _clearDependencyError() {
+        const parent = this._predList && this._predList.parentNode;
+        if (!parent) return;
+        parent.querySelectorAll('.dep-error').forEach(el => el.remove());
+        this._predList.classList.remove('input-error');
     }
 
     _getSelectedPredecessors() {
@@ -1144,8 +1168,7 @@ class TaskModal {
          *
          * store.updateTask() refuse desormais les cycles et renvoie null.
          * Sans ce controle ici, l'utilisateur cliquerait « Enregistrer »
-         * et rien ne se passerait, sans explication. On valide donc en
-         * amont pour afficher le chemin fautif.
+         * et rien ne se passerait, sans explication.
          *
          * En mode creation, aucun cycle n'est possible : une tache neuve
          * n'a pas encore de successeur. */
