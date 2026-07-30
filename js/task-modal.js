@@ -5,7 +5,9 @@
 
 import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
 import { supabaseStore } from './supabase-store.js';
-import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays, TASK_COLORS, getCurrencySymbol } from './utils.js';
+import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
+         parseISO, addWorkingDays, workingDaysBetween,
+         TASK_COLORS, getCurrencySymbol } from './utils.js';
 
 class TaskModal {
     constructor() {
@@ -1051,19 +1053,33 @@ class TaskModal {
 
     _updateEndFromDuration() {
         const start = this._taskStart.value;
-        const dur = parseInt(this._durationInput.value, 10);
-        if (start && dur > 0) {
-            this._taskEnd.value = formatDateISO(addDays(new Date(start), dur - 1));
-        }
+        const dur   = parseInt(this._durationInput.value, 10);
+        if (!start || !(dur > 0)) return;
+
+        /* La duree se compte en jours OUVRES.
+         *
+         * L'ancienne version faisait addDays(start, dur - 1), soit des
+         * jours CALENDAIRES : saisir 5 depuis un mercredi donnait une
+         * fin le dimanche. Le moteur, lui, planifie en jours ouvres —
+         * les deux se contredisaient.
+         *
+         * Second correctif : new Date('2026-05-04') est interprete en
+         * UTC alors que formatDateISO lit les composantes LOCALES. Pour
+         * un utilisateur a l'ouest de Greenwich, la date reculait d'un
+         * jour. parseISO() construit en local. */
+        const cal = store.getCalendar();
+        this._taskEnd.value = formatDateISO(addWorkingDays(parseISO(start), dur - 1, cal));
     }
 
     _updateDurationFromDates() {
         const start = this._taskStart.value;
-        const end = this._taskEnd.value;
-        if (start && end) {
-            const days = Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
-            this._durationInput.value = Math.max(1, days);
-        }
+        const end   = this._taskEnd.value;
+        if (!start || !end) return;
+
+        /* Duree affichee en jours OUVRES, coherente avec le moteur et
+           avec le calcul de couts (countWorkingDays). */
+        const cal = store.getCalendar();
+        this._durationInput.value = Math.max(1, workingDaysBetween(start, end, cal));
     }
 
     /* ---- Permit Deadlines ---- */
