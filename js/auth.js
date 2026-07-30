@@ -95,6 +95,11 @@ export const auth = {
     async signOut() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        /* Oublier le dernier compte utilise : la prochaine connexion
+           declenchera systematiquement purgeForeignLocalData() dans
+           store.js, ce qui evite qu'un compte herite des donnees
+           locales du precedent (cause des erreurs 403 sur "tasks"). */
+        localStorage.removeItem('gantt_last_user_id');
         window.location.href = 'auth.html';
     },
 
