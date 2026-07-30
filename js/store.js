@@ -580,6 +580,7 @@ class Store {
         this._listeners = new Map();
         this._data = this._load();
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         // Undo/Redo history
         this._undoStack = [];
         this._redoStack = [];
@@ -596,6 +597,11 @@ class Store {
         this._taskIndex       = null;
         this._taskIndexSource = null;
         this._taskIndexSize   = 0;
+
+        // Index des ressources (voir _ensureResourceIndex)
+        this._resourceIndex       = null;
+        this._resourceIndexSource = null;
+        this._resourceIndexSize   = 0;
     }
 
     /* ---- Persistence ---- */
@@ -696,7 +702,9 @@ class Store {
                 this._data.projects  = [];
                 this._data.tasks     = [];
                 this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
                 this._data.resources = [];
+                this._invalidateResourceIndex();
                 this._data.baselines = [];
                 this._data.settings.activeProjectId = null;
             }
@@ -737,6 +745,7 @@ class Store {
                     this._data.projects = this._data.projects.filter(p => !orphelins.includes(p.id));
                     this._data.tasks    = this._data.tasks.filter(t => !orphelins.includes(t.projectId));
                     this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
                 }
 
                 projects = await supabaseStore.getProjects();
@@ -763,6 +772,7 @@ class Store {
             ]);
             // Toutes les ressources disponibles globalement
             this._data.resources = allResources;
+            this._invalidateResourceIndex();
             // Mettre à jour resourceIds pour chaque projet
             this._data.projects.forEach(p => {
                 p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
@@ -772,6 +782,7 @@ class Store {
             const projectIds = new Set(projects.map(p => p.id));
             this._data.tasks     = this._data.tasks.filter(t => projectIds.has(t.projectId));
             this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
             this._data.baselines = this._data.baselines.filter(b => projectIds.has(b.projectId));
 
             // 4. Load customization from Supabase
@@ -820,7 +831,9 @@ class Store {
                                                 .concat(supabaseTasks)
                                                 .concat(unsynced);
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
+        this._invalidateResourceIndex();
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
         // Re-syncher les tâches locales non encore dans Supabase
@@ -921,6 +934,7 @@ class Store {
         this._redoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._undoStack.pop());
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         this._save();
         this._emit('undo', null);
         return true;
@@ -931,6 +945,7 @@ class Store {
         this._undoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._redoStack.pop());
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         this._save();
         this._emit('redo', null);
         return true;
@@ -1011,6 +1026,7 @@ class Store {
         this._data.projects = this._data.projects.filter(p => p.id !== projectId);
         this._data.tasks = this._data.tasks.filter(t => t.projectId !== projectId);
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         if (this._data.settings.activeProjectId === projectId) {
             this._data.settings.activeProjectId = this._data.projects[0]?.id || null;
         }
@@ -1056,6 +1072,7 @@ class Store {
             };
             this._data.tasks.push(newTask);
             this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         });
 
         this._save();
@@ -1213,6 +1230,7 @@ class Store {
         const direct = this._data.tasks.find(t => t.id === taskId);
         if (direct) {
             this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
             return direct;
         }
         return null;
@@ -1286,6 +1304,7 @@ class Store {
 
         this._data.tasks.push(newTask);
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         this._save();
         this._emit('task:add', newTask);
         // Log history
@@ -1415,6 +1434,7 @@ class Store {
         const parentId = task.parentId;
         this._data.tasks = this._data.tasks.filter(t => t.id !== taskId);
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
 
         if (parentId) {
             this._recalculatePhase(parentId);
@@ -1849,8 +1869,49 @@ class Store {
         return [...this._data.resources];
     }
 
+    /* ---- Index des ressources -------------------------------------
+       Meme principe que l'index des taches. Le gain n'est pas dans
+       getResource() lui-meme (4 appels, hors boucle) mais dans le calcul
+       de couts : pour CHAQUE tache, il faisait
+           assigneeIds.map(id => resources.find(r => r.id === id))
+       soit un find lineaire dans un map, dans une boucle sur les taches.
+       Avec 500 taches, 3 assignes et 50 ressources : 75 000 comparaisons
+       a chaque recalcul, et le recalcul suit chaque rendu.
+       ------------------------------------------------------------- */
+
+    _invalidateResourceIndex() {
+        this._resourceIndex = null;
+    }
+
+    _ensureResourceIndex() {
+        const arr = this._data.resources;
+        if (this._resourceIndex
+            && this._resourceIndexSource === arr
+            && this._resourceIndexSize === arr.length) {
+            return this._resourceIndex;
+        }
+        const m = new Map();
+        for (const r of arr) m.set(r.id, r);
+        this._resourceIndex       = m;
+        this._resourceIndexSource = arr;
+        this._resourceIndexSize   = arr.length;
+        return m;
+    }
+
     getResource(resourceId) {
-        return this._data.resources.find(r => r.id === resourceId) || null;
+        if (!resourceId) return null;
+        const trouve = this._ensureResourceIndex().get(resourceId);
+        if (trouve !== undefined) return trouve;
+
+        /* Repli defensif, comme pour getTask : un balayage lineaire ne
+           peut pas renvoyer un MAUVAIS resultat, contrairement a un
+           index perime. */
+        const direct = this._data.resources.find(r => r.id === resourceId);
+        if (direct) {
+            this._invalidateResourceIndex();
+            return direct;
+        }
+        return null;
     }
 
     addResource(resource) {
@@ -1862,6 +1923,7 @@ class Store {
             ...resource,
         };
         this._data.resources.push(newResource);
+        this._invalidateResourceIndex();
         this._save();
         this._emit('resource:add', newResource);
         // Sync Supabase + history
@@ -1878,6 +1940,14 @@ class Store {
         const idx = this._data.resources.findIndex(r => r.id === resourceId);
         if (idx === -1) return null;
         this._data.resources[idx] = { ...this._data.resources[idx], ...updates };
+        /* Remplacement d'objet : ni la reference du tableau ni sa longueur
+           ne changent, les gardes de _ensureResourceIndex() ne detectent
+           donc rien. C'est exactement l'oubli qui, sur les taches, a rendu
+           les dependances invisibles et les barres figees dans le Gantt.
+           On met l'entree a jour chirurgicalement. */
+        if (this._resourceIndex) {
+            this._resourceIndex.set(resourceId, this._data.resources[idx]);
+        }
         this._save();
         this._emit('resource:update', this._data.resources[idx]);
         // Sync Supabase en arrière-plan
@@ -1891,6 +1961,7 @@ class Store {
         this._snapshot();
         const resource = this._data.resources.find(r => r.id === resourceId);
         this._data.resources = this._data.resources.filter(r => r.id !== resourceId);
+        this._invalidateResourceIndex();
         // Unassign from tasks
         this._data.tasks.forEach(t => {
             if (t.assignee === resourceId) t.assignee = null;
@@ -1914,8 +1985,11 @@ class Store {
     getProjectResources(projectId) {
         const project = this._data.projects.find(p => p.id === projectId);
         if (!project) return [];
-        const ids = new Set(project.resourceIds || []);
-        return this._data.resources.filter(r => ids.has(r.id));
+        /* On parcourt les identifiants du projet (souvent quelques
+           unites) au lieu de filtrer TOUTES les ressources. */
+        return (project.resourceIds || [])
+            .map(id => this.getResource(id))
+            .filter(Boolean);
     }
 
     addResourceToProject(projectId, resourceId) {
@@ -2021,8 +2095,10 @@ class Store {
 
         for (const task of tasks) {
             const assigneeIds = task.assignees || (task.assignee ? [task.assignee] : []);
+            /* Index au lieu d'un find lineaire : on passait de
+               O(taches x assignes x ressources) a O(taches x assignes). */
             const assignedResources = assigneeIds
-                .map(id => resources.find(r => r.id === id))
+                .map(id => this.getResource(id))
                 .filter(Boolean);
 
             // Calendar days used for display; working days computed per resource for billing
@@ -2245,6 +2321,7 @@ class Store {
                     };
                     this._data.tasks.push(newTask);
                     this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
                 });
 
                 // Import resources if present
@@ -2257,6 +2334,7 @@ class Store {
                             const newId = generateId();
                             idMap[r.id] = newId;
                             this._data.resources.push({ ...r, id: newId });
+                            this._invalidateResourceIndex();
                         } else {
                             idMap[r.id] = exists.id;
                         }
@@ -2387,6 +2465,7 @@ class Store {
                             id: idMap[r.id],
                             projectId: idMap[r.projectId] || r.projectId,
                         });
+                        this._invalidateResourceIndex();
                     }
                 });
             }
@@ -2414,6 +2493,7 @@ class Store {
                 };
                 this._data.tasks.push(newTask);
                 this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
             });
 
             if (lastProjectId) {
@@ -2587,10 +2667,12 @@ class Store {
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
             resources.forEach(r => {
                 const exists = this._data.resources.find(e => e.name === r.name);
                 if (!exists) {
                     this._data.resources.push(r);
+                    this._invalidateResourceIndex();
                 } else {
                     // Remap assignees to existing resource
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
@@ -2734,12 +2816,14 @@ class Store {
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
 
             // Add resources
             Object.entries(resourceMap).forEach(([name, id]) => {
                 const exists = this._data.resources.find(e => e.name === name);
                 if (!exists) {
                     this._data.resources.push({ id, name, role: '', color: this._randomColor() });
+                    this._invalidateResourceIndex();
                 } else {
                     // Remap
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
@@ -2928,6 +3012,7 @@ class Store {
     reset() {
         this._data = this._createDefaults();
         this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
         this._save();
         this._emit('reset', null);
     }
