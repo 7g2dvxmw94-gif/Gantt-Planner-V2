@@ -71,8 +71,45 @@ export const collaboration = {
         if (error) throw error;
 
         if (data.type === 'invited') {
-            const inviteLink = `${window.location.origin}/invite.html?token=${data.token}`;
-            return { type: 'invited', email, link: inviteLink, token: data.token };
+            /* CORRECTIF : window.location.origin ne contient PAS le chemin.
+               Sur GitHub Pages l'app vit dans un sous-repertoire, le lien
+               genere pointait donc vers
+                 https://<compte>.github.io/invite.html?token=...
+               au lieu de
+                 https://<compte>.github.io/Gantt-Planner-V2/invite.html?token=...
+               et menait a une page 404. new URL() resout relativement a la
+               page courante, ce qui fonctionne aussi bien a la racine d'un
+               domaine dedie que dans un sous-chemin. */
+            const inviteLink = new URL(`invite.html?token=${data.token}`,
+                                       window.location.href).href;
+            /* Envoi de l'email via l'Edge Function send-invitation.
+               Volontairement NON bloquant : si l'envoi echoue (quota Resend
+               atteint, domaine non verifie, panne du service), l'invitation
+               existe deja en base et le lien reste affiche pour un envoi
+               manuel. Faire echouer l'invitation entiere pour un probleme
+               d'email serait une regression fonctionnelle. */
+            let emailSent = false;
+            let emailError = null;
+            try {
+                const { data: sendData, error: sendError } =
+                    await supabase.functions.invoke('send-invitation', {
+                        body: { token: data.token },
+                    });
+                if (sendError) throw sendError;
+                emailSent = Boolean(sendData?.sent);
+            } catch (err) {
+                emailError = err?.message || "Envoi de l'email impossible";
+                console.warn('[collaboration] email non envoye:', emailError);
+            }
+
+            return {
+                type: 'invited',
+                email,
+                link: inviteLink,
+                token: data.token,
+                emailSent,
+                emailError,
+            };
         }
         return { type: data.type, email };
     },
