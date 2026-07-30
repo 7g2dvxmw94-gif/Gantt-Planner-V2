@@ -1,3 +1,4 @@
+import { escapeHtml } from './utils.js';
 /* ========================================
    COLLABORATION UI
    Share modal : gestion des membres et invitations
@@ -601,6 +602,8 @@ function _showMsg(el, type, text) {
     el.innerHTML = text;
 }
 
-function _escape(str) {
-    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+/* La fonction _escape locale a ete remplacee par escapeHtml de
+   utils.js : une seule implementation, testee, utilisee partout.
+   Dupliquer un echappement, c'est risquer que l'une des copies soit
+   oubliee lors d'une correction. */
+const _escape = escapeHtml;
