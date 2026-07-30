@@ -9,7 +9,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml} from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -3564,7 +3564,15 @@ thead{display:table-header-group}
             const hint = code === '42P01'
                 ? 'La table project_history n\'existe pas — exécutez la migration SQL 012 dans Supabase.'
                 : 'Vérifiez la console pour plus de détails.';
-            body.innerHTML = `<div style="padding:1rem 1.25rem;color:var(--color-error);font-size:0.82rem;"><strong>Erreur :</strong> ${msg}<br><br><em>${hint}</em></div>`;
+            /* CORRECTIF INJECTION HTML : msg provient de result.error.message,
+               c'est-a-dire d'une erreur Postgres. Or ces messages citent
+               souvent la donnee fautive — donc du contenu saisi par
+               l'utilisateur. Injecte tel quel dans innerHTML, un nom de
+               tache contenant du balisage etait interprete par le
+               navigateur. hint est une constante, mais on l'echappe aussi
+               par principe : le jour ou elle deviendra dynamique, la
+               protection sera deja en place. */
+            body.innerHTML = `<div style="padding:1rem 1.25rem;color:var(--color-error);font-size:0.82rem;"><strong>Erreur :</strong> ${escapeHtml(msg)}<br><br><em>${escapeHtml(hint)}</em></div>`;
             return;
         }
 
