@@ -1399,6 +1399,36 @@ class Store {
         };
     }
 
+    /** Valide un LOT de modifications de dependances sans l'appliquer.
+     *
+     * INDISPENSABLE : le modal d'edition ecrit PLUSIEURS taches d'affilee
+     * — les predecesseurs de la tache editee, puis les dependances de
+     * chaque successeur (liens inverses). Valider chaque ecriture
+     * isolement ne suffit pas : un cycle peut naitre de la COMBINAISON.
+     *
+     * Exemple concret : on edite B, on ajoute A comme successeur.
+     * Vu depuis B seule, aucun cycle. Mais l'ecriture sur A cree
+     * A -> B -> A.
+     *
+     * @param {{taskId: string, dependencies: Array}[]} changes
+     * @returns {{valid: boolean, cycles: string[][], message: string}}
+     */
+    validateDependencyChanges(changes) {
+        const map = new Map((changes || []).map(c => [c.taskId, c.dependencies || []]));
+        const simule = this._data.tasks.map(t =>
+            map.has(t.id) ? { ...t, dependencies: map.get(t.id) } : t
+        );
+        const cycles = findAllCycles(simule);
+        if (!cycles.length) return { valid: true, cycles: [], message: '' };
+
+        const nom = id => this.getTask(id)?.name || id;
+        return {
+            valid: false,
+            cycles,
+            message: 'Dépendance circulaire : ' + cycles[0].map(nom).join(' → '),
+        };
+    }
+
     /** Liste les cycles DEJA presents dans le projet courant.
      *  Utile car rien n'empechait leur creation auparavant : un
      *  planning existant peut en contenir. */
