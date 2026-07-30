@@ -303,27 +303,49 @@
 
             show('loadingState');
 
-            // Fetch the invitation details (read-only, no auth needed)
-            const { data: inv, error } = await supabase
-                .from('invitations')
-                .select('*, projects(name)')
-                .eq('token', token)
-                .is('accepted_at', null)
-                .single();
+            /* Lecture via la RPC get_invitation_by_token (migration 021).
+               La table invitations n'est plus lisible directement : la
+               politique USING(true) exposait TOUS les tokens et emails de
+               TOUS les clients. La RPC ne renvoie que l'utile, sans le
+               project_id ni le token.
+
+               Effet de bord corrige : l'ancien select('*, projects(name)')
+               renvoyait toujours null pour le nom du projet, car la RLS sur
+               projects exige d'etre deja membre. L'ecran affichait donc le
+               libelle de repli « Projet ». La RPC, en SECURITY DEFINER,
+               renvoie le vrai nom. */
+            const { data: inv, error } = await supabase.rpc(
+                'get_invitation_by_token',
+                { p_token: token }
+            );
 
             if (error || !inv) {
                 show('errorState');
                 return;
             }
 
-            if (new Date(inv.expires_at) < new Date()) {
+            if (inv.error) {
                 show('errorState');
-                document.getElementById('errorMessage').textContent = 'Cette invitation a expiré.';
+                const messages = {
+                    expired:          'Cette invitation a expiré.',
+                    already_accepted: 'Cette invitation a déjà été utilisée.',
+                    not_found:        'Cette invitation est introuvable.',
+                    invalid:          'Lien d\'invitation invalide.',
+                };
+                document.getElementById('errorMessage').textContent =
+                    messages[inv.error] || 'Cette invitation n\'est plus valide.';
                 return;
             }
 
             // Show invitation details
-            document.getElementById('projectName').textContent = inv.projects?.name || 'Projet';
+            document.getElementById('projectName').textContent = inv.project_name;
+
+            /* L'invitation est desormais nominative : accept_invitation refuse
+               si l'utilisateur connecte n'a pas cette adresse. On l'affiche
+               donc en clair pour eviter toute confusion. */
+            document.getElementById('projectName').insertAdjacentHTML('afterend',
+                `<p style="font-size:.85rem;opacity:.7;margin:.4rem 0 0">`
+                + `Invitation destinée à <strong>${inv.email}</strong></p>`);
 
             const roleLabels = { editor: 'Éditeur', viewer: 'Lecteur', owner: 'Propriétaire' };
             const roleEl = document.getElementById('roleBadge');
@@ -332,7 +354,9 @@
 
             // Update register link with redirect
             const registerLink = document.getElementById('registerLink');
-            registerLink.href = `auth.html?view=register&redirect=${encodeURIComponent(window.location.href)}`;
+            registerLink.href = `auth.html?view=register`
+                + `&email=${encodeURIComponent(inv.email)}`
+                + `&redirect=${encodeURIComponent(window.location.href)}`;
 
             // Check if user is logged in
             const user = await auth.getUser();
