@@ -874,6 +874,28 @@ class TaskModal {
         });
     }
 
+    /** Affiche une erreur de dependance sous la liste des predecesseurs.
+     *  Reprend le motif de validation du champ « nom » : surlignage
+     *  temporaire, message explicite, retrait automatique. */
+    _showDependencyError(message) {
+        const existant = this._predList.parentNode.querySelector('.dep-error');
+        if (existant) existant.remove();
+
+        const alerte = createElement('div', {
+            className: 'dep-error',
+            style: 'color:#dc2626;font-size:.8rem;margin-top:.4rem;line-height:1.4',
+        }, message);
+
+        this._predList.parentNode.appendChild(alerte);
+        this._predList.classList.add('input-error');
+        this._predList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+            this._predList.classList.remove('input-error');
+            alerte.remove();
+        }, 6000);
+    }
+
     _getSelectedPredecessors() {
         const result = [];
         this._predList.querySelectorAll('div').forEach(row => {
@@ -1116,6 +1138,26 @@ class TaskModal {
             this._taskName.focus();
             setTimeout(() => this._taskName.classList.remove('input-error'), 1500);
             return;
+        }
+
+        /* Refus des dependances circulaires, AVANT tout enregistrement.
+         *
+         * store.updateTask() refuse desormais les cycles et renvoie null.
+         * Sans ce controle ici, l'utilisateur cliquerait « Enregistrer »
+         * et rien ne se passerait, sans explication. On valide donc en
+         * amont pour afficher le chemin fautif.
+         *
+         * En mode creation, aucun cycle n'est possible : une tache neuve
+         * n'a pas encore de successeur. */
+        if (this._mode !== 'create' && this._editingTaskId) {
+            const check = store.validateDependencies(
+                this._editingTaskId,
+                this._getSelectedPredecessors(),
+            );
+            if (!check.valid) {
+                this._showDependencyError(check.message);
+                return;
+            }
         }
 
         const activeColor = $('.color-swatch.active', this._colorPicker);
