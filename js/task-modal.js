@@ -874,9 +874,38 @@ class TaskModal {
                 if (existing && existing.type === val) opt.selected = true;
                 sel.appendChild(opt);
             });
-            sel.style.display = existing ? '' : 'none';
-            cb.addEventListener('change', () => { sel.style.display = cb.checked ? '' : 'none'; });
+            /* Champ de decalage (lag) en jours.
+             *
+             * Sans lui, l'utilisateur n'a AUCUN moyen d'exprimer un delai
+             * volontaire : le moteur recolle desormais strictement le
+             * successeur a son predecesseur. C'est le besoin central du
+             * planning de permis de construire (delai d'instruction) et de
+             * chantier (sechage, livraison). Negatif = chevauchement. */
+            const lagWrap = createElement('span', {
+                style: { display: 'flex', alignItems: 'center', gap: '2px', flexShrink: '0' },
+                title: 'Décalage en jours. Négatif = chevauchement.',
+            });
+            const lagInput = createElement('input', {
+                type: 'number',
+                className: 'input',
+                value: String(Number(existing && existing.lag) || 0),
+                step: '1',
+                style: { width: '52px', padding: '2px 4px', fontSize: 'var(--font-size-xs)', textAlign: 'right' },
+            });
+            lagWrap.appendChild(lagInput);
+            lagWrap.appendChild(createElement('span', {
+                style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' },
+            }, 'j'));
+
+            const majVisibilite = () => {
+                sel.style.display     = cb.checked ? '' : 'none';
+                lagWrap.style.display = cb.checked ? 'flex' : 'none';
+            };
+            majVisibilite();
+            cb.addEventListener('change', majVisibilite);
+
             row.appendChild(sel);
+            row.appendChild(lagWrap);
             this._predList.appendChild(row);
         });
     }
@@ -884,12 +913,11 @@ class TaskModal {
     /** Affiche une erreur de dependance sous la liste des predecesseurs.
      *
      * Le message NE disparait PAS tout seul. Une premiere version le
-     * retirait au bout de 6 secondes, comme le surlignage du champ
-     * « nom » : mauvaise idee. Une dependance circulaire demande de
-     * comprendre puis corriger un enchainement de taches ; si
-     * l'utilisateur regarde ailleurs il manque l'information, et un
-     * minuteur en attente peut retirer le surlignage d'une tentative
-     * suivante. */
+     * retirait apres 6 secondes, comme le surlignage du champ « nom » :
+     * mauvaise idee. Une dependance circulaire demande de comprendre puis
+     * corriger un enchainement ; si l'utilisateur regarde ailleurs il
+     * manque l'information, et un minuteur en attente peut retirer le
+     * surlignage d'une tentative suivante. */
     _showDependencyError(message) {
         this._clearDependencyError();
 
@@ -903,9 +931,6 @@ class TaskModal {
         this._predList.parentNode.appendChild(alerte);
         this._predList.classList.add('input-error');
         alerte.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-        /* Trace systematique : si l'affichage echoue, la console garde
-           l'information. */
         console.warn('[task-modal] ' + message);
     }
 
@@ -916,8 +941,9 @@ class TaskModal {
         this._predList.classList.remove('input-error');
     }
 
-    /** Calcule les modifications de dependances des SUCCESSEURS, sans
-     *  les appliquer. Sert a valider le lot complet avant ecriture. */
+    /** Modifications de dependances des SUCCESSEURS, sans les appliquer.
+     *  Sert a valider le lot complet avant ecriture, et a l'ecrire
+     *  ensuite : un seul calcul, donc aucune divergence possible. */
     _computeSuccessorChanges() {
         const selectedSuccessors = this._getSelectedSuccessors();
         const allTasks = store.getTasks()
@@ -932,7 +958,17 @@ class TaskModal {
             if (succEntry && currentLink && succEntry.type === currentLink.type) return;
 
             const deps = (t.dependencies || []).filter(d => d.taskId !== this._editingTaskId);
-            if (succEntry) deps.push({ taskId: this._editingTaskId, type: succEntry.type });
+            if (succEntry) {
+                /* Conserver le decalage deja saisi sur ce lien : il se
+                   modifie depuis la ligne « predecesseurs » de la tache
+                   successeur, pas ici. Le perdre a chaque enregistrement
+                   serait une regression silencieuse. */
+                deps.push({
+                    taskId: this._editingTaskId,
+                    type:   succEntry.type,
+                    lag:    Number(currentLink && currentLink.lag) || 0,
+                });
+            }
             changes.push({ taskId: t.id, dependencies: deps });
         });
 
@@ -942,10 +978,16 @@ class TaskModal {
     _getSelectedPredecessors() {
         const result = [];
         this._predList.querySelectorAll('div').forEach(row => {
-            const cb = row.querySelector('input[type="checkbox"]');
+            const cb  = row.querySelector('input[type="checkbox"]');
             const sel = row.querySelector('select');
             if (cb && cb.checked && sel) {
-                result.push({ taskId: cb.value, type: sel.value });
+                const li  = row.querySelector('input[type="number"]');
+                const lag = li ? parseInt(li.value, 10) : 0;
+                result.push({
+                    taskId: cb.value,
+                    type:   sel.value,
+                    lag:    Number.isFinite(lag) ? lag : 0,
+                });
             }
         });
         return result;
@@ -1185,12 +1227,11 @@ class TaskModal {
 
         /* Refus des dependances circulaires, AVANT toute ecriture.
          *
-         * On valide le LOT COMPLET : les predecesseurs de la tache
-         * editee ET les liens inverses ecrits sur chaque successeur.
-         * Valider seulement les predecesseurs laissait passer les cycles
-         * crees via la liste des successeurs — le store les refusait
-         * ensuite, mais le modal se fermait quand meme, sans message :
-         * echec silencieux.
+         * On valide le LOT COMPLET : predecesseurs de la tache editee ET
+         * liens inverses ecrits sur chaque successeur. Valider seulement
+         * les predecesseurs laissait passer les cycles crees via la liste
+         * des successeurs — le store les refusait ensuite, mais le modal
+         * se fermait quand meme : echec silencieux.
          *
          * En mode creation, aucun cycle possible : une tache neuve n'a
          * pas encore de successeur. */
@@ -1274,9 +1315,8 @@ class TaskModal {
             // Apply predecessor constraints (adjusts dates based on predecessors)
             store.applyPredecessorConstraints(this._editingTaskId);
 
-            /* Liens inverses des successeurs. On reutilise exactement le
-               meme calcul que la validation ci-dessus, pour qu'ils ne
-               puissent pas diverger. */
+            /* Liens inverses : on reutilise exactement le meme calcul que
+               la validation ci-dessus, pour qu'ils ne divergent pas. */
             this._computeSuccessorChanges().forEach(({ taskId, dependencies }) => {
                 store.updateTask(taskId, { dependencies });
                 store.applyPredecessorConstraints(taskId);
