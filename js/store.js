@@ -63,9 +63,19 @@ export function purgeForeignLocalData(userId) {
 }
 
 /* ---- Plan / Subscription constants ---- */
+/* SEMANTIQUE DE « collaborators » : nombre TOTAL de membres du projet,
+   PROPRIETAIRE INCLUS. Donc free = 2 signifie « toi + 1 invite ».
+   C'est la meme convention que public.plan_limits en base — les deux
+   DOIVENT rester alignes, sinon l'interface autorise une action que le
+   serveur refuse, et l'utilisateur se fait rejeter apres avoir rempli
+   le formulaire.
+
+   La source de verite est la BASE (migration 020) : c'est elle qui
+   protege. Ces valeurs ne servent qu'a afficher un message immediat
+   sans aller-retour reseau. */
 export const PLAN_LIMITS = {
-    free:  { projects: 1,        tasks: 50,       collaborators: 1        },
-    pro:   { projects: Infinity, tasks: Infinity,  collaborators: 5        },
+    free:  { projects: 1,        tasks: 50,        collaborators: 2        },
+    pro:   { projects: Infinity, tasks: Infinity,  collaborators: 6        },
     team:  { projects: Infinity, tasks: Infinity,  collaborators: Infinity },
 };
 
@@ -2390,13 +2400,32 @@ class Store {
         return count < limit;
     }
 
-    canAddCollaborator(projectId) {
-        const pid = projectId || this._data.settings.activeProjectId;
+    /* Verifie s'il reste de la place pour un collaborateur.
+     *
+     * CORRECTIF : l'ancienne version comptait project.resourceIds, soit
+     * les RESSOURCES du planning (les personnes affectees aux taches),
+     * et non les MEMBRES du projet (les comptes ayant acces). Deux
+     * notions differentes : on peut avoir 20 ressources nommees dans un
+     * planning et un seul utilisateur connecte.
+     *
+     * store.js ne charge pas la liste des membres, il ne peut donc pas
+     * la compter lui-meme. Le nombre doit etre fourni par l'appelant —
+     * collaboration-ui.js le connait, puisqu'il l'affiche.
+     *
+     * @param {number} currentMemberCount  membres actuels, proprietaire inclus
+     * @returns {boolean} true s'il reste de la place
+     */
+    canAddCollaborator(currentMemberCount) {
         const limit = PLAN_LIMITS[this.getEffectivePlan()].collaborators;
         if (limit === Infinity) return true;
-        const project = this._data.projects.find(p => p.id === pid);
-        const count = (project?.resourceIds || []).length;
-        return count < limit;
+        if (typeof currentMemberCount !== 'number') {
+            /* Sans information fiable, on laisse passer : le serveur
+               tranchera (trigger enforce_collaborator_quota, migration
+               024). Mieux vaut un refus serveur explicite qu'un blocage
+               client fonde sur une donnee fausse. */
+            return true;
+        }
+        return currentMemberCount < limit;
     }
 
     /** Met à jour les infos de plan localement (après paiement ou changement webhook) */
