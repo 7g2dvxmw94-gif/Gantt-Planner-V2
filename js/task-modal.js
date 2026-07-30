@@ -292,9 +292,9 @@ class TaskModal {
         const predGroup = createElement('div', { className: 'form-group' });
         predGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.predecessors')));
         this._predList = createElement('div', { className: 'dep-list' });
-        /* Des que l'utilisateur corrige sa selection, le message
-           d'erreur disparait : il ne doit pas rester affiche alors
-           qu'il ne correspond plus a l'etat du formulaire. */
+        /* Des que l'utilisateur corrige sa selection, le message d'erreur
+           disparait : il ne doit pas rester affiche alors qu'il ne
+           correspond plus a l'etat du formulaire. */
         this._predList.addEventListener('change', () => this._clearDependencyError());
         predGroup.appendChild(this._predList);
         depRow.appendChild(predGroup);
@@ -838,8 +838,8 @@ class TaskModal {
     }
 
     _populatePredecessors(taskId, currentDeps) {
-        /* Toute reconstruction de la liste efface un message precedent :
-           il ne doit pas survivre a une reouverture du modal. */
+        /* Toute reconstruction efface un message precedent : il ne doit
+           pas survivre a une reouverture du modal. */
         this._clearDependencyError();
         this._predList.innerHTML = '';
         const deps = currentDeps || [];
@@ -883,16 +883,13 @@ class TaskModal {
 
     /** Affiche une erreur de dependance sous la liste des predecesseurs.
      *
-     * CHOIX DE CONCEPTION : le message NE disparait PAS tout seul.
-     * Une premiere version le retirait au bout de 6 secondes, comme le
-     * surlignage du champ « nom ». Mauvaise idee : une dependance
-     * circulaire demande a l'utilisateur de comprendre puis de corriger
-     * un enchainement de taches. S'il regarde ailleurs, ou si le message
-     * est hors de la zone visible, il le manque — et un minuteur en
-     * attente peut retirer le surlignage d'une tentative suivante.
-     *
-     * Le message reste donc affiche jusqu'a ce que l'utilisateur modifie
-     * sa selection de predecesseurs, ou ferme le modal. */
+     * Le message NE disparait PAS tout seul. Une premiere version le
+     * retirait au bout de 6 secondes, comme le surlignage du champ
+     * « nom » : mauvaise idee. Une dependance circulaire demande de
+     * comprendre puis corriger un enchainement de taches ; si
+     * l'utilisateur regarde ailleurs il manque l'information, et un
+     * minuteur en attente peut retirer le surlignage d'une tentative
+     * suivante. */
     _showDependencyError(message) {
         this._clearDependencyError();
 
@@ -907,17 +904,39 @@ class TaskModal {
         this._predList.classList.add('input-error');
         alerte.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        /* Trace systematique : si l'affichage echoue pour une raison
-           quelconque, la console garde l'information. */
+        /* Trace systematique : si l'affichage echoue, la console garde
+           l'information. */
         console.warn('[task-modal] ' + message);
     }
 
-    /** Retire le message et le surlignage. */
     _clearDependencyError() {
         const parent = this._predList && this._predList.parentNode;
         if (!parent) return;
         parent.querySelectorAll('.dep-error').forEach(el => el.remove());
         this._predList.classList.remove('input-error');
+    }
+
+    /** Calcule les modifications de dependances des SUCCESSEURS, sans
+     *  les appliquer. Sert a valider le lot complet avant ecriture. */
+    _computeSuccessorChanges() {
+        const selectedSuccessors = this._getSelectedSuccessors();
+        const allTasks = store.getTasks()
+            .filter(t => !t.isPhase && t.id !== this._editingTaskId);
+        const changes = [];
+
+        allTasks.forEach(t => {
+            const succEntry   = selectedSuccessors.find(x => x.taskId === t.id);
+            const currentLink = (t.dependencies || []).find(d => d.taskId === this._editingTaskId);
+
+            if (!succEntry && !currentLink) return;
+            if (succEntry && currentLink && succEntry.type === currentLink.type) return;
+
+            const deps = (t.dependencies || []).filter(d => d.taskId !== this._editingTaskId);
+            if (succEntry) deps.push({ taskId: this._editingTaskId, type: succEntry.type });
+            changes.push({ taskId: t.id, dependencies: deps });
+        });
+
+        return changes;
     }
 
     _getSelectedPredecessors() {
@@ -1164,22 +1183,26 @@ class TaskModal {
             return;
         }
 
-        /* Refus des dependances circulaires, AVANT tout enregistrement.
+        /* Refus des dependances circulaires, AVANT toute ecriture.
          *
-         * store.updateTask() refuse desormais les cycles et renvoie null.
-         * Sans ce controle ici, l'utilisateur cliquerait « Enregistrer »
-         * et rien ne se passerait, sans explication.
+         * On valide le LOT COMPLET : les predecesseurs de la tache
+         * editee ET les liens inverses ecrits sur chaque successeur.
+         * Valider seulement les predecesseurs laissait passer les cycles
+         * crees via la liste des successeurs — le store les refusait
+         * ensuite, mais le modal se fermait quand meme, sans message :
+         * echec silencieux.
          *
-         * En mode creation, aucun cycle n'est possible : une tache neuve
-         * n'a pas encore de successeur. */
+         * En mode creation, aucun cycle possible : une tache neuve n'a
+         * pas encore de successeur. */
         if (this._mode !== 'create' && this._editingTaskId) {
-            const check = store.validateDependencies(
-                this._editingTaskId,
-                this._getSelectedPredecessors(),
-            );
+            const lot = [
+                { taskId: this._editingTaskId, dependencies: this._getSelectedPredecessors() },
+                ...this._computeSuccessorChanges(),
+            ];
+            const check = store.validateDependencyChanges(lot);
             if (!check.valid) {
                 this._showDependencyError(check.message);
-                return;
+                return;   // le modal reste ouvert, rien n'est ecrit
             }
         }
 
@@ -1251,24 +1274,12 @@ class TaskModal {
             // Apply predecessor constraints (adjusts dates based on predecessors)
             store.applyPredecessorConstraints(this._editingTaskId);
 
-            // Update successors: sync the reverse links (only changed ones)
-            const selectedSuccessors = this._getSelectedSuccessors();
-            const allTasks = store.getTasks().filter(t => !t.isPhase && t.id !== this._editingTaskId);
-            allTasks.forEach(t => {
-                const succEntry = selectedSuccessors.find(s => s.taskId === t.id);
-                const currentLink = (t.dependencies || []).find(d => d.taskId === this._editingTaskId);
-
-                // Skip if nothing changed
-                if (!succEntry && !currentLink) return;
-                if (succEntry && currentLink && succEntry.type === currentLink.type) return;
-
-                let deps = (t.dependencies || []).filter(d => d.taskId !== this._editingTaskId);
-                if (succEntry) {
-                    deps.push({ taskId: this._editingTaskId, type: succEntry.type });
-                }
-                store.updateTask(t.id, { dependencies: deps });
-                // Apply constraints on the successor too
-                store.applyPredecessorConstraints(t.id);
+            /* Liens inverses des successeurs. On reutilise exactement le
+               meme calcul que la validation ci-dessus, pour qu'ils ne
+               puissent pas diverger. */
+            this._computeSuccessorChanges().forEach(({ taskId, dependencies }) => {
+                store.updateTask(taskId, { dependencies });
+                store.applyPredecessorConstraints(taskId);
             });
         }
 
