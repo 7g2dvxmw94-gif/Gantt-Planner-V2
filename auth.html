@@ -310,12 +310,43 @@
         }
 
         (async () => {
-            const session = await auth.getSession();
-            if (session) { window.location.href = 'index.html'; return; }
             const params = new URLSearchParams(window.location.search);
+
+            /* Destination apres authentification. Sans cela, un invite arrivait
+               toujours sur index.html au lieu de revenir a son invitation, et
+               devait retrouver l'email d'invitation pour recommencer.
+               On n'accepte qu'une URL relative au meme site : une redirection
+               ouverte vers un domaine tiers serait exploitable en hameconnage. */
+            const wanted = params.get('redirect') || '';
+            let destination = 'index.html';
+            if (wanted) {
+                try {
+                    const u = new URL(wanted, window.location.origin);
+                    if (u.origin === window.location.origin) {
+                        destination = u.pathname + u.search + u.hash;
+                    }
+                } catch { /* URL invalide : on garde index.html */ }
+            }
+            window.__authRedirect = destination;
+
+            const session = await auth.getSession();
+            if (session) { window.location.href = destination; return; }
+
             if (params.get('confirmed') === '1') {
                 showView('viewLogin');
                 showAlert('Email confirmé ! Vous pouvez vous connecter.', 'success');
+            }
+
+            /* Ouvrir directement le formulaire demande (?view=register) */
+            if (params.get('view') === 'register') showView('viewRegister');
+
+            /* Preremplir l'adresse quand elle est connue (lien d'invitation) */
+            const presetEmail = params.get('email');
+            if (presetEmail) {
+                const rEmail = document.getElementById('registerEmail');
+                const lEmail = document.getElementById('loginEmail');
+                if (rEmail) rEmail.value = presetEmail;
+                if (lEmail) lEmail.value = presetEmail;
             }
         })();
 
@@ -334,7 +365,7 @@
             hideAlert();
             try {
                 await auth.signIn(email, password);
-                window.location.href = 'index.html';
+                window.location.href = window.__authRedirect || 'index.html';
             } catch (err) {
                 showAlert(err.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : err.message);
             } finally { setLoading('btnLogin', false); }
