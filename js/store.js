@@ -9,6 +9,59 @@ import { auth } from './auth.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
+/* ============================================================
+   Cloisonnement du stockage local par utilisateur
+   ============================================================ */
+
+/* Clés contenant des données propres à UN utilisateur.
+   Volontairement exclues : 'gantt_lang' (préférence navigateur) et les
+   client_id OAuth de sauvegarde cloud (propres à l'appareil). */
+const USER_SCOPED_KEYS = [
+    'gantt_active_project',
+    'gantt_ui_settings',
+    'gantt_dismissed_notifs',
+    '_shownNotifPopups',
+    'gantt_onboarding_done',
+];
+
+/* Mémorise le dernier compte utilisé, pour détecter un changement */
+const LAST_USER_KEY = 'gantt_last_user_id';
+
+/* 'gantt_ui_settings' → 'gantt_ui_settings::<uid>' */
+export function userKey(base, userId) {
+    return userId ? `${base}::${userId}` : base;
+}
+
+/* Supprime les données locales laissées par un AUTRE compte.
+   Retourne true si une purge a eu lieu. */
+export function purgeForeignLocalData(userId) {
+    if (!userId) return false;
+
+    const previous = localStorage.getItem(LAST_USER_KEY);
+    if (previous === userId) return false;
+
+    /* Données projet héritées de la version hors-ligne ou d'un autre
+       compte. Ne JAMAIS tenter de les revendiquer : le serveur refuse
+       et l'application se retrouve désynchronisée. */
+    localStorage.removeItem('gantt-planner-pro');
+
+    /* Clés non préfixées laissées par une version antérieure */
+    USER_SCOPED_KEYS.forEach(k => localStorage.removeItem(k));
+
+    /* Clés préfixées appartenant à d'autres comptes */
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key || !key.includes('::')) continue;
+        const [base, owner] = key.split('::');
+        if (USER_SCOPED_KEYS.includes(base) && owner !== userId) {
+            localStorage.removeItem(key);
+        }
+    }
+
+    localStorage.setItem(LAST_USER_KEY, userId);
+    return previous !== null;
+}
+
 /* ---- Plan / Subscription constants ---- */
 export const PLAN_LIMITS = {
     free:  { projects: 1,        tasks: 50,       collaborators: 1        },
@@ -406,6 +459,8 @@ class Store {
         this._loadedProjectIds = new Set();
         // Subscription plan info (loaded from profiles table after login)
         this._planInfo = { plan: 'free', planStatus: 'active', trialEndsAt: null };
+        // Identifiant du compte connecté, renseigné par initFromSupabase()
+        this._currentUserId = null;
     }
 
     /* ---- Persistence ---- */
@@ -489,15 +544,54 @@ class Store {
             const user = await auth.getUser();
             if (!user) return;
 
+            /* Purger les données d'un autre compte AVANT tout. C'est ce qui
+               empêche la revendication de projets appartenant à autrui,
+               cause du blocage 403 sur "tasks". */
+            if (purgeForeignLocalData(user.id)) {
+                this._data.projects  = [];
+                this._data.tasks     = [];
+                this._data.resources = [];
+                this._data.baselines = [];
+                this._data.settings.activeProjectId = null;
+            }
+            this._currentUserId = user.id;
+
+            // Recharger les préférences UI depuis la clé préfixée : le
+            // constructeur a lu avant de connaître l'utilisateur.
+            const scopedUi = this._loadSettingsFromStorage();
+            if (scopedUi) Object.assign(this._data.settings, scopedUi);
+
             // 1. Charger les projets de l'utilisateur depuis Supabase
             let projects = await supabaseStore.getProjects();
 
-            // 2. Si Supabase est vide mais qu'il y a des projets locaux, les synchroniser
+            /* Synchronisation des projets locaux. Ne concerne plus qu'un cas
+               légitime : migration depuis la version hors-ligne, où
+               l'utilisateur possède réellement ses projets. Chaque échec
+               retire le projet du cache local au lieu d'être avalé — sinon
+               l'application travaille sur des projets qu'elle ne possède pas. */
             if (!projects.length && this._data.projects.length) {
+                const orphelins = [];
+
                 for (const p of this._data.projects) {
-                    await supabaseStore.upsertProject(p, user.id).catch(() => {});
-                    await supabaseStore.addProjectMember(p.id, user.id, 'owner').catch(() => {});
+                    try {
+                        await supabaseStore.upsertProject(p, user.id);
+                        /* Pas d'addProjectMember ici : la RPC upsert_project
+                           inscrit déjà le propriétaire dans project_members,
+                           côté serveur, en SECURITY DEFINER. */
+                    } catch (err) {
+                        console.warn(
+                            `[store] projet local "${p.name}" non synchronisé ` +
+                            `(${err?.message || 'erreur inconnue'}) — retiré du cache local`
+                        );
+                        orphelins.push(p.id);
+                    }
                 }
+
+                if (orphelins.length) {
+                    this._data.projects = this._data.projects.filter(p => !orphelins.includes(p.id));
+                    this._data.tasks    = this._data.tasks.filter(t => !orphelins.includes(t.projectId));
+                }
+
                 projects = await supabaseStore.getProjects();
             }
 
@@ -509,8 +603,8 @@ class Store {
 
             this._data.projects = projects;
 
-            // 2. Restaurer le projet actif depuis localStorage (préférence UI)
-            const savedActiveId = localStorage.getItem('gantt_active_project');
+            // Projet actif : clé préfixée par utilisateur
+            const savedActiveId = localStorage.getItem(userKey('gantt_active_project', user.id));
             const activeProject = projects.find(p => p.id === savedActiveId) || projects[0];
             this._data.settings.activeProjectId = activeProject.id;
 
@@ -611,7 +705,7 @@ class Store {
 
     _loadSettingsFromStorage() {
         try {
-            const raw = localStorage.getItem('gantt_ui_settings');
+            const raw = localStorage.getItem(userKey('gantt_ui_settings', this._currentUserId));
             return raw ? JSON.parse(raw) : null;
         } catch { return null; }
     }
@@ -625,9 +719,13 @@ class Store {
                 theme:       this._data.settings.theme,
                 showBaseline: this._data.settings.showBaseline,
             };
-            localStorage.setItem('gantt_ui_settings', JSON.stringify(uiSettings));
+            const uid = this._currentUserId;
+            localStorage.setItem(userKey('gantt_ui_settings', uid), JSON.stringify(uiSettings));
             if (this._data.settings.activeProjectId) {
-                localStorage.setItem('gantt_active_project', this._data.settings.activeProjectId);
+                localStorage.setItem(
+                    userKey('gantt_active_project', uid),
+                    this._data.settings.activeProjectId
+                );
             }
         } catch (e) {
             console.warn('Failed to save settings to localStorage:', e);
