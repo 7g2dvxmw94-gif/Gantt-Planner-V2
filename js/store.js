@@ -579,6 +579,7 @@ class Store {
     constructor() {
         this._listeners = new Map();
         this._data = this._load();
+        this._invalidateTaskIndex();
         // Undo/Redo history
         this._undoStack = [];
         this._redoStack = [];
@@ -590,6 +591,11 @@ class Store {
         this._planInfo = { plan: 'free', planStatus: 'active', trialEndsAt: null };
         // Identifiant du compte connecté, renseigné par initFromSupabase()
         this._currentUserId = null;
+
+        // Index des taches (voir _ensureTaskIndex)
+        this._taskIndex       = null;
+        this._taskIndexSource = null;
+        this._taskIndexSize   = 0;
     }
 
     /* ---- Persistence ---- */
@@ -689,6 +695,7 @@ class Store {
             if (purgeForeignLocalData(user.id)) {
                 this._data.projects  = [];
                 this._data.tasks     = [];
+                this._invalidateTaskIndex();
                 this._data.resources = [];
                 this._data.baselines = [];
                 this._data.settings.activeProjectId = null;
@@ -729,6 +736,7 @@ class Store {
                 if (orphelins.length) {
                     this._data.projects = this._data.projects.filter(p => !orphelins.includes(p.id));
                     this._data.tasks    = this._data.tasks.filter(t => !orphelins.includes(t.projectId));
+                    this._invalidateTaskIndex();
                 }
 
                 projects = await supabaseStore.getProjects();
@@ -763,6 +771,7 @@ class Store {
             // 4. Purger les données locales orphelines (projets supprimés)
             const projectIds = new Set(projects.map(p => p.id));
             this._data.tasks     = this._data.tasks.filter(t => projectIds.has(t.projectId));
+            this._invalidateTaskIndex();
             this._data.baselines = this._data.baselines.filter(b => projectIds.has(b.projectId));
 
             // 4. Load customization from Supabase
@@ -810,6 +819,7 @@ class Store {
         this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId)
                                                 .concat(supabaseTasks)
                                                 .concat(unsynced);
+        this._invalidateTaskIndex();
         this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
@@ -910,6 +920,7 @@ class Store {
         if (this._undoStack.length === 0) return false;
         this._redoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._undoStack.pop());
+        this._invalidateTaskIndex();
         this._save();
         this._emit('undo', null);
         return true;
@@ -919,6 +930,7 @@ class Store {
         if (this._redoStack.length === 0) return false;
         this._undoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._redoStack.pop());
+        this._invalidateTaskIndex();
         this._save();
         this._emit('redo', null);
         return true;
@@ -998,6 +1010,7 @@ class Store {
         this._snapshot();
         this._data.projects = this._data.projects.filter(p => p.id !== projectId);
         this._data.tasks = this._data.tasks.filter(t => t.projectId !== projectId);
+        this._invalidateTaskIndex();
         if (this._data.settings.activeProjectId === projectId) {
             this._data.settings.activeProjectId = this._data.projects[0]?.id || null;
         }
@@ -1042,6 +1055,7 @@ class Store {
                 updatedAt: new Date().toISOString(),
             };
             this._data.tasks.push(newTask);
+            this._invalidateTaskIndex();
         });
 
         this._save();
@@ -1151,8 +1165,57 @@ class Store {
         return [...this._data.tasks].sort((a, b) => a.order - b.order);
     }
 
+    /* ---- Index des taches ----------------------------------------
+       getTask() etait un this._data.tasks.find(), donc O(n). Or il est
+       appele DANS des boucles : _computeConstrainedDates() parcourt les
+       predecesseurs, propagateDependencies() descend en cascade sur les
+       successeurs, getCriticalPath() et le calcul de couts iterent sur
+       toutes les taches. Sur un planning de 500 taches avec propagation,
+       on atteignait O(n^2) voire O(n^3).
+
+       L'index est un Map id -> tache. Le risque d'un index est de
+       renvoyer une donnee PERIMEE : il est donc invalide explicitement a
+       chaque mutation structurelle du tableau, avec en filet une
+       verification de la reference et de la longueur.
+
+       La mutation d'un CHAMP d'une tache (dates, nom...) n'invalide
+       rien : l'index stocke les references des objets, pas des copies.
+       ------------------------------------------------------------- */
+
+    _invalidateTaskIndex() {
+        this._taskIndex = null;
+    }
+
+    _ensureTaskIndex() {
+        const arr = this._data.tasks;
+        if (this._taskIndex
+            && this._taskIndexSource === arr
+            && this._taskIndexSize === arr.length) {
+            return this._taskIndex;
+        }
+        const m = new Map();
+        for (const t of arr) m.set(t.id, t);
+        this._taskIndex       = m;
+        this._taskIndexSource = arr;
+        this._taskIndexSize   = arr.length;
+        return m;
+    }
+
     getTask(taskId) {
-        return this._data.tasks.find(t => t.id === taskId) || null;
+        if (!taskId) return null;
+        const trouve = this._ensureTaskIndex().get(taskId);
+        if (trouve !== undefined) return trouve;
+
+        /* Repli defensif : si l'index a manque la tache alors qu'elle
+           existe, il est perime. Un balayage lineaire ne peut pas
+           renvoyer un MAUVAIS resultat, contrairement a un index perime.
+           On reconstruit avant de conclure a l'absence. */
+        const direct = this._data.tasks.find(t => t.id === taskId);
+        if (direct) {
+            this._invalidateTaskIndex();
+            return direct;
+        }
+        return null;
     }
 
     getChildTasks(parentId) {
@@ -1222,6 +1285,7 @@ class Store {
         }
 
         this._data.tasks.push(newTask);
+        this._invalidateTaskIndex();
         this._save();
         this._emit('task:add', newTask);
         // Log history
@@ -1336,6 +1400,7 @@ class Store {
 
         const parentId = task.parentId;
         this._data.tasks = this._data.tasks.filter(t => t.id !== taskId);
+        this._invalidateTaskIndex();
 
         if (parentId) {
             this._recalculatePhase(parentId);
@@ -2165,6 +2230,7 @@ class Store {
                         }),
                     };
                     this._data.tasks.push(newTask);
+                    this._invalidateTaskIndex();
                 });
 
                 // Import resources if present
@@ -2333,6 +2399,7 @@ class Store {
                     }),
                 };
                 this._data.tasks.push(newTask);
+                this._invalidateTaskIndex();
             });
 
             if (lastProjectId) {
@@ -2505,6 +2572,7 @@ class Store {
             };
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
+            this._invalidateTaskIndex();
             resources.forEach(r => {
                 const exists = this._data.resources.find(e => e.name === r.name);
                 if (!exists) {
@@ -2651,6 +2719,7 @@ class Store {
             };
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
+            this._invalidateTaskIndex();
 
             // Add resources
             Object.entries(resourceMap).forEach(([name, id]) => {
@@ -2844,6 +2913,7 @@ class Store {
 
     reset() {
         this._data = this._createDefaults();
+        this._invalidateTaskIndex();
         this._save();
         this._emit('reset', null);
     }
