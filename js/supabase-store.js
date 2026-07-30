@@ -61,14 +61,23 @@ function taskToRow(t) {
 }
 
 function resourceToRow(r) {
+    /* CORRECTIF : rateType, dailyRate et worksWeekends etaient saisis
+       dans l'interface et utilises par le calcul de couts, mais JAMAIS
+       envoyes en base — les colonnes n'existaient pas. Apres
+       rechargement, une ressource a 400 EUR/jour redevenait horaire a
+       0 EUR : les budgets etaient silencieusement faux.
+       Colonnes ajoutees par la migration 027. */
     return {
-        id:          r.id,
-        project_id:  r.projectId,
-        name:        r.name,
-        role:        r.role        || '',
-        avatar:      r.avatar      || '',
-        color:       r.color       || '#6366F1',
-        hourly_rate: r.hourlyRate  || 0,
+        id:             r.id,
+        project_id:     r.projectId,
+        name:           r.name,
+        role:           r.role       || '',
+        avatar:         r.avatar     || '',
+        color:          r.color      || '#6366F1',
+        hourly_rate:    r.hourlyRate || 0,
+        rate_type:      r.rateType === 'daily' ? 'daily' : 'hourly',
+        daily_rate:     r.dailyRate  || 0,
+        works_weekends: Boolean(r.worksWeekends),
     };
 }
 
@@ -133,13 +142,16 @@ function rowToTask(row) {
 
 function rowToResource(row) {
     return {
-        id:         row.id,
-        projectId:  row.project_id,
-        name:       row.name,
-        role:       row.role       || '',
-        avatar:     row.avatar     || '',
-        color:      row.color      || '#6366F1',
-        hourlyRate: parseFloat(row.hourly_rate) || 0,
+        id:            row.id,
+        projectId:     row.project_id,
+        name:          row.name,
+        role:          row.role       || '',
+        avatar:        row.avatar     || '',
+        color:         row.color      || '#6366F1',
+        hourlyRate:    parseFloat(row.hourly_rate) || 0,
+        rateType:      row.rate_type === 'daily' ? 'daily' : 'hourly',
+        dailyRate:     parseFloat(row.daily_rate) || 0,
+        worksWeekends: Boolean(row.works_weekends),
     };
 }
 
@@ -292,13 +304,58 @@ export const supabaseStore = {
         const projectIds = members.map(m => m.project_id);
         const { data, error } = await supabase
             .from('resources')
-            .select('*')
-            .in('project_id', projectIds);
+            .select('*');
+        /* Plus de filtre .in('project_id', ...) : la RLS (migration 027)
+           renvoie desormais les ressources des projets dont on est membre
+           ET celles PARTAGEES avec eux via project_resources. Filtrer sur
+           project_id excluait justement les ressources empruntees. */
         if (error) {
             console.error('[supabaseStore] getAllResources:', error);
             return [];
         }
         return (data || []).map(rowToResource);
+    },
+
+    /* ---- Liaison projet <-> ressource (migration 027) ---- */
+
+    /** Tous les rattachements visibles : [{ projectId, resourceId }] */
+    async getProjectResourceLinks() {
+        const { data, error } = await supabase
+            .from('project_resources')
+            .select('project_id, resource_id');
+        if (error) {
+            console.error('[supabaseStore] getProjectResourceLinks:', error);
+            return [];
+        }
+        return (data || []).map(row => ({
+            projectId:  row.project_id,
+            resourceId: row.resource_id,
+        }));
+    },
+
+    /** Rattache une ressource a un projet. Idempotent. */
+    async linkResourceToProject(projectId, resourceId) {
+        const { error } = await supabase
+            .from('project_resources')
+            .upsert({ project_id: projectId, resource_id: resourceId },
+                    { onConflict: 'project_id,resource_id' });
+        if (error) {
+            console.error('[supabaseStore] linkResourceToProject:', error);
+            throw error;
+        }
+    },
+
+    /** Detache une ressource d'un projet. */
+    async unlinkResourceFromProject(projectId, resourceId) {
+        const { error } = await supabase
+            .from('project_resources')
+            .delete()
+            .eq('project_id', projectId)
+            .eq('resource_id', resourceId);
+        if (error) {
+            console.error('[supabaseStore] unlinkResourceFromProject:', error);
+            throw error;
+        }
     },
 
     async getResources(projectId) {
