@@ -583,3 +583,26 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
     }
     return n;
 }
+
+/**
+ * Echappe les caracteres speciaux HTML.
+ *
+ * POURQUOI : aucune fonction d'echappement partagee n'existait. Seul
+ * collaboration-ui.js en avait une copie privee (_escape), et le reste
+ * du code injectait directement dans innerHTML. Un message d'erreur
+ * Postgres, un nom de projet ou de tache contenant du balisage etait
+ * donc interprete par le navigateur.
+ *
+ * A utiliser SYSTEMATIQUEMENT des qu'une donnee non maitrisee entre
+ * dans un template destine a innerHTML. Quand c'est possible, preferer
+ * textContent, qui n'interprete rien par construction.
+ */
+export function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
