@@ -773,6 +773,23 @@ class Store {
             // Toutes les ressources disponibles globalement
             this._data.resources = allResources;
             this._invalidateResourceIndex();
+
+            /* CORRECTIF : reconstruire project.resourceIds.
+             *
+             * rowToProject() renvoie systematiquement resourceIds: [], car
+             * il n'existe AUCUNE colonne resource_ids en base : le champ
+             * n'est ni envoye ni relu. Il etait donc remis a zero a chaque
+             * rechargement, et l'onglet Ressources apparaissait vide.
+             *
+             * resource.projectId, lui, EST persiste. On s'en sert pour
+             * reconstituer le lien.
+             *
+             * LIMITE ASSUMEE : projectId etant unique, une ressource
+             * partagee entre plusieurs projets ne le restera pas apres
+             * rechargement. Cela ne fonctionnait pas davantage avant —
+             * une vraie mise en commun demanderait une table de liaison
+             * project_resources. */
+            this._rebuildProjectResourceIds();
             // Mettre à jour resourceIds pour chaque projet
             this._data.projects.forEach(p => {
                 p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
@@ -1924,6 +1941,23 @@ class Store {
         };
         this._data.resources.push(newResource);
         this._invalidateResourceIndex();
+
+        /* CORRECTIF : rattacher la ressource au projet actif.
+         *
+         * addResource() renseignait seulement resource.projectId, sans
+         * ajouter l'identifiant a project.resourceIds. Or l'onglet
+         * Ressources affiche par defaut la portee « projet », qui filtre
+         * justement sur resourceIds. La ressource etait donc creee (le
+         * message de confirmation s'affichait) mais INVISIBLE, sauf en
+         * basculant le selecteur sur « toutes ». */
+        const projetActif = this._data.projects.find(p => p.id === newResource.projectId);
+        if (projetActif) {
+            if (!projetActif.resourceIds) projetActif.resourceIds = [];
+            if (!projetActif.resourceIds.includes(newResource.id)) {
+                projetActif.resourceIds.push(newResource.id);
+            }
+        }
+
         this._save();
         this._emit('resource:add', newResource);
         // Sync Supabase + history
@@ -1962,6 +1996,16 @@ class Store {
         const resource = this._data.resources.find(r => r.id === resourceId);
         this._data.resources = this._data.resources.filter(r => r.id !== resourceId);
         this._invalidateResourceIndex();
+
+        /* Retirer la reference de TOUS les projets. Sans cela, des
+           identifiants orphelins s'accumulaient dans resourceIds et
+           faussaient les compteurs de l'onglet. */
+        this._data.projects.forEach(p => {
+            if (Array.isArray(p.resourceIds)) {
+                p.resourceIds = p.resourceIds.filter(id => id !== resourceId);
+            }
+        });
+
         // Unassign from tasks
         this._data.tasks.forEach(t => {
             if (t.assignee === resourceId) t.assignee = null;
@@ -1990,6 +2034,24 @@ class Store {
         return (project.resourceIds || [])
             .map(id => this.getResource(id))
             .filter(Boolean);
+    }
+
+    /** Reconstitue project.resourceIds a partir de resource.projectId.
+     *  Necessaire car resourceIds n'est pas persiste (voir le commentaire
+     *  dans initFromSupabase). */
+    _rebuildProjectResourceIds() {
+        const parProjet = new Map();
+        for (const r of this._data.resources) {
+            if (!r.projectId) continue;
+            if (!parProjet.has(r.projectId)) parProjet.set(r.projectId, []);
+            parProjet.get(r.projectId).push(r.id);
+        }
+        for (const p of this._data.projects) {
+            const depuisBase = parProjet.get(p.id) || [];
+            const existants  = Array.isArray(p.resourceIds) ? p.resourceIds : [];
+            // Union : on ne perd pas un rattachement local plus recent
+            p.resourceIds = [...new Set([...existants, ...depuisBase])];
+        }
     }
 
     addResourceToProject(projectId, resourceId) {
