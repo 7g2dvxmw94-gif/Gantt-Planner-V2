@@ -5,7 +5,7 @@
 
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
-import { formatDateISO, formatDateDisplay, addDays, daysBetween } from './utils.js';
+import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog} from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -747,7 +747,7 @@ class GanttInteractions {
                     `a déplacé un ${typeLabel} (⚠️ chemin critique)`,
                     taskBeforeDrag.isMilestone ? 'milestone' : 'task',
                     taskBeforeDrag.name
-                ).catch(() => {});
+                ).catch(e => syncLog.record('historique : déplacement tâche', e));
             }
 
             if (this._onUpdate) this._onUpdate();
