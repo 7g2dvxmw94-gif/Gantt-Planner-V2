@@ -33,12 +33,13 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     const bar = page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName });
     await expect(bar).toBeVisible({ timeout: 10_000 });
 
-    // Attendre que le zoom "jour" soit appliqué et calculer la véritable
-    // largeur d'une colonne au lieu de la supposer. La largeur peut varier
-    // selon les CSS, le zoom appliqué, et autres facteurs de rendu.
-    const firstColWidth = await page.evaluate(() => {
+    // Mesurer la largeur réelle des colonnes depuis le DOM après que le Gantt
+    // soit complètement rendu (après la création de la tâche).
+    const colWidth = await page.evaluate(() => {
         const col = document.querySelector('.gantt-timeline-grid-col');
-        return col ? col.getBoundingClientRect().width : 36;
+        if (!col) return 36;
+        const width = col.getBoundingClientRect().width;
+        return width > 0 ? width : 36;
     });
 
     const box = await bar.boundingBox();
@@ -47,7 +48,7 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(startX + 3 * firstColWidth, startY, { steps: 10 });
+    await page.mouse.move(startX + 3 * colWidth, startY, { steps: 10 });
     await page.mouse.up();
 
     // Rouvrir la tâche et vérifier que les dates ont bien avancé de 3 jours.

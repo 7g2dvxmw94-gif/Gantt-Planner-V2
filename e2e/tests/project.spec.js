@@ -45,6 +45,7 @@ test('renommer le projet actif', async ({ page }) => {
     // édition à la fois, donc cibler l'input directement sur la page suffit.
     const renameInput = page.locator('.project-rename-input');
     await renameInput.waitFor({ state: 'visible', timeout: 5_000 });
+    await renameInput.focus();
     await renameInput.fill(renamed);
     await renameInput.press('Enter');
 
