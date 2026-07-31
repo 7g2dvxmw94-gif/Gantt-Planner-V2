@@ -120,7 +120,6 @@ class GanttInteractions {
 
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
-        console.log('DRAG START - Original task:', {id: task.id, name: task.name, startDate: task.startDate, endDate: task.endDate});
 
         const isMilestone = !!milestone;
         const isPermit = !!permit;
@@ -722,16 +721,11 @@ class GanttInteractions {
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth + 1), -1);
 
                 if (d.mode === 'move') {
+                    // Preserve the original task duration when moving
+                    const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(newEnd);
-                    console.log('MOVE DEBUG:', {
-                        newLeft,
-                        newWidth,
-                        newStart: formatDateISO(newStart),
-                        newEnd: formatDateISO(newEnd),
-                        barLeftCSS: d.bar.style.left,
-                        barWidthCSS: d.bar.style.width
-                    });
+                    // For inclusive date ranges: duration of 2 days (Aug 10-12) means endDate = startDate + 2
+                    updates.endDate = formatDateISO(addDays(newStart, origDuration + 1));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
