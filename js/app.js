@@ -87,6 +87,7 @@ class App {
         this._bindContextMenu();
         this._bindProjectSelector();
         this._bindNotifications();
+        this._bindSyncStatus();
         this._buildFilterBar();
         this._bindHistoryBtn();
 
@@ -3633,6 +3634,114 @@ thead{display:table-header-group}
             const panel = document.getElementById('notifPanel');
             if (panel) panel.remove();
         });
+    }
+
+    /* ---- Indicateur de synchronisation --------------------------------
+       Icone discrete signalant un echec de synchronisation (voir syncLog
+       dans utils.js). Cachee tant qu'aucun echec n'est survenu dans la
+       session ; une fois apparue, elle reste visible pour consultation,
+       meme apres lecture, mais son badge et son eclat disparaissent des
+       que le panneau a ete ouvert.
+       ------------------------------------------------------------- */
+
+    _bindSyncStatus() {
+        const btn = $('#syncStatusBtn');
+        if (!btn) return;
+
+        this._syncErrorCount    = 0;   // depuis la derniere consultation
+        this._syncErrorsAllTime = 0;   // total de la session, pour l'affichage "vu"
+
+        syncLog.subscribe(() => {
+            this._syncErrorCount++;
+            this._syncErrorsAllTime++;
+            this._updateSyncStatus();
+        });
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleSyncPanel();
+        });
+
+        document.addEventListener('click', () => {
+            const panel = document.getElementById('syncStatusPanel');
+            if (panel) panel.remove();
+        });
+    }
+
+    _updateSyncStatus() {
+        const btn   = $('#syncStatusBtn');
+        const badge = $('#syncStatusBadge');
+        if (!btn || !badge) return;
+
+        /* Premiere erreur de la session : l'icone sort de sa discretion
+           et reste presente pour le reste de la session. */
+        if (this._syncErrorsAllTime > 0) btn.style.display = '';
+
+        if (this._syncErrorCount > 0) {
+            badge.textContent  = this._syncErrorCount > 99 ? '99+' : String(this._syncErrorCount);
+            badge.style.display = '';
+            btn.classList.add('sync-status-alert');
+        } else {
+            badge.style.display = 'none';
+            btn.classList.remove('sync-status-alert');
+        }
+    }
+
+    _toggleSyncPanel() {
+        const existing = document.getElementById('syncStatusPanel');
+        if (existing) { existing.remove(); return; }
+
+        /* Ouvrir le panneau vaut consultation : on eteint l'alerte, mais
+           le contenu (l'historique) reste affichable ensuite via l'icone
+           qui demeure visible. */
+        this._syncErrorCount = 0;
+        this._updateSyncStatus();
+
+        const btn  = $('#syncStatusBtn');
+        const rect = btn.getBoundingClientRect();
+
+        const panel = document.createElement('div');
+        panel.id = 'syncStatusPanel';
+        panel.className = 'notif-panel';
+        panel.style.right = (window.innerWidth - rect.right) + 'px';
+        panel.style.top = (rect.bottom + 6) + 'px';
+        panel.addEventListener('click', (e) => e.stopPropagation());
+
+        const errors = store.getSyncErrors ? store.getSyncErrors(20) : [];
+
+        const header = document.createElement('div');
+        header.className = 'notif-panel-title';
+        header.textContent = 'Synchronisation';
+        panel.appendChild(header);
+
+        if (!errors.length) {
+            const empty = document.createElement('div');
+            empty.className = 'notif-empty';
+            empty.textContent = 'Aucun incident de synchronisation.';
+            panel.appendChild(empty);
+        } else {
+            errors.forEach(err => {
+                const item = document.createElement('div');
+                item.className = 'notif-item';
+
+                const heure = new Date(err.at).toLocaleTimeString('fr-FR',
+                    { hour: '2-digit', minute: '2-digit' });
+
+                /* escapeHtml : err.scope et err.message peuvent contenir un
+                   nom de tache ou de ressource saisi par l'utilisateur —
+                   memes precautions que le reste de l'interface. */
+                item.innerHTML = `
+                    <div class="notif-icon warning">!</div>
+                    <div class="notif-text">
+                        <strong>${escapeHtml(err.scope)}</strong>
+                        <div class="notif-sub">${escapeHtml(err.message)} · ${heure}</div>
+                    </div>
+                `;
+                panel.appendChild(item);
+            });
+        }
+
+        document.body.appendChild(panel);
     }
 
     _toggleNotifPanel() {
