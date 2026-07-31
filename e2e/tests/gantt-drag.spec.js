@@ -5,8 +5,6 @@ import { createProject, deleteActiveProject } from '../helpers.js';
    (pas de rendu, pas de coordonnées d'écran réelles). C'est exactement le
    type de régression que ce lot 5 vise à couvrir. */
 
-const DAY_COL_WIDTH = 36; // ZOOM_CONFIG.day.colWidth dans js/gantt-renderer.js
-
 test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async ({ page }) => {
     const projectName = `E2E Drag ${Date.now()}`;
     const taskName = `Tâche glissée ${Date.now()}`;
@@ -16,6 +14,9 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
 
     // Zoom "jour" pour un mapping pixel <-> jour déterministe.
     await page.locator('.zoom-btn[data-zoom="day"]').click();
+
+    // Attendre que le zoom soit appliqué (les colonnes de jour sont rendues)
+    await page.locator('.gantt-cell').first().waitFor({ timeout: 5_000 });
 
     // Créer une tâche avec des dates connues.
     await page.locator('#addTaskBtn').click();
@@ -35,13 +36,21 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     const bar = page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName });
     await expect(bar).toBeVisible({ timeout: 10_000 });
 
+    // Attendre que le zoom "jour" soit appliqué et calculer la véritable
+    // largeur d'une colonne au lieu de la supposer. La largeur peut varier
+    // selon les CSS, le zoom appliqué, et autres facteurs de rendu.
+    const firstColWidth = await page.evaluate(() => {
+        const col = document.querySelector('.gantt-cell');
+        return col ? col.getBoundingClientRect().width : 36;
+    });
+
     const box = await bar.boundingBox();
     const startX = box.x + box.width / 2;
     const startY = box.y + box.height / 2;
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(startX + 3 * DAY_COL_WIDTH, startY, { steps: 10 });
+    await page.mouse.move(startX + 3 * firstColWidth, startY, { steps: 10 });
     await page.mouse.up();
 
     // Rouvrir la tâche et vérifier que les dates ont bien avancé de 3 jours.
