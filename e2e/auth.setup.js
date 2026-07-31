@@ -20,11 +20,14 @@ setup('login', async ({ page }) => {
 
     await page.waitForURL(/index\.html/, { timeout: 15_000 });
 
-    // Le tour d'onboarding (js/onboarding.js) s'auto-lance 600ms après le
-    // chargement pour tout compte sans ce flag, et son overlay plein écran
-    // (même z-index que les dropdowns) intercepte les clics des tests sur
-    // des éléments hors du "spotlight" — on le désactive une fois pour
-    // toutes ici, persisté dans le storageState partagé par tous les tests.
+    // store.initFromSupabase() (awaité par App.init()) appelle
+    // purgeForeignLocalData() en tout premier, qui EFFACE
+    // 'gantt_onboarding_done' tant que 'gantt_last_user_id' ne correspond pas
+    // encore à ce compte (premier login sur ce storageState). Il faut donc
+    // attendre la fin de l'init (marqueur data-app-ready) avant d'écrire le
+    // flag, sinon la purge l'efface aussitôt et l'overlay d'onboarding
+    // (même z-index que les dropdowns) intercepte les clics des tests.
+    await page.locator('body[data-app-ready="true"]').waitFor({ timeout: 15_000 });
     await page.evaluate(() => localStorage.setItem('gantt_onboarding_done', '1'));
 
     try {
