@@ -720,10 +720,16 @@ class GanttInteractions {
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
 
                 if (d.mode === 'move') {
-                    // Account for snap-to-working-days: add 1 day so after snapping we get the correct visual dates
-                    const compensatedEnd = addDays(newEnd, 1);
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(compensatedEnd);
+                    updates.endDate = formatDateISO(newEnd);
+                    console.log('MOVE DEBUG:', {
+                        newLeft,
+                        newWidth,
+                        newStart: formatDateISO(newStart),
+                        newEnd: formatDateISO(newEnd),
+                        barLeftCSS: d.bar.style.left,
+                        barWidthCSS: d.bar.style.width
+                    });
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
