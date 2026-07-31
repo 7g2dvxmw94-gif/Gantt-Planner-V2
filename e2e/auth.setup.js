@@ -1,8 +1,8 @@
 import { test as setup, expect } from '@playwright/test';
 import { mkdir } from 'fs/promises';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 
-const AUTH_FILE = 'e2e/.auth/user.json';
+const AUTH_FILE = resolve(process.cwd(), 'e2e/.auth/user.json');
 
 setup('login', async ({ page }) => {
     const email = process.env.E2E_TEST_EMAIL;
