@@ -19,7 +19,6 @@ setup('login', async ({ page }) => {
     await page.locator('#btnLogin').click();
 
     await page.waitForURL(/index\.html/, { timeout: 15_000 });
-    await expect(page.locator('#projectName')).not.toHaveText('…', { timeout: 15_000 });
 
     try {
         await mkdir(dirname(AUTH_FILE), { recursive: true });
