@@ -720,8 +720,8 @@ class GanttInteractions {
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
 
                 if (d.mode === 'move') {
-                    // Use the bar's actual new position to determine dates
-                    // The bar's right edge position corresponds to endDate + 1, so newEnd is already correct
+                    // Use the bar's actual visual position for both dates
+                    // The bar visually spans from left (start) to right (end+1), so both newStart and newEnd are correct
                     updates.startDate = formatDateISO(newStart);
                     updates.endDate = formatDateISO(newEnd);
                 } else if (d.mode === 'resize-left') {
