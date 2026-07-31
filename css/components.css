@@ -984,6 +984,26 @@ textarea.input {
 }
 
 /* ---- Notification Badge ---- */
+/* Indicateur de synchronisation — discret par defaut (cache en HTML tant
+   qu'aucun echec n'est survenu), avec un leger halo d'alerte une fois
+   qu'un incident a ete enregistre et pas encore consulte. Volontairement
+   plus subtil qu'un toast : un souci de synchronisation ne doit pas
+   interrompre le travail en cours, seulement rester decouvrable. */
+.sync-status-alert {
+    color: var(--color-warning, #F59E0B);
+}
+.sync-status-alert::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-warning, #F59E0B);
+    box-shadow: 0 0 0 2px var(--bg-elevated, var(--bg-base, #fff));
+}
+
 .notif-badge {
     position: absolute;
     top: 2px;
