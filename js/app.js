@@ -9,7 +9,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog} from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -345,8 +345,8 @@ class App {
 
             if (priority.length > 0 && !priority.includes(task.priority)) return false;
 
-            if (dateStart && new Date(task.endDate) < new Date(dateStart)) return false;
-            if (dateEnd && new Date(task.startDate) > new Date(dateEnd)) return false;
+            if (dateStart && parseISO(task.endDate) < parseISO(dateStart)) return false;
+            if (dateEnd && parseISO(task.startDate) > parseISO(dateEnd)) return false;
 
             if (search) {
                 const q = search.toLowerCase();
@@ -621,7 +621,7 @@ class App {
                 const tdVariance = document.createElement('td');
                 tdVariance.className = 'table-bl-col';
                 if (blTask) {
-                    const variance = Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+                    const variance = Math.round((parseISO(task.endDate) - parseISO(blTask.endDate)) / 86400000);
                     const badge = document.createElement('span');
                     if (variance > 0) {
                         badge.className = 'bl-variance-late';
@@ -1055,8 +1055,8 @@ class App {
         const project = store.getActiveProject();
         if (!project) return { percent: 0, concurrent: 0 };
 
-        const projectStart = rangeStart ? new Date(rangeStart) : new Date(project.startDate);
-        const projectEnd   = rangeEnd   ? new Date(rangeEnd)   : new Date(project.endDate);
+        const projectStart = rangeStart ? parseISO(rangeStart) : parseISO(project.startDate);
+        const projectEnd   = rangeEnd   ? parseISO(rangeEnd)   : parseISO(project.endDate);
 
         let totalWorkDays = 0;
         let allocatedDays = 0;
@@ -1068,8 +1068,8 @@ class App {
             if (day !== 0 && day !== 6) {
                 totalWorkDays++;
                 const active = assignedTasks.filter(t => {
-                    const ts = new Date(t.startDate);
-                    const te = new Date(t.endDate);
+                    const ts = parseISO(t.startDate);
+                    const te = parseISO(t.endDate);
                     return current >= ts && current <= te;
                 }).length;
                 allocatedDays += active;
@@ -1091,7 +1091,7 @@ class App {
         if (assignedAll.length === 0) return { percent: 0, concurrent: 0, projectCount: 0 };
 
         // Derive date range spanning all assigned tasks
-        const dates = assignedAll.flatMap(t => [new Date(t.startDate), new Date(t.endDate)]);
+        const dates = assignedAll.flatMap(t => [parseISO(t.startDate), parseISO(t.endDate)]);
         const rangeStart = new Date(Math.min(...dates));
         const rangeEnd   = new Date(Math.max(...dates));
 
@@ -1824,7 +1824,7 @@ class App {
         };
         const dur = (task) => {
             if (!task.startDate || !task.endDate) return '';
-            const days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            const days = Math.max(1, Math.round((parseISO(task.endDate) - parseISO(task.startDate)) / 86400000) + 1);
             return days + ' jour' + (days > 1 ? 's' : '');
         };
         const assigneeNames = (task) => (task.assignees || [])
@@ -1870,7 +1870,7 @@ class App {
         const fmtDateTime = (d, time) => d ? `${d}T${time}` : '';
         const durISO = (task) => {
             if (!task.startDate || !task.endDate) return 'PT8H0M0S';
-            const days = Math.max(1, Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1);
+            const days = Math.max(1, Math.round((parseISO(task.endDate) - parseISO(task.startDate)) / 86400000) + 1);
             return `PT${days * 8}H0M0S`;
         };
 
@@ -2142,8 +2142,8 @@ ${assignLines.join('\n')}
             if (sections.includes('timeline')) {
                 const ganttTasks = nonPhase.filter(tk => tk.startDate && tk.endDate);
                 if (ganttTasks.length > 0) {
-                    const rangeStartDate = tlStart ? new Date(tlStart) : new Date(Math.min(...ganttTasks.map(tk => new Date(tk.startDate).getTime())));
-                    const rangeEndDate   = tlEnd   ? new Date(tlEnd)   : new Date(Math.max(...ganttTasks.map(tk => new Date(tk.endDate).getTime())));
+                    const rangeStartDate = tlStart ? parseISO(tlStart) : new Date(Math.min(...ganttTasks.map(tk => parseISO(tk.startDate).getTime())));
+                    const rangeEndDate   = tlEnd   ? parseISO(tlEnd)   : new Date(Math.max(...ganttTasks.map(tk => parseISO(tk.endDate).getTime())));
                     rangeStartDate.setDate(1);
                     rangeEndDate.setMonth(rangeEndDate.getMonth() + 1); rangeEndDate.setDate(0);
                     const totalDays = Math.max(1, daysBetween(formatDateISO(rangeStartDate), formatDateISO(rangeEndDate)));
@@ -2198,7 +2198,7 @@ ${assignLines.join('\n')}
                                 color: row.isPhase ? DARK : '334155', fontFace: ff, valign: 'middle',
                             });
                             if (row.isPhase) {
-                                const pDates = row.children.flatMap(tk => [new Date(tk.startDate), new Date(tk.endDate)]);
+                                const pDates = row.children.flatMap(tk => [parseISO(tk.startDate), parseISO(tk.endDate)]);
                                 const pStart = new Date(Math.min(...pDates.map(d => d.getTime())));
                                 const pEnd   = new Date(Math.max(...pDates.map(d => d.getTime())));
                                 const pOff = Math.max(0, daysBetween(formatDateISO(rangeStartDate), formatDateISO(pStart)));
@@ -2630,8 +2630,10 @@ thead{display:table-header-group}
 
     _pdfTimelineSection(tasks, resources, tlStart, tlEnd) {
         const range = store.getTimelineRange();
-        const start = tlStart ? new Date(tlStart) : new Date(range.start);
-        const end = tlEnd ? new Date(tlEnd) : new Date(range.end);
+        /* range.start/range.end proviennent de store.getTimelineRange() —
+           des chaines de date calendaire, pas des horodatages. */
+        const start = tlStart ? parseISO(tlStart) : parseISO(range.start);
+        const end = tlEnd ? parseISO(tlEnd) : parseISO(range.end);
         const DAY = 86400000;
         // End date is inclusive; use exclusive boundary for calculations
         const endExcl = new Date(end.getTime() + DAY);
@@ -2730,8 +2732,8 @@ thead{display:table-header-group}
         })();
 
         const renderRow = (task, indent) => {
-            const ts = new Date(task.startDate);
-            const te = new Date(task.endDate);
+            const ts = parseISO(task.startDate);
+            const te = parseISO(task.endDate);
             const visStart = new Date(Math.max(ts.getTime(), start.getTime()));
             const visEnd = new Date(Math.min(te.getTime() + DAY, endExcl.getTime()));
 
@@ -2915,7 +2917,7 @@ thead{display:table-header-group}
             html += `<div class="res-workload"><div class="res-workload-fill" style="width:${Math.min(workload.percent, 100)}%;background:${fillColor}"></div></div>`;
 
             if (assignedTasks.length > 0) {
-                assignedTasks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).forEach(task => {
+                assignedTasks.sort((a, b) => parseISO(a.startDate) - parseISO(b.startDate)).forEach(task => {
                     html += `<div class="res-task">`;
                     html += `<span class="res-task-name"><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span> ${task.name}</span>`;
                     html += `<span class="res-task-dates">${formatDateDisplay(task.startDate)} → ${formatDateDisplay(task.endDate)}</span>`;
@@ -3436,7 +3438,7 @@ thead{display:table-header-group}
 
             // Overdue tasks
             nonPhase.filter(tk => tk.endDate && tk.endDate < today && tk.progress < 100).forEach(tk => {
-                const days = daysBetween(new Date(tk.endDate), new Date());
+                const days = daysBetween(parseISO(tk.endDate), new Date());
                 notifications.push({
                     type: 'danger',
                     icon: '\u26A0',
@@ -3449,7 +3451,7 @@ thead{display:table-header-group}
 
             // Milestones approaching (within 3 days)
             nonPhase.filter(tk => tk.isMilestone && tk.endDate >= today && tk.endDate <= soon && tk.progress < 100).forEach(tk => {
-                const days = daysBetween(new Date(), new Date(tk.endDate));
+                const days = daysBetween(new Date(), parseISO(tk.endDate));
                 notifications.push({
                     type: 'warning',
                     icon: '\u25C6',
@@ -4296,7 +4298,7 @@ thead{display:table-header-group}
         const allUpcoming = [];
         projects.forEach(p => {
             this._getFilteredTasks(false, p.id).filter(t => t.progress < 100).forEach(t => {
-                const daysLeft = Math.ceil((new Date(t.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.ceil((parseISO(t.endDate) - new Date()) / (1000 * 60 * 60 * 24));
                 allUpcoming.push({ ...t, projectName: p.name, daysLeft });
             });
         });
@@ -4704,7 +4706,11 @@ thead{display:table-header-group}
             if (deadlines.suspended) {
                 nextDeadline = `<span style="color:#F59E0B;">${t('dashboard.permit.suspended')}</span>`;
             } else if (deadlines.decisionDeadline && (permit.permitStatus !== 'granted' && permit.permitStatus !== 'granted_conditions' && permit.permitStatus !== 'refused')) {
-                const dl = new Date(deadlines.decisionDeadline);
+                /* parseISO, pas new Date : deadlines.decisionDeadline est une date
+                   calendaire pure. Sous un fuseau negatif, new Date() aurait
+                   sous-estime le nombre de jours restants d'une unite,
+                   pouvant afficher un delai comme depasse un jour trop tot. */
+                const dl = parseISO(deadlines.decisionDeadline);
                 const daysLeft = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
                 const color = daysLeft <= 3 ? '#EF4444' : daysLeft <= 14 ? '#F59E0B' : 'var(--text-secondary)';
                 nextDeadline = `<span style="color:${color};">${t('dashboard.permit.decisionLabel')}: ${formatDateDisplay(deadlines.decisionDeadline)}${daysLeft >= 0 ? ` ${t('dashboard.permit.daysLeft', { days: daysLeft })}` : ` ${t('dashboard.permit.overdue')}`}</span>`;

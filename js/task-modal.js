@@ -682,7 +682,7 @@ class TaskModal {
         }
 
         // Duration
-        const days = Math.round((new Date(task.endDate) - new Date(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+        const days = Math.round((parseISO(task.endDate) - parseISO(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;
         this._durationInput.value = Math.max(1, days);
         this._durationInput.disabled = task.isMilestone;
 
@@ -1121,7 +1121,12 @@ class TaskModal {
         if (deadlines.suspended) {
             items.push({ label: t('permit.deadline.provisional'), value: t('permit.deadline.suspended'), cls: 'warning' });
         } else if (deadlines.decisionDeadline) {
-            const dl = new Date(deadlines.decisionDeadline);
+            /* parseISO : deadlines.decisionDeadline est une date calendaire pure,
+               pas un horodatage. Sous un fuseau negatif, new Date() aurait
+               sous-estime le nombre de jours restants d'une unite — pour un
+               delai reglementaire de permis de construire, ce n'est pas un
+               detail cosmetique. */
+            const dl = parseISO(deadlines.decisionDeadline);
             const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
             let cls = '';
             if (daysLeft <= 7 && daysLeft >= 0) cls = 'urgent';
@@ -1137,7 +1142,7 @@ class TaskModal {
         }
 
         if (deadlines.appealEndDate) {
-            const appeal = new Date(deadlines.appealEndDate);
+            const appeal = parseISO(deadlines.appealEndDate);  // meme raison que ci-dessus
             const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
             let cls = daysLeft < 0 ? '' : (daysLeft <= 7 ? 'urgent' : '');
             const label = daysLeft < 0 ? t('permit.deadline.appealPurged') : t('permit.deadline.appealEnd', { days: daysLeft });
