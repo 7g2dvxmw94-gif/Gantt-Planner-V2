@@ -625,11 +625,14 @@ const MAX_ENTRIES = 30;
 /** Cree un journal independant (utilise par le store, teste isolement). */
 export function createSyncLog() {
     const entries = [];
+    const listeners = new Set();
 
     return {
         /** Enregistre un echec. Toujours en console (visible en debogage),
-         *  et dans un tampon borne (consultable depuis la console ou par
-         *  un futur indicateur d'interface). */
+         *  dans un tampon borne (consultable via store.getSyncErrors()),
+         *  et notifie les abonnes — c'est ce qui alimente l'icone
+         *  discrete de la barre d'outils sans qu'elle ait a sonder le
+         *  journal en boucle. */
         record(scope, err) {
             const entry = {
                 scope,
@@ -639,7 +642,15 @@ export function createSyncLog() {
             entries.push(entry);
             if (entries.length > MAX_ENTRIES) entries.shift();
             console.warn(`[sync] ${scope} : ${entry.message}`);
+            listeners.forEach(fn => { try { fn(entry); } catch { /* abonne defaillant : ignore */ } });
             return entry;
+        },
+
+        /** S'abonne aux nouvelles erreurs. Retourne une fonction de
+         *  desabonnement. */
+        subscribe(fn) {
+            listeners.add(fn);
+            return () => listeners.delete(fn);
         },
 
         /** Dernieres erreurs, les plus recentes en premier. */
