@@ -186,6 +186,12 @@ class App {
 
         // Onboarding for new users
         onboarding.tryAutoStart();
+
+        // Signale que l'app est prête (utilisé par les tests E2E Playwright :
+        // le bootstrap attend initFromSupabase() avant d'appeler init(), donc
+        // les listeners comme celui du sélecteur de projet ne sont attachés
+        // qu'à ce moment — un clic avant ce marqueur ne fait rien).
+        document.body.setAttribute('data-app-ready', 'true');
     }
 
     /* ---- Tab Navigation ---- */
