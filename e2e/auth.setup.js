@@ -21,6 +21,19 @@ setup('login', async ({ page }) => {
     await page.waitForURL(/index\.html/, { timeout: 15_000 });
     await expect(page.locator('#projectName')).not.toHaveText('…', { timeout: 15_000 });
 
-    await mkdir(dirname(AUTH_FILE), { recursive: true });
-    await page.context().storageState({ path: AUTH_FILE });
+    try {
+        await mkdir(dirname(AUTH_FILE), { recursive: true });
+        console.log(`✓ Directory created: ${dirname(AUTH_FILE)}`);
+    } catch (err) {
+        console.error(`✗ mkdir failed: ${err.message}`);
+        throw err;
+    }
+
+    try {
+        await page.context().storageState({ path: AUTH_FILE });
+        console.log(`✓ Storage state saved to: ${AUTH_FILE}`);
+    } catch (err) {
+        console.error(`✗ storageState failed: ${err.message}`);
+        throw err;
+    }
 });
