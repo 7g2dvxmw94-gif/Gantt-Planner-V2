@@ -5,7 +5,7 @@
 
 import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
-         workingDaysBetween, defaultCalendar } from './utils.js';
+         workingDaysBetween, defaultCalendar, syncLog } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -1149,7 +1149,7 @@ class Store {
         supabaseStore.upsertBaseline(baseline)
             .catch(e => console.error('[store] sync createBaseline:', e));
         supabaseStore.logHistory(pid, 'a créé la baseline', 'baseline', baseline.name)
-            .catch(() => {});
+            .catch(e => syncLog.record('historique : création baseline', e));
         this._emit('baseline:create', baseline);
         return baseline;
     }
@@ -1169,7 +1169,7 @@ class Store {
         supabaseStore.deleteBaseline(baselineId)
             .catch(e => console.error('[store] sync deleteBaseline:', e));
         supabaseStore.logHistory(bl.projectId, 'a supprimé la baseline', 'baseline', bl.name)
-            .catch(() => {});
+            .catch(e => syncLog.record('historique : suppression baseline', e));
         this._emit('baseline:delete', baselineId);
     }
 
@@ -1245,6 +1245,12 @@ class Store {
         this._taskIndexSource = arr;
         this._taskIndexSize   = arr.length;
         return m;
+    }
+
+    /** Dernieres erreurs de synchronisation, les plus recentes en
+     *  premier. A executer depuis la console : store.getSyncErrors() */
+    getSyncErrors(n = 30) {
+        return syncLog.recent(n);
     }
 
     getTask(taskId) {
@@ -1338,7 +1344,7 @@ class Store {
         this._emit('task:add', newTask);
         // Log history
         supabaseStore.logHistory(newTask.projectId, 'a créé la tâche', newTask.isPhase ? 'phase' : 'task', newTask.name)
-            .catch(() => {});
+            .catch(e => syncLog.record('historique : création tâche', e));
         // Defer Supabase sync so applyPredecessorConstraints can adjust dates first
         const taskId = newTask.id;
         setTimeout(() => {
@@ -1478,7 +1484,7 @@ class Store {
             .catch(e => console.error('[store] sync deleteTask:', e));
         // Log history
         supabaseStore.logHistory(projectId, 'a supprimé la tâche', task.isPhase ? 'phase' : 'task', taskName)
-            .catch(() => {});
+            .catch(e => syncLog.record('historique : suppression tâche', e));
         // Notifier les owners si l'acteur n'est pas owner lui-même
         const role = this.getActiveProject()?._role;
         if (role && role !== 'owner') {
@@ -1688,6 +1694,7 @@ class Store {
      */
     migrateToWorkingDays() {
         let deplacees = 0;
+        const echecs = [];   // taches recalees LOCALEMENT mais pas synchronisees
 
         // 1. Recaler chaque tache non-phase sur des jours ouvres
         for (const task of this._data.tasks) {
@@ -1697,7 +1704,17 @@ class Store {
             task.startDate = cible.startDate;
             task.endDate   = cible.endDate;
             deplacees++;
-            supabaseStore.upsertTask(task).catch(() => {});
+            /* CORRECTIF : un .catch(() => {}) muet masquait une divergence
+             * reelle entre le local et le serveur. Sur une migration en
+             * MASSE, quelques echecs de reseau sont plausibles ; sans
+             * trace, l'utilisateur croit son planning migre alors que
+             * certaines taches restent, cote serveur, sur leurs
+             * anciennes dates. On les liste desormais pour pouvoir les
+             * resynchroniser. */
+            supabaseStore.upsertTask(task).catch(e => {
+                syncLog.record(`migration jours ouvres : tâche "${task.name}"`, e);
+                echecs.push(task.id);
+            });
         }
 
         // 2. Repropager les contraintes depuis les taches sans predecesseur
@@ -1715,8 +1732,16 @@ class Store {
 
         this._save();
         this._emit('change', {});
-        console.info(`[store] migrateToWorkingDays : ${deplacees} tache(s) recalee(s)`);
-        return deplacees;
+        if (echecs.length) {
+            console.warn(
+                `[store] migrateToWorkingDays : ${deplacees} tache(s) recalee(s), ` +
+                `dont ${echecs.length} non synchronisee(s) — relancez store.migrateToWorkingDays() ` +
+                `ou verifiez store.getSyncErrors().`
+            );
+        } else {
+            console.info(`[store] migrateToWorkingDays : ${deplacees} tache(s) recalee(s)`);
+        }
+        return { deplacees, echecs };
     }
 
     /** Convertit les ecarts DEJA presents en decalage explicite.
@@ -1730,6 +1755,7 @@ class Store {
      */
     migrateGapsToLag() {
         let modifies = 0;
+        const echecs = [];
 
         for (const task of this._data.tasks) {
             if (!task.dependencies || !task.dependencies.length) continue;
@@ -1751,12 +1777,25 @@ class Store {
                     dep.lag = 0;
                 }
             }
-            supabaseStore.upsertTask(task).catch(() => {});
+            /* Meme raisonnement que migrateToWorkingDays : un lag calcule
+             * mais non synchronise ferait revenir l'ancien ecart au
+             * prochain chargement depuis Supabase. */
+            supabaseStore.upsertTask(task).catch(e => {
+                syncLog.record(`migration décalages : tâche "${task.name}"`, e);
+                echecs.push(task.id);
+            });
         }
 
         if (modifies) { this._save(); this._emit('change', {}); }
-        console.info(`[store] migrateGapsToLag : ${modifies} decalage(s) renseigne(s)`);
-        return modifies;
+        if (echecs.length) {
+            console.warn(
+                `[store] migrateGapsToLag : ${modifies} decalage(s) renseigne(s), ` +
+                `dont ${echecs.length} non synchronise(s) — relancez store.migrateGapsToLag().`
+            );
+        } else {
+            console.info(`[store] migrateGapsToLag : ${modifies} decalage(s) renseigne(s)`);
+        }
+        return { modifies, echecs };
     }
 
     /* ---- Cycles de dependances ---- */
@@ -1976,7 +2015,7 @@ class Store {
         supabaseStore.upsertResource(newResource)
             .catch(e => console.error('[store] sync addResource:', e));
         supabaseStore.logHistory(newResource.projectId, 'a ajouté la ressource', 'resource', newResource.name)
-            .catch(() => {});
+            .catch(e => syncLog.record('historique : ajout ressource', e));
         return newResource;
     }
 
@@ -2032,7 +2071,7 @@ class Store {
             .catch(e => console.error('[store] sync deleteResource:', e));
         if (resource) {
             supabaseStore.logHistory(resource.projectId, 'a supprimé la ressource', 'resource', resource.name)
-                .catch(() => {});
+                .catch(e => syncLog.record('historique : suppression ressource', e));
         }
     }
 
