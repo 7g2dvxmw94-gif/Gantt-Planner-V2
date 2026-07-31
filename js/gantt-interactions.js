@@ -120,7 +120,6 @@ class GanttInteractions {
 
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
-        console.log('DRAG START DEBUG:', {taskId: task.id, taskName: task.name, startDate: task.startDate, endDate: task.endDate});
 
         const isMilestone = !!milestone;
         const isPermit = !!permit;
@@ -719,14 +718,12 @@ class GanttInteractions {
                 const newStart = this._positionToDateFn(newLeft);
                 // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
-                console.log('DRAG POSITION DEBUG:', {newLeft, newWidth, newStartDate: formatDateISO(newStart), newEndDate: formatDateISO(newEnd)});
 
                 if (d.mode === 'move') {
-                    // Preserve original duration to avoid drift from month-length differences
-                    const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
+                    // Use the bar's actual new position to determine dates
+                    // The bar's right edge position corresponds to endDate + 1, so newEnd is already correct
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(addDays(newStart, origDuration + 1));
-                    console.log('DRAG DEBUG:', {origStart: d.origStartDate, origEnd: d.origEndDate, origDuration, newStart: formatDateISO(newStart), newEnd: updates.endDate});
+                    updates.endDate = formatDateISO(newEnd);
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
