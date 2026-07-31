@@ -5,7 +5,7 @@
 
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
-import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog} from './utils.js';
+import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog, parseISO } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -440,7 +440,7 @@ class GanttInteractions {
         } else {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)} \u2192 ${fmt(task.endDate)}</span></div>`;
             const dur = (task.startDate && task.endDate)
-                ? Math.round((new Date(task.endDate) - new Date(task.startDate)) / 86400000) + 1
+                ? Math.round((parseISO(task.endDate) - parseISO(task.startDate)) / 86400000) + 1
                 : null;
             if (dur !== null) html += `<div class="gtt-row"><span class="gtt-icon">\u23f1</span><span>${t(dur > 1 ? 'task.meta.days' : 'task.meta.day', { n: dur })}</span></div>`;
             if (typeof task.progress === 'number') {
@@ -460,8 +460,8 @@ class GanttInteractions {
             const blTask = baseline.tasks.find(t => t.id === task.id);
             if (blTask) {
                 const variance = task.isMilestone
-                    ? Math.round((new Date(task.startDate) - new Date(blTask.startDate)) / 86400000)
-                    : Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+                    ? Math.round((parseISO(task.startDate) - parseISO(blTask.startDate)) / 86400000)
+                    : Math.round((parseISO(task.endDate) - parseISO(blTask.endDate)) / 86400000);
                 const varColor = variance > 0 ? '#FCA5A5' : variance < 0 ? '#6EE7B7' : '#94A3B8';
                 const varBg = variance > 0 ? 'rgba(239,68,68,.15)' : variance < 0 ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.1)';
                 const varLabel = variance > 0 ? t('baseline.late', { variance }) : variance < 0 ? t('baseline.early', { variance: Math.abs(variance) }) : t('baseline.onTime');
@@ -721,7 +721,7 @@ class GanttInteractions {
 
                 if (d.mode === 'move') {
                     // Preserve original duration to avoid drift from month-length differences
-                    const origDuration = daysBetween(new Date(d.origStartDate), new Date(d.origEndDate));
+                    const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
                     updates.endDate = formatDateISO(addDays(newStart, origDuration));
                 } else if (d.mode === 'resize-left') {
@@ -761,7 +761,7 @@ class GanttInteractions {
 /* ---- Helper ---- */
 
 function _formatDateFR(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'short',

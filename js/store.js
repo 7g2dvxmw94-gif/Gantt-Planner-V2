@@ -251,17 +251,17 @@ function calculatePermitDeadlines(permit) {
     deadlines.instructionDays = instructionDays;
 
     if (permit.depositDate) {
-        const deposit = new Date(permit.depositDate);
+        const deposit = parseISO(permit.depositDate);
         // Completeness deadline (1 month from deposit)
         deadlines.completenessDeadline = formatDateISO(addDays(deposit, 30));
         // Decision deadline
-        const baseDate = permit.completenessDate ? new Date(permit.completenessDate) : deposit;
+        const baseDate = permit.completenessDate ? parseISO(permit.completenessDate) : deposit;
         let effectiveInstruction = instructionDays;
         if (permit.additionalDocsRequestDate) {
             // Instruction clock restarts from additional docs submission
             if (permit.additionalDocsResponseDate) {
                 effectiveInstruction = instructionDays; // full delay from response
-                deadlines.decisionDeadline = formatDateISO(addDays(new Date(permit.additionalDocsResponseDate), effectiveInstruction));
+                deadlines.decisionDeadline = formatDateISO(addDays(parseISO(permit.additionalDocsResponseDate), effectiveInstruction));
             } else {
                 // Waiting for docs - deadline suspended
                 deadlines.decisionDeadline = null;
@@ -275,10 +275,10 @@ function calculatePermitDeadlines(permit) {
     }
 
     if (permit.decisionDate && (permit.permitStatus === 'granted' || permit.permitStatus === 'granted_conditions')) {
-        const decision = new Date(permit.decisionDate);
+        const decision = parseISO(permit.decisionDate);
         // Display start (posting on site)
         if (permit.displayStartDate) {
-            const displayStart = new Date(permit.displayStartDate);
+            const displayStart = parseISO(permit.displayStartDate);
             deadlines.appealEndDate = formatDateISO(addDays(displayStart, THIRD_PARTY_APPEAL_DAYS));
         }
         // Permit expiry (3 years from decision)
@@ -1766,8 +1766,8 @@ class Store {
                 if (!pred) { dep.lag = 0; continue; }
 
                 let attendu = null;
-                if (dep.type === 'FS')      attendu = addDays(new Date(pred.endDate), 1);
-                else if (dep.type === 'SS') attendu = new Date(pred.startDate);
+                if (dep.type === 'FS')      attendu = addDays(parseISO(pred.endDate), 1);
+                else if (dep.type === 'SS') attendu = parseISO(pred.startDate);
 
                 if (attendu) {
                     const ecart = daysBetween(formatDateISO(attendu), task.startDate);
@@ -3011,7 +3011,10 @@ class Store {
 
             // Alert: decision deadline approaching
             if (deadlines.decisionDeadline) {
-                const dl = new Date(deadlines.decisionDeadline);
+                /* parseISO : sans ca, sous un fuseau negatif, l'alerte de
+                   decision imminente pouvait se declencher un jour trop tard
+                   (le compte de jours restants etait sous-estime). */
+                const dl = parseISO(deadlines.decisionDeadline);
                 const daysLeft = Math.ceil((dl - today) / (1000 * 60 * 60 * 24));
                 if (daysLeft >= 0 && daysLeft <= alertDaysBefore) {
                     notifications.push({
@@ -3036,7 +3039,7 @@ class Store {
 
             // Alert: appeal end date approaching
             if (deadlines.appealEndDate) {
-                const appeal = new Date(deadlines.appealEndDate);
+                const appeal = parseISO(deadlines.appealEndDate);  // meme raison
                 const daysLeft = Math.ceil((appeal - today) / (1000 * 60 * 60 * 24));
                 if (daysLeft >= 0 && daysLeft <= alertDaysBefore) {
                     notifications.push({
@@ -3058,7 +3061,7 @@ class Store {
 
             // Alert: permit expiry
             if (deadlines.expiryDate) {
-                const expiry = new Date(deadlines.expiryDate);
+                const expiry = parseISO(deadlines.expiryDate);  // meme raison
                 const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
                 if (daysLeft >= 0 && daysLeft <= 90) {
                     notifications.push({

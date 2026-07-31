@@ -20,11 +20,38 @@ function _getLocale() {
     return _LANG_LOCALE[localStorage.getItem('gantt_lang')] || 'fr-FR';
 }
 
+/* ============================================================
+   CORRECTIF FUSEAU HORAIRE (lot 3)
+   ------------------------------------------------------------
+   Toutes les fonctions ci-dessous faisaient `new Date(date)` puis
+   lisaient des composantes LOCALES (getDate/getMonth/getFullYear/
+   getDay) ou formataient en local (toLocaleDateString). Or
+   `new Date('2026-05-04')` est interprete comme minuit UTC — pour un
+   utilisateur a l'ouest de Greenwich (Ameriques, Pacifique), lire
+   .getDate() dessus renvoie le jour PRECEDENT.
+
+   Verifie avec le vrai moteur JS, sous plusieurs fuseaux simules :
+     TZ=America/New_York : new Date('2026-05-04').getDate() -> 3 (FAUX)
+     TZ=Europe/Paris      : new Date('2026-05-04').getDate() -> 4 (correct)
+   Le bug est invisible depuis la France — d'ou son absence de
+   detection jusqu'ici — mais actif pour tout client se connectant
+   depuis les Ameriques.
+
+   Ces fonctions utilisent desormais parseISO() (definie plus bas,
+   disponible ici par hoisting des declarations de fonction) qui
+   construit la date depuis ses composantes plutot que de les faire
+   passer par une interpretation UTC intermediaire.
+
+   Les COMPARAISONS et SOUSTRACTIONS pures (tri, <, >, difference de
+   dates) restaient deja correctes quel que soit le fuseau — elles ne
+   sont pas touchees ici, seule l'extraction de composantes l'etait.
+   ============================================================ */
+
 /**
  * Format a date as YYYY-MM-DD
  */
 export function formatDateISO(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -35,7 +62,7 @@ export function formatDateISO(date) {
  * Format a date for display (e.g. "15 Mar 2025")
  */
 export function formatDateDisplay(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short',
@@ -47,7 +74,7 @@ export function formatDateDisplay(date) {
  * Format a short date (e.g. "15 Mar")
  */
 export function formatDateShort(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.toLocaleDateString(_getLocale(), {
         day: 'numeric',
         month: 'short'
@@ -58,8 +85,8 @@ export function formatDateShort(date) {
  * Calculate the number of business days between two dates
  */
 export function businessDaysBetween(start, end) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const startDate = parseISO(start);
+    const endDate = parseISO(end);
     let count = 0;
     const current = new Date(startDate);
     while (current <= endDate) {
@@ -74,8 +101,8 @@ export function businessDaysBetween(start, end) {
  * Calculate the number of calendar days between two dates
  */
 export function daysBetween(start, end) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const startDate = parseISO(start);
+    const endDate = parseISO(end);
     const diffTime = endDate.getTime() - startDate.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -85,8 +112,8 @@ export function daysBetween(start, end) {
  * Returns at least 1.
  */
 export function countWorkingDays(start, end) {
-    const s = new Date(start);
-    const e = new Date(end);
+    const s = parseISO(start);
+    const e = parseISO(end);
     s.setHours(0, 0, 0, 0);
     e.setHours(0, 0, 0, 0);
     let count = 0;
@@ -103,7 +130,7 @@ export function countWorkingDays(start, end) {
  * Add days to a date
  */
 export function addDays(date, days) {
-    const d = new Date(date);
+    const d = parseISO(date);
     d.setDate(d.getDate() + days);
     return d;
 }
@@ -112,7 +139,7 @@ export function addDays(date, days) {
  * Get the Monday of the week containing the given date
  */
 export function getWeekStart(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
@@ -124,7 +151,7 @@ export function getWeekStart(date) {
  * Get the first day of the month
  */
 export function getMonthStart(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     d.setDate(1);
     d.setHours(0, 0, 0, 0);
     return d;
@@ -136,7 +163,7 @@ export function getMonthStart(date) {
 export function getMonthsBetween(start, end) {
     const months = [];
     const current = getMonthStart(start);
-    const endDate = new Date(end);
+    const endDate = parseISO(end);
     while (current <= endDate) {
         months.push(new Date(current));
         current.setMonth(current.getMonth() + 1);
@@ -150,7 +177,7 @@ export function getMonthsBetween(start, end) {
 export function getWeeksBetween(start, end) {
     const weeks = [];
     let current = getWeekStart(start);
-    const endDate = new Date(end);
+    const endDate = parseISO(end);
     while (current <= endDate) {
         weeks.push(new Date(current));
         current = addDays(current, 7);
@@ -163,9 +190,9 @@ export function getWeeksBetween(start, end) {
  */
 export function getDaysBetween(start, end) {
     const days = [];
-    const current = new Date(start);
+    const current = parseISO(start);
     current.setHours(0, 0, 0, 0);
-    const endDate = new Date(end);
+    const endDate = parseISO(end);
     endDate.setHours(0, 0, 0, 0);
     while (current <= endDate) {
         days.push(new Date(current));
@@ -178,7 +205,7 @@ export function getDaysBetween(start, end) {
  * Check if a date is today
  */
 export function isToday(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     const today = new Date();
     return d.toDateString() === today.toDateString();
 }
@@ -187,7 +214,7 @@ export function isToday(date) {
  * Check if a date is a weekend
  */
 export function isWeekend(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.getDay() === 0 || d.getDay() === 6;
 }
 
@@ -195,7 +222,7 @@ export function isWeekend(date) {
  * Get the ISO week number
  */
 export function getWeekNumber(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
     const week1 = new Date(d.getFullYear(), 0, 4);
@@ -206,7 +233,7 @@ export function getWeekNumber(date) {
  * Get month name in the current UI language
  */
 export function getMonthName(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.toLocaleDateString(_getLocale(), { month: 'long' });
 }
 
@@ -214,7 +241,7 @@ export function getMonthName(date) {
  * Get day name in French (short)
  */
 export function getDayName(date) {
-    const d = new Date(date);
+    const d = parseISO(date);
     return d.toLocaleDateString('fr-FR', { weekday: 'short' });
 }
 
@@ -424,9 +451,20 @@ export function clamp(value, min, max) {
 /** Analyse 'AAAA-MM-JJ' en date LOCALE (jamais UTC). */
 export function parseISO(value) {
     if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-    const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return new Date(NaN);
-    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+    /* CORRECTIF (lot 3) : le regex etait un match de PREFIXE (sans '$'),
+     * qui capturait aussi le debut d'un horodatage complet du type
+     * '2026-05-04T13:45:00.000Z' et jetait silencieusement l'heure.
+     * Or cette meme fonction est desormais reutilisee par les anciennes
+     * fonctions utilitaires (addDays, daysBetween, isWeekend...) qui
+     * peuvent recevoir soit une date-calendrier pure ('2026-05-04', le
+     * cas a corriger), soit — plus rarement — un horodatage complet.
+     * Le regex EXACT (avec '$') ne matche desormais que les dates pures ;
+     * tout le reste (horodatage, nombre, valeur invalide) retombe sur le
+     * comportement natif de Date, correct pour un instant precis. */
+    const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return new Date(value);
 }
 
 /* NOTE : formatDateISO() existe deja plus haut dans ce fichier et lit
