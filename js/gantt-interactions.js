@@ -718,7 +718,8 @@ class GanttInteractions {
                 const newWidth = parseFloat(d.bar.style.width);
                 const newStart = this._positionToDateFn(newLeft);
                 // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
-                const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
+                // Add 1px to width to account for sub-pixel rendering or rounding
+                const newEnd = addDays(this._positionToDateFn(newLeft + newWidth + 1), -1);
 
                 if (d.mode === 'move') {
                     updates.startDate = formatDateISO(newStart);
