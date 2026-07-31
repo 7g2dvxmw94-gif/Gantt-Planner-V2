@@ -120,6 +120,7 @@ class GanttInteractions {
 
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
+        console.log('DRAG START - Original task:', {id: task.id, name: task.name, startDate: task.startDate, endDate: task.endDate});
 
         const isMilestone = !!milestone;
         const isPermit = !!permit;
