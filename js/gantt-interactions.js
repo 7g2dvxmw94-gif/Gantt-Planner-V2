@@ -721,9 +721,17 @@ class GanttInteractions {
 
                 if (d.mode === 'move') {
                     // Preserve original duration to avoid drift from month-length differences
-                    const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
+                    // Task dates are inclusive, so a task from Aug 10-12 is 3 calendar days.
+                    // daysBetween returns the numeric difference (2), so we add 1 to get the
+                    // inclusive day count, then subtract 1 when using with addDays (which uses
+                    // numeric offset semantics).
+                    const origStart = parseISO(d.origStartDate);
+                    const origEnd = parseISO(d.origEndDate);
+                    const inclusiveDays = daysBetween(origStart, origEnd) + 1;
+                    const newEnd = addDays(newStart, inclusiveDays - 1);
+
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(addDays(newStart, origDuration));
+                    updates.endDate = formatDateISO(newEnd);
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
