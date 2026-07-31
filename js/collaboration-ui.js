@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils.js';
+import { escapeHtml, syncLog} from './utils.js';
 /* ========================================
    COLLABORATION UI
    Share modal : gestion des membres et invitations
@@ -423,7 +423,7 @@ export const collaborationUI = {
                         supabaseStore.notifyProjectRemoved(this._projectId, m.userId, m.role)
                             .catch(e => console.error('[collab] notifyProjectRemoved FAILED — SQL migration 011 may not have been run:', e));
                         supabaseStore.logHistory(this._projectId, `a retiré ${m.name} du projet`, 'share', m.name)
-                            .catch(() => {});
+                            .catch(e => syncLog.record('historique : retrait membre', e));
                         row.remove();
                     } catch {
                         removeBtn.disabled = false;
@@ -533,7 +533,7 @@ export const collaborationUI = {
                 supabaseStore.notifyProjectShared(this._projectId, email, roleSelect.value)
                     .catch(e => console.error('[collab] notifyProjectShared:', e));
                 supabaseStore.logHistory(this._projectId, `a partagé le projet avec ${email}`, 'share', email)
-                    .catch(() => {});
+                    .catch(e => syncLog.record('historique : partage projet', e));
                 await this._loadData();
             } else {
                 const link = result.link;
