@@ -55,7 +55,7 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     await bar.dblclick();
     await expect(page.locator('#taskStart')).toHaveValue('2026-08-13');
     await expect(page.locator('#taskEnd')).toHaveValue('2026-08-15');
-    await page.getByRole('button', { name: 'Annuler' }).click();
+    await page.locator('#taskModalOverlay').locator('button', { hasText: 'Annuler' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
     await deleteActiveProject(page);
