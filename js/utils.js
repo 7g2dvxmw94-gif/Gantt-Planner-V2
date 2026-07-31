@@ -606,3 +606,56 @@ export function escapeHtml(value) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+
+/* ============================================================
+   Journal des erreurs de synchronisation
+   ------------------------------------------------------------
+   17 echecs etaient .catch(() => {}) : aucune trace, nulle part.
+   On a deja vu ce que ca cause deux fois dans cette session —
+   l'application continuant sur des donnees fausses sans le
+   signaler. Ce module donne un endroit UNIQUE et testable pour
+   les tracer, sans casser le comportement existant (l'action
+   principale continue meme si la synchronisation echoue : c'est
+   voulu, l'utilisateur ne doit pas perdre son travail local a
+   cause d'un probleme reseau passager).
+   ============================================================ */
+
+const MAX_ENTRIES = 30;
+
+/** Cree un journal independant (utilise par le store, teste isolement). */
+export function createSyncLog() {
+    const entries = [];
+
+    return {
+        /** Enregistre un echec. Toujours en console (visible en debogage),
+         *  et dans un tampon borne (consultable depuis la console ou par
+         *  un futur indicateur d'interface). */
+        record(scope, err) {
+            const entry = {
+                scope,
+                message: err?.message || String(err),
+                at: new Date().toISOString(),
+            };
+            entries.push(entry);
+            if (entries.length > MAX_ENTRIES) entries.shift();
+            console.warn(`[sync] ${scope} : ${entry.message}`);
+            return entry;
+        },
+
+        /** Dernieres erreurs, les plus recentes en premier. */
+        recent(n = MAX_ENTRIES) {
+            return entries.slice(-n).reverse();
+        },
+
+        count() {
+            return entries.length;
+        },
+
+        clear() {
+            entries.length = 0;
+        },
+    };
+}
+
+/* Instance partagee : un seul journal pour toute l'application. */
+export const syncLog = createSyncLog();
