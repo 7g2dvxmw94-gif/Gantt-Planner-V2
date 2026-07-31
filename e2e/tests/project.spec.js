@@ -35,16 +35,18 @@ test('renommer le projet actif', async ({ page }) => {
     await createProject(page, original);
 
     await page.locator('.project-selector').click();
-    const item = page.locator('.project-dropdown-item', { hasText: original });
-    await item.locator('.project-item-action').click();
 
-    // _startDropdownRename() (js/app.js) vide item.textContent avant d'y
-    // insérer l'input : reprendre item.locator(...) après ce point ne
-    // matcherait plus rien, puisque le filtre hasText ci-dessus porte sur le
-    // textContent, pas sur la value de l'input. Un seul item peut être en
-    // édition à la fois, donc cibler l'input directement sur la page suffit.
+    // Find the project item and its rename button
+    const projectItem = page.locator('.project-dropdown-item', { hasText: original }).first();
+    const actionBtn = projectItem.locator('.project-item-action');
+
+    // Ensure the button is visible before clicking
+    await actionBtn.waitFor({ state: 'visible', timeout: 5_000 });
+    await actionBtn.click();
+
+    // After clicking the action button, the input should appear
     const renameInput = page.locator('.project-rename-input');
-    await renameInput.waitFor({ state: 'attached', timeout: 10_000 });
+    await renameInput.waitFor({ state: 'visible', timeout: 5_000 });
     await renameInput.fill(renamed);
     await renameInput.press('Enter');
 

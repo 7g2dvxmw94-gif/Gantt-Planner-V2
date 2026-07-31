@@ -721,10 +721,9 @@ class GanttInteractions {
 
                 if (d.mode === 'move') {
                     // Preserve original duration to avoid drift from month-length differences
-                    // daysBetween returns numeric difference; increment to preserve inclusive day count
                     const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(addDays(newStart, origDuration + 1));
+                    updates.endDate = formatDateISO(addDays(newStart, origDuration));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
