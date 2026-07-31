@@ -20,6 +20,13 @@ setup('login', async ({ page }) => {
 
     await page.waitForURL(/index\.html/, { timeout: 15_000 });
 
+    // Le tour d'onboarding (js/onboarding.js) s'auto-lance 600ms après le
+    // chargement pour tout compte sans ce flag, et son overlay plein écran
+    // (même z-index que les dropdowns) intercepte les clics des tests sur
+    // des éléments hors du "spotlight" — on le désactive une fois pour
+    // toutes ici, persisté dans le storageState partagé par tous les tests.
+    await page.evaluate(() => localStorage.setItem('gantt_onboarding_done', '1'));
+
     try {
         await mkdir(dirname(AUTH_FILE), { recursive: true });
         console.log(`✓ Directory created: ${dirname(AUTH_FILE)}`);
