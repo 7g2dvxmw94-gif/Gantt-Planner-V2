@@ -7,7 +7,7 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from '
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween,
-         TASK_COLORS, getCurrencySymbol } from './utils.js';
+         TASK_COLORS, getCurrencySymbol, syncLog} from './utils.js';
 
 class TaskModal {
     constructor() {
@@ -1325,7 +1325,7 @@ class TaskModal {
                     action = `a modifié un ${typeLabel} (⚠️ chemin critique)`;
                 }
                 supabaseStore.logHistory(pid, action, existingTask.isPhase ? 'phase' : 'task', data.name || existingTask.name)
-                    .catch(() => {});
+                    .catch(e => syncLog.record('historique : modification tâche', e));
             }
 
             // Apply predecessor constraints (adjusts dates based on predecessors)
