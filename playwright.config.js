@@ -40,7 +40,7 @@ export default defineConfig({
     projects: [
         {
             name: 'setup',
-            testMatch: /auth\.setup\.js/,
+            testMatch: '**/e2e/auth.setup.js',
         },
         {
             name: 'chromium',
