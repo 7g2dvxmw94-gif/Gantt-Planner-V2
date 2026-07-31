@@ -724,6 +724,7 @@ class GanttInteractions {
                     const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
                     updates.endDate = formatDateISO(addDays(newStart, origDuration + 1));
+                    console.log('DRAG DEBUG:', {origStart: d.origStartDate, origEnd: d.origEndDate, origDuration, newStart: formatDateISO(newStart), newEnd: updates.endDate});
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
