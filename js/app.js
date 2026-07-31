@@ -9,7 +9,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml} from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog} from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -281,7 +281,7 @@ class App {
                     // Preload all other projects in background so the filter
                     // dropdown works without a visible delay on first selection
                     store.getProjects().forEach(p =>
-                        store.ensureProjectLoaded(p.id).catch(() => {})
+                        store.ensureProjectLoaded(p.id).catch(e => syncLog.record(`chargement projet « ${p.name} »`, e))
                     );
                 }
                 break;
@@ -3674,7 +3674,7 @@ thead{display:table-header-group}
                 // Delete all Supabase notifications
                 const supIds = notifs.filter(n => n._supId).map(n => n._supId);
                 supIds.forEach(id => {
-                    supabaseStore.deleteNotification(id).catch(() => {});
+                    supabaseStore.deleteNotification(id).catch(e => syncLog.record('suppression notification', e));
                 });
                 this._supabaseNotifs = this._supabaseNotifs.filter(s => !supIds.includes(s.id));
 
@@ -3864,7 +3864,7 @@ thead{display:table-header-group}
             // Mark all as read in Supabase
             notifs.forEach(n => {
                 if (n.id) {
-                    supabaseStore.markNotificationRead(n.id).catch(() => {});
+                    supabaseStore.markNotificationRead(n.id).catch(e => syncLog.record('notification lue', e));
                     const local = this._supabaseNotifs.find(x => x.id === n.id);
                     if (local) local.readAt = new Date().toISOString();
                 }
@@ -4325,7 +4325,7 @@ thead{display:table-header-group}
             const n = this._dashboardNotifs[idx];
             if (!n) return;
             if (n._supId) {
-                supabaseStore.deleteNotification(n._supId).catch(() => {});
+                supabaseStore.deleteNotification(n._supId).catch(e => syncLog.record('suppression notification', e));
                 this._supabaseNotifs = this._supabaseNotifs.filter(s => s.id !== n._supId);
             } else {
                 this._dismissNotification(this._notifKey(n));
@@ -4346,7 +4346,7 @@ thead{display:table-header-group}
             clearAllBtn.addEventListener('click', () => {
                 (this._dashboardNotifs || []).forEach(n => {
                     if (n._supId) {
-                        supabaseStore.deleteNotification(n._supId).catch(() => {});
+                        supabaseStore.deleteNotification(n._supId).catch(e => syncLog.record('suppression notification', e));
                         this._supabaseNotifs = this._supabaseNotifs.filter(s => s.id !== n._supId);
                     } else {
                         const dismissed = this._getDismissedNotifs();
