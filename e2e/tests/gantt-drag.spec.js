@@ -15,9 +15,6 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     // Zoom "jour" pour un mapping pixel <-> jour déterministe.
     await page.locator('.zoom-btn[data-zoom="day"]').click();
 
-    // Attendre que le zoom soit appliqué (les colonnes de jour sont rendues)
-    await page.locator('.gantt-cell').first().waitFor({ timeout: 5_000 });
-
     // Créer une tâche avec des dates connues.
     await page.locator('#addTaskBtn').click();
     await page.locator('#taskName').fill(taskName);
@@ -40,7 +37,7 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     // largeur d'une colonne au lieu de la supposer. La largeur peut varier
     // selon les CSS, le zoom appliqué, et autres facteurs de rendu.
     const firstColWidth = await page.evaluate(() => {
-        const col = document.querySelector('.gantt-cell');
+        const col = document.querySelector('.gantt-timeline-grid-col');
         return col ? col.getBoundingClientRect().width : 36;
     });
 
