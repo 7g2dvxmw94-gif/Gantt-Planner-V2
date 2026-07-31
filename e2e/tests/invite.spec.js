@@ -15,6 +15,11 @@ test('le lien d\'invitation pointe vers le bon sous-chemin', async ({ page, base
     await createProject(page, projectName);
 
     await page.locator('#shareBtn').click();
+    // collaborationUI.open() affiche la modale immédiatement mais ne lie le
+    // clic du bouton "Inviter" qu'après deux appels réseau awaités (auth.getUser(),
+    // getCurrentUserRole()) — attendre la liste des membres (peuplée après ce
+    // point par _loadData()) garantit que le bouton est déjà interactif.
+    await page.locator('.share-member-row').first().waitFor({ timeout: 10_000 });
     await page.locator('#shareEmailInput').fill(inviteeEmail);
     await page.locator('#shareInviteBtn').click();
 

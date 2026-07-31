@@ -24,6 +24,14 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     await page.locator('#taskEnd').fill('2026-08-12');
     await page.getByRole('button', { name: 'Créer' }).click();
 
+    // .modal-overlay retire juste la classe "active" à la fermeture ; opacity
+    // ET visibility sont animées sur --transition-base (200ms), et pour une
+    // transition CSS "visibility" bascule à hidden seulement en FIN de
+    // transition. L'overlay reste donc visible/cliquable ~200ms après le clic
+    // sur "Créer" et intercepte un mousedown démarré trop tôt sur la barre du
+    // Gantt en dessous — le drag ne s'enclenche alors jamais silencieusement.
+    await expect(page.locator('#taskModalOverlay')).toBeHidden();
+
     const bar = page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName });
     await expect(bar).toBeVisible({ timeout: 10_000 });
 
@@ -41,6 +49,7 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     await expect(page.locator('#taskStart')).toHaveValue('2026-08-13');
     await expect(page.locator('#taskEnd')).toHaveValue('2026-08-15');
     await page.getByRole('button', { name: 'Annuler' }).click();
+    await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
     await deleteActiveProject(page);
 });
