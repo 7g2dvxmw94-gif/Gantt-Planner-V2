@@ -120,6 +120,7 @@ class GanttInteractions {
 
         const task = store.getTask(targetBar.dataset.taskId);
         if (!task) return;
+        console.log('DRAG START DEBUG:', {taskId: task.id, taskName: task.name, startDate: task.startDate, endDate: task.endDate});
 
         const isMilestone = !!milestone;
         const isPermit = !!permit;
@@ -718,6 +719,7 @@ class GanttInteractions {
                 const newStart = this._positionToDateFn(newLeft);
                 // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
+                console.log('DRAG POSITION DEBUG:', {newLeft, newWidth, newStartDate: formatDateISO(newStart), newEndDate: formatDateISO(newEnd)});
 
                 if (d.mode === 'move') {
                     // Preserve original duration to avoid drift from month-length differences
