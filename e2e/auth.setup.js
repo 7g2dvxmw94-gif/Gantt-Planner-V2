@@ -1,4 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
+import { mkdir } from 'fs/promises';
+import { dirname } from 'path';
 
 const AUTH_FILE = 'e2e/.auth/user.json';
 
@@ -19,5 +21,6 @@ setup('login', async ({ page }) => {
     await page.waitForURL(/index\.html/, { timeout: 15_000 });
     await expect(page.locator('#projectName')).not.toHaveText('…', { timeout: 15_000 });
 
+    await mkdir(dirname(AUTH_FILE), { recursive: true });
     await page.context().storageState({ path: AUTH_FILE });
 });
