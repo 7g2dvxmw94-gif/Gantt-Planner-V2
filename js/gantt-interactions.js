@@ -720,10 +720,10 @@ class GanttInteractions {
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
 
                 if (d.mode === 'move') {
-                    // Use the bar's actual visual position for both dates
-                    // The bar visually spans from left (start) to right (end+1), so both newStart and newEnd are correct
+                    // Use bar visual position but add 1 to end date to preserve inclusive 3-day span
+                    // A 3-day task should remain 3 days after moving
                     updates.startDate = formatDateISO(newStart);
-                    updates.endDate = formatDateISO(newEnd);
+                    updates.endDate = formatDateISO(addDays(newEnd, 1));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {
