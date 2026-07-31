@@ -1395,16 +1395,22 @@ class Store {
          * tapant la date a la main, alors que le moteur ne l'y placerait
          * jamais. Le planning afficherait des barres sur des colonnes
          * grisees : incoherent, et faussant le calcul de couts qui
-         * compte en jours ouvres. */
+         * compte en jours ouvres.
+         *
+         * EXCEPTION : les operations de drag (deplacement ou redimensionnement)
+         * ne doivent PAS etre snappees, car l'utilisateur voit visellement
+         * la position exacte et doit obtenir ce qu'il a pointe a la souris. */
         const modifieDates = updates
             && (updates.startDate !== undefined || updates.endDate !== undefined)
-            && !this._data.tasks[idx].isPhase;
+            && !this._data.tasks[idx].isPhase
+            && !updates.skipSnap;
         if (modifieDates) {
             const debut = updates.startDate ?? this._data.tasks[idx].startDate;
             const fin   = updates.endDate   ?? this._data.tasks[idx].endDate;
             const cale  = this._snapToWorkingDays(debut, fin);
             updates = { ...updates, startDate: cale.startDate, endDate: cale.endDate };
         }
+        delete updates.skipSnap;
 
         this._data.tasks[idx] = {
             ...this._data.tasks[idx],
