@@ -1014,9 +1014,18 @@ class SettingsPanel {
     }
 
     _applyBrandName(name) {
-        const logoText = document.querySelector('.logo > span');
-        if (logoText) {
-            logoText.textContent = name && name.trim() ? name.trim() : 'Gantly';
+        const logoWrap = document.querySelector('.logo');
+        if (!logoWrap) return;
+        const text = name && name.trim() ? name.trim() : '';
+        let logoText = logoWrap.querySelector('span');
+        if (text) {
+            if (!logoText) {
+                logoText = document.createElement('span');
+                logoWrap.appendChild(logoText);
+            }
+            logoText.textContent = text;
+        } else if (logoText) {
+            logoText.remove();
         }
     }
 

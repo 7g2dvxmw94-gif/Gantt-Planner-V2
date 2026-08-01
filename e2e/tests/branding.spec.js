@@ -48,16 +48,12 @@ test('changer la couleur d’accent l’applique immédiatement et la persiste a
     await expect.poll(getPrimaryColor).toBe(initialColor);
 });
 
-test('changer le nom de l’entreprise dans Réglages > Profil persiste après rechargement', async ({ page }) => {
-    // Note : _applyBrandName() (settings-panel.js) ne cible que
-    // '.logo > span', un élément qu'aucun code ne crée jamais — le logo
-    // d'en-tête est en réalité une image PNG (.logo-icon), pas du texte.
-    // Ce champ n'a donc actuellement aucun effet visuel dans l'en-tête ;
-    // seule sa persistance (valeur enregistrée) est vérifiable ici.
+test('changer le nom de l’entreprise l’affiche à côté du logo et persiste après rechargement', async ({ page }) => {
     await page.goto('index.html');
     await waitForAppReady(page);
 
     const nameField = page.locator('#settingsName');
+    const logoText = page.locator('.logo > span');
     const targetName = `E2E Brand ${Date.now()}`;
 
     const setCompanyName = async (name) => {
@@ -69,6 +65,11 @@ test('changer le nom de l’entreprise dans Réglages > Profil persiste après r
         // n'attend naturellement ce délai avant le rechargement de page.
         await page.waitForTimeout(600);
         await page.locator('#settingsSaveBtn').click();
+        if (name.trim()) {
+            await expect(logoText).toHaveText(name.trim());
+        } else {
+            await expect(logoText).toHaveCount(0);
+        }
     };
 
     await page.locator('#settingsBtn').click();
@@ -78,8 +79,9 @@ test('changer le nom de l’entreprise dans Réglages > Profil persiste après r
 
     await page.reload();
     await waitForAppReady(page);
+    await expect(logoText).toHaveText(targetName);
+
     await page.locator('#settingsBtn').click();
     await expect(nameField).toHaveValue(targetName);
-
     await setCompanyName(initialCompanyValue);
 });
