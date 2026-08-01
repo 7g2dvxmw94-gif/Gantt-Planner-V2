@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'fs';
 import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § G1 étape 5 (import) : le fichier JSON exporté
@@ -9,29 +10,6 @@ import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.
 test('réimporter un export JSON restaure un projet identique', async ({ page }) => {
     const projectName = `E2E Import ${Date.now()}`;
     const taskName = `Tâche import ${Date.now()}`;
-
-    // Diagnostic temporaire : la synchro Supabase du projet original semble
-    // ne jamais atteindre le serveur (confirmé par requête SQL directe), sans
-    // qu'aucune erreur ne remonte dans les logs CI habituels ni côté console
-    // navigateur (tentative précédente, toujours muette). On capture donc
-    // directement les requêtes/réponses réseau vers Supabase pour voir ce qui
-    // part réellement et ce que le serveur répond.
-    page.on('console', (msg) => console.log(`[browser:${msg.type()}] ${msg.text()}`));
-    page.on('pageerror', (err) => console.error(`[browser:pageerror] ${err.message}`));
-    page.on('request', (req) => {
-        const url = req.url();
-        if (url.includes('supabase.co') && (url.includes('project') || url.includes('rpc'))) {
-            console.log(`[net:request] ${req.method()} ${url} body=${req.postData() || ''}`);
-        }
-    });
-    page.on('response', async (res) => {
-        const url = res.url();
-        if (url.includes('supabase.co') && (url.includes('project') || url.includes('rpc'))) {
-            let body = '';
-            try { body = await res.text(); } catch (_) { /* ignore */ }
-            console.log(`[net:response] ${res.status()} ${url} body=${body}`);
-        }
-    });
 
     await page.goto('index.html');
     await createProject(page, projectName);
@@ -54,10 +32,20 @@ test('réimporter un export JSON restaure un projet identique', async ({ page })
 
     // Réimporter ce même fichier : store.importProject() crée un NOUVEAU
     // projet (nouveaux ids, tâches remappées) et l'active automatiquement.
+    // download.path() pointe vers le fichier temporaire interne de Playwright
+    // (nom arbitraire, sans extension) — pas vers le nom suggéré du
+    // téléchargement. Sans extension ".json", le tri par extension de
+    // _importProject() (js/app.js) tombe dans le cas "format non supporté" et
+    // n'importe jamais rien : il faut fournir explicitement un nom de fichier
+    // avec la bonne extension via un FilePayload plutôt que le chemin brut.
     const fileChooserPromise = page.waitForEvent('filechooser');
     await page.locator('#importBtn').click();
     const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles(filePath);
+    await fileChooser.setFiles({
+        name: 'export.json',
+        mimeType: 'application/json',
+        buffer: readFileSync(filePath),
+    });
 
     await expect(page.locator('#toastContainer .toast', { hasText: `"${projectName}"` })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#projectName')).toHaveText(projectName);

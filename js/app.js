@@ -5015,7 +5015,6 @@ tr:nth-child(even){background:#fafbfc}
         input.accept = '.json,.xml,.xlsx,.xls';
         input.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            console.log('[diag] import: change fired, file=', file && file.name);
             if (!file) return;
             const ext = file.name.split('.').pop().toLowerCase();
 
@@ -5024,7 +5023,6 @@ tr:nth-child(even){background:#fafbfc}
                 reader.onload = async (evt) => {
                     try {
                         const parsed = JSON.parse(evt.target.result);
-                        console.log('[diag] import: parsed.type=', parsed.type, 'has project=', !!parsed.project, 'has tasks=', !!parsed.tasks);
                         if (parsed.type === 'full-backup') {
                             const result = await store.importAllProjects(parsed);
                             if (result) {
@@ -5036,9 +5034,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         } else {
-                            console.log('[diag] import: calling store.importProject');
                             const result = await store.importProject(parsed);
-                            console.log('[diag] import: result=', result && result.id, result && result.name);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();

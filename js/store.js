@@ -2510,11 +2510,9 @@ class Store {
      *  serveur précédent et le projet importé disparaissait purement et
      *  simplement, jamais persisté (même anti-pattern que deleteProject). */
     async importProject(jsonData) {
-        console.log('[diag] store.importProject: called');
         this._snapshot();
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
-            console.log('[diag] store.importProject: data.project=', !!data.project, 'data.tasks=', data.tasks && data.tasks.length);
             if (data.project && data.tasks) {
                 // Assign new IDs to avoid conflicts
                 const idMap = {};
@@ -2527,7 +2525,6 @@ class Store {
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                 };
-                console.log('[diag] store.importProject: newProjectId=', newProjectId, 'name=', newProject.name);
                 this._data.projects.push(newProject);
 
                 // Map task IDs
@@ -2584,17 +2581,13 @@ class Store {
 
                 this._data.settings.activeProjectId = newProjectId;
                 this._save();
-                console.log('[diag] store.importProject: activeProjectId set to', newProjectId);
 
                 // Sync to Supabase (project → resources → tasks), attendu par
                 // l'appelant avant de considérer l'import terminé.
                 const user = await auth.getUser();
-                console.log('[diag] store.importProject: user=', user && user.id);
                 if (user) {
                     try {
-                        console.log('[diag] store.importProject: calling upsertProject for', newProjectId);
                         await supabaseStore.upsertProject(newProject, user.id);
-                        console.log('[diag] store.importProject: upsertProject succeeded');
                     } catch (e) {
                         console.error('[importProject] upsertProject failed:', e?.message || e);
                     }
@@ -2625,12 +2618,10 @@ class Store {
                 }
 
                 this._emit('project:import', newProjectId);
-                console.log('[diag] store.importProject: returning newProject', newProject.id);
                 return newProject;
             }
-            console.log('[diag] store.importProject: condition data.project && data.tasks was falsy, returning null');
         } catch (e) {
-            console.error('Import failed:', e, e?.stack);
+            console.error('Import failed:', e);
         }
         return null;
     }
