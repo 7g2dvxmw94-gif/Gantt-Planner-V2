@@ -2149,49 +2149,64 @@ class Store {
         }
     }
 
+    /** Rattache une ressource a un projet.
+     *  Met a jour l'etat local IMMEDIATEMENT (optimiste), et renvoie la
+     *  promesse de l'ecriture en base : l'appelant peut l'ignorer (le cas
+     *  courant, UI reactive sans attendre le reseau) ou l'attendre quand il
+     *  a besoin d'une confirmation que le rattachement a bien atteint le
+     *  serveur avant d'agir (ex. avant un rechargement de page) — sans ce
+     *  await, un reload immediatement apres le clic pouvait survenir avant
+     *  la fin de l'ecriture reseau et faire disparaitre le partage. */
     addResourceToProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
-        if (!project) return;
+        if (!project) return Promise.resolve();
         if (!project.resourceIds) project.resourceIds = [];
-        if (!project.resourceIds.includes(resourceId)) {
-            this._snapshot();
-            project.resourceIds.push(resourceId);
-            this._save();
-            this._emit('change', null);
-            // Sync : mettre à jour le project_id de la ressource
-            /* Persister le rattachement dans project_resources.
-               Avant la migration 027, project.resourceIds n'etait stocke
-               NULLE PART : il etait remis a zero a chaque rechargement,
-               et l'onglet Ressources apparaissait vide. */
-            supabaseStore.linkResourceToProject?.(projectId, resourceId)
-                .catch(e => console.error('[store] sync linkResourceToProject:', e));
+        if (project.resourceIds.includes(resourceId)) return Promise.resolve();
 
-            const resource = this.getResource(resourceId);
-            if (resource) {
-                /* On ne touche PLUS a resource.projectId : il designe le
-                   projet PROPRIETAIRE, et l'ecraser transfererait la
-                   propriete au lieu de partager. C'est la table de liaison
-                   qui exprime l'emprunt. */
-                supabaseStore.upsertResource(resource)
-                    .catch(e => console.error('[store] sync addResourceToProject:', e));
-            }
+        this._snapshot();
+        project.resourceIds.push(resourceId);
+        this._save();
+        this._emit('change', null);
+
+        const resource = this.getResource(resourceId);
+        if (resource) {
+            /* On ne touche PLUS a resource.projectId : il designe le
+               projet PROPRIETAIRE, et l'ecraser transfererait la
+               propriete au lieu de partager. C'est la table de liaison
+               qui exprime l'emprunt. */
+            supabaseStore.upsertResource(resource)
+                .catch(e => console.error('[store] sync addResourceToProject:', e));
         }
+
+        /* Persister le rattachement dans project_resources.
+           Avant la migration 027, project.resourceIds n'etait stocke
+           NULLE PART : il etait remis a zero a chaque rechargement,
+           et l'onglet Ressources apparaissait vide. */
+        return Promise.resolve(supabaseStore.linkResourceToProject?.(projectId, resourceId))
+            .catch(e => {
+                console.error('[store] sync linkResourceToProject:', e);
+                throw e;
+            });
     }
 
+    /** Detache une ressource d'un projet. Meme contrat que addResourceToProject
+     *  : mise a jour locale immediate, promesse de sync renvoyee. */
     removeResourceFromProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
-        if (!project || !project.resourceIds) return;
+        if (!project || !project.resourceIds) return Promise.resolve();
         this._snapshot();
         project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+        this._save();
+        this._emit('change', null);
 
         /* Detacher aussi en base, sinon le rattachement revenait au
            prochain rechargement : _rebuildProjectResourceIds() le
            relisait depuis project_resources. */
-        supabaseStore.unlinkResourceFromProject?.(projectId, resourceId)
-            .catch(e => console.error('[store] sync unlinkResourceFromProject:', e));
-
-        this._save();
-        this._emit('change', null);
+        return Promise.resolve(supabaseStore.unlinkResourceFromProject?.(projectId, resourceId))
+            .catch(e => {
+                console.error('[store] sync unlinkResourceFromProject:', e);
+                throw e;
+            });
     }
 
     isResourceInProject(projectId, resourceId) {

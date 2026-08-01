@@ -34,8 +34,13 @@ test('une ressource affectée à un second projet reste visible après rechargem
     const card = page.locator('.resource-card', { hasText: resourceName });
     await expect(card).toBeVisible();
 
-    // L'affecter au projet B actif.
+    // L'affecter au projet B actif. store.addResourceToProject() met à jour
+    // l'état local puis synchronise en base de manière asynchrone (non
+    // bloquante) ; attendre le toast de confirmation garantit que
+    // l'écriture réseau est terminée avant de recharger — sans quoi le
+    // rechargement pourrait survenir avant la fin de la synchronisation.
     await card.locator('.resource-assign-btn--out').click();
+    await expect(page.locator('#toastContainer .toast', { hasText: 'Ressource affectée au projet' })).toBeVisible();
 
     // Recharger la page : reproduit exactement le scénario du bug, où le
     // rattachement partagé disparaissait car resourceIds était recalculé

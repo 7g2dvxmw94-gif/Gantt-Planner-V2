@@ -1274,8 +1274,14 @@ class App {
                     unassignBtn.className = 'resource-assign-btn resource-assign-btn--in';
                     unassignBtn.title = t('resource.unassignTooltip');
                     unassignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${t('resource.projectBadge')}`;
-                    unassignBtn.addEventListener('click', () => {
-                        store.removeResourceFromProject(activeProject.id, resource.id);
+                    unassignBtn.addEventListener('click', async () => {
+                        unassignBtn.disabled = true;
+                        try {
+                            await store.removeResourceFromProject(activeProject.id, resource.id);
+                            this._showToast(t('toast.resourceUnassigned'), 'success');
+                        } catch (e) {
+                            this._showToast(t('toast.error', { message: e.message }), 'error');
+                        }
                         this._renderResourceView();
                     });
                     assignRow.appendChild(unassignBtn);
@@ -1284,8 +1290,14 @@ class App {
                     assignBtn.className = 'resource-assign-btn resource-assign-btn--out';
                     assignBtn.title = t('resource.assignTooltip');
                     assignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${t('resource.assign')}`;
-                    assignBtn.addEventListener('click', () => {
-                        store.addResourceToProject(activeProject.id, resource.id);
+                    assignBtn.addEventListener('click', async () => {
+                        assignBtn.disabled = true;
+                        try {
+                            await store.addResourceToProject(activeProject.id, resource.id);
+                            this._showToast(t('toast.resourceAssigned'), 'success');
+                        } catch (e) {
+                            this._showToast(t('toast.error', { message: e.message }), 'error');
+                        }
                         this._renderResourceView();
                     });
                     assignRow.appendChild(assignBtn);
