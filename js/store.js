@@ -856,19 +856,37 @@ class Store {
         const supabaseTaskIds = new Set(supabaseTasks.map(t => t.id));
         const unsynced = localTasks.filter(t => !supabaseTaskIds.has(t.id));
 
+        /* Ressources locales pour ce projet (pas encore synchees ou en
+         * attente). Meme filet de securite que pour les taches ci-dessus :
+         * addResource() n'attend PAS la fin de supabaseStore.upsertResource()
+         * (fire-and-forget) avant de rendre la main. Sans cette protection,
+         * un rechargement de ce projet declenche pendant la fenetre de sync
+         * (ex. le prechargement en arriere-plan de l'onglet Ressources)
+         * ecrasait _data.resources avec la liste Supabase encore incomplete,
+         * faisant disparaitre la ressource tout juste creee. */
+        const localResources = this._data.resources.filter(r => r.projectId === projectId);
+        const supabaseResourceIds = new Set(resources.map(r => r.id));
+        const unsyncedResources = localResources.filter(r => !supabaseResourceIds.has(r.id));
+
         // Remplacer avec les données Supabase + conserver les tâches locales non synchées
         this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId)
                                                 .concat(supabaseTasks)
                                                 .concat(unsynced);
         this._invalidateTaskIndex();
         this._invalidateResourceIndex();
-        this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
+        this._data.resources = this._data.resources.filter(r => r.projectId !== projectId)
+                                                     .concat(resources)
+                                                     .concat(unsyncedResources);
         this._invalidateResourceIndex();
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
         // Re-syncher les tâches locales non encore dans Supabase
         for (const task of unsynced) {
             supabaseStore.upsertTask(task).catch(e => console.error('[store] re-sync task:', e));
+        }
+        // Re-syncher les ressources locales non encore dans Supabase
+        for (const resource of unsyncedResources) {
+            supabaseStore.upsertResource(resource).catch(e => console.error('[store] re-sync resource:', e));
         }
 
         // Reconstruire resourceIds : ressources propres au projet UNIES aux
@@ -878,7 +896,7 @@ class Store {
         // autre projet a chaque (re)chargement (ex. changement de projet actif).
         const project = this._data.projects.find(p => p.id === projectId);
         if (project) {
-            const ownedIds  = resources.map(r => r.id);
+            const ownedIds  = resources.map(r => r.id).concat(unsyncedResources.map(r => r.id));
             const linkedIds = (liensPartages || []).map(l => l.resourceId);
             project.resourceIds = [...new Set([...ownedIds, ...linkedIds])];
         }
