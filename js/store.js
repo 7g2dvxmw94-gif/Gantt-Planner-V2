@@ -2185,15 +2185,25 @@ class Store {
         return Promise.resolve(supabaseStore.linkResourceToProject?.(projectId, resourceId))
             .catch(e => {
                 console.error('[store] sync linkResourceToProject:', e);
+                /* Rollback optimiste : le serveur a refuse le rattachement
+                   (RLS, reseau...). Laisser l'etat local tel quel afficherait
+                   la ressource comme rattachee alors qu'un rechargement la
+                   ferait disparaitre — incoherent et trompeur pour
+                   l'utilisateur. */
+                project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+                this._save();
+                this._emit('change', null);
                 throw e;
             });
     }
 
     /** Detache une ressource d'un projet. Meme contrat que addResourceToProject
-     *  : mise a jour locale immediate, promesse de sync renvoyee. */
+     *  : mise a jour locale immediate, promesse de sync renvoyee, rollback
+     *  optimiste si le serveur refuse. */
     removeResourceFromProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
         if (!project || !project.resourceIds) return Promise.resolve();
+        if (!project.resourceIds.includes(resourceId)) return Promise.resolve();
         this._snapshot();
         project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
         this._save();
@@ -2205,6 +2215,12 @@ class Store {
         return Promise.resolve(supabaseStore.unlinkResourceFromProject?.(projectId, resourceId))
             .catch(e => {
                 console.error('[store] sync unlinkResourceFromProject:', e);
+                // Rollback optimiste : le serveur n'a pas detache le lien.
+                if (!project.resourceIds.includes(resourceId)) {
+                    project.resourceIds.push(resourceId);
+                    this._save();
+                    this._emit('change', null);
+                }
                 throw e;
             });
     }
