@@ -6339,9 +6339,9 @@ tr:nth-child(even){background:#fafbfc}
             this._toggleProjectDropdown();
         });
 
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
             const dd = document.getElementById('projectDropdown');
-            if (dd) dd.remove();
+            if (dd && !e.target.closest('#projectDropdown')) dd.remove();
         });
     }
 
