@@ -1075,6 +1075,16 @@ class Store {
         return this._data.projects[idx];
     }
 
+    /** Supprime un projet. Met a jour l'etat local immediatement (optimiste),
+     *  et renvoie la promesse de l'ecriture en base : l'appelant peut
+     *  l'attendre pour confirmer que la suppression a bien atteint le
+     *  serveur (ex. avant de fermer la page) au lieu de simplement l'ignorer.
+     *  Sans await sur cette promesse, un contexte navigateur ferme juste
+     *  apres l'appel (fin d'un test E2E, fermeture d'onglet) pouvait couper
+     *  la requete reseau avant qu'elle ne parte : le projet redevenait
+     *  actif au prochain chargement, jamais reellement supprime cote
+     *  serveur — plusieurs dizaines de projets de test se sont ainsi
+     *  accumules en base avant que ce ne soit repere. */
     deleteProject(projectId) {
         this._snapshot();
         this._data.projects = this._data.projects.filter(p => p.id !== projectId);
@@ -1086,9 +1096,11 @@ class Store {
         }
         this._save();
         this._emit('project:delete', projectId);
-        // Sync Supabase en arrière-plan
-        supabaseStore.deleteProject(projectId)
-            .catch(e => console.error('[store] sync deleteProject:', e));
+        return Promise.resolve(supabaseStore.deleteProject(projectId))
+            .catch(e => {
+                console.error('[store] sync deleteProject:', e);
+                throw e;
+            });
     }
 
     duplicateProject(projectId) {

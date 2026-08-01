@@ -6476,15 +6476,19 @@ tr:nth-child(even){background:#fafbfc}
             const delBtn = document.createElement('button');
             delBtn.className = 'project-dropdown-item danger';
             delBtn.textContent = t('project.action.delete');
-            delBtn.addEventListener('click', (e) => {
+            delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 dropdown.remove();
                 if (confirm(t('confirm.deleteProject', { name: activeProject.name }))) {
-                    store.deleteProject(activeProject.id);
+                    try {
+                        await store.deleteProject(activeProject.id);
+                        this._showToast(t('toast.projectDeleted'), 'success');
+                    } catch (err) {
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
+                    }
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast(t('toast.projectDeleted'), 'success');
                 }
             });
             dropdown.appendChild(delBtn);
