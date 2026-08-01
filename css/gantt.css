@@ -1395,17 +1395,18 @@ tr.critical-path:hover {
 .resource-scope-toggle {
     display: flex;
     gap: 2px;
-    background: var(--bg-tertiary);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     padding: 3px;
 }
 
 .resource-scope-btn {
-    padding: 5px 14px;
+    padding: 6px 16px;
     border: none;
     border-radius: calc(var(--radius-md) - 2px);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -1413,13 +1414,14 @@ tr.critical-path:hover {
 }
 
 .resource-scope-btn.active {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
 }
 
 .resource-scope-btn:hover:not(.active) {
-    color: var(--text-secondary);
+    background: var(--bg-muted);
+    color: var(--text-primary);
 }
 
 /* ---- Resource empty state ---- */

@@ -868,6 +868,11 @@ class App {
 
         // Rate type toggle
         let currentRateType = (isEdit && resource.rateType === 'daily') ? 'daily' : 'hourly';
+        // Montants saisis pour chaque type, conserves independamment le temps
+        // de l'edition : sans cela, basculer hourly -> daily -> hourly effacait
+        // le montant deja saisi pour le type qu'on quitte.
+        let hourlyValue = isEdit ? (resource.hourlyRate || '') : '';
+        let dailyValue  = isEdit ? (resource.dailyRate  || '') : '';
         const rateToggle = document.createElement('div');
         rateToggle.className = 'res-rate-toggle';
         const btnHourly = document.createElement('button');
@@ -900,11 +905,15 @@ class App {
         rateSuffix.textContent = currentRateType === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
 
         const switchRateType = (type) => {
+            // Memoriser la valeur du type qu'on quitte avant de basculer.
+            if (currentRateType === 'daily') dailyValue = rateInput.value;
+            else hourlyValue = rateInput.value;
+
             currentRateType = type;
             btnHourly.classList.toggle('active', type === 'hourly');
             btnDaily.classList.toggle('active', type === 'daily');
             rateSuffix.textContent = type === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
-            rateInput.value = '';
+            rateInput.value = type === 'daily' ? dailyValue : hourlyValue;
             rateInput.focus();
         };
         btnHourly.addEventListener('click', () => switchRateType('hourly'));
