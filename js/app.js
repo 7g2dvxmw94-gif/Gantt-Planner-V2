@@ -5034,7 +5034,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         } else {
-                            const result = store.importProject(parsed);
+                            const result = await store.importProject(parsed);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -5452,7 +5452,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
-                            const result = store.importProject(data);
+                            const result = await store.importProject(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -5826,7 +5826,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
-                            const result = store.importProject(data);
+                            const result = await store.importProject(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();

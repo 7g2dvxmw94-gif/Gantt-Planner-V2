@@ -2498,7 +2498,12 @@ class Store {
 
     /* ---- Import ---- */
 
-    importProject(jsonData) {
+    /** Importe un projet depuis un JSON exporté. Attend la fin de la
+     *  synchronisation Supabase avant de retourner : sans cela, un rechargement
+     *  de page juste après l'import (ex. fin de test E2E) repartait de l'état
+     *  serveur précédent et le projet importé disparaissait purement et
+     *  simplement, jamais persisté (même anti-pattern que deleteProject). */
+    async importProject(jsonData) {
         this._snapshot();
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
@@ -2571,15 +2576,14 @@ class Store {
                 this._data.settings.activeProjectId = newProjectId;
                 this._save();
 
-                // Sync to Supabase in background (project → resources → tasks)
-                auth.getUser().then(async user => {
-                    if (!user) return;
+                // Sync to Supabase (project → resources → tasks), attendu par
+                // l'appelant avant de considérer l'import terminé.
+                const user = await auth.getUser();
+                if (user) {
                     try {
                         await supabaseStore.upsertProject(newProject, user.id);
-                        console.log('[importProject] project saved:', newProjectId);
                     } catch (e) {
                         console.error('[importProject] upsertProject failed:', e?.message || e);
-                        return;
                     }
                     // Resources
                     for (const r of (data.resources || [])) {
@@ -2605,8 +2609,7 @@ class Store {
                             );
                         }
                     }
-                    console.log('[importProject] Supabase sync complete');
-                });
+                }
 
                 this._emit('project:import', newProjectId);
                 return newProject;
