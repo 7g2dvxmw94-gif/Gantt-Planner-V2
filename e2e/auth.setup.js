@@ -38,7 +38,12 @@ setup('login', async ({ page }) => {
     // projet de test en fin de spec — c'est exactement ce qui a cassé
     // plusieurs specs en cascade la première fois que le compte de test a
     // été entièrement nettoyé.
-    const SEED_NAME = 'E2E Seed (ne pas supprimer)';
+    //
+    // IMPORTANT : ce nom ne doit PAS commencer par "E2E " — un nettoyage
+    // manuel ponctuel des projets de test orphelins (`name like 'E2E %'`)
+    // a supprimé ce seed par erreur la première fois, exactement parce
+    // qu'il correspondait à ce même motif.
+    const SEED_NAME = '🔒 Seed persistant (ne pas supprimer)';
     await page.locator('.project-selector').click();
     const hasSeed = await page.locator('.project-dropdown-item .project-item-name', { hasText: SEED_NAME }).count() > 0;
     if (!hasSeed) {
