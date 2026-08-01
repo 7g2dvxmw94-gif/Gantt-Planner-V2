@@ -50,14 +50,16 @@ test('les filtres statut et priorité masquent les tâches, se combinent, et se 
     await expect(barTodoLow).toBeHidden({ timeout: 5_000 });
     await expect(barDoneHigh).toBeVisible();
 
-    // Filtre Priorité (en plus, intersection) : cocher aussi "Basse" ne doit
-    // rien réafficher puisque la tâche todo-basse reste exclue par le
-    // filtre Statut ("Terminé") toujours actif — seule l'intersection des
-    // deux filtres est affichée.
+    // Filtre Priorité en plus (statut="Terminé" ET priorité="Basse") :
+    // aucune tâche n'a les deux à la fois (todo-basse est priorité basse
+    // mais pas terminée ; terminée-haute est terminée mais priorité haute).
+    // Sous une intersection (ET), les deux doivent disparaître — sous une
+    // union (OU) l'une des deux réapparaîtrait. C'est ce qui distingue les
+    // deux sémantiques.
     await page.locator('#filterPriority .filter-multi-toggle').click();
     await page.locator('#filterPriority .filter-multi-option', { hasText: 'Basse' }).locator('input[type="checkbox"]').check();
     await expect(barTodoLow).toBeHidden();
-    await expect(barDoneHigh).toBeVisible();
+    await expect(barDoneHigh).toBeHidden({ timeout: 5_000 });
 
     // Retirer le filtre Statut : la priorité "Basse" seule doit maintenant
     // ne garder que la tâche todo-basse.
