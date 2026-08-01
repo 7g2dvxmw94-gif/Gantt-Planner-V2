@@ -24,16 +24,9 @@ test('une ressource affectée à un second projet reste visible après rechargem
 
     await expect(page.locator('.resource-card', { hasText: resourceName })).toBeVisible();
 
-    // Créer un second projet B (devient le projet actif). store.addProject()
-    // ne fait PAS attendre sa synchronisation Supabase (fire-and-forget,
-    // y compris l'inscription du propriétaire dans project_members) avant
-    // de rendre la main : attendre que le réseau se calme laisse le temps à
-    // ce projet d'exister réellement côté serveur avant qu'on ne dépende de
-    // son appartenance (la policy RLS de project_resources vérifie
-    // can_edit_project(B), qui échoue tant que ce rattachement n'est pas
-    // encore visible en base).
+    // Créer un second projet B (devient le projet actif). createProject()
+    // attend déjà la confirmation que le projet est persisté côté serveur.
     await createProject(page, projectB);
-    await page.waitForLoadState('networkidle');
     await page.locator('#tabResources').click();
 
     // La ressource créée sur A n'apparaît pas encore dans la portée "Ce

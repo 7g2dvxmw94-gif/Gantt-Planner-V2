@@ -5034,7 +5034,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.importErrorJson'), 'error');
                             }
                         } else {
-                            const result = store.importProject(parsed);
+                            const result = await store.importProject(parsed);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -5452,7 +5452,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
-                            const result = store.importProject(data);
+                            const result = await store.importProject(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -5826,7 +5826,7 @@ tr:nth-child(even){background:#fafbfc}
                                 this._showToast(t('toast.cloudRestoreCount', { count: result.count }), 'success');
                             }
                         } else {
-                            const result = store.importProject(data);
+                            const result = await store.importProject(data);
                             if (result) {
                                 ganttRenderer.render();
                                 this._renderStats();
@@ -6476,15 +6476,19 @@ tr:nth-child(even){background:#fafbfc}
             const delBtn = document.createElement('button');
             delBtn.className = 'project-dropdown-item danger';
             delBtn.textContent = t('project.action.delete');
-            delBtn.addEventListener('click', (e) => {
+            delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 dropdown.remove();
                 if (confirm(t('confirm.deleteProject', { name: activeProject.name }))) {
-                    store.deleteProject(activeProject.id);
+                    try {
+                        await store.deleteProject(activeProject.id);
+                        this._showToast(t('toast.projectDeleted'), 'success');
+                    } catch (err) {
+                        this._showToast(t('toast.error', { message: err.message }), 'error');
+                    }
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
-                    this._showToast(t('toast.projectDeleted'), 'success');
                 }
             });
             dropdown.appendChild(delBtn);
@@ -6527,7 +6531,7 @@ tr:nth-child(even){background:#fafbfc}
         input.addEventListener('click', (e) => e.stopPropagation());
     }
 
-    _createNewProject() {
+    async _createNewProject() {
         if (!store.canAddProject()) {
             this._showUpgradeModal('projects');
             return;
@@ -6536,7 +6540,7 @@ tr:nth-child(even){background:#fafbfc}
         if (!name || !name.trim()) return;
 
         const today = new Date();
-        const project = store.addProject({
+        const project = await store.addProject({
             name: name.trim(),
             description: '',
             startDate: formatDateISO(today),
