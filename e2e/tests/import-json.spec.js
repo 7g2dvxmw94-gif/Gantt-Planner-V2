@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § G1 étape 5 (import) : le fichier JSON exporté
    doit pouvoir être réimporté et restaurer un projet identique (mêmes
@@ -41,8 +41,12 @@ test('réimporter un export JSON restaure un projet identique', async ({ page })
     await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName })).toBeVisible({ timeout: 10_000 });
 
     // Nettoyage : deux projets partagent désormais le même nom (l'original
-    // et la copie importée, active) — supprimer l'un puis l'autre.
+    // et la copie importée, active) — supprimer l'un puis l'autre. Un
+    // rechargement entre les deux repart d'un DOM propre avant de rouvrir
+    // le sélecteur de projet.
     await deleteActiveProject(page);
+    await page.reload();
+    await waitForAppReady(page);
     await page.locator('.project-selector').click();
     await page.locator('.project-dropdown-item .project-item-name', { hasText: projectName }).first().click();
     await deleteActiveProject(page);

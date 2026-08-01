@@ -30,6 +30,25 @@ setup('login', async ({ page }) => {
     await page.locator('body[data-app-ready="true"]').waitFor({ timeout: 15_000 });
     await page.evaluate(() => localStorage.setItem('gantt_onboarding_done', '1'));
 
+    // S'assurer qu'un projet "seed" persistant existe. Le bouton de
+    // suppression de projet n'apparaît QUE si l'utilisateur a plus d'un
+    // projet (js/app.js, _toggleProjectDropdown : `if (projects.length > 1)`).
+    // Sans ce seed, un test qui se retrouve seul dans le compte (ex. juste
+    // après un nettoyage complet) ne peut jamais supprimer son propre
+    // projet de test en fin de spec — c'est exactement ce qui a cassé
+    // plusieurs specs en cascade la première fois que le compte de test a
+    // été entièrement nettoyé.
+    const SEED_NAME = 'E2E Seed (ne pas supprimer)';
+    await page.locator('.project-selector').click();
+    const hasSeed = await page.locator('.project-dropdown-item .project-item-name', { hasText: SEED_NAME }).count() > 0;
+    if (!hasSeed) {
+        page.once('dialog', (dialog) => dialog.accept(SEED_NAME));
+        await page.locator('button.new-project').click();
+        await page.locator('#projectName').filter({ hasText: SEED_NAME }).waitFor({ timeout: 10_000 });
+    } else {
+        await page.locator('.project-selector').click(); // referme le menu
+    }
+
     try {
         await mkdir(dirname(AUTH_FILE), { recursive: true });
         console.log(`✓ Directory created: ${dirname(AUTH_FILE)}`);
