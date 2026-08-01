@@ -186,6 +186,12 @@ class App {
 
         // Onboarding for new users
         onboarding.tryAutoStart();
+
+        // Signale que l'app est prête (utilisé par les tests E2E Playwright :
+        // le bootstrap attend initFromSupabase() avant d'appeler init(), donc
+        // les listeners comme celui du sélecteur de projet ne sont attachés
+        // qu'à ce moment — un clic avant ce marqueur ne fait rien).
+        document.body.setAttribute('data-app-ready', 'true');
     }
 
     /* ---- Tab Navigation ---- */
@@ -267,6 +273,20 @@ class App {
                 if (resourceView) {
                     resourceView.style.display = '';
                     this._renderResourceView();
+                    // Précharger tous les projets en arrière-plan : la détection
+                    // de surcharge croise les tâches de TOUS les projets qui
+                    // partagent une ressource, mais getAllTasks() ne contient
+                    // que les projets déjà chargés en mémoire. Sans ce
+                    // préchargement, une ressource partagée avec un projet
+                    // jamais ouvert dans la session semblait libre alors
+                    // qu'elle est en surcharge.
+                    Promise.all(
+                        store.getProjects().map(p =>
+                            store.ensureProjectLoaded(p.id).catch(e => syncLog.record(`chargement projet « ${p.name} »`, e))
+                        )
+                    ).then(() => {
+                        if (this._activeView === 'resources') this._renderResourceView();
+                    });
                 }
                 break;
             case 'dashboard':
@@ -848,6 +868,11 @@ class App {
 
         // Rate type toggle
         let currentRateType = (isEdit && resource.rateType === 'daily') ? 'daily' : 'hourly';
+        // Montants saisis pour chaque type, conserves independamment le temps
+        // de l'edition : sans cela, basculer hourly -> daily -> hourly effacait
+        // le montant deja saisi pour le type qu'on quitte.
+        let hourlyValue = isEdit ? (resource.hourlyRate || '') : '';
+        let dailyValue  = isEdit ? (resource.dailyRate  || '') : '';
         const rateToggle = document.createElement('div');
         rateToggle.className = 'res-rate-toggle';
         const btnHourly = document.createElement('button');
@@ -880,11 +905,15 @@ class App {
         rateSuffix.textContent = currentRateType === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
 
         const switchRateType = (type) => {
+            // Memoriser la valeur du type qu'on quitte avant de basculer.
+            if (currentRateType === 'daily') dailyValue = rateInput.value;
+            else hourlyValue = rateInput.value;
+
             currentRateType = type;
             btnHourly.classList.toggle('active', type === 'hourly');
             btnDaily.classList.toggle('active', type === 'daily');
             rateSuffix.textContent = type === 'daily' ? getCurrencyConfig().daily : getCurrencyConfig().hourly;
-            rateInput.value = '';
+            rateInput.value = type === 'daily' ? dailyValue : hourlyValue;
             rateInput.focus();
         };
         btnHourly.addEventListener('click', () => switchRateType('hourly'));
@@ -1254,8 +1283,14 @@ class App {
                     unassignBtn.className = 'resource-assign-btn resource-assign-btn--in';
                     unassignBtn.title = t('resource.unassignTooltip');
                     unassignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${t('resource.projectBadge')}`;
-                    unassignBtn.addEventListener('click', () => {
-                        store.removeResourceFromProject(activeProject.id, resource.id);
+                    unassignBtn.addEventListener('click', async () => {
+                        unassignBtn.disabled = true;
+                        try {
+                            await store.removeResourceFromProject(activeProject.id, resource.id);
+                            this._showToast(t('toast.resourceUnassigned'), 'success');
+                        } catch (e) {
+                            this._showToast(t('toast.error', { message: e.message }), 'error');
+                        }
                         this._renderResourceView();
                     });
                     assignRow.appendChild(unassignBtn);
@@ -1264,8 +1299,14 @@ class App {
                     assignBtn.className = 'resource-assign-btn resource-assign-btn--out';
                     assignBtn.title = t('resource.assignTooltip');
                     assignBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${t('resource.assign')}`;
-                    assignBtn.addEventListener('click', () => {
-                        store.addResourceToProject(activeProject.id, resource.id);
+                    assignBtn.addEventListener('click', async () => {
+                        assignBtn.disabled = true;
+                        try {
+                            await store.addResourceToProject(activeProject.id, resource.id);
+                            this._showToast(t('toast.resourceAssigned'), 'success');
+                        } catch (e) {
+                            this._showToast(t('toast.error', { message: e.message }), 'error');
+                        }
                         this._renderResourceView();
                     });
                     assignRow.appendChild(assignBtn);

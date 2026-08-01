@@ -318,11 +318,14 @@ export const supabaseStore = {
 
     /* ---- Liaison projet <-> ressource (migration 027) ---- */
 
-    /** Tous les rattachements visibles : [{ projectId, resourceId }] */
-    async getProjectResourceLinks() {
-        const { data, error } = await supabase
-            .from('project_resources')
-            .select('project_id, resource_id');
+    /** Rattachements visibles : [{ projectId, resourceId }].
+     *  Sans argument, renvoie TOUS les liens (init globale). Avec un
+     *  projectId, ne renvoie que les liens de ce projet (chargement d'un
+     *  projet a la demande, sans tirer toute la table). */
+    async getProjectResourceLinks(projectId = null) {
+        let query = supabase.from('project_resources').select('project_id, resource_id');
+        if (projectId) query = query.eq('project_id', projectId);
+        const { data, error } = await query;
         if (error) {
             console.error('[supabaseStore] getProjectResourceLinks:', error);
             return [];

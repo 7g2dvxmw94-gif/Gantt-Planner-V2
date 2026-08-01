@@ -717,12 +717,15 @@ class GanttInteractions {
                 const newWidth = parseFloat(d.bar.style.width);
                 const newStart = this._positionToDateFn(newLeft);
                 // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
-                const newEnd = addDays(this._positionToDateFn(newLeft + newWidth), -1);
+                // Add 1px to width to account for sub-pixel rendering or rounding
+                const newEnd = addDays(this._positionToDateFn(newLeft + newWidth + 1), -1);
 
                 if (d.mode === 'move') {
-                    // Preserve original duration to avoid drift from month-length differences
+                    // Preserve the original task duration when moving
                     const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
                     updates.startDate = formatDateISO(newStart);
+                    // daysBetween returns numeric difference; for Aug 10-12 it's 2
+                    // To preserve the span, endDate = startDate + daysBetween(startDate, endDate)
                     updates.endDate = formatDateISO(addDays(newStart, origDuration));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
@@ -737,6 +740,7 @@ class GanttInteractions {
                 ? store.getCriticalPath() : [];
             const isOnCriticalPath = criticalIds.includes(d.taskId);
 
+            updates.skipSnap = true;
             store.updateTask(d.taskId, updates);
 
             // Log critical path alert for user-initiated drag changes

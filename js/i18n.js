@@ -288,6 +288,8 @@ const I18N = {
         'resource.noTasks': 'Aucune tâche assignée',
         'resource.emptyAll': 'Aucune ressource dans l\'entreprise. Créez la première ci-dessus.',
         'resource.emptyProject': 'Aucune ressource affectée à ce projet.',
+        'toast.resourceAssigned': 'Ressource affectée au projet',
+        'toast.resourceUnassigned': 'Ressource retirée du projet',
 
         // Gantt left column meta
         'task.meta.person': '{n} personne',
@@ -952,6 +954,8 @@ const I18N = {
         'resource.noTasks': 'No assigned tasks',
         'resource.emptyAll': 'No resources in the company. Create the first one above.',
         'resource.emptyProject': 'No resources assigned to this project.',
+        'toast.resourceAssigned': 'Resource added to project',
+        'toast.resourceUnassigned': 'Resource removed from project',
 
         // Gantt left column meta
         'task.meta.person': '{n} person',

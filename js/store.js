@@ -781,17 +781,15 @@ class Store {
              * n'est ni envoye ni relu. Il etait donc remis a zero a chaque
              * rechargement, et l'onglet Ressources apparaissait vide.
              *
-             * resource.projectId, lui, EST persiste. On s'en sert pour
-             * reconstituer le lien.
-             *
-             * LIMITE ASSUMEE : projectId etant unique, une ressource
-             * partagee entre plusieurs projets ne le restera pas apres
-             * rechargement. Cela ne fonctionnait pas davantage avant —
-             * une vraie mise en commun demanderait une table de liaison
-             * project_resources. */
-            /* Charger les rattachements partages (migration 027). En cas
-               d'echec on repli sur resource.projectId : mieux vaut une
-               vue restreinte qu'un onglet vide. */
+             * Le partage entre projets est exprime par la table de liaison
+             * project_resources (many-to-many) ; resource.projectId ne sert
+             * que de repli pour les ressources pas encore synchronisees.
+             * _rebuildProjectResourceIds() fait l'UNION des deux sources —
+             * ne PAS l'ecraser ensuite avec un filtre sur resource.projectId
+             * seul, sinon toute ressource partagee perd son rattachement aux
+             * autres projets des le rechargement suivant (c'etait le bug :
+             * la ressource redevenait invisible ailleurs que sur son projet
+             * proprietaire). */
             let liensPartages = null;
             try {
                 if (typeof supabaseStore.getProjectResourceLinks === 'function') {
@@ -802,10 +800,6 @@ class Store {
                              err?.message || err);
             }
             this._rebuildProjectResourceIds(liensPartages);
-            // Mettre à jour resourceIds pour chaque projet
-            this._data.projects.forEach(p => {
-                p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
-            });
 
             // 4. Purger les données locales orphelines (projets supprimés)
             const projectIds = new Set(projects.map(p => p.id));
@@ -844,10 +838,17 @@ class Store {
     }
 
     async _loadProjectData(projectId) {
-        const [supabaseTasks, resources, baselines] = await Promise.all([
+        const [supabaseTasks, resources, baselines, liensPartages] = await Promise.all([
             supabaseStore.getTasks(projectId),
             supabaseStore.getResources(projectId),
             supabaseStore.getBaselines(projectId),
+            (typeof supabaseStore.getProjectResourceLinks === 'function'
+                ? supabaseStore.getProjectResourceLinks(projectId)
+                : Promise.resolve([])
+            ).catch(err => {
+                console.warn('[store] liens projet/ressource indisponibles :', err?.message || err);
+                return [];
+            }),
         ]);
 
         // Tâches locales pour ce projet (pas encore synchées ou en attente)
@@ -855,13 +856,27 @@ class Store {
         const supabaseTaskIds = new Set(supabaseTasks.map(t => t.id));
         const unsynced = localTasks.filter(t => !supabaseTaskIds.has(t.id));
 
+        /* Ressources locales pour ce projet (pas encore synchees ou en
+         * attente). Meme filet de securite que pour les taches ci-dessus :
+         * addResource() n'attend PAS la fin de supabaseStore.upsertResource()
+         * (fire-and-forget) avant de rendre la main. Sans cette protection,
+         * un rechargement de ce projet declenche pendant la fenetre de sync
+         * (ex. le prechargement en arriere-plan de l'onglet Ressources)
+         * ecrasait _data.resources avec la liste Supabase encore incomplete,
+         * faisant disparaitre la ressource tout juste creee. */
+        const localResources = this._data.resources.filter(r => r.projectId === projectId);
+        const supabaseResourceIds = new Set(resources.map(r => r.id));
+        const unsyncedResources = localResources.filter(r => !supabaseResourceIds.has(r.id));
+
         // Remplacer avec les données Supabase + conserver les tâches locales non synchées
         this._data.tasks     = this._data.tasks.filter(t => t.projectId !== projectId)
                                                 .concat(supabaseTasks)
                                                 .concat(unsynced);
         this._invalidateTaskIndex();
         this._invalidateResourceIndex();
-        this._data.resources = this._data.resources.filter(r => r.projectId !== projectId).concat(resources);
+        this._data.resources = this._data.resources.filter(r => r.projectId !== projectId)
+                                                     .concat(resources)
+                                                     .concat(unsyncedResources);
         this._invalidateResourceIndex();
         this._data.baselines = this._data.baselines.filter(b => b.projectId !== projectId).concat(baselines);
 
@@ -869,11 +884,21 @@ class Store {
         for (const task of unsynced) {
             supabaseStore.upsertTask(task).catch(e => console.error('[store] re-sync task:', e));
         }
+        // Re-syncher les ressources locales non encore dans Supabase
+        for (const resource of unsyncedResources) {
+            supabaseStore.upsertResource(resource).catch(e => console.error('[store] re-sync resource:', e));
+        }
 
-        // Reconstruire resourceIds depuis toutes les ressources du projet
+        // Reconstruire resourceIds : ressources propres au projet UNIES aux
+        // ressources partagees via project_resources. Un simple
+        // `resources.map(r => r.id)` ne gardait que les ressources dont
+        // resource.projectId == projectId et perdait celles empruntees a un
+        // autre projet a chaque (re)chargement (ex. changement de projet actif).
         const project = this._data.projects.find(p => p.id === projectId);
         if (project) {
-            project.resourceIds = resources.map(r => r.id);
+            const ownedIds  = resources.map(r => r.id).concat(unsyncedResources.map(r => r.id));
+            const linkedIds = (liensPartages || []).map(l => l.resourceId);
+            project.resourceIds = [...new Set([...ownedIds, ...linkedIds])];
         }
 
         // Recalculate all phase dates/progress in memory so the Gantt
@@ -1395,16 +1420,22 @@ class Store {
          * tapant la date a la main, alors que le moteur ne l'y placerait
          * jamais. Le planning afficherait des barres sur des colonnes
          * grisees : incoherent, et faussant le calcul de couts qui
-         * compte en jours ouvres. */
+         * compte en jours ouvres.
+         *
+         * EXCEPTION : les operations de drag (deplacement ou redimensionnement)
+         * ne doivent PAS etre snappees, car l'utilisateur voit visellement
+         * la position exacte et doit obtenir ce qu'il a pointe a la souris. */
         const modifieDates = updates
             && (updates.startDate !== undefined || updates.endDate !== undefined)
-            && !this._data.tasks[idx].isPhase;
+            && !this._data.tasks[idx].isPhase
+            && !updates.skipSnap;
         if (modifieDates) {
             const debut = updates.startDate ?? this._data.tasks[idx].startDate;
             const fin   = updates.endDate   ?? this._data.tasks[idx].endDate;
             const cale  = this._snapToWorkingDays(debut, fin);
             updates = { ...updates, startDate: cale.startDate, endDate: cale.endDate };
         }
+        delete updates.skipSnap;
 
         this._data.tasks[idx] = {
             ...this._data.tasks[idx],
@@ -2118,49 +2149,80 @@ class Store {
         }
     }
 
+    /** Rattache une ressource a un projet.
+     *  Met a jour l'etat local IMMEDIATEMENT (optimiste), et renvoie la
+     *  promesse de l'ecriture en base : l'appelant peut l'ignorer (le cas
+     *  courant, UI reactive sans attendre le reseau) ou l'attendre quand il
+     *  a besoin d'une confirmation que le rattachement a bien atteint le
+     *  serveur avant d'agir (ex. avant un rechargement de page) — sans ce
+     *  await, un reload immediatement apres le clic pouvait survenir avant
+     *  la fin de l'ecriture reseau et faire disparaitre le partage. */
     addResourceToProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
-        if (!project) return;
+        if (!project) return Promise.resolve();
         if (!project.resourceIds) project.resourceIds = [];
-        if (!project.resourceIds.includes(resourceId)) {
-            this._snapshot();
-            project.resourceIds.push(resourceId);
-            this._save();
-            this._emit('change', null);
-            // Sync : mettre à jour le project_id de la ressource
-            /* Persister le rattachement dans project_resources.
-               Avant la migration 027, project.resourceIds n'etait stocke
-               NULLE PART : il etait remis a zero a chaque rechargement,
-               et l'onglet Ressources apparaissait vide. */
-            supabaseStore.linkResourceToProject?.(projectId, resourceId)
-                .catch(e => console.error('[store] sync linkResourceToProject:', e));
+        if (project.resourceIds.includes(resourceId)) return Promise.resolve();
 
-            const resource = this.getResource(resourceId);
-            if (resource) {
-                /* On ne touche PLUS a resource.projectId : il designe le
-                   projet PROPRIETAIRE, et l'ecraser transfererait la
-                   propriete au lieu de partager. C'est la table de liaison
-                   qui exprime l'emprunt. */
-                supabaseStore.upsertResource(resource)
-                    .catch(e => console.error('[store] sync addResourceToProject:', e));
-            }
+        this._snapshot();
+        project.resourceIds.push(resourceId);
+        this._save();
+        this._emit('change', null);
+
+        const resource = this.getResource(resourceId);
+        if (resource) {
+            /* On ne touche PLUS a resource.projectId : il designe le
+               projet PROPRIETAIRE, et l'ecraser transfererait la
+               propriete au lieu de partager. C'est la table de liaison
+               qui exprime l'emprunt. */
+            supabaseStore.upsertResource(resource)
+                .catch(e => console.error('[store] sync addResourceToProject:', e));
         }
+
+        /* Persister le rattachement dans project_resources.
+           Avant la migration 027, project.resourceIds n'etait stocke
+           NULLE PART : il etait remis a zero a chaque rechargement,
+           et l'onglet Ressources apparaissait vide. */
+        return Promise.resolve(supabaseStore.linkResourceToProject?.(projectId, resourceId))
+            .catch(e => {
+                console.error('[store] sync linkResourceToProject:', e);
+                /* Rollback optimiste : le serveur a refuse le rattachement
+                   (RLS, reseau...). Laisser l'etat local tel quel afficherait
+                   la ressource comme rattachee alors qu'un rechargement la
+                   ferait disparaitre — incoherent et trompeur pour
+                   l'utilisateur. */
+                project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+                this._save();
+                this._emit('change', null);
+                throw e;
+            });
     }
 
+    /** Detache une ressource d'un projet. Meme contrat que addResourceToProject
+     *  : mise a jour locale immediate, promesse de sync renvoyee, rollback
+     *  optimiste si le serveur refuse. */
     removeResourceFromProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
-        if (!project || !project.resourceIds) return;
+        if (!project || !project.resourceIds) return Promise.resolve();
+        if (!project.resourceIds.includes(resourceId)) return Promise.resolve();
         this._snapshot();
         project.resourceIds = project.resourceIds.filter(id => id !== resourceId);
+        this._save();
+        this._emit('change', null);
 
         /* Detacher aussi en base, sinon le rattachement revenait au
            prochain rechargement : _rebuildProjectResourceIds() le
            relisait depuis project_resources. */
-        supabaseStore.unlinkResourceFromProject?.(projectId, resourceId)
-            .catch(e => console.error('[store] sync unlinkResourceFromProject:', e));
-
-        this._save();
-        this._emit('change', null);
+        return Promise.resolve(supabaseStore.unlinkResourceFromProject?.(projectId, resourceId))
+            .catch(e => {
+                console.error('[store] sync unlinkResourceFromProject:', e);
+                // Rollback optimiste : le serveur n'a pas detache le lien.
+                if (!project.resourceIds.includes(resourceId)) {
+                    project.resourceIds.push(resourceId);
+                    this._save();
+                    this._emit('change', null);
+                }
+                throw e;
+            });
     }
 
     isResourceInProject(projectId, resourceId) {
