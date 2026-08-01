@@ -273,6 +273,20 @@ class App {
                 if (resourceView) {
                     resourceView.style.display = '';
                     this._renderResourceView();
+                    // Précharger tous les projets en arrière-plan : la détection
+                    // de surcharge croise les tâches de TOUS les projets qui
+                    // partagent une ressource, mais getAllTasks() ne contient
+                    // que les projets déjà chargés en mémoire. Sans ce
+                    // préchargement, une ressource partagée avec un projet
+                    // jamais ouvert dans la session semblait libre alors
+                    // qu'elle est en surcharge.
+                    Promise.all(
+                        store.getProjects().map(p =>
+                            store.ensureProjectLoaded(p.id).catch(e => syncLog.record(`chargement projet « ${p.name} »`, e))
+                        )
+                    ).then(() => {
+                        if (this._activeView === 'resources') this._renderResourceView();
+                    });
                 }
                 break;
             case 'dashboard':

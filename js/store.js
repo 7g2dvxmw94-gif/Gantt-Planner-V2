@@ -781,17 +781,15 @@ class Store {
              * n'est ni envoye ni relu. Il etait donc remis a zero a chaque
              * rechargement, et l'onglet Ressources apparaissait vide.
              *
-             * resource.projectId, lui, EST persiste. On s'en sert pour
-             * reconstituer le lien.
-             *
-             * LIMITE ASSUMEE : projectId etant unique, une ressource
-             * partagee entre plusieurs projets ne le restera pas apres
-             * rechargement. Cela ne fonctionnait pas davantage avant —
-             * une vraie mise en commun demanderait une table de liaison
-             * project_resources. */
-            /* Charger les rattachements partages (migration 027). En cas
-               d'echec on repli sur resource.projectId : mieux vaut une
-               vue restreinte qu'un onglet vide. */
+             * Le partage entre projets est exprime par la table de liaison
+             * project_resources (many-to-many) ; resource.projectId ne sert
+             * que de repli pour les ressources pas encore synchronisees.
+             * _rebuildProjectResourceIds() fait l'UNION des deux sources —
+             * ne PAS l'ecraser ensuite avec un filtre sur resource.projectId
+             * seul, sinon toute ressource partagee perd son rattachement aux
+             * autres projets des le rechargement suivant (c'etait le bug :
+             * la ressource redevenait invisible ailleurs que sur son projet
+             * proprietaire). */
             let liensPartages = null;
             try {
                 if (typeof supabaseStore.getProjectResourceLinks === 'function') {
@@ -802,10 +800,6 @@ class Store {
                              err?.message || err);
             }
             this._rebuildProjectResourceIds(liensPartages);
-            // Mettre à jour resourceIds pour chaque projet
-            this._data.projects.forEach(p => {
-                p.resourceIds = allResources.filter(r => r.projectId === p.id).map(r => r.id);
-            });
 
             // 4. Purger les données locales orphelines (projets supprimés)
             const projectIds = new Set(projects.map(p => p.id));
@@ -844,10 +838,17 @@ class Store {
     }
 
     async _loadProjectData(projectId) {
-        const [supabaseTasks, resources, baselines] = await Promise.all([
+        const [supabaseTasks, resources, baselines, liensPartages] = await Promise.all([
             supabaseStore.getTasks(projectId),
             supabaseStore.getResources(projectId),
             supabaseStore.getBaselines(projectId),
+            (typeof supabaseStore.getProjectResourceLinks === 'function'
+                ? supabaseStore.getProjectResourceLinks(projectId)
+                : Promise.resolve([])
+            ).catch(err => {
+                console.warn('[store] liens projet/ressource indisponibles :', err?.message || err);
+                return [];
+            }),
         ]);
 
         // Tâches locales pour ce projet (pas encore synchées ou en attente)
@@ -870,10 +871,16 @@ class Store {
             supabaseStore.upsertTask(task).catch(e => console.error('[store] re-sync task:', e));
         }
 
-        // Reconstruire resourceIds depuis toutes les ressources du projet
+        // Reconstruire resourceIds : ressources propres au projet UNIES aux
+        // ressources partagees via project_resources. Un simple
+        // `resources.map(r => r.id)` ne gardait que les ressources dont
+        // resource.projectId == projectId et perdait celles empruntees a un
+        // autre projet a chaque (re)chargement (ex. changement de projet actif).
         const project = this._data.projects.find(p => p.id === projectId);
         if (project) {
-            project.resourceIds = resources.map(r => r.id);
+            const ownedIds  = resources.map(r => r.id);
+            const linkedIds = (liensPartages || []).map(l => l.resourceId);
+            project.resourceIds = [...new Set([...ownedIds, ...linkedIds])];
         }
 
         // Recalculate all phase dates/progress in memory so the Gantt
