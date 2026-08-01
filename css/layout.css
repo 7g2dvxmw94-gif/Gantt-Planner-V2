@@ -33,16 +33,9 @@
 }
 
 .logo-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-accent, #EC4899));
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-sm);
+    width: 220px;
+    height: 56px;
+    background: url('../assets/Logo%20Gantly.png') center/auto 24px no-repeat;
 }
 
 .logo-img {
