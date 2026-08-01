@@ -11,11 +11,27 @@ test('réimporter un export JSON restaure un projet identique', async ({ page })
     const taskName = `Tâche import ${Date.now()}`;
 
     // Diagnostic temporaire : la synchro Supabase du projet original semble
-    // ne jamais atteindre le serveur (confirmé par requête SQL directe),
-    // sans qu'aucune erreur ne remonte dans les logs CI habituels — capturer
-    // la console du navigateur pour voir l'erreur réelle, le cas échéant.
+    // ne jamais atteindre le serveur (confirmé par requête SQL directe), sans
+    // qu'aucune erreur ne remonte dans les logs CI habituels ni côté console
+    // navigateur (tentative précédente, toujours muette). On capture donc
+    // directement les requêtes/réponses réseau vers Supabase pour voir ce qui
+    // part réellement et ce que le serveur répond.
     page.on('console', (msg) => console.log(`[browser:${msg.type()}] ${msg.text()}`));
     page.on('pageerror', (err) => console.error(`[browser:pageerror] ${err.message}`));
+    page.on('request', (req) => {
+        const url = req.url();
+        if (url.includes('supabase.co') && (url.includes('project') || url.includes('rpc'))) {
+            console.log(`[net:request] ${req.method()} ${url} body=${req.postData() || ''}`);
+        }
+    });
+    page.on('response', async (res) => {
+        const url = res.url();
+        if (url.includes('supabase.co') && (url.includes('project') || url.includes('rpc'))) {
+            let body = '';
+            try { body = await res.text(); } catch (_) { /* ignore */ }
+            console.log(`[net:response] ${res.status()} ${url} body=${body}`);
+        }
+    });
 
     await page.goto('index.html');
     await createProject(page, projectName);
