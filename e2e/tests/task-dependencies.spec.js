@@ -46,7 +46,7 @@ test('ajouter un prédécesseur contraint automatiquement les dates de la tâche
     await barB.dblclick();
     await expect(page.locator('#taskStart')).toHaveValue('2026-08-13');
     await expect(page.locator('#taskEnd')).toHaveValue('2026-08-17');
-    await page.locator('#taskModalOverlay').getByRole('button', { name: 'Annuler' }).click();
+    await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
     await deleteActiveProject(page);
