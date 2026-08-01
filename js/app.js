@@ -6531,7 +6531,7 @@ tr:nth-child(even){background:#fafbfc}
         input.addEventListener('click', (e) => e.stopPropagation());
     }
 
-    _createNewProject() {
+    async _createNewProject() {
         if (!store.canAddProject()) {
             this._showUpgradeModal('projects');
             return;
@@ -6540,7 +6540,7 @@ tr:nth-child(even){background:#fafbfc}
         if (!name || !name.trim()) return;
 
         const today = new Date();
-        const project = store.addProject({
+        const project = await store.addProject({
             name: name.trim(),
             description: '',
             startDate: formatDateISO(today),

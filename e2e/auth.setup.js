@@ -57,6 +57,13 @@ setup('login', async ({ page }) => {
         page.once('dialog', (dialog) => dialog.accept(SEED_NAME));
         await page.locator('button.new-project').click();
         await page.locator('#projectName').filter({ hasText: SEED_NAME }).waitFor({ timeout: 10_000 });
+        // store.addProject() attend maintenant la synchro Supabase avant de
+        // rendre la main ; ce toast ne s'affiche qu'une fois le projet
+        // réellement persisté côté serveur — condition nécessaire puisque le
+        // contexte du navigateur se ferme juste après (storageState() puis
+        // fin du test setup), sans quoi la requête réseau pouvait être
+        // coupée avant de partir (même anti-pattern que deleteProject).
+        await page.locator('#toastContainer .toast', { hasText: `"${SEED_NAME}" créé` }).waitFor({ timeout: 10_000 });
         console.log('[seed] created successfully');
     } else {
         await page.locator('.project-selector').click(); // referme le menu

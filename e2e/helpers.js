@@ -7,13 +7,20 @@ export async function waitForAppReady(page) {
     await page.locator('body[data-app-ready="true"]').waitFor({ timeout: 15_000 });
 }
 
-/** Crée un projet via le bouton "Nouveau projet" (window.prompt natif). */
+/** Crée un projet via le bouton "Nouveau projet" (window.prompt natif).
+ *
+ *  store.addProject() attend désormais la fin de la synchronisation Supabase
+ *  avant de renvoyer la main (mêmes anti-pattern et correctif que
+ *  deleteActiveProject ci-dessous) ; attendre le toast de confirmation
+ *  garantit que le projet existe bien côté serveur avant de continuer (ex.
+ *  avant un rechargement de page qui re-fetch tout depuis Supabase). */
 export async function createProject(page, name) {
     await waitForAppReady(page);
     page.once('dialog', (dialog) => dialog.accept(name));
     await page.locator('.project-selector').click();
     await page.locator('button.new-project').click();
     await expectProjectName(page, name);
+    await page.locator('#toastContainer .toast', { hasText: `"${name}" créé` }).waitFor({ timeout: 10_000 });
 }
 
 export async function expectProjectName(page, name) {

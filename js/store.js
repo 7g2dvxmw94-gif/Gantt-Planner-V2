@@ -1034,7 +1034,14 @@ class Store {
         this._emit('project:change', projectId);
     }
 
-    addProject(project) {
+    /** Crée un projet. Met à jour l'état local immédiatement (optimiste) et
+     *  attend la synchronisation Supabase avant de retourner : sans cela,
+     *  une action ultérieure qui dépend de ce projet existant côté serveur
+     *  (ex. rattacher une ressource, qui vérifie can_edit_project() via RLS,
+     *  ou un rechargement de page qui re-fetch tout depuis Supabase) pouvait
+     *  survenir avant la fin de l'écriture réseau — même anti-pattern déjà
+     *  corrigé pour deleteProject() et importProject(). */
+    async addProject(project) {
         this._snapshot();
         const newProject = {
             id: generateId(),
@@ -1046,12 +1053,11 @@ class Store {
         this._data.projects.push(newProject);
         this._save();
         this._emit('project:add', newProject);
-        // Sync Supabase - await pour éviter race condition lors de la création de tâches
-        auth.getUser().then(async user => {
-            if (!user) return;
+        const user = await auth.getUser();
+        if (user) {
             await supabaseStore.upsertProject(newProject, user.id)
                 .catch(e => console.error('[store] sync addProject:', e));
-        });
+        }
         return newProject;
     }
 
