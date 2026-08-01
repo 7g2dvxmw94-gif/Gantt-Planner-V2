@@ -44,14 +44,23 @@ setup('login', async ({ page }) => {
     // a supprimé ce seed par erreur la première fois, exactement parce
     // qu'il correspondait à ce même motif.
     const SEED_NAME = '🔒 Seed persistant (ne pas supprimer)';
+    page.on('console', (msg) => console.log(`[browser:${msg.type()}] ${msg.text()}`));
+    page.on('pageerror', (err) => console.error(`[browser:pageerror] ${err.message}`));
+    page.on('dialog', (dialog) => console.log(`[dialog] type=${dialog.type()} message=${dialog.message()}`));
+
     await page.locator('.project-selector').click();
+    const dropdownVisible = await page.locator('#projectDropdown').isVisible().catch(() => false);
+    const itemCount = await page.locator('.project-dropdown-item[data-project-id]').count();
     const hasSeed = await page.locator('.project-dropdown-item .project-item-name', { hasText: SEED_NAME }).count() > 0;
+    console.log(`[seed] dropdownVisible=${dropdownVisible} itemCount=${itemCount} hasSeed=${hasSeed}`);
     if (!hasSeed) {
         page.once('dialog', (dialog) => dialog.accept(SEED_NAME));
         await page.locator('button.new-project').click();
         await page.locator('#projectName').filter({ hasText: SEED_NAME }).waitFor({ timeout: 10_000 });
+        console.log('[seed] created successfully');
     } else {
         await page.locator('.project-selector').click(); // referme le menu
+        console.log('[seed] already existed');
     }
 
     try {
