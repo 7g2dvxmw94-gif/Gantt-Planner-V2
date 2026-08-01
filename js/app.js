@@ -2000,7 +2000,7 @@ ${assignLines.join('\n')}
 
     _showMSProjectImportHelp() {
         const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
+        overlay.className = 'modal-overlay active';
         overlay.innerHTML = `
             <div class="modal" style="max-width:560px" role="dialog" aria-modal="true" aria-label="Import dans MS Project">
                 <div class="modal-header">

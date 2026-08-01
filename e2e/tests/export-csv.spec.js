@@ -41,5 +41,10 @@ test('exporter en CSV télécharge un fichier contenant les tâches du projet', 
     expect(content).toContain('10/08/2026');
     expect(content).toContain('12/08/2026');
 
+    // L'export CSV ouvre une aide "Import dans MS Project" : la fermer
+    // avant de continuer, sinon elle intercepte les clics suivants.
+    await page.locator('#msHelpOk').click();
+    await expect(page.locator('#msHelpOk')).toBeHidden();
+
     await deleteActiveProject(page);
 });
