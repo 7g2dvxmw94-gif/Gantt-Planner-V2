@@ -1034,7 +1034,14 @@ class Store {
         this._emit('project:change', projectId);
     }
 
-    addProject(project) {
+    /** Crée un projet. Met à jour l'état local immédiatement (optimiste) et
+     *  attend la synchronisation Supabase avant de retourner : sans cela,
+     *  une action ultérieure qui dépend de ce projet existant côté serveur
+     *  (ex. rattacher une ressource, qui vérifie can_edit_project() via RLS,
+     *  ou un rechargement de page qui re-fetch tout depuis Supabase) pouvait
+     *  survenir avant la fin de l'écriture réseau — même anti-pattern déjà
+     *  corrigé pour deleteProject() et importProject(). */
+    async addProject(project) {
         this._snapshot();
         const newProject = {
             id: generateId(),
@@ -1046,12 +1053,11 @@ class Store {
         this._data.projects.push(newProject);
         this._save();
         this._emit('project:add', newProject);
-        // Sync Supabase - await pour éviter race condition lors de la création de tâches
-        auth.getUser().then(async user => {
-            if (!user) return;
+        const user = await auth.getUser();
+        if (user) {
             await supabaseStore.upsertProject(newProject, user.id)
                 .catch(e => console.error('[store] sync addProject:', e));
-        });
+        }
         return newProject;
     }
 
@@ -1075,6 +1081,16 @@ class Store {
         return this._data.projects[idx];
     }
 
+    /** Supprime un projet. Met a jour l'etat local immediatement (optimiste),
+     *  et renvoie la promesse de l'ecriture en base : l'appelant peut
+     *  l'attendre pour confirmer que la suppression a bien atteint le
+     *  serveur (ex. avant de fermer la page) au lieu de simplement l'ignorer.
+     *  Sans await sur cette promesse, un contexte navigateur ferme juste
+     *  apres l'appel (fin d'un test E2E, fermeture d'onglet) pouvait couper
+     *  la requete reseau avant qu'elle ne parte : le projet redevenait
+     *  actif au prochain chargement, jamais reellement supprime cote
+     *  serveur — plusieurs dizaines de projets de test se sont ainsi
+     *  accumules en base avant que ce ne soit repere. */
     deleteProject(projectId) {
         this._snapshot();
         this._data.projects = this._data.projects.filter(p => p.id !== projectId);
@@ -1086,9 +1102,11 @@ class Store {
         }
         this._save();
         this._emit('project:delete', projectId);
-        // Sync Supabase en arrière-plan
-        supabaseStore.deleteProject(projectId)
-            .catch(e => console.error('[store] sync deleteProject:', e));
+        return Promise.resolve(supabaseStore.deleteProject(projectId))
+            .catch(e => {
+                console.error('[store] sync deleteProject:', e);
+                throw e;
+            });
     }
 
     duplicateProject(projectId) {
@@ -2486,7 +2504,12 @@ class Store {
 
     /* ---- Import ---- */
 
-    importProject(jsonData) {
+    /** Importe un projet depuis un JSON exporté. Attend la fin de la
+     *  synchronisation Supabase avant de retourner : sans cela, un rechargement
+     *  de page juste après l'import (ex. fin de test E2E) repartait de l'état
+     *  serveur précédent et le projet importé disparaissait purement et
+     *  simplement, jamais persisté (même anti-pattern que deleteProject). */
+    async importProject(jsonData) {
         this._snapshot();
         try {
             const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
@@ -2559,15 +2582,14 @@ class Store {
                 this._data.settings.activeProjectId = newProjectId;
                 this._save();
 
-                // Sync to Supabase in background (project → resources → tasks)
-                auth.getUser().then(async user => {
-                    if (!user) return;
+                // Sync to Supabase (project → resources → tasks), attendu par
+                // l'appelant avant de considérer l'import terminé.
+                const user = await auth.getUser();
+                if (user) {
                     try {
                         await supabaseStore.upsertProject(newProject, user.id);
-                        console.log('[importProject] project saved:', newProjectId);
                     } catch (e) {
                         console.error('[importProject] upsertProject failed:', e?.message || e);
-                        return;
                     }
                     // Resources
                     for (const r of (data.resources || [])) {
@@ -2593,8 +2615,7 @@ class Store {
                             );
                         }
                     }
-                    console.log('[importProject] Supabase sync complete');
-                });
+                }
 
                 this._emit('project:import', newProjectId);
                 return newProject;
