@@ -10,6 +10,13 @@ test('réimporter un export JSON restaure un projet identique', async ({ page })
     const projectName = `E2E Import ${Date.now()}`;
     const taskName = `Tâche import ${Date.now()}`;
 
+    // Diagnostic temporaire : la synchro Supabase du projet original semble
+    // ne jamais atteindre le serveur (confirmé par requête SQL directe),
+    // sans qu'aucune erreur ne remonte dans les logs CI habituels — capturer
+    // la console du navigateur pour voir l'erreur réelle, le cas échéant.
+    page.on('console', (msg) => console.log(`[browser:${msg.type()}] ${msg.text()}`));
+    page.on('pageerror', (err) => console.error(`[browser:pageerror] ${err.message}`));
+
     await page.goto('index.html');
     await createProject(page, projectName);
 
