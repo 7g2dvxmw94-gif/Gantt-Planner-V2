@@ -1066,19 +1066,27 @@ class Store {
         this._snapshot();
         const idx = this._data.projects.findIndex(p => p.id === projectId);
         if (idx === -1) return null;
-        this._data.projects[idx] = {
+        const updatedProject = {
             ...this._data.projects[idx],
             ...updates,
             updatedAt: new Date().toISOString(),
         };
+        this._data.projects[idx] = updatedProject;
         this._save();
-        this._emit('project:update', this._data.projects[idx]);
+        this._emit('project:update', updatedProject);
+        /* Ne PAS ré-indexer this._data.projects[idx] après ce point : le
+           await ci-dessous ouvre une fenêtre pendant laquelle une autre
+           mutation (ex. deleteProject) peut réassigner this._data.projects
+           (via filter()), rendant idx obsolète et provoquant un crash sur
+           un élément décalé ou inexistant. La référence updatedProject,
+           capturée avant le await, reste valide quoi qu'il arrive au
+           tableau. */
         const user = await auth.getUser();
         if (user) {
-            await supabaseStore.upsertProject(this._data.projects[idx], user.id)
+            await supabaseStore.upsertProject(updatedProject, user.id)
                 .catch(e => console.error('[store] sync updateProject:', e));
         }
-        return this._data.projects[idx];
+        return updatedProject;
     }
 
     /** Supprime un projet. Met a jour l'etat local immediatement (optimiste),
@@ -1220,11 +1228,14 @@ class Store {
         const idx = this._data.baselines.findIndex(b => b.id === baselineId);
         if (idx === -1) return;
         this._data.baselines[idx].name = newName;
+        const baseline = this._data.baselines[idx];
         this._save();
-        // Sync to Supabase
-        await supabaseStore.upsertBaseline(this._data.baselines[idx])
+        // Sync to Supabase. Ne pas ré-indexer this._data.baselines[idx]
+        // après ce await : le tableau peut avoir été réassigné entre-temps
+        // (ex. deleteBaseline sur une autre baseline) et idx devenir obsolète.
+        await supabaseStore.upsertBaseline(baseline)
             .catch(e => console.error('[store] sync renameBaseline:', e));
-        this._emit('baseline:update', this._data.baselines[idx]);
+        this._emit('baseline:update', baseline);
     }
 
     setActiveBaseline(baselineId) {
@@ -2075,20 +2086,24 @@ class Store {
         this._snapshot();
         const idx = this._data.resources.findIndex(r => r.id === resourceId);
         if (idx === -1) return null;
-        this._data.resources[idx] = { ...this._data.resources[idx], ...updates };
+        const updatedResource = { ...this._data.resources[idx], ...updates };
+        this._data.resources[idx] = updatedResource;
         /* Remplacement d'objet : ni la reference du tableau ni sa longueur
            ne changent, les gardes de _ensureResourceIndex() ne detectent
            donc rien. C'est exactement l'oubli qui, sur les taches, a rendu
            les dependances invisibles et les barres figees dans le Gantt.
            On met l'entree a jour chirurgicalement. */
         if (this._resourceIndex) {
-            this._resourceIndex.set(resourceId, this._data.resources[idx]);
+            this._resourceIndex.set(resourceId, updatedResource);
         }
         this._save();
-        this._emit('resource:update', this._data.resources[idx]);
-        await supabaseStore.upsertResource(this._data.resources[idx])
+        this._emit('resource:update', updatedResource);
+        // Ne pas ré-indexer this._data.resources[idx] après ce await : idx
+        // peut devenir obsolète si une autre mutation (ex. deleteResource)
+        // réassigne le tableau entre-temps.
+        await supabaseStore.upsertResource(updatedResource)
             .catch(e => console.error('[store] sync updateResource:', e));
-        return this._data.resources[idx];
+        return updatedResource;
     }
 
     async deleteResource(resourceId) {

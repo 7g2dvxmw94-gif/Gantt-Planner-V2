@@ -6382,7 +6382,15 @@ tr:nth-child(even){background:#fafbfc}
             searchInput.addEventListener('keydown', e => e.stopPropagation());
             searchWrap.appendChild(searchInput);
             dropdown.appendChild(searchWrap);
-            setTimeout(() => searchInput.focus(), 50);
+            // Ne vole le focus que si rien d'autre dans le dropdown ne l'a
+            // déjà pris entre-temps (ex. le champ de renommage d'un projet,
+            // ouvert en cliquant le crayon dans ce même délai de 50ms) —
+            // sinon ce focus tardif déclenchait le blur du champ de
+            // renommage, qui referme tout le dropdown avant que
+            // l'utilisateur ait pu taper quoi que ce soit.
+            setTimeout(() => {
+                if (!dropdown.contains(document.activeElement)) searchInput.focus();
+            }, 50);
         }
 
         // Scrollable project list
