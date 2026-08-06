@@ -858,12 +858,13 @@ class Store {
 
         /* Ressources locales pour ce projet (pas encore synchees ou en
          * attente). Meme filet de securite que pour les taches ci-dessus :
-         * addResource() n'attend PAS la fin de supabaseStore.upsertResource()
-         * (fire-and-forget) avant de rendre la main. Sans cette protection,
-         * un rechargement de ce projet declenche pendant la fenetre de sync
-         * (ex. le prechargement en arriere-plan de l'onglet Ressources)
-         * ecrasait _data.resources avec la liste Supabase encore incomplete,
-         * faisant disparaitre la ressource tout juste creee. */
+         * meme si addResource() attend desormais la fin de sa propre
+         * synchronisation, ce chargement peut toujours s'executer avant
+         * qu'une ressource creee ailleurs (import, migration) n'ait fini de
+         * syncher. Sans cette protection, un rechargement de ce projet
+         * declenche pendant cette fenetre ecrasait _data.resources avec la
+         * liste Supabase encore incomplete, faisant disparaitre la
+         * ressource tout juste creee. */
         const localResources = this._data.resources.filter(r => r.projectId === projectId);
         const supabaseResourceIds = new Set(resources.map(r => r.id));
         const unsyncedResources = localResources.filter(r => !supabaseResourceIds.has(r.id));
@@ -1061,7 +1062,7 @@ class Store {
         return newProject;
     }
 
-    updateProject(projectId, updates) {
+    async updateProject(projectId, updates) {
         this._snapshot();
         const idx = this._data.projects.findIndex(p => p.id === projectId);
         if (idx === -1) return null;
@@ -1072,12 +1073,11 @@ class Store {
         };
         this._save();
         this._emit('project:update', this._data.projects[idx]);
-        // Sync Supabase en arrière-plan
-        auth.getUser().then(user => {
-            if (!user) return;
-            supabaseStore.upsertProject(this._data.projects[idx], user.id)
+        const user = await auth.getUser();
+        if (user) {
+            await supabaseStore.upsertProject(this._data.projects[idx], user.id)
                 .catch(e => console.error('[store] sync updateProject:', e));
-        });
+        }
         return this._data.projects[idx];
     }
 
@@ -1166,7 +1166,7 @@ class Store {
         return this._data.baselines.find(b => b.id === proj.activeBaselineId) || null;
     }
 
-    createBaseline(name) {
+    async createBaseline(name) {
         const pid = this._data.settings.activeProjectId;
         const existing = this._data.baselines.filter(b => b.projectId === pid);
         if (existing.length >= 5) return null; // max 5 per project
@@ -1189,7 +1189,7 @@ class Store {
         if (proj) proj.activeBaselineId = baseline.id;
         this._save();
         // Sync to Supabase + history
-        supabaseStore.upsertBaseline(baseline)
+        await supabaseStore.upsertBaseline(baseline)
             .catch(e => console.error('[store] sync createBaseline:', e));
         supabaseStore.logHistory(pid, 'a créé la baseline', 'baseline', baseline.name)
             .catch(e => syncLog.record('historique : création baseline', e));
@@ -1197,7 +1197,7 @@ class Store {
         return baseline;
     }
 
-    deleteBaseline(baselineId) {
+    async deleteBaseline(baselineId) {
         const bl = this._data.baselines.find(b => b.id === baselineId);
         if (!bl) return;
         this._data.baselines = this._data.baselines.filter(b => b.id !== baselineId);
@@ -1209,20 +1209,20 @@ class Store {
         }
         this._save();
         // Sync to Supabase + history
-        supabaseStore.deleteBaseline(baselineId)
+        await supabaseStore.deleteBaseline(baselineId)
             .catch(e => console.error('[store] sync deleteBaseline:', e));
         supabaseStore.logHistory(bl.projectId, 'a supprimé la baseline', 'baseline', bl.name)
             .catch(e => syncLog.record('historique : suppression baseline', e));
         this._emit('baseline:delete', baselineId);
     }
 
-    renameBaseline(baselineId, newName) {
+    async renameBaseline(baselineId, newName) {
         const idx = this._data.baselines.findIndex(b => b.id === baselineId);
         if (idx === -1) return;
         this._data.baselines[idx].name = newName;
         this._save();
         // Sync to Supabase
-        supabaseStore.upsertBaseline(this._data.baselines[idx])
+        await supabaseStore.upsertBaseline(this._data.baselines[idx])
             .catch(e => console.error('[store] sync renameBaseline:', e));
         this._emit('baseline:update', this._data.baselines[idx]);
     }
@@ -1505,7 +1505,7 @@ class Store {
         return this._data.tasks[idx];
     }
 
-    deleteTask(taskId) {
+    async deleteTask(taskId) {
         if (!this.canEdit()) { console.warn('[store] deleteTask: read-only project'); return; }
         if (!this._batchingUndo) this._snapshot();
         const task = this.getTask(taskId);
@@ -1513,7 +1513,9 @@ class Store {
 
         // Delete children recursively
         const children = this.getChildTasks(taskId);
-        children.forEach(child => this.deleteTask(child.id));
+        for (const child of children) {
+            await this.deleteTask(child.id);
+        }
 
         const parentId = task.parentId;
         this._data.tasks = this._data.tasks.filter(t => t.id !== taskId);
@@ -1529,7 +1531,7 @@ class Store {
         // Sync Supabase + notification aux owners si l'acteur est éditeur/invité
         const projectId = task.projectId;
         const taskName  = task.name;
-        supabaseStore.deleteTask(taskId)
+        await supabaseStore.deleteTask(taskId)
             .catch(e => console.error('[store] sync deleteTask:', e));
         // Log history
         supabaseStore.logHistory(projectId, 'a supprimé la tâche', task.isPhase ? 'phase' : 'task', taskName)
@@ -2031,7 +2033,7 @@ class Store {
         return null;
     }
 
-    addResource(resource) {
+    async addResource(resource) {
         if (!this.canEdit()) { console.warn('[store] addResource: read-only project'); return null; }
         this._snapshot();
         const newResource = {
@@ -2061,14 +2063,14 @@ class Store {
         this._save();
         this._emit('resource:add', newResource);
         // Sync Supabase + history
-        supabaseStore.upsertResource(newResource)
+        await supabaseStore.upsertResource(newResource)
             .catch(e => console.error('[store] sync addResource:', e));
         supabaseStore.logHistory(newResource.projectId, 'a ajouté la ressource', 'resource', newResource.name)
             .catch(e => syncLog.record('historique : ajout ressource', e));
         return newResource;
     }
 
-    updateResource(resourceId, updates) {
+    async updateResource(resourceId, updates) {
         if (!this.canEdit()) { console.warn('[store] updateResource: read-only project'); return null; }
         this._snapshot();
         const idx = this._data.resources.findIndex(r => r.id === resourceId);
@@ -2084,13 +2086,12 @@ class Store {
         }
         this._save();
         this._emit('resource:update', this._data.resources[idx]);
-        // Sync Supabase en arrière-plan
-        supabaseStore.upsertResource(this._data.resources[idx])
+        await supabaseStore.upsertResource(this._data.resources[idx])
             .catch(e => console.error('[store] sync updateResource:', e));
         return this._data.resources[idx];
     }
 
-    deleteResource(resourceId) {
+    async deleteResource(resourceId) {
         if (!this.canEdit()) { console.warn('[store] deleteResource: read-only project'); return; }
         this._snapshot();
         const resource = this._data.resources.find(r => r.id === resourceId);
@@ -2116,7 +2117,7 @@ class Store {
         this._save();
         this._emit('resource:delete', resourceId);
         // Sync Supabase + history
-        supabaseStore.deleteResource(resourceId)
+        await supabaseStore.deleteResource(resourceId)
             .catch(e => console.error('[store] sync deleteResource:', e));
         if (resource) {
             supabaseStore.logHistory(resource.projectId, 'a supprimé la ressource', 'resource', resource.name)
@@ -2175,11 +2176,11 @@ class Store {
      *  serveur avant d'agir (ex. avant un rechargement de page) — sans ce
      *  await, un reload immediatement apres le clic pouvait survenir avant
      *  la fin de l'ecriture reseau et faire disparaitre le partage. */
-    addResourceToProject(projectId, resourceId) {
+    async addResourceToProject(projectId, resourceId) {
         const project = this._data.projects.find(p => p.id === projectId);
-        if (!project) return Promise.resolve();
+        if (!project) return;
         if (!project.resourceIds) project.resourceIds = [];
-        if (project.resourceIds.includes(resourceId)) return Promise.resolve();
+        if (project.resourceIds.includes(resourceId)) return;
 
         this._snapshot();
         project.resourceIds.push(resourceId);
@@ -2192,7 +2193,7 @@ class Store {
                projet PROPRIETAIRE, et l'ecraser transfererait la
                propriete au lieu de partager. C'est la table de liaison
                qui exprime l'emprunt. */
-            supabaseStore.upsertResource(resource)
+            await supabaseStore.upsertResource(resource)
                 .catch(e => console.error('[store] sync addResourceToProject:', e));
         }
 
@@ -2200,7 +2201,7 @@ class Store {
            Avant la migration 027, project.resourceIds n'etait stocke
            NULLE PART : il etait remis a zero a chaque rechargement,
            et l'onglet Ressources apparaissait vide. */
-        return Promise.resolve(supabaseStore.linkResourceToProject?.(projectId, resourceId))
+        await Promise.resolve(supabaseStore.linkResourceToProject?.(projectId, resourceId))
             .catch(e => {
                 console.error('[store] sync linkResourceToProject:', e);
                 /* Rollback optimiste : le serveur a refuse le rattachement
@@ -2254,13 +2255,13 @@ class Store {
         return { ...this._data.settings };
     }
 
-    updateSettings(updates) {
+    async updateSettings(updates) {
         this._data.settings = { ...this._data.settings, ...updates };
         this._save();
         this._emit('settings:change', this._data.settings);
         // Sync customization to Supabase
         if (updates.customization) {
-            supabaseStore.upsertUserSettings(updates.customization)
+            await supabaseStore.upsertUserSettings(updates.customization)
                 .catch(e => console.error('[store] sync customization:', e));
         }
     }
