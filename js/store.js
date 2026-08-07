@@ -593,6 +593,12 @@ class Store {
            UPSERT, donc une ecriture arrivant apres la suppression RESSUSCITE
            la ligne (sans ses taches, deja parties en cascade). */
         this._projectWrites = new Map();
+        /* Projets supprimes durant cette session. Toute ecriture de ligne
+           projet arrivant apres coup pour l'un d'eux est ABANDONNEE : c'est
+           le seul garde-fou qui ne suppose pas d'avoir identifie l'appelant
+           en retard. Attendre les ecritures en vol (ci-dessus) ne couvre que
+           celles deja parties au moment du DELETE. */
+        this._deletedProjectIds = new Set();
         // Subscription plan info (loaded from profiles table after login)
         this._planInfo = { plan: 'free', planStatus: 'active', trialEndsAt: null };
         // Identifiant du compte connecté, renseigné par initFromSupabase()
@@ -733,7 +739,7 @@ class Store {
 
                 for (const p of this._data.projects) {
                     try {
-                        await supabaseStore.upsertProject(p, user.id);
+                        await this._upsertProjectGuarded(p, user.id);
                         /* Pas d'addProjectMember ici : la RPC upsert_project
                            inscrit déjà le propriétaire dans project_members,
                            côté serveur, en SECURITY DEFINER. */
@@ -989,10 +995,18 @@ class Store {
         this._redoStack = [];
     }
 
+    /** Un projet revenu par undo/redo n'est plus « supprimé » : sans cela ses
+     *  écritures ultérieures seraient abandonnées par _upsertProjectGuarded()
+     *  et la restauration resterait purement locale. */
+    _forgetTombstones() {
+        (this._data.projects || []).forEach(p => this._deletedProjectIds.delete(p.id));
+    }
+
     undo() {
         if (this._undoStack.length === 0) return false;
         this._redoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._undoStack.pop());
+        this._forgetTombstones();
         this._invalidateTaskIndex();
         this._invalidateResourceIndex();
         this._save();
@@ -1004,6 +1018,7 @@ class Store {
         if (this._redoStack.length === 0) return false;
         this._undoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._redoStack.pop());
+        this._forgetTombstones();
         this._invalidateTaskIndex();
         this._invalidateResourceIndex();
         this._save();
@@ -1061,7 +1076,7 @@ class Store {
         this._emit('project:add', newProject);
         const user = await auth.getUser();
         if (user) {
-            await supabaseStore.upsertProject(newProject, user.id)
+            await this._upsertProjectGuarded(newProject, user.id)
                 .catch(e => console.error('[store] sync addProject:', e));
         }
         return newProject;
@@ -1074,6 +1089,25 @@ class Store {
      *  (l'appelant, lui, recoit la promesse d'origine) pour qu'un echec
      *  reseau ne se transforme pas en rejet non gere ni ne bloque un
      *  deleteProject() en attente. */
+    /** Ecrit une ligne projet, sauf si ce projet a deja ete supprime.
+     *
+     *  La RPC upsert_project est un UPSERT : appliquee apres delete_project,
+     *  elle RECREE la ligne — orpheline, sans ses taches deja parties en
+     *  cascade. Le compte de test a accumule des dizaines de projets
+     *  fantomes de cette facon, tous reconnaissables a la meme signature :
+     *  0 tache, 1 membre.
+     *
+     *  Tous les points d'ecriture du store passent par ici, y compris les
+     *  imports : la protection ne doit pas dependre du fait d'avoir su
+     *  identifier quel appelant etait en retard. */
+    async _upsertProjectGuarded(project, userId) {
+        if (this._deletedProjectIds.has(project.id)) {
+            console.warn(`[store] upsert ignoré : projet ${project.id} déjà supprimé`);
+            return;
+        }
+        return supabaseStore.upsertProject(project, userId);
+    }
+
     _trackProjectWrite(projectId, promise) {
         const entry = Promise.resolve(promise)
             .catch(() => {})
@@ -1111,7 +1145,7 @@ class Store {
            tableau. */
         const user = await auth.getUser();
         if (user) {
-            await supabaseStore.upsertProject(updatedProject, user.id)
+            await this._upsertProjectGuarded(updatedProject, user.id)
                 .catch(e => console.error('[store] sync updateProject:', e));
         }
         return updatedProject;
@@ -1151,6 +1185,11 @@ class Store {
          *
          *  Le garde-fou est place ici plutot que chez les appelants : il
          *  couvre aussi ceux qui oublieraient d'attendre leur ecriture. */
+        /* Marquer AVANT d'attendre quoi que ce soit : toute ecriture declenchee
+           a partir de maintenant sera abandonnee par _upsertProjectGuarded(),
+           y compris celles nees pendant l'attente ci-dessous. */
+        this._deletedProjectIds.add(projectId);
+
         const pending = this._projectWrites.get(projectId);
         return Promise.resolve(pending)
             .then(() => supabaseStore.deleteProject(projectId))
@@ -2646,7 +2685,7 @@ class Store {
                 const user = await auth.getUser();
                 if (user) {
                     try {
-                        await supabaseStore.upsertProject(newProject, user.id);
+                        await this._upsertProjectGuarded(newProject, user.id);
                     } catch (e) {
                         console.error('[importProject] upsertProject failed:', e?.message || e);
                     }
@@ -2802,7 +2841,7 @@ class Store {
                     console.log('[import] syncing project:', mappedProj?.id, mappedProj?.name);
                     if (mappedProj) {
                         try {
-                            await supabaseStore.upsertProject(mappedProj, user.id);
+                            await this._upsertProjectGuarded(mappedProj, user.id);
                             console.log('[import] project saved OK:', mappedProj.id);
                         } catch (e) {
                             console.error('[import] upsertProject FAILED:', e?.message || e, 'code:', e?.code);
