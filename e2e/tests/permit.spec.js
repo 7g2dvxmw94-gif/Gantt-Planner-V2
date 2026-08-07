@@ -77,9 +77,13 @@ test('créer un permis : les champs réglementaires apparaissent et les délais 
     await page.locator('#permitType').selectOption('PC');
     await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('90 jours');
 
-    // Secteur ABF : +30 j réglementaires (ABF_EXTRA_DAYS).
+    /* Secteur ABF : +30 j réglementaires (ABF_EXTRA_DAYS). Le libellé passe
+       alors par une clé i18n distincte (permit.deadline.instructionDaysABF)
+       qui explicite la majoration — on l'assert en entier, cette mention
+       étant justement ce qui permet à l'utilisateur de comprendre d'où
+       sortent les 30 jours supplémentaires. */
     await page.locator('#permitABF').check();
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('120 jours');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('120 jours (ABF +30j)');
     await page.locator('#permitABF').uncheck();
     await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('90 jours');
 
