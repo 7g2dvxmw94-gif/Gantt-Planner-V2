@@ -36,15 +36,12 @@ test('renommer le projet actif', async ({ page }) => {
 
     await page.locator('.project-selector').click();
 
-    // Find the project item and its rename button
     const projectItem = page.locator('.project-dropdown-item', { hasText: original }).first();
     const actionBtn = projectItem.locator('.project-item-action');
 
-    // Ensure the button is visible before clicking
     await actionBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await actionBtn.click();
 
-    // After clicking the action button, the input should appear
     const renameInput = page.locator('.project-rename-input');
     await renameInput.waitFor({ state: 'visible', timeout: 5_000 });
     await renameInput.fill(renamed);
