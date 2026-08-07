@@ -32,6 +32,14 @@ test('changer la couleur d’accent l’applique immédiatement et la persiste a
         }, hex);
         await expect.poll(getPrimaryColor).toBe(hex);
         await page.locator('#settingsSaveBtn').click();
+        /* Le toast n'est emis qu'une fois les ecritures Supabase terminees
+           (settings-panel.js, _save() attend _flushPendingWrites()) : c'est
+           donc le signal fiable que la personnalisation est bien persistee.
+           Sans cette attente, le page.reload() ci-dessous pouvait partir
+           avant la fin de l'ecriture et repartir de l'etat serveur
+           precedent — la couleur revenait alors au defaut. */
+        await page.locator('#toastContainer .toast', { hasText: 'Réglages enregistrés' })
+            .waitFor({ timeout: 10_000 });
     };
 
     const initialColor = await getPrimaryColor();
@@ -59,17 +67,21 @@ test('changer le nom de l’entreprise l’affiche à côté du logo et persiste
     const setCompanyName = async (name) => {
         await nameField.fill(name);
         await expect(nameField).toHaveValue(name);
-        // La sauvegarde vers le store (et sa synchro Supabase) est debattue
-        // sur l'événement 'input' avec 500ms de délai (settings-panel.js
-        // _debounce) ; contrairement au changement de couleur, rien d'autre
-        // n'attend naturellement ce délai avant le rechargement de page.
-        await page.waitForTimeout(600);
-        await page.locator('#settingsSaveBtn').click();
+        /* La sauvegarde est debouncée 500 ms sur 'input' (settings-panel.js).
+           _applyBrandName() est appelé DANS ce gestionnaire, juste après
+           _saveCustomization() : voir le logo refléter la nouvelle valeur
+           prouve donc que le debounce a tourné et que l'écriture est lancée.
+           C'est un signal observable, là où le waitForTimeout(600) qui
+           figurait ici pariait sur une durée. */
         if (name.trim()) {
             await expect(logoText).toHaveText(name.trim());
         } else {
             await expect(logoText).toHaveCount(0);
         }
+        await page.locator('#settingsSaveBtn').click();
+        // Puis attendre la fin de l'écriture réseau elle-même (cf. premier test).
+        await page.locator('#toastContainer .toast', { hasText: 'Réglages enregistrés' })
+            .waitFor({ timeout: 10_000 });
     };
 
     await page.locator('#settingsBtn').click();

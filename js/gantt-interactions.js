@@ -42,6 +42,7 @@ class GanttInteractions {
         if (!this._container) return;
 
         this._onTaskClick = opts.onTaskClick;
+        this._onTaskDblClick = opts.onTaskDblClick;
         this._onUpdate = opts.onUpdate;
         this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
@@ -52,6 +53,7 @@ class GanttInteractions {
 
         // Delegate click events
         this._container.addEventListener('click', (e) => this._handleClick(e));
+        this._container.addEventListener('dblclick', (e) => this._handleDblClick(e));
 
         // Delegate mousedown for drag/resize
         this._container.addEventListener('mousedown', (e) => this._handleMouseDown(e));
@@ -73,27 +75,46 @@ class GanttInteractions {
 
     /* ---- Click ---- */
 
-    _handleClick(e) {
-        // Find the closest bar, milestone, or row with a task-id
+    /** Identifiant de tache vise par un evenement souris, qu'il porte sur la
+     *  barre du Gantt ou sur le nom dans la colonne de gauche. */
+    _taskIdFromEvent(e) {
         const bar = e.target.closest('.gantt-bar, .gantt-milestone, .gantt-permit');
-        if (bar && bar.dataset.taskId) {
-            // Don't fire click if we just finished dragging
-            if (this._justDragged) {
-                this._justDragged = false;
-                return;
-            }
-            if (this._onTaskClick) this._onTaskClick(bar.dataset.taskId);
-            return;
-        }
+        if (bar && bar.dataset.taskId) return bar.dataset.taskId;
 
-        // Click on task name in left column
         const taskCell = e.target.closest('.task-info');
         if (taskCell) {
             const row = taskCell.closest('.gantt-row');
-            if (row && row.dataset.taskId && this._onTaskClick) {
-                this._onTaskClick(row.dataset.taskId);
-            }
+            if (row && row.dataset.taskId) return row.dataset.taskId;
         }
+        return null;
+    }
+
+    /* Clic simple = SELECTION, double-clic = ouverture de la fiche.
+     *
+     * Le clic simple ouvrait auparavant directement la modal d'edition, ce
+     * qui contredisait TEST_PLAN.md (§ B5, « double-cliquer sur tache ») et
+     * rendait la selection inatteignable depuis le Gantt : la plomberie
+     * existait pourtant deja cote app (_toggleTaskSelection, le style
+     * .gantt-bar.selected, la touche Suppr qui agit sur la selection), mais
+     * rien ne la declenchait ici. */
+    _handleClick(e) {
+        const taskId = this._taskIdFromEvent(e);
+        if (!taskId) return;
+
+        // Don't fire click if we just finished dragging
+        if (this._justDragged) {
+            this._justDragged = false;
+            return;
+        }
+        if (this._onTaskClick) {
+            this._onTaskClick(taskId, { append: e.ctrlKey || e.metaKey });
+        }
+    }
+
+    _handleDblClick(e) {
+        const taskId = this._taskIdFromEvent(e);
+        if (!taskId) return;
+        if (this._onTaskDblClick) this._onTaskDblClick(taskId);
     }
 
     /* ---- Drag & Resize (Mouse) ---- */

@@ -38,6 +38,9 @@ class SettingsPanel {
         this._isOpen = false;
         this._activeTab = 'profil';
         this._snapshot = null;
+        /* Ecritures de personnalisation encore en vol vers Supabase.
+           _save() les attend avant d'annoncer « enregistre ». */
+        this._pendingWrites = new Set();
     }
 
     init() {
@@ -647,10 +650,30 @@ class SettingsPanel {
         return value !== undefined ? value : '';
     }
 
+    /* store.updateSettings() est asynchrone et attend l'ecriture Supabase,
+       mais cet appelant-ci ne l'attendait pas : la promesse etait jetee.
+       Rien ne reliait donc le clic sur « Enregistrer » a la fin reelle de
+       l'ecriture — un rechargement immediat repartait de l'etat serveur
+       precedent et la personnalisation etait perdue, silencieusement. Meme
+       anti-pattern que celui deja corrige pour deleteProject(),
+       importProject() et addProject(). On conserve la promesse pour que
+       _save() puisse l'attendre. */
     _saveCustomization(key, value) {
         const settings = store.getSettings();
         const customization = { ...(settings.customization || {}), [key]: value };
-        store.updateSettings({ customization });
+        const write = store.updateSettings({ customization })
+            .finally(() => this._pendingWrites.delete(write));
+        this._pendingWrites.add(write);
+        return write;
+    }
+
+    /** Attend la fin des ecritures de personnalisation encore en vol.
+     *  Boucle : une ecriture peut s'ajouter pendant qu'on attend les
+     *  precedentes (les gestionnaires en declenchent quatre d'affilee). */
+    async _flushPendingWrites() {
+        while (this._pendingWrites.size > 0) {
+            await Promise.allSettled([...this._pendingWrites]);
+        }
     }
 
     /* ---- Events ---- */
@@ -1157,9 +1180,15 @@ class SettingsPanel {
         if (cancelBtn) cancelBtn.addEventListener('click', () => this._cancel());
     }
 
-    _save() {
+    /* Le panneau se ferme tout de suite (l'UI a deja applique les
+       changements en direct), mais l'evenement « settings-saved » — donc le
+       toast de confirmation — n'est emis qu'une fois les ecritures reseau
+       terminees. C'est ce qui rend le toast fiable comme signal de
+       persistance, pour l'utilisateur comme pour les tests E2E. */
+    async _save() {
         this._snapshot = null;
         this.close();
+        await this._flushPendingWrites();
         document.dispatchEvent(new CustomEvent('settings-saved'));
     }
 
@@ -1173,7 +1202,11 @@ class SettingsPanel {
 
     _revertToSnapshot() {
         const snap = this._snapshot;
-        store.updateSettings({ customization: snap });
+        /* Suivie comme les autres ecritures : annuler puis recharger aussitot
+           ne doit pas laisser la personnalisation abandonnee cote serveur. */
+        const write = store.updateSettings({ customization: snap })
+            .finally(() => this._pendingWrites.delete(write));
+        this._pendingWrites.add(write);
         // Revert visual state
         if (snap.avatarPhoto) {
             this._applyAvatarPhoto(snap.avatarPhoto);
