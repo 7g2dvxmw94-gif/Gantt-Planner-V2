@@ -43,6 +43,16 @@ test('modifier une tâche depuis la modal : nom, date de fin, couleur, priorité
     const bar = page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName });
     await expect(bar).toBeVisible({ timeout: 10_000 });
 
+    /* La création émet le MÊME toast que l'édition : taskModal.init() reçoit
+       un unique callback _onSave, partagé par les modes création et édition,
+       qui affiche toujours toast.taskUpdated (js/app.js:62). Les toasts
+       vivent 3,3 s (app.js:5004) — soit plus que la durée des étapes
+       ci-dessous. Sans cette attente, l'assertion de fin trouve deux toasts
+       identiques et échoue en strict mode ; pire, un .last() y passerait
+       parfois sur le toast de création, donc à tort. */
+    const toastMaj = page.locator('#toastContainer .toast', { hasText: 'Tâche mise à jour' });
+    await expect(toastMaj).toHaveCount(0, { timeout: 10_000 });
+
     // --- B5.1 : ouvrir la modal d'édition, pré-remplie ---
     await bar.click();
     const modal = page.locator('#taskModalOverlay');
@@ -70,7 +80,7 @@ test('modifier une tâche depuis la modal : nom, date de fin, couleur, priorité
     // bouton « Enregistrer » (i18n settings.btnSave).
     await modal.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(modal).toBeHidden();
-    await expect(page.locator('#toastContainer .toast', { hasText: 'Tâche mise à jour' })).toBeVisible();
+    await expect(toastMaj).toBeVisible();
 
     const editedBar = page.locator('.gantt-bar[data-task-id]').filter({ hasText: newTaskName });
     await expect(editedBar).toBeVisible({ timeout: 10_000 });
