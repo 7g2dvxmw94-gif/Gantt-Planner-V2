@@ -588,6 +588,11 @@ class Store {
         this._batchingUndo = false;
         // Track which projects have had their data fully loaded from Supabase
         this._loadedProjectIds = new Set();
+        /* Ecritures de ligne projet en vol, par id. deleteProject() les attend
+           avant d'emettre son DELETE : cote serveur, upsert_project est un
+           UPSERT, donc une ecriture arrivant apres la suppression RESSUSCITE
+           la ligne (sans ses taches, deja parties en cascade). */
+        this._projectWrites = new Map();
         // Subscription plan info (loaded from profiles table after login)
         this._planInfo = { plan: 'free', planStatus: 'active', trialEndsAt: null };
         // Identifiant du compte connecté, renseigné par initFromSupabase()
@@ -1062,7 +1067,30 @@ class Store {
         return newProject;
     }
 
-    async updateProject(projectId, updates) {
+    /** Enregistre une ecriture de ligne projet en vol.
+     *
+     *  L'enregistrement est SYNCHRONE : la fenetre de course s'ouvre des
+     *  l'appel, pas au premier await. La promesse suivie avale les erreurs
+     *  (l'appelant, lui, recoit la promesse d'origine) pour qu'un echec
+     *  reseau ne se transforme pas en rejet non gere ni ne bloque un
+     *  deleteProject() en attente. */
+    _trackProjectWrite(projectId, promise) {
+        const entry = Promise.resolve(promise)
+            .catch(() => {})
+            .finally(() => {
+                if (this._projectWrites.get(projectId) === entry) {
+                    this._projectWrites.delete(projectId);
+                }
+            });
+        this._projectWrites.set(projectId, entry);
+        return promise;
+    }
+
+    updateProject(projectId, updates) {
+        return this._trackProjectWrite(projectId, this._updateProjectImpl(projectId, updates));
+    }
+
+    async _updateProjectImpl(projectId, updates) {
         this._snapshot();
         const idx = this._data.projects.findIndex(p => p.id === projectId);
         if (idx === -1) return null;
@@ -1110,7 +1138,22 @@ class Store {
         }
         this._save();
         this._emit('project:delete', projectId);
-        return Promise.resolve(supabaseStore.deleteProject(projectId))
+
+        /* Attendre les ecritures de ce projet encore en vol AVANT de
+         *  supprimer.
+         *
+         *  upsert_project est un UPSERT : une ecriture qui atterrit apres le
+         *  DELETE recree la ligne, orpheline — sans ses taches, deja parties
+         *  en cascade. C'est exactement ce qui se produisait en renommant un
+         *  projet puis en le supprimant dans la foulee : le renommage n'etant
+         *  pas attendu par son appelant, son upsert doublait le delete et le
+         *  projet reapparaissait au rechargement suivant.
+         *
+         *  Le garde-fou est place ici plutot que chez les appelants : il
+         *  couvre aussi ceux qui oublieraient d'attendre leur ecriture. */
+        const pending = this._projectWrites.get(projectId);
+        return Promise.resolve(pending)
+            .then(() => supabaseStore.deleteProject(projectId))
             .catch(e => {
                 console.error('[store] sync deleteProject:', e);
                 throw e;
