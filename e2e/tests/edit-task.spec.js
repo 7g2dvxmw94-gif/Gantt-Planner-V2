@@ -7,19 +7,15 @@ import { createProject, deleteActiveProject } from '../helpers.js';
    Gantt — et surtout persister dans le store, ce que vérifie la
    réouverture de la modal en fin de test.
 
-   Deux écarts entre le plan de test et l'implémentation, assumés ici :
+   La modal s'ouvre au DOUBLE-clic, conformément au plan ; le clic simple
+   sélectionne (voir select-task.spec.js).
 
-   1. Le plan dit « double-cliquer sur la tâche » ; l'app ouvre en réalité
-      la modal sur un *simple* clic (js/gantt-interactions.js:76, un seul
-      listener 'click' délégué sur #ganttContainer). Le test suit le
-      comportement réel.
-
-   2. Le plan dit « changer le statut en "En cours" » ; le champ statut est
-      volontairement `disabled` et dérivé de la progression
-      (task-modal.js:541, _syncStatusFromProgress : 0 % → À faire,
-      1-99 % → En cours, 100 % → Terminé). L'étape « statut » est donc
-      vérifiée comme conséquence du passage de la progression à 50 %,
-      pas comme une action indépendante. */
+   Un écart subsiste avec le plan : celui-ci dit « changer le statut en
+   "En cours" », alors que le champ statut est volontairement `disabled` et
+   dérivé de la progression (task-modal.js, _syncStatusFromProgress :
+   0 % → À faire, 1-99 % → En cours, 100 % → Terminé). L'étape « statut »
+   est donc vérifiée comme conséquence du passage de la progression à 50 %,
+   pas comme une action indépendante. */
 
 const VERT = '#10B981';   // TASK_COLORS[5], utils.js — distinct de l'Indigo par défaut
 
@@ -54,7 +50,7 @@ test('modifier une tâche depuis la modal : nom, date de fin, couleur, priorité
     await expect(toastMaj).toHaveCount(0, { timeout: 10_000 });
 
     // --- B5.1 : ouvrir la modal d'édition, pré-remplie ---
-    await bar.click();
+    await bar.dblclick();
     const modal = page.locator('#taskModalOverlay');
     await expect(modal).toBeVisible();
     await expect(page.locator('#taskModalTitle')).toContainText('Modifier la tâche');
@@ -92,7 +88,7 @@ test('modifier une tâche depuis la modal : nom, date de fin, couleur, priorité
     await expect(editedBar.locator('.gantt-bar-progress')).toBeVisible();
 
     // --- Persistance : rouvrir la modal doit rendre les nouvelles valeurs ---
-    await editedBar.click();
+    await editedBar.dblclick();
     await expect(modal).toBeVisible();
     await expect(page.locator('#taskName')).toHaveValue(newTaskName);
     await expect(page.locator('#taskEnd')).toHaveValue('2026-08-14');

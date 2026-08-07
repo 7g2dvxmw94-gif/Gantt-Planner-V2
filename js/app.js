@@ -64,7 +64,11 @@ class App {
 
         // Initialize Gantt interactions (drag, resize, click)
         ganttInteractions.init({
-            onTaskClick: (taskId) => taskModal.openEdit(taskId),
+            onTaskClick: (taskId, { append } = {}) => {
+                if (append) this._toggleTaskSelection(taskId, true);
+                else this._selectTaskExclusively(taskId);
+            },
+            onTaskDblClick: (taskId) => taskModal.openEdit(taskId),
             onUpdate: () => {
                 ganttRenderer.render();
                 this._renderStats();
@@ -531,6 +535,10 @@ class App {
             if (this._selectedTaskIds.has(task.id)) row.classList.add('selected');
             const isCritical = criticalIds.includes(task.id);
             if (isCritical) row.classList.add('critical-path');
+            /* Memes regles que sur le Gantt : clic simple = selection,
+               double-clic = ouverture de la fiche. Les deux vues doivent
+               repondre pareil, sans quoi le meme geste aurait deux effets
+               selon l'onglet ouvert. */
             row.addEventListener('click', (e) => {
                 if (e.target.type === 'checkbox') return;
                 if (e.ctrlKey || e.metaKey) {
@@ -538,6 +546,10 @@ class App {
                     this._toggleTaskSelection(task.id, true);
                     return;
                 }
+                this._selectTaskExclusively(task.id);
+            });
+            row.addEventListener('dblclick', (e) => {
+                if (e.target.type === 'checkbox') return;
                 taskModal.openEdit(task.id);
             });
 
@@ -6583,6 +6595,21 @@ tr:nth-child(even){background:#fafbfc}
         this._updateSelectionUI();
     }
 
+    /** Selection exclusive : remplace la selection courante par cette seule
+     *  tache.
+     *
+     *  Idempotent, contrairement a _toggleTaskSelection(id, false) qui
+     *  DESELECTIONNE une tache deja selectionnee. C'est indispensable pour le
+     *  clic simple : un double-clic emet deux 'click' avant le 'dblclick', et
+     *  avec une bascule le second clic defaisait le premier — la barre
+     *  clignotait puis se retrouvait deselectionnee au moment ou la fiche
+     *  s'ouvrait. */
+    _selectTaskExclusively(taskId) {
+        this._selectedTaskIds.clear();
+        this._selectedTaskIds.add(taskId);
+        this._updateSelectionUI();
+    }
+
     _selectAllTasks() {
         const tasks = this._getFilteredTasks(false);
         tasks.forEach(t => this._selectedTaskIds.add(t.id));
@@ -6608,9 +6635,21 @@ tr:nth-child(even){background:#fafbfc}
             headerCb.indeterminate = this._selectedTaskIds.size > 0 && !headerCb.checked;
         }
 
-        // Update gantt bar highlighting
-        $$('.gantt-bar, .gantt-milestone').forEach(bar => {
+        /* Surlignage des barres du Gantt. .gantt-permit est inclus : ces
+           barres sont cliquables comme les autres, donc selectionnables
+           depuis que le clic simple selectionne — les omettre laisserait une
+           tache selectionnee sans aucun retour visuel. */
+        $$('.gantt-bar, .gantt-milestone, .gantt-permit').forEach(bar => {
             bar.classList.toggle('selected', this._selectedTaskIds.has(bar.dataset.taskId));
+        });
+
+        /* Surlignage des lignes de la vue Tableau. La classe n'etait posee
+           qu'au rendu : tant que la selection n'y etait atteignable que par
+           Ctrl+Clic, seule la case a cocher bougeait et personne ne l'avait
+           remarque. Le clic simple selectionnant desormais, l'absence de
+           retour visuel deviendrait flagrante. */
+        $$('tr[data-task-id]').forEach(row => {
+            row.classList.toggle('selected', this._selectedTaskIds.has(row.dataset.taskId));
         });
 
         // Show/hide batch action bar

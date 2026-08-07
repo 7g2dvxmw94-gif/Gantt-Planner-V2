@@ -1811,7 +1811,9 @@ tr.critical-path:hover {
     background: rgba(99, 102, 241, 0.12);
 }
 
-.gantt-bar.selected {
+.gantt-bar.selected,
+.gantt-milestone.selected,
+.gantt-permit.selected {
     outline: 2px solid var(--color-primary);
     outline-offset: 1px;
 }
