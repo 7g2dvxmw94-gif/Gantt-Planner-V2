@@ -1,16 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { waitForAppReady } from '../helpers.js';
+import { snapshotCustomization } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § I1 (couleurs) et § I2 (identité). La personnalisation
    est un réglage global du compte (pas propre à un projet) : comme
    theme.spec.js, on capture l'état initial et on le restaure en fin de
    test plutôt que de supposer une valeur par défaut, pour ne pas altérer
-   durablement le compte de test partagé. */
+   durablement le compte de test partagé.
 
-test('changer la couleur d’accent l’applique immédiatement et la persiste après rechargement', async ({ page }) => {
+   Ces deux tests restaurent eux-mêmes l'état de départ par leur dernière
+   instruction — donc jamais s'ils échouent avant. La capture ci-dessous
+   confie la même restauration au filet de nettoyage (cleanup.js), qui lui
+   s'exécute quoi qu'il arrive au test. À la différence du thème, la
+   personnalisation est écrite dans Supabase : elle survivrait au run. */
+
+test.beforeEach(async ({ page }) => {
     await page.goto('index.html');
     await waitForAppReady(page);
+    await snapshotCustomization(page);
+});
 
+test('changer la couleur d’accent l’applique immédiatement et la persiste après rechargement', async ({ page }) => {
     // <input type="color"> normalise toujours sa valeur en hex minuscule dès
     // qu'elle transite par lui (y compris pour restaurer la couleur
     // initiale) : comparer en minuscules partout évite un faux échec sur la
@@ -57,9 +67,6 @@ test('changer la couleur d’accent l’applique immédiatement et la persiste a
 });
 
 test('changer le nom de l’entreprise l’affiche à côté du logo et persiste après rechargement', async ({ page }) => {
-    await page.goto('index.html');
-    await waitForAppReady(page);
-
     const nameField = page.locator('#settingsName');
     const logoText = page.locator('.logo > span');
     const targetName = `E2E Brand ${Date.now()}`;

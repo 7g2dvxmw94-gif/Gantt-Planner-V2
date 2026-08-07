@@ -1,7 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 
 /* Ces deux scénarios doivent tourner SANS session existante : on écrase le
-   storageState hérité du projet "chromium" (issu de auth.setup.js). */
+   storageState hérité du projet "chromium" (issu de auth.setup.js).
+
+   Seul fichier de la suite qui n'écrit rien : pas de session, donc pas de
+   ligne créée et rien à rendre au filet de nettoyage (cleanup.js), qui
+   restera inerte faute d'avoir quoi que ce soit d'enregistré. */
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('un visiteur non connecté est redirigé vers la page de connexion', async ({ page }) => {

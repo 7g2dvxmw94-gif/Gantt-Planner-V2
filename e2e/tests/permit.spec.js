@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (créer un permis de construire) : le type
