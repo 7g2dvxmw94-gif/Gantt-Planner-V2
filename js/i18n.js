@@ -96,6 +96,24 @@ const I18N = {
         'settings.costs.excludeWeekends': 'Exclure les week-ends du calcul des coûts',
         'settings.costs.excludeWeekends.tooltip': 'Seuls les jours ouvrés (lun.-ven.) sont pris en compte pour calculer le coût des ressources. Désactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi être configurée individuellement.',
 
+        // Settings - Working calendar
+        'settings.calendar.title': 'Calendrier de travail',
+        'settings.calendar.hint': 'Détermine les jours sur lesquels les durées se comptent et les tâches se planifient. Aucune tâche ne peut tomber un jour non ouvré.',
+        'settings.calendar.workingDays': 'Jours travaillés',
+        'settings.calendar.frenchHolidays': 'Appliquer les jours fériés français',
+        'settings.calendar.alsaceMoselle': 'Ajouter les fériés d’Alsace-Moselle (Vendredi saint, Saint-Étienne)',
+        'settings.calendar.customHolidays': 'Jours chômés supplémentaires',
+        'settings.calendar.addHoliday': 'Ajouter',
+        'settings.calendar.removeHoliday': 'Retirer ce jour',
+        'settings.calendar.noCustomHoliday': 'Aucun jour chômé ajouté.',
+        'calendar.day.mon': 'Lun',
+        'calendar.day.tue': 'Mar',
+        'calendar.day.wed': 'Mer',
+        'calendar.day.thu': 'Jeu',
+        'calendar.day.fri': 'Ven',
+        'calendar.day.sat': 'Sam',
+        'calendar.day.sun': 'Dim',
+
         // Settings - Profile
         'settings.identity': 'Identité',
         'settings.avatar.hint': 'JPG, PNG ou GIF · Max 2 Mo',
@@ -761,6 +779,24 @@ const I18N = {
         'settings.resources.title': 'Resources',
         'settings.costs.excludeWeekends': 'Exclude weekends from cost calculation',
         'settings.costs.excludeWeekends.tooltip': 'Enabled by default: only working days (Mon–Fri) are used to calculate resource costs. Disable if your project includes weekend work. Each resource can also be configured individually via the "Works weekends" option in its profile.',
+
+        // Settings - Working calendar
+        'settings.calendar.title': 'Working calendar',
+        'settings.calendar.hint': 'Sets which days durations are counted in and tasks are scheduled on. No task can fall on a non-working day.',
+        'settings.calendar.workingDays': 'Working days',
+        'settings.calendar.frenchHolidays': 'Apply French public holidays',
+        'settings.calendar.alsaceMoselle': 'Add Alsace-Moselle holidays (Good Friday, St Stephen\'s Day)',
+        'settings.calendar.customHolidays': 'Additional non-working days',
+        'settings.calendar.addHoliday': 'Add',
+        'settings.calendar.removeHoliday': 'Remove this day',
+        'settings.calendar.noCustomHoliday': 'No additional non-working day.',
+        'calendar.day.mon': 'Mon',
+        'calendar.day.tue': 'Tue',
+        'calendar.day.wed': 'Wed',
+        'calendar.day.thu': 'Thu',
+        'calendar.day.fri': 'Fri',
+        'calendar.day.sat': 'Sat',
+        'calendar.day.sun': 'Sun',
 
         // Settings - Profile
         'settings.identity': 'Identity',

@@ -5,7 +5,7 @@
 
 import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
-         workingDaysBetween, defaultCalendar, syncLog } from './utils.js';
+         workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -588,6 +588,11 @@ class Store {
         this._batchingUndo = false;
         // Track which projects have had their data fully loaded from Supabase
         this._loadedProjectIds = new Set();
+        /* Reference stable du calendrier ouvre, reconstruite a la demande.
+           Voir _getCalendar() : la memoisation des feries sur mesure est
+           indexee par identite d'objet, un objet neuf a chaque appel la
+           rendrait inutile. */
+        this._calendarRef = null;
         /* Ecritures de ligne projet en vol, par id. deleteProject() les attend
            avant d'emettre son DELETE : cote serveur, upsert_project est un
            UPSERT, donc une ecriture arrivant apres la suppression RESSUSCITE
@@ -685,16 +690,15 @@ class Store {
                 zoomLevel: 'week',
                 theme: null,
                 showBaseline: true,
-                /* Calendrier ouvre. Les durees se comptent en jours
-                   OUVRES et aucune tache ne tombe sur un jour non
-                   ouvre. workingDays : 0 = dimanche ... 6 = samedi.
-                   Un chantier travaillant le samedi met [1,2,3,4,5,6]. */
-                calendar: {
-                    workingDays: [1, 2, 3, 4, 5],
-                    holidays: [],
-                    useFrenchHolidays: true,
-                    alsaceMoselle: false,
-                },
+                /* Le calendrier ouvre ne figure PLUS ici : il vit dans
+                   settings.customization.calendar, seul emplacement
+                   reellement persiste (synchronise vers Supabase par
+                   upsert_user_settings). Il etait auparavant declare a cet
+                   endroit, jamais ecrit et jamais relu d'un chargement a
+                   l'autre — une constante deguisee en reglage. Sa forme
+                   par defaut est defaultCalendar() (utils.js), et
+                   _getCalendar() ci-dessous en est le point d'acces
+                   unique. */
             },
         };
     }
@@ -823,6 +827,12 @@ class Store {
             const customization = await supabaseStore.getUserSettings();
             if (customization && Object.keys(customization).length) {
                 this._data.settings.customization = { ...this._data.settings.customization, ...customization };
+                /* Le calendrier ouvre arrive avec la personnalisation. Sans
+                   cette invalidation, un _getCalendar() appele pendant le
+                   chargement figerait les valeurs par defaut pour toute la
+                   session — et le recalcul des phases, quelques lignes plus
+                   bas, en est justement un. */
+                this._invalidateCalendar();
             }
 
             // 5. Restaurer les préférences UI depuis localStorage
@@ -1682,9 +1692,41 @@ class Store {
      *
      * @returns {{startDate: string, endDate: string}|null}
      */
-    /** Calendrier ouvre du projet, avec repli sur lundi-vendredi. */
+    /** Calendrier ouvre du compte, avec repli sur lundi-vendredi.
+     *
+     *  Le calendrier stocke peut etre partiel (une version anterieure de
+     *  l'interface n'ecrivait pas tous les champs) : on le fusionne sur les
+     *  valeurs par defaut plutot que de le prendre tel quel, faute de quoi
+     *  un workingDays absent ferait tomber isWorkingDay() sur son propre
+     *  repli et un useFrenchHolidays absent vaudrait « non ».
+     *
+     *  La REFERENCE est mise en cache, et ce n'est pas un detail de
+     *  performance : feriesPersonnalises() (utils.js) memoise les jours
+     *  feries sur mesure dans une WeakMap indexee par l'OBJET calendrier.
+     *  Renvoyer un objet neuf a chaque appel — et cette fonction est
+     *  appelee des milliers de fois par recalcul — reconstruirait ce Set
+     *  aussi souvent. Le cache est invalide par _invalidateCalendar(). */
     _getCalendar() {
-        return this._data.settings.calendar || defaultCalendar();
+        if (!this._calendarRef) {
+            const stored = this._data.settings.customization?.calendar;
+            this._calendarRef = stored
+                ? { ...defaultCalendar(), ...stored }
+                : defaultCalendar();
+        }
+        return this._calendarRef;
+    }
+
+    /** A appeler des que la personnalisation change.
+     *
+     *  Lacher la reference suffit a purger la memoisation des feries sur
+     *  mesure, celle-ci etant indexee par identite d'objet. Les feries
+     *  francais, eux, sont memoises sous une cle qui inclut deja
+     *  useFrenchHolidays et alsaceMoselle : les basculer ne peut donc pas
+     *  rendre un resultat perime. resetCalendarCache() reste appele par
+     *  precaution, le cout etant nul. */
+    _invalidateCalendar() {
+        this._calendarRef = null;
+        resetCalendarCache();
     }
 
     /** Version publique : le modal en a besoin pour convertir une duree
@@ -2369,6 +2411,10 @@ class Store {
 
     async updateSettings(updates) {
         this._data.settings = { ...this._data.settings, ...updates };
+        /* Le calendrier voyage dans customization : toute ecriture de
+           celle-ci peut l'avoir change. Invalider AVANT d'emettre, pour que
+           les abonnes qui re-rendent lisent deja le nouveau calendrier. */
+        if (updates.customization) this._invalidateCalendar();
         this._save();
         this._emit('settings:change', this._data.settings);
         // Sync customization to Supabase
