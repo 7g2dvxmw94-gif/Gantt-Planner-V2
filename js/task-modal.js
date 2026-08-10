@@ -681,9 +681,20 @@ class TaskModal {
             this._resetPermitFields();
         }
 
-        // Duration
-        const days = Math.round((parseISO(task.endDate) - parseISO(task.startDate)) / (1000 * 60 * 60 * 24)) + 1;
-        this._durationInput.value = Math.max(1, days);
+        /* Duree relue en jours OUVRES, comme les deux autres chemins du
+           meme champ : _updateEndFromDuration() l'ecrit avec
+           addWorkingDays(), _updateDurationFromDates() la recalcule avec
+           workingDaysBetween(). Seule cette relecture comptait en jours
+           CALENDAIRES, et faisait donc mentir le champ des qu'une tache
+           enjambait un week-end ou un ferie : une tache creee a 5 jours
+           ouvres (11 -> 18 mai 2026, l'Ascension etant sautee) se rouvrait
+           a 8. Comme toute modification du formulaire reinjecte cette
+           valeur dans la date de fin, l'echeance glissait ensuite au
+           21 mai sans que l'utilisateur ait touche aux dates. */
+        this._durationInput.value = Math.max(
+            1,
+            workingDaysBetween(task.startDate, task.endDate, store.getCalendar())
+        );
         this._durationInput.disabled = task.isMilestone;
 
         // Color
