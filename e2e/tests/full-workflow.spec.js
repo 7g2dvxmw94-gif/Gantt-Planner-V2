@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject } from '../helpers.js';
 
 /* Test d'intégration "bout en bout" demandé pour vérifier que plusieurs

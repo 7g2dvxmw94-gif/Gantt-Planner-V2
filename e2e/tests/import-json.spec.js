@@ -1,6 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { readFileSync } from 'fs';
 import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § G1 étape 5 (import) : le fichier JSON exporté
    doit pouvoir être réimporté et restaurer un projet identique (mêmes
@@ -50,6 +51,12 @@ test('réimporter un export JSON restaure un projet identique', async ({ page })
     await expect(page.locator('#toastContainer .toast', { hasText: `"${projectName}"` })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#projectName')).toHaveText(projectName);
     await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName })).toBeVisible({ timeout: 10_000 });
+
+    /* La copie importée est le seul projet de la suite qui ne vienne pas de
+       createProject() : le filet de nettoyage ne la connaît pas encore. Sans
+       cette ligne, un échec entre ici et la fin du test laisserait en base
+       exactement le doublon "E2E Import" qu'on a passé la session à traquer. */
+    await trackActiveProject(page);
 
     // Nettoyage : deux projets partagent désormais le même nom (l'original
     // et la copie importée, active) — supprimer l'un puis l'autre. Un

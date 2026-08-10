@@ -1,5 +1,7 @@
 /* Utilitaires partagés entre les specs E2E. */
 
+import { trackActiveProject } from './cleanup.js';
+
 /** Attend que App.init() soit passé (store.initFromSupabase() est awaité
  *  avant, donc les listeners comme celui du sélecteur de projet ne sont
  *  attachés qu'à ce moment — cliquer avant ne fait rien). */
@@ -13,7 +15,11 @@ export async function waitForAppReady(page) {
  *  avant de renvoyer la main (mêmes anti-pattern et correctif que
  *  deleteActiveProject ci-dessous) ; attendre le toast de confirmation
  *  garantit que le projet existe bien côté serveur avant de continuer (ex.
- *  avant un rechargement de page qui re-fetch tout depuis Supabase). */
+ *  avant un rechargement de page qui re-fetch tout depuis Supabase).
+ *
+ *  Le projet est enregistré auprès du filet de nettoyage (cleanup.js) dès sa
+ *  création : le test qui échoue ensuite, où que ce soit, ne laissera pas sa
+ *  ligne en base pour autant. */
 export async function createProject(page, name) {
     await waitForAppReady(page);
     page.once('dialog', (dialog) => dialog.accept(name));
@@ -21,6 +27,7 @@ export async function createProject(page, name) {
     await page.locator('button.new-project').click();
     await expectProjectName(page, name);
     await page.locator('#toastContainer .toast', { hasText: `"${name}" créé` }).waitFor({ timeout: 10_000 });
+    await trackActiveProject(page);
 }
 
 export async function expectProjectName(page, name) {

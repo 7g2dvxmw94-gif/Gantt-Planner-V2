@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
 
 /* Régression : une ressource affectée à un second projet perdait son

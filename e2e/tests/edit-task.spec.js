@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B5 (modifier une tâche) : la modal d'édition doit

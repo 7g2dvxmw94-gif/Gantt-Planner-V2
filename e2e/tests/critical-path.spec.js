@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique). Avec exactement 2 tâches

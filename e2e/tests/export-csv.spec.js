@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import fs from 'node:fs/promises';
 import { createProject, deleteActiveProject } from '../helpers.js';
 

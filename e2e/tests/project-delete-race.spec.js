@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures.js';
 import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
 
 /* Régression : renommer un projet puis le supprimer aussitôt le faisait
