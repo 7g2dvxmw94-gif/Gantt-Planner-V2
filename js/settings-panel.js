@@ -4,7 +4,7 @@
    ======================================== */
 
 import { store, PLAN_PRICES } from './store.js';
-import { CURRENCIES } from './utils.js';
+import { CURRENCIES, formatDateDisplay } from './utils.js';
 
 const COLOR_PRESETS = [
     { id: 'indigo',  name: 'Indigo',   primary: '#6366F1', hover: '#4F46E5', light: '#EEF2FF', dark: '#4338CA' },
@@ -303,6 +303,7 @@ class SettingsPanel {
         const showLinks = this._getCustomization('showLinks') !== false;
         const currentLang = getCurrentLang();
         const excludeWeekends = store.getActiveProject()?.excludeWeekends !== false;
+        const cal = store.getCalendar();
 
         return `
             <div class="settings-section">
@@ -362,6 +363,50 @@ class SettingsPanel {
                     </div>
                 </div>
 
+                <!-- Working calendar -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <h3>${t('settings.calendar.title')}</h3>
+                    </div>
+                    <p class="settings-hint">${t('settings.calendar.hint')}</p>
+
+                    <div class="settings-field">
+                        <label class="settings-field-label">${t('settings.calendar.workingDays')}</label>
+                        <div class="calendar-days" id="settingsWorkingDays">
+                            ${this._renderWorkingDayButtons(cal)}
+                        </div>
+                    </div>
+
+                    <div class="settings-identity-fields">
+                        <div class="settings-field settings-field-toggle">
+                            <label class="settings-field-label" for="settingsFrenchHolidays">${t('settings.calendar.frenchHolidays')}</label>
+                            <label class="settings-toggle">
+                                <input type="checkbox" id="settingsFrenchHolidays" ${cal.useFrenchHolidays ? 'checked' : ''}>
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-field settings-field-toggle">
+                            <label class="settings-field-label" for="settingsAlsaceMoselle">${t('settings.calendar.alsaceMoselle')}</label>
+                            <label class="settings-toggle">
+                                <input type="checkbox" id="settingsAlsaceMoselle" ${cal.alsaceMoselle ? 'checked' : ''} ${cal.useFrenchHolidays ? '' : 'disabled'}>
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-field">
+                        <label class="settings-field-label" for="settingsHolidayInput">${t('settings.calendar.customHolidays')}</label>
+                        <div class="calendar-holiday-add">
+                            <input type="date" class="settings-field-input" id="settingsHolidayInput">
+                            <button class="btn btn-secondary" id="settingsHolidayAddBtn">${t('settings.calendar.addHoliday')}</button>
+                        </div>
+                        <div class="calendar-holiday-list" id="settingsHolidayList">
+                            ${this._renderCustomHolidays(cal)}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Resources -->
                 <div class="settings-group">
                     <div class="settings-group-header">
@@ -385,6 +430,63 @@ class SettingsPanel {
                 </div>
             </div>
         `;
+    }
+
+    /* ---- Calendrier ouvre ---- */
+
+    /** Les sept jours, lundi en tete.
+     *
+     *  L'ordre d'AFFICHAGE (lundi -> dimanche) ne suit pas celui des
+     *  valeurs stockees, ou 0 = dimanche pour coller a Date#getDay() —
+     *  c'est la convention que lisent isWorkingDay() et le reste du moteur.
+     *  Le tableau ci-dessous fait le pont entre les deux, une bonne fois. */
+    _joursSemaine() {
+        return [
+            { valeur: 1, cle: 'calendar.day.mon' },
+            { valeur: 2, cle: 'calendar.day.tue' },
+            { valeur: 3, cle: 'calendar.day.wed' },
+            { valeur: 4, cle: 'calendar.day.thu' },
+            { valeur: 5, cle: 'calendar.day.fri' },
+            { valeur: 6, cle: 'calendar.day.sat' },
+            { valeur: 0, cle: 'calendar.day.sun' },
+        ];
+    }
+
+    _renderWorkingDayButtons(cal) {
+        const actifs = cal.workingDays || [];
+        return this._joursSemaine().map(j => `
+            <button type="button" class="calendar-day-btn${actifs.includes(j.valeur) ? ' active' : ''}"
+                    data-day="${j.valeur}" aria-pressed="${actifs.includes(j.valeur)}">
+                ${t(j.cle)}
+            </button>
+        `).join('');
+    }
+
+    _renderCustomHolidays(cal) {
+        const jours = [...(cal.holidays || [])].sort();
+        if (!jours.length) {
+            return `<p class="settings-hint" id="settingsHolidayEmpty">${t('settings.calendar.noCustomHoliday')}</p>`;
+        }
+        return jours.map(iso => `
+            <span class="calendar-holiday-chip" data-holiday="${iso}">
+                ${formatDateDisplay(iso)}
+                <button type="button" class="calendar-holiday-remove" data-holiday="${iso}"
+                        aria-label="${t('settings.calendar.removeHoliday')}">×</button>
+            </span>
+        `).join('');
+    }
+
+    /** Ecrit une modification du calendrier.
+     *
+     *  Un OBJET NEUF a chaque fois, jamais une mutation en place : la
+     *  memoisation des feries sur mesure (utils.js) est indexee par
+     *  identite d'objet, muter le calendrier existant lui laisserait servir
+     *  un Set perime. Passe par _saveCustomization() comme les autres
+     *  reglages, ce qui lui vaut gratuitement le suivi des ecritures en vol
+     *  et la restauration sur « Annuler ». */
+    _saveCalendar(patch) {
+        const actuel = store.getCalendar();
+        return this._saveCustomization('calendar', { ...actuel, ...patch });
     }
 
     _renderSynchroTab() {
@@ -967,6 +1069,90 @@ class SettingsPanel {
                 }
             });
         }
+
+        this._bindCalendarEvents();
+    }
+
+    _bindCalendarEvents() {
+        /* Jours travailles. Le dernier jour ouvre ne peut pas etre retire :
+           un calendrier sans aucun jour ouvre ferait tourner
+           nextWorkingDay() jusqu'a sa garde de 400 iterations, et toute
+           date saisie deviendrait impossible a recaler. */
+        this._panel.querySelectorAll('.calendar-day-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const jour = Number(btn.dataset.day);
+                const actuels = store.getCalendar().workingDays || [];
+                const actif = actuels.includes(jour);
+                if (actif && actuels.length === 1) return;
+
+                const suivants = actif
+                    ? actuels.filter(j => j !== jour)
+                    : [...actuels, jour].sort((a, b) => a - b);
+
+                btn.classList.toggle('active', !actif);
+                btn.setAttribute('aria-pressed', String(!actif));
+                this._saveCalendar({ workingDays: suivants });
+                document.dispatchEvent(new CustomEvent('calendar-changed'));
+            });
+        });
+
+        const feriesFr = this._panel.querySelector('#settingsFrenchHolidays');
+        const alsace   = this._panel.querySelector('#settingsAlsaceMoselle');
+        if (feriesFr) {
+            feriesFr.addEventListener('change', () => {
+                /* L'Alsace-Moselle n'ajoute que deux jours AUX feries
+                   francais : la case n'a aucun sens quand ceux-ci sont
+                   coupes, on la desactive plutot que de la laisser mentir. */
+                if (alsace) alsace.disabled = !feriesFr.checked;
+                this._saveCalendar({ useFrenchHolidays: feriesFr.checked });
+                document.dispatchEvent(new CustomEvent('calendar-changed'));
+            });
+        }
+        if (alsace) {
+            alsace.addEventListener('change', () => {
+                this._saveCalendar({ alsaceMoselle: alsace.checked });
+                document.dispatchEvent(new CustomEvent('calendar-changed'));
+            });
+        }
+
+        const dateInput = this._panel.querySelector('#settingsHolidayInput');
+        const addBtn    = this._panel.querySelector('#settingsHolidayAddBtn');
+        if (dateInput && addBtn) {
+            addBtn.addEventListener('click', () => {
+                const iso = dateInput.value;
+                if (!iso) return;
+                const actuels = store.getCalendar().holidays || [];
+                if (actuels.includes(iso)) { dateInput.value = ''; return; }
+                this._saveCalendar({ holidays: [...actuels, iso].sort() });
+                dateInput.value = '';
+                this._refreshHolidayList();
+                document.dispatchEvent(new CustomEvent('calendar-changed'));
+            });
+        }
+
+        this._bindHolidayRemoval();
+    }
+
+    /** Delegue la suppression : les puces sont reconstruites a chaque ajout,
+     *  un ecouteur pose sur chacune serait perdu au premier re-rendu. */
+    _bindHolidayRemoval() {
+        const liste = this._panel.querySelector('#settingsHolidayList');
+        if (!liste || liste.dataset.bound) return;
+        liste.dataset.bound = '1';
+        liste.addEventListener('click', (e) => {
+            const btn = e.target.closest('.calendar-holiday-remove');
+            if (!btn) return;
+            const iso = btn.dataset.holiday;
+            const actuels = store.getCalendar().holidays || [];
+            this._saveCalendar({ holidays: actuels.filter(j => j !== iso) });
+            this._refreshHolidayList();
+            document.dispatchEvent(new CustomEvent('calendar-changed'));
+        });
+    }
+
+    _refreshHolidayList() {
+        const liste = this._panel.querySelector('#settingsHolidayList');
+        if (liste) liste.innerHTML = this._renderCustomHolidays(store.getCalendar());
     }
 
     _bindAideEvents() {

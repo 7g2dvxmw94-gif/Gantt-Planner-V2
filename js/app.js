@@ -1497,6 +1497,10 @@ class App {
         document.addEventListener('show-keyboard-help', () => this._showKeyboardHelp());
         document.addEventListener('launch-onboarding', () => onboarding.start());
         document.addEventListener('settings-saved', () => this._showToast(t('toast.settingsSaved'), 'success'));
+        /* Le calendrier ouvre decide des colonnes grisees : sans ce
+           rafraichissement, activer le samedi ne se verrait qu'au prochain
+           rechargement — le reglage aurait l'air sans effet. */
+        document.addEventListener('calendar-changed', () => this._refreshCurrentView());
         document.addEventListener('gantt:addTask', () => this._showAddTaskDialog());
 
         // Baseline

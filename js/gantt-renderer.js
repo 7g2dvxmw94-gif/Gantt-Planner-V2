@@ -4,7 +4,7 @@
    ======================================== */
 
 import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
-import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, isWeekend, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
+import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -309,9 +309,18 @@ class GanttRenderer {
                 } else {
                     // Show day numbers
                     const days = getDaysBetween(visibleStart, visibleEnd);
+                    /* Grise les jours NON OUVRES, pas seulement les
+                       samedis-dimanches : depuis que le calendrier est
+                       reglable, un chantier peut travailler le samedi — la
+                       colonne resterait grisee alors que le moteur y
+                       planifie. Les feries, eux, n'etaient jamais marques
+                       bien que le moteur ait toujours refuse d'y placer une
+                       tache. La classe garde son nom « weekend » : c'est le
+                       style d'une colonne inactive, le CSS est inchange. */
+                    const calendrier = store.getCalendar();
                     days.forEach(dayDate => {
                         let cls = 'timeline-day';
-                        if (isWeekend(dayDate)) cls += ' weekend';
+                        if (!isWorkingDay(dayDate, calendrier)) cls += ' weekend';
                         if (isToday(dayDate)) cls += ' today';
                         const dayEl = createElement('div', {
                             className: cls,
@@ -512,9 +521,10 @@ class GanttRenderer {
                 }));
             });
         } else {
+            const calendrier = store.getCalendar();
             this._dayColumns.forEach(day => {
                 let cls = 'gantt-timeline-grid-col';
-                if (isWeekend(day)) cls += ' weekend';
+                if (!isWorkingDay(day, calendrier)) cls += ' weekend';
                 if (this._zoomLevel === 'week' && day.getDay() === 1) cls += ' week-start';
                 grid.appendChild(createElement('div', {
                     className: cls,

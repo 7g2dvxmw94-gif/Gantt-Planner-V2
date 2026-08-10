@@ -741,3 +741,93 @@
     text-transform: uppercase;
     letter-spacing: .03em;
 }
+
+/* ---- Calendrier ouvré (onglet Général) ---- */
+
+.settings-hint {
+    margin: 0 0 12px;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.calendar-days {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+/* Même vocabulaire visuel que .lang-btn, en gabarit carré : sept jours
+   tiennent ainsi sur une ligne, y compris dans un panneau étroit. */
+.calendar-day-btn {
+    min-width: 40px;
+    padding: 8px 0;
+    border: 1.5px solid var(--border-default);
+    border-radius: 8px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.calendar-day-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.calendar-day-btn.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.calendar-holiday-add {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.calendar-holiday-add .settings-field-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.calendar-holiday-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.calendar-holiday-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 10px;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.calendar-holiday-remove {
+    border: none;
+    background: none;
+    padding: 0 2px;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.calendar-holiday-remove:hover {
+    color: var(--color-danger, #ef4444);
+}
