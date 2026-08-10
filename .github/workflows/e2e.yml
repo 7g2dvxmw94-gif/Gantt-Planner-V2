@@ -5,6 +5,26 @@ on:
     branches: [main]
   pull_request:
 
+# Toute la suite tourne sur UN SEUL compte Supabase partagé : deux runs
+# simultanés (deux PR actives, ou un merge sur main pendant qu'une PR
+# tourne) se marchent dessus. Les projets de l'un apparaissent dans les
+# écrans de l'autre — le récapitulatif du Dashboard agrège déjà tous les
+# projets du compte, ce qui a forcé permit.spec.js à filtrer par nom plutôt
+# qu'à compter — et le seed dont dépend le bouton de suppression n'est plus
+# le seul repère stable. Ce groupe sérialise les runs à l'échelle du dépôt.
+#
+# Le groupe est volontairement GLOBAL, sans github.ref : c'est la
+# sérialisation entre branches qui protège le compte, pas l'annulation des
+# runs redondants d'une même branche.
+#
+# cancel-in-progress: false — un run interrompu en plein test laisse
+# derrière lui exactement les lignes orphelines que le filet de nettoyage
+# (e2e/cleanup.js) sert à éviter, sa phase de démontage n'ayant jamais lieu.
+# Les runs font donc la queue (~4 min chacun) au lieu de s'annuler.
+concurrency:
+  group: e2e-compte-partage
+  cancel-in-progress: false
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
