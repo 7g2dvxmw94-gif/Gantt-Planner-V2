@@ -1476,6 +1476,21 @@ class Store {
         this._data.tasks.push(newTask);
         this._invalidateTaskIndex();
         this._invalidateResourceIndex();
+
+        /* Recaler la phase parente : une tache qui nait sous une phase en
+           change l'enveloppe et l'avancement. updateTask() et deleteTask()
+           le font deja — addTask() etait le seul point de mutation a ne pas
+           le faire.
+           Le point d'appel du formulaire (task-modal.js) enchaine bien
+           applyPredecessorConstraints(), qui contient le meme recalcul, mais
+           celle-ci sort avant d'y arriver quand la tache n'a aucun
+           predecesseur : le cas courant. La phase restait donc figee sur les
+           dates par defaut du formulaire jusqu'au rechargement suivant, ou
+           initFromSupabase() recalcule toutes les phases — le symptome
+           s'effacait de lui-meme, ce qui l'a rendu difficile a voir.
+           Avant _emit(), pour que le rendu qui suit parte de valeurs a jour. */
+        if (newTask.parentId) this._recalculatePhase(newTask.parentId);
+
         this._save();
         this._emit('task:add', newTask);
         // Log history

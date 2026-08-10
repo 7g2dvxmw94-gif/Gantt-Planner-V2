@@ -78,33 +78,14 @@ test('une phase couvre ses tâches enfants et moyenne leur avancement', async ({
 
     const phaseBar = page.locator('.gantt-bar.phase-bar');
 
-    /* DIAGNOSTIC TEMPORAIRE — à retirer.
-       La barre de phase existe bien dans le DOM mais Playwright la dit
-       « hidden », ce que ni la lecture du rendu ni celle du CSS n'explique.
-       Plutôt que de continuer à formuler des hypothèses, on relève l'état
-       réel : boîte englobante de la barre et de chacun de ses ancêtres. */
-    const diagnostic = await phaseBar.evaluate((el) => {
-        const chaine = [];
-        for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
-            const cs = getComputedStyle(n);
-            const r = n.getBoundingClientRect();
-            chaine.push({
-                el: n.tagName.toLowerCase() + (n.className ? '.' + String(n.className).trim().replace(/\s+/g, '.') : ''),
-                display: cs.display,
-                visibility: cs.visibility,
-                overflow: cs.overflow,
-                rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
-                style: n.getAttribute('style') || '',
-            });
-        }
-        return chaine;
-    });
-    console.log('[diag phase-bar]\n' + diagnostic.map(n =>
-        `  ${n.el}\n    display=${n.display} visibility=${n.visibility} overflow=${n.overflow} rect=${n.rect.join(',')}\n    style="${n.style}"`
-    ).join('\n'));
-
-    await expect(phaseBar).toBeVisible({ timeout: 10_000 });
-    await expect(phaseBar).toHaveAttribute('aria-label', new RegExp(phaseName));
+    /* Une phase sans enfant reste MASQUÉE, et c'est voulu :
+       _applyFiltersToTimeline() (app.js) n'affiche une phase que si au
+       moins un de ses enfants est visible. La ligne existe dans le DOM,
+       avec un display:none posé à chaque rafraîchissement. Une phase vide
+       ne dit rien sur un planning — l'assertion documente la règle plutôt
+       que de la contourner. */
+    await expect(phaseBar).toBeAttached();
+    await expect(phaseBar).toBeHidden();
 
     // --- B2.6 : deux tâches rattachées à la phase ---
     // La première reste à 0 %, la seconde monte à 50 % : la moyenne
@@ -117,6 +98,10 @@ test('une phase couvre ses tâches enfants et moyenne leur avancement', async ({
     const barreB = page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomB });
     await expect(barreA).toBeVisible({ timeout: 10_000 });
     await expect(barreB).toBeVisible({ timeout: 10_000 });
+
+    // La phase, elle, sort de l'ombre dès qu'elle a un enfant visible.
+    await expect(phaseBar).toBeVisible({ timeout: 10_000 });
+    await expect(phaseBar).toHaveAttribute('aria-label', new RegExp(phaseName));
 
     // --- L'enveloppe : début du premier enfant, fin du dernier ---
     // Aucun rechargement volontaire ici : la phase doit suivre ses enfants
