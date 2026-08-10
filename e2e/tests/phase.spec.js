@@ -77,6 +77,32 @@ test('une phase couvre ses tâches enfants et moyenne leur avancement', async ({
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
     const phaseBar = page.locator('.gantt-bar.phase-bar');
+
+    /* DIAGNOSTIC TEMPORAIRE — à retirer.
+       La barre de phase existe bien dans le DOM mais Playwright la dit
+       « hidden », ce que ni la lecture du rendu ni celle du CSS n'explique.
+       Plutôt que de continuer à formuler des hypothèses, on relève l'état
+       réel : boîte englobante de la barre et de chacun de ses ancêtres. */
+    const diagnostic = await phaseBar.evaluate((el) => {
+        const chaine = [];
+        for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+            const cs = getComputedStyle(n);
+            const r = n.getBoundingClientRect();
+            chaine.push({
+                el: n.tagName.toLowerCase() + (n.className ? '.' + String(n.className).trim().replace(/\s+/g, '.') : ''),
+                display: cs.display,
+                visibility: cs.visibility,
+                overflow: cs.overflow,
+                rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+                style: n.getAttribute('style') || '',
+            });
+        }
+        return chaine;
+    });
+    console.log('[diag phase-bar]\n' + diagnostic.map(n =>
+        `  ${n.el}\n    display=${n.display} visibility=${n.visibility} overflow=${n.overflow} rect=${n.rect.join(',')}\n    style="${n.style}"`
+    ).join('\n'));
+
     await expect(phaseBar).toBeVisible({ timeout: 10_000 });
     await expect(phaseBar).toHaveAttribute('aria-label', new RegExp(phaseName));
 
