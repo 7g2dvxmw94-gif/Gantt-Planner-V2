@@ -1289,9 +1289,7 @@ class Store {
                        copiees perdent leurs ressources au rechargement.
                        syncTaskAssignees() journalise ses erreurs sans les
                        propager : un echec ici n'annule donc pas la copie. */
-                    if (tache.assignees?.length) {
-                        await supabaseStore.syncTaskAssignees(tache.id, tache.assignees);
-                    }
+                    /* MUTATION : synchro des assignés retirée */
                 }
 
                 /* Liens projet-ressource. resourceIds n'est pas une colonne
@@ -1300,9 +1298,7 @@ class Store {
                    elles-memes existent deja — elles sont partagees, la copie
                    les reference plutot que de les dupliquer — seules les
                    lignes de liaison manquent. */
-                for (const resourceId of (newProject.resourceIds || [])) {
-                    await supabaseStore.linkResourceToProject(newProjectId, resourceId);
-                }
+                /* MUTATION : liens projet-ressource retirés */
             } catch (e) {
                 /* Retirer la copie locale avant de propager : la laisser
                    afficherait un projet qui n'existe pas cote serveur et
