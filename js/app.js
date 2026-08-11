@@ -6478,10 +6478,20 @@ tr:nth-child(even){background:#fafbfc}
         const dupBtn = document.createElement('button');
         dupBtn.className = 'project-dropdown-item';
         dupBtn.textContent = t('project.action.duplicate');
-        dupBtn.addEventListener('click', (e) => {
+        dupBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             dropdown.remove();
-            const dup = store.duplicateProject(activeProject.id);
+            /* Attendre la synchronisation avant d'annoncer quoi que ce soit :
+               le toast de succès précédait l'écriture — qui n'existait pas —
+               et la copie disparaissait au rechargement. Même traitement que
+               la suppression de projet, juste en dessous. */
+            let dup;
+            try {
+                dup = await store.duplicateProject(activeProject.id);
+            } catch (err) {
+                this._showToast(t('toast.error', { message: err.message }), 'error');
+                return;
+            }
             if (dup) {
                 store.setActiveProject(dup.id);
                 this._dashboardFilterProjectId = null;
