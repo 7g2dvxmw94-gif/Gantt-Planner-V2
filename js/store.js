@@ -2841,6 +2841,17 @@ class Store {
                             await supabaseStore.upsertTask(newTask).catch(e =>
                                 console.error('[importProject] upsertTask failed:', e?.message || e)
                             );
+                            /* Les assignes ne sont PAS portes par upsertTask :
+                               rowToTask() les initialise a [] avec la mention
+                               « recharge separement via task_assignees ». Les
+                               ids sont pourtant deja remappes ci-dessus — ils
+                               ne manquaient qu'a l'ecriture, et disparaissaient
+                               donc au rechargement suivant.
+                               syncTaskAssignees() journalise ses erreurs sans
+                               les propager : pas de .catch a ajouter. */
+                            if (newTask.assignees?.length) {
+                                await supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
+                            }
                         }
                     }
                 }
@@ -3001,6 +3012,18 @@ class Store {
                     if (newTask) {
                         try {
                             await supabaseStore.upsertTask(newTask);
+                            /* Même omission que dans importProject ci-dessus,
+                               et même correctif. Les ids d'assignés sont déjà
+                               remappés au moment de la construction de la
+                               tâche ; seule l'écriture manquait.
+                               NON COUVERT PAR UN TEST : la restauration
+                               globale a son propre point d'entrée, qui mérite
+                               son propre scénario. Corrigé tout de même —
+                               laisser sciemment le même défaut dans la
+                               fonction voisine n'aurait pas de sens. */
+                            if (newTask.assignees?.length) {
+                                await supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
+                            }
                         } catch (e) {
                             console.error('[import] upsertTask FAILED:', e?.message || e);
                         }
