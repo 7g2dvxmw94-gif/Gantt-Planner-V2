@@ -1282,6 +1282,26 @@ class Store {
                 });
                 for (const tache of parentsDabord) {
                     await supabaseStore.upsertTask(tache);
+                    /* Les assignes ne sont PAS portes par upsertTask :
+                       taskToRow() les ignore, ils vivent dans une table de
+                       liaison alimentee a part — meme decoupage que dans
+                       addTask() et updateTask(). Sans cet appel, les taches
+                       copiees perdent leurs ressources au rechargement.
+                       syncTaskAssignees() journalise ses erreurs sans les
+                       propager : un echec ici n'annule donc pas la copie. */
+                    if (tache.assignees?.length) {
+                        await supabaseStore.syncTaskAssignees(tache.id, tache.assignees);
+                    }
+                }
+
+                /* Liens projet-ressource. resourceIds n'est pas une colonne
+                   de `projects` (projectToRow l'ignore) : il se reconstruit
+                   au chargement depuis project_resources. Les ressources
+                   elles-memes existent deja — elles sont partagees, la copie
+                   les reference plutot que de les dupliquer — seules les
+                   lignes de liaison manquent. */
+                for (const resourceId of (newProject.resourceIds || [])) {
+                    await supabaseStore.linkResourceToProject(newProjectId, resourceId);
                 }
             } catch (e) {
                 /* Retirer la copie locale avant de propager : la laisser

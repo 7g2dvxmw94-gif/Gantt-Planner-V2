@@ -20,6 +20,14 @@ import { trackActiveProject } from '../cleanup.js';
  *    premier recalcul — ou jamais. On l'observe ici en rouvrant la tâche
  *    successeur dans la copie : son prédécesseur doit être coché, ce qui
  *    n'est possible que si l'id pointe à l'intérieur du projet courant.
+ *
+ * 3. LES RESSOURCES ET LES ASSIGNÉS SUIVENT. Ni les unes ni les autres ne
+ *    voyagent avec les écritures principales : `resourceIds` n'est pas une
+ *    colonne de `projects` et les assignés ne sont pas portés par
+ *    `upsertTask` — les deux vivent dans des tables de liaison alimentées
+ *    par des appels dédiés. Un projet de test sans ressource ni assigné
+ *    laisserait donc passer leur absence sans rien signaler, ce qui a été
+ *    précisément le cas de la première version de ce test.
  */
 
 const AMONT_DEBUT = '2026-06-01';   // lundi
@@ -30,22 +38,38 @@ test('dupliquer un projet : la copie survit au rechargement, dépendances remapp
     const projectName = `E2E Duplication ${suffixe}`;
     const nomAmont = `Amont ${suffixe}`;
     const nomAval  = `Aval ${suffixe}`;
+    const nomRessource = `Ressource dup ${suffixe}`;
 
     await page.goto('index.html');
     await createProject(page, projectName);
 
-    // --- Un projet avec deux tâches liées, pour que la copie ait quelque
-    //     chose à remapper ---
-    const creer = async (nom, debut, fin) => {
+    /* Une ressource, rattachée au projet actif à sa création. Elle est
+       indispensable au test : sans elle, ni le lien projet-ressource ni
+       l'assignation de tâche ne seraient exercés. */
+    await page.locator('#tabResources').click();
+    await page.locator('.resource-add-btn').click();
+    const modalRessource = page.locator('.resource-modal');
+    await modalRessource.locator('#resName').fill(nomRessource);
+    await modalRessource.getByRole('button', { name: 'Créer la ressource' }).click();
+    await expect(page.locator('.resource-card', { hasText: nomRessource })).toBeVisible();
+    await page.locator('#tabTimeline').click();
+
+    // --- Deux tâches liées, pour que la copie ait quelque chose à remapper ---
+    const creer = async (nom, debut, fin, avecRessource = false) => {
         await page.locator('#addTaskBtn').click();
-        await page.locator('#taskName').fill(nom);
-        await page.locator('#taskStart').fill(debut);
-        await page.locator('#taskEnd').fill(fin);
+        const modal = page.locator('#taskModalOverlay');
+        await modal.locator('#taskName').fill(nom);
+        await modal.locator('#taskStart').fill(debut);
+        await modal.locator('#taskEnd').fill(fin);
+        if (avecRessource) {
+            await modal.locator('.assignee-item', { hasText: nomRessource })
+                .locator('input[type="checkbox"]').check();
+        }
         await page.getByRole('button', { name: 'Créer' }).click();
-        await expect(page.locator('#taskModalOverlay')).toBeHidden();
+        await expect(modal).toBeHidden();
     };
     await creer(nomAmont, AMONT_DEBUT, AMONT_FIN);
-    await creer(nomAval, '2026-06-15', '2026-06-17');
+    await creer(nomAval, '2026-06-15', '2026-06-17', true);
 
     const barreAval = page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomAval });
     await expect(barreAval).toBeVisible({ timeout: 10_000 });
@@ -90,8 +114,25 @@ test('dupliquer un projet : la copie survit au rechargement, dépendances remapp
         groupePred.locator('.dep-list > div').filter({ hasText: nomAmont })
             .locator('input[type="checkbox"]')
     ).toBeChecked();
+
+    /* L'assigné, dans la même modal : les assignés ne sont pas portés par
+       upsertTask() et passent par un appel dédié. Sans lui, la case serait
+       décochée après rechargement, sans autre symptôme. */
+    await expect(
+        page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: nomRessource })
+            .locator('input[type="checkbox"]')
+    ).toBeChecked();
+
     await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
+
+    /* Le lien projet-ressource : la portée par défaut de l'onglet
+       Ressources est « Ce projet ». La ressource n'y apparaît que si une
+       ligne project_resources existe pour la COPIE — elle ne se déduit pas
+       de la table `projects`, qui ne porte aucune colonne resourceIds. */
+    await page.locator('#tabResources').click();
+    await expect(page.locator('.resource-card', { hasText: nomRessource })).toBeVisible({ timeout: 10_000 });
+    await page.locator('#tabTimeline').click();
 
     // --- Nettoyage : la copie, puis l'original ---
     await deleteActiveProject(page);
