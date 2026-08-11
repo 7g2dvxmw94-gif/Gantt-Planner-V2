@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Arbre factice — tests du filet de nettoyage</title>
+</head>
+<body>
+<script type="module">
+    /* Charge le module comme le ferait app.js, pour que l'import dynamique
+       de cleanup.js retombe sur LA MÊME instance : la résolution se fait
+       par URL, deux importateurs du même chemin partagent l'objet. */
+    import { store } from './js/store.js';
+    window.__store = store;
+    document.body.dataset.stubReady = 'true';
+</script>
+</body>
+</html>
