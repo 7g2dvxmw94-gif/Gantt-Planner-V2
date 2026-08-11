@@ -1289,7 +1289,9 @@ class Store {
                        copiees perdent leurs ressources au rechargement.
                        syncTaskAssignees() journalise ses erreurs sans les
                        propager : un echec ici n'annule donc pas la copie. */
-                    /* MUTATION 3 : seule la synchro des assignés est retirée */
+                    if (tache.assignees?.length) {
+                        await supabaseStore.syncTaskAssignees(tache.id, tache.assignees);
+                    }
                 }
 
                 /* Liens projet-ressource. resourceIds n'est pas une colonne
