@@ -1209,7 +1209,21 @@ class Store {
             });
     }
 
-    duplicateProject(projectId) {
+    /** Duplique un projet et ses taches, puis ATTEND la synchronisation.
+     *
+     *  La copie n'etait auparavant empilee que dans l'etat local : ni cette
+     *  methode ni son appelant n'ecrivaient quoi que ce soit dans Supabase,
+     *  et aucun ecouteur de 'project:add' ne compensait. Un toast annoncait
+     *  pourtant un succes — la copie disparaissait au rechargement suivant,
+     *  avec le travail fait dedans.
+     *
+     *  Meme famille que addProject(), importProject() et deleteProject(),
+     *  corriges avant elle. Contrat retenu ici : celui de deleteProject(),
+     *  qui PROPAGE l'echec pour que l'appelant puisse le signaler, plutot
+     *  que celui d'importProject(), qui journalise et poursuit. Une copie
+     *  qui n'atteint pas le serveur n'existe pas : l'utilisateur doit
+     *  l'apprendre autrement que par sa disparition. */
+    async duplicateProject(projectId) {
         this._snapshot();
         const source = this._data.projects.find(p => p.id === projectId);
         if (!source) return null;
@@ -1243,11 +1257,66 @@ class Store {
                 updatedAt: new Date().toISOString(),
             };
             this._data.tasks.push(newTask);
-            this._invalidateTaskIndex();
-        this._invalidateResourceIndex();
         });
+        /* Hors de la boucle : ces invalidations y figuraient, donc repetees
+           a chaque tache copiee sans rien apporter de plus. */
+        this._invalidateTaskIndex();
+        this._invalidateResourceIndex();
 
         this._save();
+
+        /* Synchronisation, attendue par l'appelant : projet d'abord, puis
+           les taches, les parents avant leurs enfants — meme ordre que
+           importProject(), une phase devant exister avant ce qui s'y
+           rattache. */
+        const user = await auth.getUser();
+        if (user) {
+            try {
+                await this._upsertProjectGuarded(newProject, user.id);
+
+                const copies = this._data.tasks.filter(t => t.projectId === newProjectId);
+                const parentsDabord = [...copies].sort((a, b) => {
+                    if (!a.parentId && b.parentId) return -1;
+                    if (a.parentId && !b.parentId) return 1;
+                    return 0;
+                });
+                for (const tache of parentsDabord) {
+                    await supabaseStore.upsertTask(tache);
+                    /* Les assignes ne sont PAS portes par upsertTask :
+                       taskToRow() les ignore, ils vivent dans une table de
+                       liaison alimentee a part — meme decoupage que dans
+                       addTask() et updateTask(). Sans cet appel, les taches
+                       copiees perdent leurs ressources au rechargement.
+                       syncTaskAssignees() journalise ses erreurs sans les
+                       propager : un echec ici n'annule donc pas la copie. */
+                    if (tache.assignees?.length) {
+                        await supabaseStore.syncTaskAssignees(tache.id, tache.assignees);
+                    }
+                }
+
+                /* Liens projet-ressource. resourceIds n'est pas une colonne
+                   de `projects` (projectToRow l'ignore) : il se reconstruit
+                   au chargement depuis project_resources. Les ressources
+                   elles-memes existent deja — elles sont partagees, la copie
+                   les reference plutot que de les dupliquer — seules les
+                   lignes de liaison manquent. */
+                for (const resourceId of (newProject.resourceIds || [])) {
+                    await supabaseStore.linkResourceToProject(newProjectId, resourceId);
+                }
+            } catch (e) {
+                /* Retirer la copie locale avant de propager : la laisser
+                   afficherait un projet qui n'existe pas cote serveur et
+                   s'evanouirait au rechargement — exactement le symptome
+                   que cette correction supprime. */
+                this._data.projects = this._data.projects.filter(p => p.id !== newProjectId);
+                this._data.tasks    = this._data.tasks.filter(t => t.projectId !== newProjectId);
+                this._invalidateTaskIndex();
+                this._invalidateResourceIndex();
+                console.error('[store] sync duplicateProject:', e);
+                throw e;
+            }
+        }
+
         this._emit('project:add', newProject);
         return newProject;
     }
