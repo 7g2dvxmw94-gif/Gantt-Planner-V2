@@ -2849,7 +2849,9 @@ class Store {
                                donc au rechargement suivant.
                                syncTaskAssignees() journalise ses erreurs sans
                                les propager : pas de .catch a ajouter. */
-                            /* MUTATION : appel retiré dans importProject seul */
+                            if (newTask.assignees?.length) {
+                                await supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
+                            }
                         }
                     }
                 }
