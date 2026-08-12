@@ -165,3 +165,114 @@ test('les assignés d’une tâche survivent au réimport', async ({ page }) => 
     await page.locator('.project-dropdown-item .project-item-name', { hasText: projectName }).first().click();
     await deleteActiveProject(page);
 });
+
+/* Restauration d'une sauvegarde GLOBALE (« Tout exporter »).
+ *
+ * Deuxième point d'entrée d'import, distinct du précédent : le même bouton
+ * route vers store.importAllProjects() dès que le fichier porte
+ * `type: 'full-backup'`. Il présentait la même omission que
+ * importProject() — les assignés jamais écrits dans task_assignees — et a
+ * été corrigé en même temps, mais sans test. Voici ce test.
+ *
+ * LA SAUVEGARDE EST FILTRÉE avant réimport, pour ne garder que le projet
+ * du test. Ce n'est pas une commodité : importAllProjects() ne renomme pas
+ * les copies, donc restaurer la sauvegarde entière du compte y dupliquerait
+ * TOUS les projets — dont le seed persistant, à l'identique. Le doublon
+ * porterait alors un nom que le filtre de purge « E2E % » ne rattrape pas,
+ * délibérément (voir auth.setup.js). Filtrer garde une empreinte d'un seul
+ * projet, tout en conservant la forme réelle d'un export.
+ *
+ * La personnalisation est vidée pour la même raison : importAllProjects()
+ * la fusionne dans les réglages du compte, partagé par toutes les specs. */
+test('la restauration d’une sauvegarde globale conserve les assignés', async ({ page }) => {
+    const suffixe = Date.now();
+    const projectName = `E2E Backup ${suffixe}`;
+    const taskName = `Tâche sauvegardée ${suffixe}`;
+    const nomRessource = `Ressource backup ${suffixe}`;
+
+    await page.goto('index.html');
+    await createProject(page, projectName);
+
+    await page.locator('#tabResources').click();
+    await page.locator('.resource-add-btn').click();
+    const modalRessource = page.locator('.resource-modal');
+    await modalRessource.locator('#resName').fill(nomRessource);
+    await modalRessource.getByRole('button', { name: 'Créer la ressource' }).click();
+    await expect(page.locator('.resource-card', { hasText: nomRessource })).toBeVisible();
+    await page.locator('#tabTimeline').click();
+
+    await page.locator('#addTaskBtn').click();
+    const modalTache = page.locator('#taskModalOverlay');
+    await modalTache.locator('#taskName').fill(taskName);
+    await modalTache.locator('#taskStart').fill('2026-06-01');
+    await modalTache.locator('#taskEnd').fill('2026-06-03');
+    await modalTache.locator('.assignee-item', { hasText: nomRessource })
+        .locator('input[type="checkbox"]').check();
+    await page.getByRole('button', { name: 'Créer' }).click();
+    await expect(modalTache).toBeHidden();
+
+    // --- « Tout exporter » : une vraie sauvegarde globale ---
+    await page.locator('#exportBtn').click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('.export-dropdown-item')
+        .filter({ has: page.locator('.export-dropdown-label', { hasText: /^Tout exporter$/ }) })
+        .click();
+    const download = await downloadPromise;
+    const sauvegarde = JSON.parse(readFileSync(await download.path(), 'utf-8'));
+    expect(sauvegarde.type).toBe('full-backup');
+
+    /* Réduite au seul projet du test — voir l'en-tête. On conserve la
+       structure produite par l'application plutôt que d'inventer une
+       charge utile, dont les champs manquants feraient échouer le test
+       pour une tout autre raison. */
+    const projet = sauvegarde.projects.find(p => p.name === projectName);
+    expect(projet, 'le projet du test doit figurer dans la sauvegarde').toBeTruthy();
+    const taches = sauvegarde.tasks.filter(t => t.projectId === projet.id);
+    const idsRessources = new Set(taches.flatMap(t => t.assignees || []));
+    const filtree = {
+        ...sauvegarde,
+        projects: [projet],
+        tasks: taches,
+        resources: sauvegarde.resources.filter(r => idsRessources.has(r.id)),
+        customization: {},
+    };
+    expect(filtree.resources.length,
+        'la ressource assignée doit être présente, sinon le test ne prouve rien').toBe(1);
+
+    // --- Réimport via le même bouton ---
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#importBtn').click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles({
+        name: 'sauvegarde.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(JSON.stringify(filtree)),
+    });
+    await expect(page.locator('#toastContainer .toast', { hasText: 'projet(s) importé(s)' }))
+        .toBeVisible({ timeout: 10_000 });
+
+    /* importAllProjects() active le dernier projet restauré : la copie est
+       donc le projet actif, et le filet de nettoyage peut l'enregistrer. */
+    await trackActiveProject(page);
+
+    await page.reload();
+    await waitForAppReady(page);
+
+    const barre = page.locator('.gantt-bar[data-task-id]').filter({ hasText: taskName });
+    await expect(barre).toBeVisible({ timeout: 10_000 });
+    await barre.dblclick();
+    await expect(
+        page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: nomRessource })
+            .locator('input[type="checkbox"]')
+    ).toBeChecked();
+    await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
+    await expect(page.locator('#taskModalOverlay')).toBeHidden();
+
+    // --- Nettoyage : la copie restaurée, puis l'original (même nom) ---
+    await deleteActiveProject(page);
+    await page.reload();
+    await waitForAppReady(page);
+    await page.locator('.project-selector').click();
+    await page.locator('.project-dropdown-item .project-item-name', { hasText: projectName }).first().click();
+    await deleteActiveProject(page);
+});

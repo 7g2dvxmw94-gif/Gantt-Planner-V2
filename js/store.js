@@ -3016,11 +3016,13 @@ class Store {
                                et même correctif. Les ids d'assignés sont déjà
                                remappés au moment de la construction de la
                                tâche ; seule l'écriture manquait.
-                               NON COUVERT PAR UN TEST : la restauration
-                               globale a son propre point d'entrée, qui mérite
-                               son propre scénario. Corrigé tout de même —
-                               laisser sciemment le même défaut dans la
-                               fonction voisine n'aurait pas de sens. */
+                               Couvert depuis par import-json.spec.js, « la
+                               restauration d'une sauvegarde globale conserve
+                               les assignés ». Ce test filtre la sauvegarde
+                               pour n'en garder qu'un projet : cette fonction
+                               ne renomme pas les copies, et restaurer la
+                               sauvegarde entière du compte de test y
+                               dupliquerait le seed persistant à l'identique. */
                             if (newTask.assignees?.length) {
                                 await supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
                             }
