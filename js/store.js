@@ -3021,9 +3021,7 @@ class Store {
                                son propre scénario. Corrigé tout de même —
                                laisser sciemment le même défaut dans la
                                fonction voisine n'aurait pas de sens. */
-                            if (newTask.assignees?.length) {
-                                await supabaseStore.syncTaskAssignees(newTask.id, newTask.assignees);
-                            }
+                            /* MUTATION : appel retiré dans importAllProjects seul */
                         } catch (e) {
                             console.error('[import] upsertTask FAILED:', e?.message || e);
                         }
