@@ -3047,7 +3047,6 @@ class Store {
     }
 
     importFromMSProjectXML(xmlString) {
-        this._snapshot();
         try {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xmlString, 'application/xml');
@@ -3058,10 +3057,36 @@ class Store {
                 return node ? node.textContent.trim() : '';
             };
 
-            const projectName = getTag(doc.documentElement, 'Name') || 'Projet importé (XML)';
             const taskEls = Array.from(doc.getElementsByTagNameNS(ns, 'Task').length
                 ? doc.getElementsByTagNameNS(ns, 'Task')
                 : doc.getElementsByTagName('Task'));
+
+            /* Refuser ce qui n'est pas un planning MS Project.
+             *
+             * DOMParser ne lève pas sur du XML mal formé : il renvoie un
+             * document dont la racine est <parsererror>. Sans ce garde-fou,
+             * n'importe quel .xml — y compris du HTML, un fichier vide ou un
+             * XML d'une autre application — produisait un projet vide nommé
+             * « Projet importé (XML) », le rendait actif, et l'appelant
+             * affichait un toast de SUCCÈS : l'utilisateur perdait de vue son
+             * projet en cours sans le moindre avertissement.
+             *
+             * Le critère est l'absence de <Task>, pas l'absence de contenu :
+             * un vrai fichier MS Project vide porte malgré tout la tâche
+             * récapitulative UID 0, et reste donc importable.
+             *
+             * Ce contrôle précède _snapshot() à dessein. L'instantané vide la
+             * pile de redo (voir _snapshot) ; le prendre avant de savoir si
+             * l'import aura lieu ferait payer à l'utilisateur son historique
+             * pour un fichier finalement rejeté. */
+            if (doc.getElementsByTagName('parsererror').length || !taskEls.length) {
+                console.error('MS Project XML import failed: aucune tâche trouvée (fichier non MS Project ou XML invalide)');
+                return null;
+            }
+
+            this._snapshot();
+
+            const projectName = getTag(doc.documentElement, 'Name') || 'Projet importé (XML)';
             const resEls = Array.from(doc.getElementsByTagNameNS(ns, 'Resource').length
                 ? doc.getElementsByTagNameNS(ns, 'Resource')
                 : doc.getElementsByTagName('Resource'));
