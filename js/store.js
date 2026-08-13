@@ -3198,7 +3198,15 @@ class Store {
                        homonyme déjà connue du compte n'est PAS recréée : c'est
                        son identifiant existant qui est rattaché au projet, sans
                        quoi les tâches importées pointeraient une ressource que
-                       le projet ne déclare pas. */
+                       le projet ne déclare pas.
+
+                       NON COUVERT PAR UN TEST, et pas par oubli : ce
+                       rattachement-ci ne SURVIT pas encore. _loadProjectData()
+                       écrase resourceIds par `ownedIds ∪ linkedIds`, et une
+                       ressource empruntée à un autre projet n'est ni l'un ni
+                       l'autre tant que l'import n'écrit pas sa ligne
+                       project_resources. À couvrir avec linkResourceToProject(),
+                       dans la PR qui ajoute la persistance. */
                     if (!newProject.resourceIds.includes(exists.id)) {
                         newProject.resourceIds.push(exists.id);
                     }

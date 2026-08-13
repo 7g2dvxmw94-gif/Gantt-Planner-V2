@@ -18,14 +18,28 @@ import { trackActiveProject } from '../cleanup.js';
  * indépendants, ce qui rend le trou d'autant plus discret. C'est pourquoi le
  * test vérifie les DEUX, et non le seul plus visible.
  *
- * Deux branches distinctes du code sont exercées, dans deux tests :
+ * Le correctif traite les DEUX branches du dédoublonnage, mais une seule est
+ * couverte ici :
  *
- *   1. Ressource inconnue du compte → elle est créée, puis rattachée.
- *   2. Ressource HOMONYME déjà connue → elle n'est PAS recréée ; c'est son
- *      identifiant existant qui doit être rattaché au projet. Cette branche
- *      remappe déjà les assignés depuis longtemps, mais oubliait le
- *      rattachement — les tâches importées pointaient alors une ressource
- *      que le projet ne déclarait pas.
+ *   1. Ressource inconnue du compte → créée, puis rattachée.  ← ce test
+ *   2. Ressource HOMONYME déjà connue → non recréée ; c'est son identifiant
+ *      EXISTANT qui doit être rattaché.  ← NON COUVERT PAR UN TEST, et pas
+ *      par oubli.
+ *
+ * Pourquoi la branche 2 n'est pas testable ici. _loadProjectData()
+ * (js/store.js) ÉCRASE project.resourceIds — affectation dure, pas union —
+ * par `ownedIds ∪ linkedIds`. La branche 1 y survit parce que ses ressources
+ * portent projectId = projet importé, donc figurent dans ownedIds. La
+ * branche 2 non : la ressource homonyme appartient à un AUTRE projet, et le
+ * seul endroit qui exprimerait le partage est la table project_resources —
+ * que l'import n'alimente pas encore, faute d'écriture serveur.
+ *
+ * Le rattachement local de la branche 2 est donc effacé dès qu'un
+ * ensureProjectLoaded() touche le projet importé. Un test écrit aujourd'hui
+ * ne pourrait passer que sur le rendu OPTIMISTE qui précède ce chargement
+ * asynchrone : une assertion racée, qui masquerait le problème au lieu de le
+ * révéler. La couverture de la branche 2 est reportée à la PR qui ajoute
+ * linkResourceToProject() à l'import.
  *
  * NOTE — les noms portent tous Date.now(). Le dédoublonnage par nom de
  * l'import est GLOBAL au compte, et la CI partage un seul compte Supabase :
@@ -150,64 +164,6 @@ test('import XML : les ressources créées sont rattachées au projet importé',
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
     // --- Nettoyage : le projet importé (actif), puis le projet d'accueil ---
-    await deleteActiveProject(page);
-    await page.reload();
-    await waitForAppReady(page);
-    await page.locator('.project-selector').click();
-    await page.locator('.project-dropdown-item .project-item-name', { hasText: projectName }).first().click();
-    await deleteActiveProject(page);
-});
-
-test('import XML : une ressource homonyme déjà connue est rattachée, pas dupliquée', async ({ page }) => {
-    const suffixe = Date.now();
-    const projectName = `E2E XmlHomonyme ${suffixe}`;
-    const nomXml = `E2E XmlHomonymeImport ${suffixe}`;
-    const nomTache = `Tâche homonyme ${suffixe}`;
-    const ressource = `Ressource partagée ${suffixe}`;
-
-    await page.goto('index.html');
-    await createProject(page, projectName);
-
-    // La ressource existe AVANT l'import, sous le nom exact du <Resource>.
-    await page.locator('#tabResources').click();
-    await page.locator('.resource-add-btn').click();
-    const modalRessource = page.locator('.resource-modal');
-    await modalRessource.locator('#resName').fill(ressource);
-    await modalRessource.getByRole('button', { name: 'Créer la ressource' }).click();
-    await expect(page.locator('.resource-card', { hasText: ressource })).toBeVisible({ timeout: 10_000 });
-    await page.locator('#tabTimeline').click();
-
-    await importerXML(page, xmlMSProject({
-        nomProjet: nomXml,
-        nomTache,
-        ressources: [ressource],
-    }));
-
-    await expect(page.locator('#toastContainer .toast', { hasText: nomXml }))
-        .toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('#projectName')).toHaveText(nomXml);
-    await trackActiveProject(page);
-
-    /* La branche de remappage. La ressource ne doit pas être recréée — un
-       seul exemplaire dans tout le compte — et son identifiant EXISTANT doit
-       être rattaché au projet importé. */
-    await page.locator('#tabResources').click();
-    await expect(page.locator('.resource-card', { hasText: ressource })).toHaveCount(1);
-
-    await page.locator('.resource-scope-btn', { hasText: 'Toutes les ressources' }).click();
-    await expect(page.locator('.resource-card', { hasText: ressource })).toHaveCount(1);
-
-    /* Et l'assigné pointe bien cette ressource-là : sans le rattachement, la
-       tâche référencerait une ressource que son projet ne déclare pas. */
-    await page.locator('#tabTimeline').click();
-    await page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }).dblclick();
-    await expect(
-        page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: ressource })
-            .locator('input[type="checkbox"]')
-    ).toBeChecked();
-    await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
-    await expect(page.locator('#taskModalOverlay')).toBeHidden();
-
     await deleteActiveProject(page);
     await page.reload();
     await waitForAppReady(page);
