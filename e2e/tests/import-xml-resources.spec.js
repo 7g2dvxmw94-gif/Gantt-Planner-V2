@@ -136,9 +136,25 @@ test('import XML : les ressources créées sont rattachées au projet importé',
     await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }))
         .toBeVisible({ timeout: 10_000 });
 
+    /* --- L'assignation de la tâche, mécanisme DISTINCT du rattachement ---
+       Vérifiée en PREMIER, et l'ordre n'est pas cosmétique : Playwright
+       interrompt le test à la première assertion en échec. Placée après le
+       bloc Ressources, elle n'était tout simplement pas évaluée lors d'une
+       mutation du rattachement — impossible alors d'établir que le rouge est
+       spécifique. Ici, une mutation qui casse le rattachement doit laisser
+       CETTE assertion verte : les assignés vivent dans task.assignees, pas
+       dans project.resourceIds. */
+    await page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }).dblclick();
+    await expect(
+        page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: ressourceA })
+            .locator('input[type="checkbox"]')
+    ).toBeChecked();
+    await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
+    await expect(page.locator('#taskModalOverlay')).toBeHidden();
+
     /* --- L'onglet Ressources, en portée « Ce projet » (celle par défaut) ---
-       C'est l'assertion qui mord : elle ne passe que si project.resourceIds
-       contient les deux identifiants. Rien d'autre ne les y met. */
+       C'est l'assertion qui mord sur le rattachement : elle ne passe que si
+       project.resourceIds contient les deux identifiants. */
     await page.locator('#tabResources').click();
     await expect(page.locator('.resource-card', { hasText: ressourceA })).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('.resource-card', { hasText: ressourceB })).toBeVisible();
@@ -153,17 +169,8 @@ test('import XML : les ressources créées sont rattachées au projet importé',
     await expect(page.locator('.resource-card', { hasText: ressourceTemoin })).toBeVisible();
     await expect(page.locator('.resource-card', { hasText: ressourceA })).toBeVisible();
 
-    // --- L'assignation de la tâche, mécanisme distinct du rattachement ---
-    await page.locator('#tabTimeline').click();
-    await page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }).dblclick();
-    await expect(
-        page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: ressourceA })
-            .locator('input[type="checkbox"]')
-    ).toBeChecked();
-    await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
-    await expect(page.locator('#taskModalOverlay')).toBeHidden();
-
     // --- Nettoyage : le projet importé (actif), puis le projet d'accueil ---
+    await page.locator('#tabTimeline').click();
     await deleteActiveProject(page);
     await page.reload();
     await waitForAppReady(page);
