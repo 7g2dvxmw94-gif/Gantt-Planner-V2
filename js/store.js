@@ -3079,7 +3079,7 @@ class Store {
              * pile de redo (voir _snapshot) ; le prendre avant de savoir si
              * l'import aura lieu ferait payer à l'utilisateur son historique
              * pour un fichier finalement rejeté. */
-            if (!taskEls.length) {   // MUTATION TEMPORAIRE : volet parsererror retiré
+            if (doc.getElementsByTagName('parsererror').length || !taskEls.length) {
                 console.error('MS Project XML import failed: aucune tâche trouvée (fichier non MS Project ou XML invalide)');
                 return null;
             }
