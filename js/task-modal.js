@@ -801,12 +801,25 @@ class TaskModal {
         const teamResources  = filter(this._allResources  || []);
         const extraResources = filter(this._extraResources || []);
 
-        // Empty pool hint
+        /* Indice « équipe projet vide ». Il est affiché, mais NE court-circuite
+           plus le rendu : une tâche peut avoir des assignés hors équipe, et
+           ils sont rendus plus bas par la boucle sur extraResources.
+
+           L'ancien `return` inconditionnel sortait avant cette boucle, si
+           bien qu'une équipe vide masquait les assignés de la tâche — sans
+           les perdre (ils restent dans _selectedAssigneeIds, une sauvegarde
+           les réécrit intacts), mais sans laisser aucun moyen de les
+           décocher. On n'y arrive pas que par un état corrompu : retirer du
+           projet sa dernière ressource (app.js:1301) ne purge pas les
+           assignés, contrairement à la suppression d'une ressource
+           (store.js:2335).
+
+           On ne sort donc que s'il n'y a réellement rien d'autre à montrer. */
         if ((this._allResources || []).length === 0 && !q) {
             const hint = createElement('p', { className: 'assignee-empty assignee-empty--pool' },
                 t('task.assignee.emptyPool'));
             this._assigneeList.appendChild(hint);
-            return;
+            if (extraResources.length === 0) return;
         }
 
         if (teamResources.length === 0 && extraResources.length === 0) {
