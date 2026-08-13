@@ -136,14 +136,23 @@ test('import XML : les ressources créées sont rattachées au projet importé',
     await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }))
         .toBeVisible({ timeout: 10_000 });
 
-    /* --- L'assignation de la tâche, mécanisme DISTINCT du rattachement ---
-       Vérifiée en PREMIER, et l'ordre n'est pas cosmétique : Playwright
-       interrompt le test à la première assertion en échec. Placée après le
-       bloc Ressources, elle n'était tout simplement pas évaluée lors d'une
-       mutation du rattachement — impossible alors d'établir que le rouge est
-       spécifique. Ici, une mutation qui casse le rattachement doit laisser
-       CETTE assertion verte : les assignés vivent dans task.assignees, pas
-       dans project.resourceIds. */
+    /* --- L'assignation de la tâche ---
+       Vérifiée en premier, et l'ordre n'est pas cosmétique : Playwright
+       interrompt le test à la première assertion en échec, donc une
+       assertion placée après le bloc Ressources n'est pas évaluée quand le
+       rattachement casse.
+
+       Attention à ce que cette assertion prouve. Elle ne teste PAS un
+       mécanisme indépendant : mesuré par mutation, ce bloc tombe en même
+       temps que le rattachement. Les assignés vivent bien dans
+       task.assignees, mais _renderAssigneeList() court-circuite sur pool
+       vide (task-modal.js:805) et retourne AVANT de rendre _extraResources
+       — donc plus aucune ligne .assignee-item dès que l'équipe projet est
+       vide, fût-ce pour une tâche qui a des assignés.
+
+       Ce que l'assertion garantit donc : après import, la tâche est bien
+       assignée ET la ressource visible dans la modale. Les deux à la fois,
+       pas l'un sans l'autre. */
     await page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomTache }).dblclick();
     await expect(
         page.locator('#taskModalOverlay').locator('.assignee-item', { hasText: ressourceA })

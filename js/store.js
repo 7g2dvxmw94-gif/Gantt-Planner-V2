@@ -3112,7 +3112,7 @@ class Store {
                    une ressource sans projet propriétaire ne peut PAS être écrite
                    en base. C'est aussi la source de repli de
                    _rebuildProjectResourceIds() au rechargement. */
-                resources.push({ id, name, role: '', color: this._randomColor() });   // MUTATION : projectId retiré
+                resources.push({ id, name, projectId: newProjectId, role: '', color: this._randomColor() });
             });
 
             // Parse tasks (skip UID 0 which is the project summary)
@@ -3177,7 +3177,8 @@ class Store {
                    parcourt directement, et la portée par défaut de l'onglet
                    Ressources est « Ce projet ». Elles étaient donc invisibles
                    dès l'import, sans même attendre un rechargement. */
-            };   // MUTATION : resourceIds retiré
+                resourceIds: [],
+            };
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
@@ -3186,7 +3187,8 @@ class Store {
                 const exists = this._data.resources.find(e => e.name === r.name);
                 if (!exists) {
                     this._data.resources.push(r);
-                    this._invalidateResourceIndex();   // MUTATION : push retiré
+                    this._invalidateResourceIndex();
+                    newProject.resourceIds.push(r.id);
                 } else {
                     // Remap assignees to existing resource
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
@@ -3205,7 +3207,9 @@ class Store {
                        l'autre tant que l'import n'écrit pas sa ligne
                        project_resources. À couvrir avec linkResourceToProject(),
                        dans la PR qui ajoute la persistance. */
-                    /* MUTATION : push homonyme retiré */
+                    if (!newProject.resourceIds.includes(exists.id)) {
+                        newProject.resourceIds.push(exists.id);
+                    }
                 }
             });
 
