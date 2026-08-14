@@ -1,0 +1,66 @@
+name: Relancer un run E2E évincé
+
+# Le groupe de concurrence de e2e.yml ne conserve qu'UN SEUL run en attente.
+# Quand un troisième arrive (un run en cours + un en attente), le plus ancien
+# des deux en attente est annulé — sans échec, sans notification, sans trace
+# visible sur la PR. Le commit concerné se retrouve sans vérification, et
+# rien ne le signale : un run annulé n'est pas un run rouge.
+#
+# Ce workflow rattrape ce cas précis en relançant le run évincé.
+#
+# Il ne peut pas s'agir d'une annulation humaine : ce workflow ne relance
+# qu'un run n'ayant exécuté AUCUNE étape. Quelqu'un qui interrompt un run en
+# cours laisse forcément des étapes derrière lui, et son geste est respecté.
+#
+# Note : un workflow déclenché par workflow_run n'est pris en compte que
+# depuis la branche par défaut. Ce fichier n'a donc d'effet qu'une fois
+# fusionné sur main.
+
+on:
+  workflow_run:
+    workflows: ["E2E (Playwright)"]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  relancer:
+    # run_attempt borne la boucle : une relance peut elle-même être évincée.
+    # Au-delà de deux relances, on laisse tomber plutôt que de s'acharner.
+    if: >-
+      github.event.workflow_run.conclusion == 'cancelled' &&
+      github.event.workflow_run.run_attempt < 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const run_id = context.payload.workflow_run.id;
+            const { owner, repo } = context.repo;
+
+            const { data: { jobs } } = await github.rest.actions.listJobsForWorkflowRun({
+              owner, repo, run_id,
+            });
+
+            /* Une étape réellement exécutée porte une conclusion autre que
+               « skipped ». Un run évincé alors qu'il patientait n'en a
+               aucune : ses jobs sont annulés sans avoir jamais démarré. */
+            const aExecuteDesEtapes = jobs.some(job =>
+              (job.steps || []).some(etape => etape.conclusion && etape.conclusion !== 'skipped')
+            );
+
+            if (aExecuteDesEtapes) {
+              core.info(
+                `Run ${run_id} : des étapes ont tourné, c'est une annulation ` +
+                `délibérée. On ne relance pas.`
+              );
+              return;
+            }
+
+            core.info(
+              `Run ${run_id} : aucune étape exécutée, donc évincé par le groupe ` +
+              `de concurrence. Relance (tentative ` +
+              `${context.payload.workflow_run.run_attempt + 1}).`
+            );
+            await github.rest.actions.reRunWorkflow({ owner, repo, run_id });

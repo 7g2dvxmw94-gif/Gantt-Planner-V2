@@ -20,7 +20,20 @@ on:
 # cancel-in-progress: false — un run interrompu en plein test laisse
 # derrière lui exactement les lignes orphelines que le filet de nettoyage
 # (e2e/cleanup.js) sert à éviter, sa phase de démontage n'ayant jamais lieu.
-# Les runs font donc la queue (~4 min chacun) au lieu de s'annuler.
+#
+# ATTENTION — ce réglage ne crée PAS une file d'attente. Il protège un run
+# DÉJÀ DÉMARRÉ, rien de plus. GitHub ne conserve qu'UN SEUL run en attente
+# par groupe : quand un troisième arrive (un run en cours + un en attente),
+# le plus ancien des deux en attente est ANNULÉ, silencieusement.
+#
+# Conséquence concrète, déjà rencontrée : pousser deux commits coup sur
+# coup, ou fusionner deux PR à la suite, fait disparaître la vérification
+# du commit intermédiaire. Un commit poussé exprès pour être constaté rouge
+# peut ainsi n'être jamais exécuté — et un run annulé n'est pas un échec,
+# donc rien ne le signale.
+#
+# En pratique : avant de pousser, vérifier qu'aucun run n'est déjà en
+# attente sur ce groupe (statut « queued »), et espacer les poussées.
 concurrency:
   group: e2e-compte-partage
   cancel-in-progress: false
