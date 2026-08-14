@@ -3107,7 +3107,12 @@ class Store {
                 if (uid === '0' || !name) return;
                 const id = generateId();
                 resUidToId[uid] = id;
-                resources.push({ id, name, role: '', color: this._randomColor() });
+                /* projectId est indispensable, et pas seulement pour l'affichage :
+                   resources.project_id est `uuid not null` (migration 001), donc
+                   une ressource sans projet propriétaire ne peut PAS être écrite
+                   en base. C'est aussi la source de repli de
+                   _rebuildProjectResourceIds() au rechargement. */
+                resources.push({ id, name, projectId: newProjectId, role: '', color: this._randomColor() });
             });
 
             // Parse tasks (skip UID 0 which is the project summary)
@@ -3167,21 +3172,44 @@ class Store {
                 name: projectName,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                /* Sans ce tableau, les ressources importées existent mais
+                   n'appartiennent à aucun projet : getProjectResources() le
+                   parcourt directement, et la portée par défaut de l'onglet
+                   Ressources est « Ce projet ». Elles étaient donc invisibles
+                   dès l'import, sans même attendre un rechargement. */
+                resourceIds: [],
             };
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
-        this._invalidateResourceIndex();
+            this._invalidateResourceIndex();
             resources.forEach(r => {
                 const exists = this._data.resources.find(e => e.name === r.name);
                 if (!exists) {
                     this._data.resources.push(r);
                     this._invalidateResourceIndex();
+                    newProject.resourceIds.push(r.id);
                 } else {
                     // Remap assignees to existing resource
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
                         t.assignees = t.assignees.map(id => id === r.id ? exists.id : id);
                     });
+                    /* Le rattachement doit suivre le remappage. Une ressource
+                       homonyme déjà connue du compte n'est PAS recréée : c'est
+                       son identifiant existant qui est rattaché au projet, sans
+                       quoi les tâches importées pointeraient une ressource que
+                       le projet ne déclare pas.
+
+                       NON COUVERT PAR UN TEST, et pas par oubli : ce
+                       rattachement-ci ne SURVIT pas encore. _loadProjectData()
+                       écrase resourceIds par `ownedIds ∪ linkedIds`, et une
+                       ressource empruntée à un autre projet n'est ni l'un ni
+                       l'autre tant que l'import n'écrit pas sa ligne
+                       project_resources. À couvrir avec linkResourceToProject(),
+                       dans la PR qui ajoute la persistance. */
+                    if (!newProject.resourceIds.includes(exists.id)) {
+                        newProject.resourceIds.push(exists.id);
+                    }
                 }
             });
 
