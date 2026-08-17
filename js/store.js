@@ -157,6 +157,25 @@ export function wouldCreateCycle(tasks, taskId, newDeps) {
  *
  *  Parcours en profondeur colore (blanc/gris/noir) : une arriere-arete
  *  vers un noeud gris signale un cycle. Un seul passage, O(V+E). */
+/* Type de lien MS Project vers le code interne.
+   ------------------------------------------------------------
+   Table de la documentation Microsoft — element Type, parent
+   PredecessorLink :
+
+       0 = FF (finish-to-finish)   2 = SF (start-to-finish)
+       1 = FS (finish-to-start)    3 = SS (start-to-start)
+
+   L'ordre n'est PAS celui qu'on devinerait : 1 vaut FS et 0 vaut
+   FF, alors que FS est le type courant. Se fier a l'intuition ici
+   produirait des liens silencieusement faux.
+
+   Le champ est optionnel au schema. Un lien sans type est traite
+   comme Fin->Debut, qui est aussi le defaut de l'application. */
+export function typeLienMSProject(valeur) {
+    const TABLE = { '0': 'FF', '1': 'FS', '2': 'SF', '3': 'SS' };
+    return TABLE[String(valeur ?? '').trim()] || 'FS';
+}
+
 export function findAllCycles(tasks) {
     const index = buildPredecessorIndex(tasks);
     const BLANC = 0, GRIS = 1, NOIR = 2;
@@ -3156,6 +3175,70 @@ class Store {
                     dependencies: [],
                     order: tasks.length,
                     color: isSummary ? '#6366F1' : '#3B82F6',
+                });
+            });
+
+            /* --- Liens de précédence ---
+             *
+             * Deuxième passe, et pas par confort : un <PredecessorLink> peut
+             * désigner une tâche déclarée PLUS LOIN dans le fichier. Résoudre
+             * les UID pendant la première passe perdrait silencieusement
+             * ces liens-là.
+             *
+             * Aucune inversion de sens à opérer : dependencies[] porte les
+             * PRÉDÉCESSEURS de la tâche (voir l'en-tête de ce fichier), et
+             * <PredecessorLink> vit à l'intérieur de la <Task> qu'il contraint.
+             */
+            const enfants = (el, tag) => Array.from(
+                el.getElementsByTagNameNS(ns, tag).length
+                    ? el.getElementsByTagNameNS(ns, tag)
+                    : el.getElementsByTagName(tag)
+            );
+
+            taskEls.forEach(el => {
+                const uid = getTag(el, 'UID');
+                if (uid === '0') return;
+                const tache = tasks.find(t => t.id === uidToId[uid]);
+                if (!tache) return;
+
+                enfants(el, 'PredecessorLink').forEach(lien => {
+                    const predId = uidToId[getTag(lien, 'PredecessorUID')];
+                    /* PredecessorUID est optionnel au schéma, et un lien
+                       CrossProject désigne une tâche absente du fichier :
+                       sans prédécesseur identifiable, il n'y a rien à écrire. */
+                    if (!predId || predId === tache.id) return;
+                    if (tache.dependencies.some(d => d.taskId === predId)) return;
+
+                    const type = typeLienMSProject(getTag(lien, 'Type'));
+
+                    /* Un cycle rend le planning incalculable. MS Project les
+                       refuse, mais un fichier fabriqué à la main peut en
+                       porter, et l'import contournerait sinon la garde que
+                       les deux chemins d'écriture de tâche appliquent déjà.
+                       On écarte le lien fautif plutôt que de corrompre le
+                       graphe. Coût : O(V+E) par lien, comme à chaque
+                       enregistrement de tâche — acceptable pour une opération
+                       ponctuelle, à revoir si des fichiers de plusieurs
+                       milliers de liens se présentaient. */
+                    const cycle = wouldCreateCycle(tasks, tache.id,
+                        [...tache.dependencies, { taskId: predId, type }]);
+                    if (cycle) {
+                        console.warn('[importXML] lien ignoré, il créerait un cycle :', cycle);
+                        return;
+                    }
+
+                    tache.dependencies.push({
+                        taskId: predId,
+                        type,
+                        /* LinkLag n'est PAS converti. Il compte en dixièmes de
+                           minute sur calendrier ouvré, quand dep.lag compte en
+                           jours CALENDAIRES : les deux unités ne disent pas la
+                           même chose, et la conversion exigerait le calendrier
+                           du projet. Importer le lien sans son décalage vaut
+                           mieux que le perdre, mais ce n'est pas un round-trip
+                           complet. */
+                        lag: 0,
+                    });
                 });
             });
 
