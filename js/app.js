@@ -5068,8 +5068,14 @@ tr:nth-child(even){background:#fafbfc}
                 reader.readAsText(file);
             } else if (ext === 'xml') {
                 const reader = new FileReader();
-                reader.onload = (evt) => {
-                    const result = store.importFromMSProjectXML(evt.target.result);
+                /* async + await, et ce n'est pas cosmétique :
+                   importFromMSProjectXML() est asynchrone depuis qu'elle
+                   persiste. Sans le await, `result` serait une promesse —
+                   toujours vraie — et le `if` ci-dessous annoncerait un succès
+                   sur un import refusé, réintroduisant très exactement le
+                   défaut corrigé en #32. */
+                reader.onload = async (evt) => {
+                    const result = await store.importFromMSProjectXML(evt.target.result);
                     if (result) {
                         ganttRenderer.render();
                         this._renderStats();
