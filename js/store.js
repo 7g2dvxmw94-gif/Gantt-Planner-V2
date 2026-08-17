@@ -3046,7 +3046,12 @@ class Store {
         return null;
     }
 
-    importFromMSProjectXML(xmlString) {
+    /** ATTENTION — asynchrone depuis l'ajout de la persistance. L'appelant
+     *  DOIT l'attendre : une promesse est toujours vraie, donc un `if
+     *  (result)` posé sur l'appel non attendu rendrait la garde d'entrée
+     *  inopérante et réafficherait un toast de succès sur un import refusé.
+     *  Voir js/app.js, branche ext === 'xml'. */
+    async importFromMSProjectXML(xmlString) {
         try {
             const parser = new DOMParser();
             const doc = parser.parseFromString(xmlString, 'application/xml');
@@ -3183,12 +3188,23 @@ class Store {
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
             this._invalidateResourceIndex();
+
+            /* Les deux branches du dédoublonnage ne se persistent pas de la
+               même façon : une ressource créée appartient au projet importé
+               (upsertResource suffit, projectId la rattache), une ressource
+               empruntée appartient à un AUTRE projet et n'est rattachée que
+               par une ligne project_resources. Les collecter séparément ici
+               évite de redevoir distinguer les cas plus bas. */
+            const ressourcesCreees = [];
+            const ressourcesEmpruntees = [];
+
             resources.forEach(r => {
                 const exists = this._data.resources.find(e => e.name === r.name);
                 if (!exists) {
                     this._data.resources.push(r);
                     this._invalidateResourceIndex();
                     newProject.resourceIds.push(r.id);
+                    ressourcesCreees.push(r);
                 } else {
                     // Remap assignees to existing resource
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
@@ -3200,27 +3216,91 @@ class Store {
                        quoi les tâches importées pointeraient une ressource que
                        le projet ne déclare pas.
 
-                       NON COUVERT PAR UN TEST, et pas par oubli : ce
-                       rattachement-ci ne SURVIT pas encore. _loadProjectData()
+                       Ce rattachement ne survivait pas : _loadProjectData()
                        écrase resourceIds par `ownedIds ∪ linkedIds`, et une
                        ressource empruntée à un autre projet n'est ni l'un ni
-                       l'autre tant que l'import n'écrit pas sa ligne
-                       project_resources. À couvrir avec linkResourceToProject(),
-                       dans la PR qui ajoute la persistance. */
+                       l'autre. Il lui faut sa ligne project_resources, que
+                       _persisterImportXML() écrit désormais. */
                     if (!newProject.resourceIds.includes(exists.id)) {
                         newProject.resourceIds.push(exists.id);
+                        ressourcesEmpruntees.push(exists);
                     }
                 }
             });
 
             this._data.settings.activeProjectId = newProjectId;
             this._save();
+
+            /* Sans cette écriture, tout ce qui précède ne vivait qu'en
+               mémoire et dans le stockage local : au rechargement suivant,
+               initFromSupabase() reconstruisait l'état depuis la base et
+               l'import disparaissait en entier. */
+            await this._persisterImportXML(newProject, tasks, ressourcesCreees, ressourcesEmpruntees);
+
             this._emit('project:import', newProjectId);
             return newProject;
         } catch (e) {
             console.error('MS Project XML import failed:', e);
         }
         return null;
+    }
+
+    /** Écrit en base ce que l'import XML vient de construire localement.
+     *
+     *  Même contrat que importProject() (import JSON) : les erreurs sont
+     *  journalisées sans être propagées. Un échec réseau laisse donc un
+     *  projet visible localement qui ne survivra pas au rechargement — c'est
+     *  le comportement déjà retenu pour l'import JSON, et s'en écarter ici
+     *  seulement rendrait les deux chemins incohérents.
+     */
+    async _persisterImportXML(project, tasks, ressourcesCreees, ressourcesEmpruntees) {
+        const user = await auth.getUser();
+        if (!user) return;
+
+        try {
+            await this._upsertProjectGuarded(project, user.id);
+        } catch (e) {
+            console.error('[importXML] upsertProject failed:', e?.message || e);
+        }
+
+        /* Ressources créées par l'import : elles portent projectId = projet
+           importé (depuis #33), ce qui satisfait resources.project_id, qui est
+           `uuid not null` (migration 001). C'est cette contrainte qui imposait
+           de livrer le rattachement AVANT la persistance. */
+        for (const r of ressourcesCreees) {
+            await supabaseStore.upsertResource(r).catch(e =>
+                console.error('[importXML] upsertResource failed:', e?.message || e)
+            );
+        }
+
+        /* Ressources empruntées : déjà en base, propriété d'un autre projet.
+           Rien à upserter — ce serait leur voler leur project_id. Seul le
+           partage doit être écrit, et c'est project_resources qui l'exprime. */
+        for (const r of ressourcesEmpruntees) {
+            await Promise.resolve(supabaseStore.linkResourceToProject?.(project.id, r.id))
+                .catch(e => console.error('[importXML] linkResourceToProject failed:', e?.message || e));
+        }
+
+        /* Tâches : les parents d'abord, une ligne enfant référençant un parent
+           absent étant rejetée. Même tri que importProject(). */
+        const triees = [...tasks].sort((a, b) => {
+            if (!a.parentId && b.parentId) return -1;
+            if (a.parentId && !b.parentId) return 1;
+            return 0;
+        });
+
+        for (const t of triees) {
+            await supabaseStore.upsertTask(t).catch(e =>
+                console.error('[importXML] upsertTask failed:', e?.message || e)
+            );
+            /* Les assignés ne sont PAS portés par upsertTask : rowToTask() les
+               initialise à [] et attend task_assignees. Exactement le trou
+               corrigé en #30 pour l'import JSON. syncTaskAssignees() journalise
+               ses erreurs sans les propager : pas de .catch à ajouter. */
+            if (t.assignees?.length) {
+                await supabaseStore.syncTaskAssignees(t.id, t.assignees);
+            }
+        }
     }
 
     importFromExcel(rows, fileName) {
