@@ -170,10 +170,24 @@ export function wouldCreateCycle(tasks, taskId, newDeps) {
    produirait des liens silencieusement faux.
 
    Le champ est optionnel au schema. Un lien sans type est traite
-   comme Fin->Debut, qui est aussi le defaut de l'application. */
+   comme Fin->Debut, qui est aussi le defaut de l'application.
+
+   Les deux sens derivent de CETTE table unique. Les ecrire
+   separement les exposerait a diverger : l'import lirait 2 comme SF
+   pendant que l'export emettrait SF en 3, et le round-trip
+   corromprait les types sans que rien ne le signale. */
+export const LIENS_MSPROJECT = { '0': 'FF', '1': 'FS', '2': 'SF', '3': 'SS' };
+
 export function typeLienMSProject(valeur) {
-    const TABLE = { '0': 'FF', '1': 'FS', '2': 'SF', '3': 'SS' };
-    return TABLE[String(valeur ?? '').trim()] || 'FS';
+    return LIENS_MSPROJECT[String(valeur ?? '').trim()] || 'FS';
+}
+
+/** Sens inverse, pour l'export. Un code inconnu retombe sur FS (1),
+ *  comme un type absent a l'import. */
+export function numeroLienMSProject(code) {
+    const cherche = String(code ?? '').trim().toUpperCase();
+    const trouve = Object.entries(LIENS_MSPROJECT).find(([, c]) => c === cherche);
+    return trouve ? trouve[0] : '1';
 }
 
 export function findAllCycles(tasks) {

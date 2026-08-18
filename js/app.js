@@ -3,7 +3,7 @@
    Gantly
    ======================================== */
 
-import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES } from './store.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES, numeroLienMSProject } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
@@ -1931,47 +1931,76 @@ class App {
             return `PT${days * 8}H0M0S`;
         };
 
-        let taskUID = 0;
         let assignUID = 0;
         const taskUIDMap = {};
         const resUIDMap = {};
 
-        // Build task XML
+        /* --- Passe 1 : attribuer TOUS les UID avant d'émettre quoi que ce soit
+         *
+         * Séparée de l'émission, et pas par élégance : un <PredecessorLink>
+         * peut désigner une tâche émise PLUS LOIN dans le fichier, dont l'UID
+         * n'existerait pas encore. L'ancienne boucle unique n'avait pas ce
+         * besoin — elle n'émettait aucun lien.
+         *
+         * L'ordre d'émission est conservé à l'identique : tâches racines par
+         * `order`, chaque phase suivie de ses enfants. */
+        const ordreExport = [];
+        allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
+            ordreExport.push({ task, niveau: 1 });
+            if (task.isPhase) {
+                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order)
+                    .forEach(child => ordreExport.push({ task: child, niveau: 2 }));
+            }
+        });
+        ordreExport.forEach(({ task }, i) => { taskUIDMap[task.id] = i + 1; });
+
+        /** Liens de précédence d'une tâche. dependencies[] porte ses
+         *  PRÉDÉCESSEURS et <PredecessorLink> vit dans la <Task> qu'il
+         *  contraint : aucune inversion de sens. */
+        const liensDe = (task) => (task.dependencies || []).map(dep => {
+            const predUID = taskUIDMap[dep.taskId];
+            /* Une dépendance peut viser une tâche que l'export N'ÉMET PAS :
+               la descente ne se fait que sous les phases, donc ni les
+               petites-filles ni les enfants d'une tâche ordinaire ne sortent.
+               La référencer produirait un PredecessorUID pointant dans le
+               vide, qu'un lecteur MS Project rejetterait. */
+            if (predUID === undefined) return '';
+
+            /* LinkLag reste à 0 : dep.lag compte en jours CALENDAIRES quand
+               LinkLag compte en dixièmes de minute sur calendrier ouvré.
+               Convertir supposerait que les deux coïncident, ce qui décalerait
+               le planning d'un montant faux — pire qu'un décalage absent. On
+               journalise la perte plutôt que de la taire. */
+            if (Number(dep.lag)) {
+                console.warn(
+                    `[exportXML] décalage de ${dep.lag} j non exporté sur « ${task.name} » : ` +
+                    `jours calendaires et LinkLag ne sont pas convertibles sans le calendrier du projet.`
+                );
+            }
+
+            return `<PredecessorLink><PredecessorUID>${predUID}</PredecessorUID>` +
+                `<Type>${numeroLienMSProject(dep.type)}</Type>` +
+                `<LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>`;
+        }).join('');
+
+        // --- Passe 2 : émettre les tâches ---
         const taskLines = [];
         // Root summary task (UID 0)
         taskLines.push(`      <Task><UID>0</UID><ID>0</ID><Name>${esc(project.name)}</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary></Task>`);
-        taskUID = 1;
 
-        const rootTasks = allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
-        rootTasks.forEach(task => {
-            taskUIDMap[task.id] = taskUID;
+        ordreExport.forEach(({ task, niveau }) => {
+            const uid = taskUIDMap[task.id];
             taskLines.push(`      <Task>` +
-                `<UID>${taskUID}</UID><ID>${taskUID}</ID>` +
+                `<UID>${uid}</UID><ID>${uid}</ID>` +
                 `<Name>${esc(task.name)}</Name>` +
-                `<OutlineLevel>1</OutlineLevel>` +
-                (task.isPhase ? `<Summary>1</Summary>` : '') +
+                `<OutlineLevel>${niveau}</OutlineLevel>` +
+                (niveau === 1 && task.isPhase ? `<Summary>1</Summary>` : '') +
                 (task.startDate ? `<Start>${fmtDateTime(task.startDate, '08:00:00')}</Start>` : '') +
                 (task.endDate ? `<Finish>${fmtDateTime(task.endDate, '17:00:00')}</Finish>` : '') +
                 `<Duration>${durISO(task)}</Duration>` +
                 `<PercentComplete>${task.progress || 0}</PercentComplete>` +
+                liensDe(task) +
                 `</Task>`);
-            taskUID++;
-
-            if (task.isPhase) {
-                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order).forEach(child => {
-                    taskUIDMap[child.id] = taskUID;
-                    taskLines.push(`      <Task>` +
-                        `<UID>${taskUID}</UID><ID>${taskUID}</ID>` +
-                        `<Name>${esc(child.name)}</Name>` +
-                        `<OutlineLevel>2</OutlineLevel>` +
-                        (child.startDate ? `<Start>${fmtDateTime(child.startDate, '08:00:00')}</Start>` : '') +
-                        (child.endDate ? `<Finish>${fmtDateTime(child.endDate, '17:00:00')}</Finish>` : '') +
-                        `<Duration>${durISO(child)}</Duration>` +
-                        `<PercentComplete>${child.progress || 0}</PercentComplete>` +
-                        `</Task>`);
-                    taskUID++;
-                });
-            }
         });
 
         // Build resources XML
