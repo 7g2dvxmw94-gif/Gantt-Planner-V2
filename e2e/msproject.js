@@ -29,6 +29,38 @@ export function xmlMSProject({ nomProjet, nomTache, ressources }) {
 </Project>`;
 }
 
+/** Variante portant des liens de précédence. Volontairement SÉPARÉE de
+ *  xmlMSProject() plutôt qu'ajoutée en paramètre optionnel : deux specs
+ *  déjà vertes dépendent de la sortie exacte de celle-ci, et les liens
+ *  imposent plusieurs tâches là où elle n'en produit qu'une.
+ *
+ *  `taches` : [{ nom, predecesseurs?: [{ uid, type }] }]. Les UID sont
+ *  attribués 1..n dans l'ordre du tableau, l'UID 0 restant la tâche
+ *  récapitulative. `type` est la valeur NUMÉRIQUE de MS Project — voir la
+ *  table de correspondance dans store.js (_typeLienMSProject). */
+export function xmlMSProjectAvecLiens({ nomProjet, taches }) {
+    const lignes = taches.map((tache, i) => {
+        const uid = i + 1;
+        const liens = (tache.predecesseurs || []).map(p =>
+            `<PredecessorLink><PredecessorUID>${p.uid}</PredecessorUID>` +
+            `<Type>${p.type}</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>`
+        ).join('');
+        return `<Task><UID>${uid}</UID><ID>${uid}</ID><Name>${tache.nom}</Name>` +
+            `<OutlineLevel>1</OutlineLevel>` +
+            `<Start>2026-09-0${uid}T08:00:00</Start><Finish>2026-09-0${uid}T17:00:00</Finish>` +
+            `<Duration>PT8H0M0S</Duration><PercentComplete>0</PercentComplete>${liens}</Task>`;
+    }).join('\n      ');
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+   <Name>${nomProjet}</Name>
+   <Tasks>
+      <Task><UID>0</UID><ID>0</ID><Name>${nomProjet}</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary></Task>
+      ${lignes}
+   </Tasks>
+</Project>`;
+}
+
 /** L'input file est créé par document.createElement() et jamais inséré dans
  *  le DOM (_importProject, js/app.js) : seul l'événement filechooser permet
  *  de l'atteindre. Le nom doit porter l'extension .xml, le tri se faisant
