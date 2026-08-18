@@ -52,7 +52,12 @@ test('export XML : les liens de précédence et leur type sont émis', async ({ 
         await page.locator('#taskStart').fill(debut);
         await page.locator('#taskEnd').fill(fin);
         await page.getByRole('button', { name: 'Créer' }).click();
-        await expect(page.locator('#taskModalOverlay')).toBeHidden();
+        /* Délai explicite : ce test crée trois tâches coup sur coup, et le
+           délai par défaut de 5 s s'est révélé trop court sous la charge du
+           runner partagé — la fermeture de la modale a été constatée flaky
+           (échec puis succès au réessai). L'assertion reste juste ; c'est
+           seulement sa patience qui était mal calibrée. */
+        await expect(page.locator('#taskModalOverlay')).toBeHidden({ timeout: 15_000 });
     };
 
     await creerTache(tacheA, '2026-09-07', '2026-09-08');
