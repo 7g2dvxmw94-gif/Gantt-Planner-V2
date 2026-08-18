@@ -3159,6 +3159,22 @@ class Store {
                 const uid = getTag(el, 'UID');
                 if (uid === '0') return;
 
+                /* Ligne nulle. MS Project marque ainsi les lignes vides d'un
+                   planning : <IsNull>1</IsNull>, défini par la documentation
+                   pour Task comme pour Resource.
+
+                   Sans ce garde, une telle ligne devenait une tâche à part
+                   entière : le repli `getTag(el,'Name') || 'Tâche sans nom'`
+                   ci-dessous lui fabriquait un nom, la rendant indistinguable
+                   d'une vraie tâche. Elle occupait de surcroît son niveau dans
+                   parentMap et volait la paternité des tâches suivantes.
+
+                   La boucle des ressources, elle, échappe au défaut par
+                   accident : son garde `!name` écarte les ressources nulles,
+                   qui n'ont pas de Name. Rien d'équivalent ne protégeait les
+                   tâches, précisément à cause du nom de repli. */
+                if (getTag(el, 'IsNull') === '1') return;
+
                 const outlineLevel = parseInt(getTag(el, 'OutlineLevel')) || 1;
                 const isSummary = getTag(el, 'Summary') === '1';
                 const startStr = getTag(el, 'Start');
@@ -3172,9 +3188,22 @@ class Store {
                 const id = generateId();
                 uidToId[uid] = id;
 
-                // Track parent relationship by outline level
-                parentMap[outlineLevel] = id;
+                /* Purger les niveaux au moins aussi profonds AVANT de lire le
+                   parent. Sans cela, les entrées d'une branche précédente
+                   survivaient au retour à un niveau supérieur : une tâche
+                   dont le niveau saute (1 → 3, ce que produisent des fichiers
+                   générés par d'autres outils) lisait une entrée PÉRIMÉE et
+                   se retrouvait rattachée à un parent pris dans un tout autre
+                   sous-arbre.
+
+                   Le niveau courant est purgé lui aussi — il est réécrit juste
+                   après — pour que la condition reste simple à lire. */
+                Object.keys(parentMap).forEach(niveau => {
+                    if (Number(niveau) >= outlineLevel) delete parentMap[niveau];
+                });
+
                 const parentId = outlineLevel > 1 ? (parentMap[outlineLevel - 1] || null) : null;
+                parentMap[outlineLevel] = id;
 
                 tasks.push({
                     id,
