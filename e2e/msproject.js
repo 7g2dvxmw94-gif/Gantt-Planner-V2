@@ -61,6 +61,42 @@ export function xmlMSProjectAvecLiens({ nomProjet, taches }) {
 </Project>`;
 }
 
+/** Variante permettant de composer une ARBORESCENCE arbitraire, y compris
+ *  des niveaux qui sautent et des lignes nulles. Séparée des deux autres
+ *  pour la même raison : des specs vertes dépendent de leur sortie exacte.
+ *
+ *  `taches` : [{ nom?, niveau, sommaire?, nulle? }]. Les UID sont attribués
+ *  1..n dans l'ordre, l'UID 0 restant la tâche récapitulative.
+ *
+ *  `nulle: true` produit une ligne <IsNull>1</IsNull> SANS <Name>, telle que
+ *  MS Project marque une ligne vide du planning (documenté pour Task et
+ *  Resource). C'est volontairement le cas le plus hostile : sans nom, le
+ *  repli « Tâche sans nom » de l'import la rend indistinguable d'une vraie
+ *  tâche. */
+export function xmlMSProjectArborescence({ nomProjet, taches }) {
+    const lignes = taches.map((t, i) => {
+        const uid = i + 1;
+        if (t.nulle) {
+            return `<Task><UID>${uid}</UID><ID>${uid}</ID>` +
+                `<OutlineLevel>${t.niveau}</OutlineLevel><IsNull>1</IsNull></Task>`;
+        }
+        return `<Task><UID>${uid}</UID><ID>${uid}</ID><Name>${t.nom}</Name>` +
+            `<OutlineLevel>${t.niveau}</OutlineLevel>` +
+            (t.sommaire ? `<Summary>1</Summary>` : '') +
+            `<Start>2026-10-05T08:00:00</Start><Finish>2026-10-06T17:00:00</Finish>` +
+            `<Duration>PT16H0M0S</Duration><PercentComplete>0</PercentComplete></Task>`;
+    }).join('\n      ');
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+   <Name>${nomProjet}</Name>
+   <Tasks>
+      <Task><UID>0</UID><ID>0</ID><Name>${nomProjet}</Name><OutlineLevel>0</OutlineLevel><Summary>1</Summary></Task>
+      ${lignes}
+   </Tasks>
+</Project>`;
+}
+
 /** L'input file est créé par document.createElement() et jamais inséré dans
  *  le DOM (_importProject, js/app.js) : seul l'événement filechooser permet
  *  de l'atteindre. Le nom doit porter l'extension .xml, le tri se faisant
