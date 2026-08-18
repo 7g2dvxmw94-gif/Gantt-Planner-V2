@@ -69,22 +69,27 @@ test('import XML : une ligne nulle n\'est pas importée et ne vole pas la patern
     const barre = (nom) => page.locator('.gantt-bar[data-task-id]').filter({ hasText: nom });
     await expect(barre(enfant2)).toBeVisible({ timeout: 10_000 });
 
-    /* Contrôle SECONDAIRE, et je ne prétends pas qu'il morde : une ligne
-       nulle n'a pas de dates, le Gantt ne lui dessinerait donc peut-être
-       aucune barre même importée. Le run du commit de test seul tranchera.
-       S'il ne tombe pas, c'est cette assertion qui est sans effet — pas le
-       défaut qui aurait disparu. */
-    await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: 'Tâche sans nom' }))
-        .toHaveCount(0);
+    /* Le PARENTAGE d'abord, et l'ordre n'est pas cosmétique : Playwright
+       interrompt le test à la première assertion en échec. Placée après le
+       comptage ci-dessous, celle-ci n'était pas évaluée — le premier run l'a
+       montré. Deux symptômes distincts méritent d'être constatés tous les
+       deux, donc le plus spécifique passe devant.
 
-    /* L'assertion DÉCISIVE. Sans le correctif, la ligne nulle devient
-       map[1] et enfant2 se rattache à elle. Comme elle n'est pas une phase
-       (pas de <Summary>), elle ne figure pas dans le sélecteur : celui-ci
-       retomberait sur « — Aucune (racine) — » au lieu de la phase. */
+       Sans le correctif, la ligne nulle devient map[1] et enfant2 se
+       rattache à elle. N'étant pas une phase (pas de <Summary>), elle ne
+       figure pas dans le sélecteur, qui retombe sur « — Aucune (racine) — »
+       au lieu de la phase attendue. */
     await barre(enfant2).dblclick();
     await expect(parentSelectionne(page)).toHaveText(phase, { timeout: 10_000 });
     await page.locator('#taskModalOverlay').locator('button.btn-secondary', { hasText: 'Annuler' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
+
+    /* La ligne nulle ne doit exister sous aucune forme. J'avais annoncé
+       douter que ce contrôle morde, une ligne nulle n'ayant pas de dates :
+       le premier run m'a détrompé, le Gantt lui dessine bel et bien une
+       barre. Il est donc conservé comme second symptôme. */
+    await expect(page.locator('.gantt-bar[data-task-id]').filter({ hasText: 'Tâche sans nom' }))
+        .toHaveCount(0);
 
     await deleteActiveProject(page);
     await page.locator('.project-selector').click();
@@ -107,12 +112,22 @@ test('import XML : un saut de niveau ne rattache pas à une branche précédente
     /* Niveaux 1, 2, 1, 3. Au retour au niveau 1 (phase2), l'entrée map[2]
        laissée par enfant1 SURVIT. La tâche de niveau 3 qui suit lit alors
        map[2] et se retrouve rattachée à enfant1 — une tâche d'un tout autre
-       sous-arbre, déclarée avant phase2. */
+       sous-arbre, déclarée avant phase2.
+
+       enfant1 est déclaré SOMMAIRE, et ce détail décide de la valeur du
+       test. Le sélecteur « Phase parente » ne liste que les phases : sans
+       <Summary>, enfant1 n'y figure pas, le sélecteur retombe sur
+       « — Aucune (racine) — » même quand le parentId est faux, et
+       l'assertion passe alors qu'elle ne devrait pas. C'est exactement ce
+       qu'a fait la première version de ce test : verte sur du code non
+       corrigé, parce qu'elle observait par un canal aveugle au défaut.
+       Une tâche récapitulative de niveau 2 est par ailleurs parfaitement
+       ordinaire dans un planning MS Project. */
     await importerXML(page, xmlMSProjectArborescence({
         nomProjet: nomXml,
         taches: [
             { nom: phase1, niveau: 1, sommaire: true },
-            { nom: enfant1, niveau: 2 },
+            { nom: enfant1, niveau: 2, sommaire: true },
             { nom: phase2, niveau: 1, sommaire: true },
             { nom: orpheline, niveau: 3 },
         ],
