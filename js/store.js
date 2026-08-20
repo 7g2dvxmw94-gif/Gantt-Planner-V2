@@ -1539,15 +1539,42 @@ class Store {
         if (!bl) return;
         this._data.baselines = this._data.baselines.filter(b => b.id !== baselineId);
         const proj = this._data.projects.find(p => p.id === bl.projectId);
+        /* undefined tant qu'il n'y a rien à replier : supprimer une baseline
+           INACTIVE ne touche pas activeBaselineId, et la clé étrangère ne se
+           déclenche pas non plus. null, lui, est une valeur de repli
+           légitime — d'où la distinction avec undefined. */
+        let repli;
         if (proj && proj.activeBaselineId === baselineId) {
             // Activate the most recent remaining baseline for this project, or null
             const remaining = this._data.baselines.filter(b => b.projectId === bl.projectId);
             proj.activeBaselineId = remaining.length > 0 ? remaining[remaining.length - 1].id : null;
+            repli = proj.activeBaselineId;
         }
         this._save();
         // Sync to Supabase + history
+        let supprimeEnBase = true;
         await supabaseStore.deleteBaseline(baselineId)
-            .catch(e => console.error('[store] sync deleteBaseline:', e));
+            .catch(e => { supprimeEnBase = false; console.error('[store] sync deleteBaseline:', e); });
+
+        /* Le repli ci-dessus n'existait qu'en mémoire, et la base ne se
+           contentait pas de l'ignorer : elle en faisait un AUTRE. La
+           contrainte projects_active_baseline_fk étant `on delete set null`
+           (migration 001:169), la suppression vient de mettre la colonne à
+           NULL, pendant que l'écran affiche la baseline restante comme
+           active. Le repli est donc réécrit ici.
+
+           Conditionné à la réussite du DELETE : s'il a échoué, la ligne
+           supprimée existe toujours en base et la colonne pointe encore
+           dessus. Écrire le repli créerait alors une divergence de plus au
+           lieu d'en résorber une.
+
+           Écrit même quand repli vaut null, plutôt que de laisser faire la
+           clé étrangère : l'intention doit être dans le code, pas dans un
+           effet de bord du schéma. */
+        if (repli !== undefined && supprimeEnBase) {
+            await supabaseStore.setActiveBaseline(bl.projectId, repli)
+                .catch(e => console.error('[store] sync deleteBaseline (repli) :', e?.message || e));
+        }
         supabaseStore.logHistory(bl.projectId, 'a supprimé la baseline', 'baseline', bl.name)
             .catch(e => syncLog.record('historique : suppression baseline', e));
         this._emit('baseline:delete', baselineId);
