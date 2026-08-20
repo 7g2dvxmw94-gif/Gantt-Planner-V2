@@ -41,6 +41,13 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    # Le défaut de GitHub est de SIX HEURES. Or ce workflow occupe un groupe
+    # de concurrence global au dépôt : un job bloqué gèle donc toute la CI
+    # pendant six heures, PR et merges compris. C'est arrivé le 19/08 sur le
+    # run 32227370548, tué au bout du délai maximal sans avoir lancé un seul
+    # test. La suite complète tourne en 6 à 8 min ; 30 min laisse une marge
+    # confortable tout en bornant les dégâts.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -51,8 +58,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # --with-deps RETIRÉ. Il déclenchait un `apt-get install` de
+      # bibliothèques système déjà présentes sur l'image ubuntu-latest, et
+      # c'est là que le blocage se produisait : deux runs consécutifs figés à
+      # cette étape, le second six heures durant, quand elle prend
+      # habituellement 25 s à 2 min.
+      #
+      # Le téléchargement du navigateur lui-même n'était pas en cause : il
+      # reste, sans les dépendances système.
+      #
+      # Le délai propre à l'étape est volontairement court. Si l'installation
+      # se bloque à nouveau, l'échec doit être RAPIDE et LISIBLE — un job qui
+      # meurt au bout de 30 min sur « Install browsers » diagnostique moins
+      # bien qu'une étape qui échoue à 5 min.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium
 
       - name: Run E2E tests
         run: npm run test:e2e
