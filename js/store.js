@@ -617,6 +617,11 @@ class Store {
         // Undo/Redo history
         this._undoStack = [];
         this._redoStack = [];
+        /* Les restaurations se synchronisent EN FILE. undo() est asynchrone
+           depuis qu'il écrit en base ; deux Ctrl+Z rapprochés entrelaceraient
+           sinon leurs écritures, ce que la version synchrone rendait
+           impossible. */
+        this._fileRestauration = Promise.resolve();
         this._maxHistory = 50;
         this._batchingUndo = false;
         // Track which projects have had their data fully loaded from Supabase
@@ -1045,8 +1050,115 @@ class Store {
         (this._data.projects || []).forEach(p => this._deletedProjectIds.delete(p.id));
     }
 
-    undo() {
+    /** Sérialise les synchronisations de restauration : chacune attend la
+     *  précédente. Une erreur ne doit pas rompre la file, d'où le .catch. */
+    _enfilerRestauration(avant, apres) {
+        this._fileRestauration = this._fileRestauration
+            .catch(() => {})
+            .then(() => this._synchroniserRestauration(avant, apres));
+        return this._fileRestauration;
+    }
+
+    /** Répercute en base une restauration d'instantané.
+     *
+     *  undo() remplace this._data EN BLOC : il n'y a donc pas d'« opération »
+     *  à défaire, seulement deux états à réconcilier. On compare l'état
+     *  SORTANT — celui que la base reflète — à l'état RESTAURÉ, et on émet
+     *  les écritures qui comblent l'écart.
+     *
+     *  L'ordre suit les clés étrangères : suppressions des feuilles vers les
+     *  racines, créations des racines vers les feuilles. Une tâche enfant
+     *  référençant un parent absent serait rejetée.
+     *
+     *  Erreurs journalisées sans être propagées, comme partout ailleurs dans
+     *  ce fichier : un échec réseau ne doit pas empêcher l'annulation locale
+     *  d'avoir lieu.
+     */
+    async _synchroniserRestauration(avant, apres) {
+        const user = await auth.getUser();
+        if (!user) return;
+
+        const index = (liste) => new Map((liste || []).map(o => [o.id, o]));
+        const projAvant  = index(avant.projects),  projApres  = index(apres.projects);
+        const tacheAvant = index(avant.tasks),     tacheApres = index(apres.tasks);
+        const ressAvant  = index(avant.resources), ressApres  = index(apres.resources);
+
+        const echoue = (quoi) => (e) => console.error(`[undoSync] ${quoi} :`, e?.message || e);
+        const differe = (a, b) => JSON.stringify(a) !== JSON.stringify(b);
+
+        /* --- Suppressions, des feuilles vers les racines ---
+           Les entités appartenant à un projet lui-même supprimé sont
+           ignorées : `on delete cascade` (migration 001) s'en charge, et les
+           supprimer une à une multiplierait les requêtes pour rien. */
+        for (const [id, t] of tacheAvant) {
+            if (tacheApres.has(id) || !projApres.has(t.projectId)) continue;
+            await supabaseStore.deleteTask(id).catch(echoue('deleteTask'));
+        }
+        for (const [id, r] of ressAvant) {
+            if (ressApres.has(id) || !projApres.has(r.projectId)) continue;
+            await supabaseStore.deleteResource(id).catch(echoue('deleteResource'));
+        }
+        for (const id of projAvant.keys()) {
+            if (projApres.has(id)) continue;
+            await supabaseStore.deleteProject(id).catch(echoue('deleteProject'));
+            /* Reposer la pierre tombale : sans elle, une écriture ultérieure
+               ressusciterait le projet que l'on vient de supprimer. C'est le
+               pendant exact de _forgetTombstones(). */
+            this._deletedProjectIds.add(id);
+        }
+
+        // --- Créations et modifications, des racines vers les feuilles ---
+        for (const [id, p] of projApres) {
+            if (differe(projAvant.get(id), p)) {
+                await this._upsertProjectGuarded(p, user.id).catch(echoue('upsertProject'));
+            }
+        }
+        for (const [id, r] of ressApres) {
+            if (differe(ressAvant.get(id), r)) {
+                await supabaseStore.upsertResource(r).catch(echoue('upsertResource'));
+            }
+        }
+
+        // Tâches : parents d'abord, même tri que _persisterImport().
+        const triees = [...tacheApres.values()].sort((a, b) => {
+            if (!a.parentId && b.parentId) return -1;
+            if (a.parentId && !b.parentId) return 1;
+            return 0;
+        });
+        for (const t of triees) {
+            if (!differe(tacheAvant.get(t.id), t)) continue;
+            await supabaseStore.upsertTask(t).catch(echoue('upsertTask'));
+            /* Les assignés ne transitent PAS par upsertTask : rowToTask() les
+               initialise à [] et attend task_assignees. Même trou qu'en #30. */
+            await supabaseStore.syncTaskAssignees(t.id, t.assignees || []);
+        }
+
+        /* --- Partages projet-ressource ---
+           resourceIds n'est pas une colonne : il vit dans project_resources,
+           qui se réconcilie lien par lien. */
+        for (const [id, p] of projApres) {
+            const liensAvant = new Set((projAvant.get(id) || {}).resourceIds || []);
+            const liensApres = new Set(p.resourceIds || []);
+            for (const rid of liensApres) {
+                if (liensAvant.has(rid)) continue;
+                await Promise.resolve(supabaseStore.linkResourceToProject?.(id, rid))
+                    .catch(echoue('linkResourceToProject'));
+            }
+            for (const rid of liensAvant) {
+                if (liensApres.has(rid) || !ressApres.has(rid)) continue;
+                await Promise.resolve(supabaseStore.unlinkResourceFromProject?.(id, rid))
+                    .catch(echoue('unlinkResourceFromProject'));
+            }
+        }
+    }
+
+    /** ATTENTION — asynchrone depuis l'ajout de la synchronisation.
+     *  L'appelant DOIT l'attendre : une promesse est toujours vraie, donc un
+     *  `if (store.undo())` non attendu afficherait « Action annulée » même
+     *  quand l'historique est vide. Voir js/app.js (bouton et raccourci). */
+    async undo() {
         if (this._undoStack.length === 0) return false;
+        const avant = this._data;
         this._redoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._undoStack.pop());
         this._forgetTombstones();
@@ -1054,11 +1166,18 @@ class Store {
         this._invalidateResourceIndex();
         this._save();
         this._emit('undo', null);
+        /* Attendu, et non lancé en arrière-plan : l'utilisateur doit savoir
+           que son annulation est durable, et un rechargement immédiat après
+           un Ctrl+Z ne doit pas courir contre l'écriture. */
+        await this._enfilerRestauration(avant, this._data);
         return true;
     }
 
-    redo() {
+    /** Asynchrone pour la même raison qu'undo(), et avec le même impératif
+     *  côté appelant. */
+    async redo() {
         if (this._redoStack.length === 0) return false;
+        const avant = this._data;
         this._undoStack.push(JSON.stringify(this._data));
         this._data = JSON.parse(this._redoStack.pop());
         this._forgetTombstones();
@@ -1066,6 +1185,7 @@ class Store {
         this._invalidateResourceIndex();
         this._save();
         this._emit('redo', null);
+        await this._enfilerRestauration(avant, this._data);
         return true;
     }
 
