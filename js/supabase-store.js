@@ -405,6 +405,28 @@ export const supabaseStore = {
         return (data || []).map(rowToBaseline);
     },
 
+    /** Écrit projects.active_baseline_id.
+     *
+     *  Écriture DIRECTE plutôt que via la RPC upsert_project : celle-ci
+     *  prend dix paramètres nommés et n'expose pas cette colonne. L'étendre
+     *  imposerait une migration de la fonction, là où la politique
+     *  « projects: update if editor » (002_rls_policies.sql:95) autorise
+     *  déjà la mise à jour ciblée — et les écritures directes de table sont
+     *  la norme ailleurs dans ce fichier.
+     *
+     *  baselineId peut être null : désactiver une baseline est un geste
+     *  légitime, et la colonne est nullable. */
+    async setActiveBaseline(projectId, baselineId) {
+        const { error } = await supabase
+            .from('projects')
+            .update({ active_baseline_id: baselineId })
+            .eq('id', projectId);
+        if (error) {
+            console.error('[supabaseStore] setActiveBaseline:', error);
+            throw error;
+        }
+    },
+
     async upsertBaseline(baseline) {
         const user = await auth.getUser();
         const row = {

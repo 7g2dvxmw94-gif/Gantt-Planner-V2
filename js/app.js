@@ -1662,9 +1662,14 @@ class App {
                 item.className = 'bl-pop-item' + (isActive ? ' bl-pop-item--active' : '');
                 item.dataset.blId = bl.id;
                 // Clicking anywhere on the row activates/deactivates this baseline
-                item.addEventListener('click', (e) => {
+                /* async + await : store.setActiveBaseline() écrit désormais
+                   en base. Aucune condition ne porte sur sa valeur de retour,
+                   donc pas de piège de promesse ici — l'attente garantit
+                   seulement que le choix est durable avant que l'utilisateur
+                   ne recharge. */
+                item.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    store.setActiveBaseline(isActive ? null : bl.id);
+                    await store.setActiveBaseline(isActive ? null : bl.id);
                     this._updateBaselineBtnState();
                 });
 

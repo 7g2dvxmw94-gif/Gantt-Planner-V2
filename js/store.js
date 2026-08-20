@@ -1511,8 +1511,23 @@ class Store {
         if (proj) proj.activeBaselineId = baseline.id;
         this._save();
         // Sync to Supabase + history
+        let baselineEnBase = true;
         await supabaseStore.upsertBaseline(baseline)
-            .catch(e => console.error('[store] sync createBaseline:', e));
+            .catch(e => { baselineEnBase = false; console.error('[store] sync createBaseline:', e); });
+
+        /* L'auto-activation ci-dessus n'existait qu'en mémoire : même trou
+           que setActiveBaseline(). Elle est donc persistée ici — mais
+           seulement si la baseline est bien arrivée en base, car
+           projects.active_baseline_id porte une clé étrangère vers
+           baselines (migration 001:169) et l'écriture échouerait sinon.
+           Appel direct à supabaseStore plutôt qu'à this.setActiveBaseline()
+           : l'état local est déjà posé et l'événement sera émis par
+           'baseline:create' juste en dessous. */
+        if (proj && baselineEnBase) {
+            await supabaseStore.setActiveBaseline(pid, baseline.id)
+                .catch(e => console.error('[store] sync createBaseline (activation):', e?.message || e));
+        }
+
         supabaseStore.logHistory(pid, 'a créé la baseline', 'baseline', baseline.name)
             .catch(e => syncLog.record('historique : création baseline', e));
         this._emit('baseline:create', baseline);
@@ -1552,12 +1567,25 @@ class Store {
         this._emit('baseline:update', baseline);
     }
 
-    setActiveBaseline(baselineId) {
+    /** ATTENTION — asynchrone depuis l'ajout de l'écriture serveur.
+     *  Contrairement à undo(), aucun appelant ne teste sa valeur de retour :
+     *  il n'y a donc pas de piège de promesse ici. L'attente sert à autre
+     *  chose — garantir que le choix est durable avant que l'utilisateur ne
+     *  ferme ou ne recharge la page. */
+    async setActiveBaseline(baselineId) {
         const pid = this._data.settings.activeProjectId;
         const proj = this._data.projects.find(p => p.id === pid);
         if (proj) proj.activeBaselineId = baselineId;
         this._save();
         this._emit('baseline:activate', { projectId: pid, baselineId });
+
+        /* active_baseline_id est une colonne de projects (migration 001:53)
+           que rowToProject() relit au chargement — mais que la RPC
+           upsert_project n'écrit pas. Sans cet appel, le choix ne vivait
+           qu'en mémoire et disparaissait au rechargement suivant. */
+        if (!proj) return;
+        await supabaseStore.setActiveBaseline(pid, baselineId)
+            .catch(e => console.error('[store] sync setActiveBaseline:', e?.message || e));
     }
 
     toggleShowBaseline() {
