@@ -452,12 +452,24 @@ export const supabaseStore = {
         }
     },
 
+    /** LÈVE en cas d'échec, contrairement à l'écriture silencieuse d'avant.
+     *
+     *  Son appelant doit savoir si la ligne est réellement partie : la
+     *  contrainte projects_active_baseline_fk étant `on delete set null`,
+     *  c'est cette suppression qui met active_baseline_id à NULL, et le
+     *  repli n'a de sens que si elle a eu lieu. Le `.catch` que store.js
+     *  posait déjà ici ne pouvait jamais se déclencher.
+     *
+     *  Unique appelant : store.deleteBaseline(). */
     async deleteBaseline(baselineId) {
         const { error } = await supabase
             .from('baselines')
             .delete()
             .eq('id', baselineId);
-        if (error) console.error('[supabaseStore] deleteBaseline:', error);
+        if (error) {
+            console.error('[supabaseStore] deleteBaseline:', error);
+            throw error;
+        }
     },
 
     /* ---- USER SETTINGS ---- */
