@@ -5146,7 +5146,12 @@ tr:nth-child(even){background:#fafbfc}
                 return;
             }
 
-            const result = store.importFromExcel(rows, file.name);
+            /* await : importFromExcel() est asynchrone depuis qu'elle
+               persiste. Sans lui, `result` serait une promesse — toujours
+               vraie — et le `if` ci-dessous annoncerait un succès même sur un
+               import raté. La fonction englobante était déjà async, mais
+               l'oubli aurait été silencieux. */
+            const result = await store.importFromExcel(rows, file.name);
             if (result) {
                 ganttRenderer.render();
                 this._renderStats();

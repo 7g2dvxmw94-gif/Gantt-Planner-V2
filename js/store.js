@@ -3266,7 +3266,7 @@ class Store {
                     const cycle = wouldCreateCycle(tasks, tache.id,
                         [...tache.dependencies, { taskId: predId, type }]);
                     if (cycle) {
-                        console.warn('[importXML] lien ignoré, il créerait un cycle :', cycle);
+                        console.warn('[import] lien ignoré, il créerait un cycle :', cycle);
                         return;
                     }
 
@@ -3346,7 +3346,7 @@ class Store {
                        écrase resourceIds par `ownedIds ∪ linkedIds`, et une
                        ressource empruntée à un autre projet n'est ni l'un ni
                        l'autre. Il lui faut sa ligne project_resources, que
-                       _persisterImportXML() écrit désormais. */
+                       _persisterImport() écrit désormais. */
                     if (!newProject.resourceIds.includes(exists.id)) {
                         newProject.resourceIds.push(exists.id);
                         ressourcesEmpruntees.push(exists);
@@ -3361,7 +3361,7 @@ class Store {
                mémoire et dans le stockage local : au rechargement suivant,
                initFromSupabase() reconstruisait l'état depuis la base et
                l'import disparaissait en entier. */
-            await this._persisterImportXML(newProject, tasks, ressourcesCreees, ressourcesEmpruntees);
+            await this._persisterImport(newProject, tasks, ressourcesCreees, ressourcesEmpruntees);
 
             this._emit('project:import', newProjectId);
             return newProject;
@@ -3379,14 +3379,14 @@ class Store {
      *  le comportement déjà retenu pour l'import JSON, et s'en écarter ici
      *  seulement rendrait les deux chemins incohérents.
      */
-    async _persisterImportXML(project, tasks, ressourcesCreees, ressourcesEmpruntees) {
+    async _persisterImport(project, tasks, ressourcesCreees, ressourcesEmpruntees) {
         const user = await auth.getUser();
         if (!user) return;
 
         try {
             await this._upsertProjectGuarded(project, user.id);
         } catch (e) {
-            console.error('[importXML] upsertProject failed:', e?.message || e);
+            console.error('[persistImport] upsertProject failed:', e?.message || e);
         }
 
         /* Ressources créées par l'import : elles portent projectId = projet
@@ -3395,7 +3395,7 @@ class Store {
            de livrer le rattachement AVANT la persistance. */
         for (const r of ressourcesCreees) {
             await supabaseStore.upsertResource(r).catch(e =>
-                console.error('[importXML] upsertResource failed:', e?.message || e)
+                console.error('[persistImport] upsertResource failed:', e?.message || e)
             );
         }
 
@@ -3404,7 +3404,7 @@ class Store {
            partage doit être écrit, et c'est project_resources qui l'exprime. */
         for (const r of ressourcesEmpruntees) {
             await Promise.resolve(supabaseStore.linkResourceToProject?.(project.id, r.id))
-                .catch(e => console.error('[importXML] linkResourceToProject failed:', e?.message || e));
+                .catch(e => console.error('[persistImport] linkResourceToProject failed:', e?.message || e));
         }
 
         /* Tâches : les parents d'abord, une ligne enfant référençant un parent
@@ -3417,7 +3417,7 @@ class Store {
 
         for (const t of triees) {
             await supabaseStore.upsertTask(t).catch(e =>
-                console.error('[importXML] upsertTask failed:', e?.message || e)
+                console.error('[persistImport] upsertTask failed:', e?.message || e)
             );
             /* Les assignés ne sont PAS portés par upsertTask : rowToTask() les
                initialise à [] et attend task_assignees. Exactement le trou
@@ -3429,7 +3429,12 @@ class Store {
         }
     }
 
-    importFromExcel(rows, fileName) {
+    /* ATTENTION — asynchrone depuis l'ajout de la persistance, comme
+     *  importFromMSProjectXML(). L'appelant DOIT l'attendre : une promesse
+     *  est toujours vraie, donc un `if (result)` posé sur l'appel non
+     *  attendu annoncerait un succès sur un import raté. Voir
+     *  js/app.js, _importExcelFile(). */
+    async importFromExcel(rows, fileName) {
         this._snapshot();
         try {
             // Auto-detect column mapping from headers
@@ -3550,28 +3555,59 @@ class Store {
                 name: projectName,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                /* Sans ce tableau, les ressources importées n'appartiennent à
+                   aucun projet : getProjectResources() le parcourt directement
+                   et la portée par défaut de l'onglet Ressources est
+                   « Ce projet ». Elles étaient invisibles dès l'import. */
+                resourceIds: [],
             };
             this._data.projects.push(newProject);
             tasks.forEach(t => this._data.tasks.push(t));
             this._invalidateTaskIndex();
-        this._invalidateResourceIndex();
+            this._invalidateResourceIndex();
+
+            /* Les deux branches du dédoublonnage ne se persistent pas de la
+               même façon — une ressource créée appartient au projet importé,
+               une ressource homonyme appartient à un AUTRE projet et n'est
+               rattachée que par une ligne project_resources. Même distinction
+               qu'à l'import XML. */
+            const ressourcesCreees = [];
+            const ressourcesEmpruntees = [];
 
             // Add resources
             Object.entries(resourceMap).forEach(([name, id]) => {
                 const exists = this._data.resources.find(e => e.name === name);
                 if (!exists) {
-                    this._data.resources.push({ id, name, role: '', color: this._randomColor() });
+                    /* projectId n'est pas décoratif : resources.project_id est
+                       `uuid not null` (migration 001), donc une ressource sans
+                       projet propriétaire ne peut PAS être écrite en base. */
+                    const ressource = { id, name, projectId: newProjectId, role: '', color: this._randomColor() };
+                    this._data.resources.push(ressource);
                     this._invalidateResourceIndex();
+                    newProject.resourceIds.push(id);
+                    ressourcesCreees.push(ressource);
                 } else {
                     // Remap
                     tasks.filter(t => t.projectId === newProjectId).forEach(t => {
                         t.assignees = t.assignees.map(aid => aid === id ? exists.id : aid);
                     });
+                    if (!newProject.resourceIds.includes(exists.id)) {
+                        newProject.resourceIds.push(exists.id);
+                        ressourcesEmpruntees.push(exists);
+                    }
                 }
             });
 
             this._data.settings.activeProjectId = newProjectId;
             this._save();
+
+            /* Sans cette écriture, tout ce qui précède ne vivait qu'en mémoire
+               et dans le stockage local : au rechargement suivant,
+               initFromSupabase() reconstruisait l'état depuis la base et
+               l'import disparaissait en entier. Même défaut, même correctif
+               qu'à l'import XML — la fonction est partagée. */
+            await this._persisterImport(newProject, tasks, ressourcesCreees, ressourcesEmpruntees);
+
             this._emit('project:import', newProjectId);
             return newProject;
         } catch (e) {
