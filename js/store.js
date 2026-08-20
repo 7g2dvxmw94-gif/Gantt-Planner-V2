@@ -1604,15 +1604,24 @@ class Store {
         const proj = this._data.projects.find(p => p.id === pid);
         if (proj) proj.activeBaselineId = baselineId;
         this._save();
-        this._emit('baseline:activate', { projectId: pid, baselineId });
 
         /* active_baseline_id est une colonne de projects (migration 001:53)
            que rowToProject() relit au chargement — mais que la RPC
            upsert_project n'écrit pas. Sans cet appel, le choix ne vivait
            qu'en mémoire et disparaissait au rechargement suivant. */
-        if (!proj) return;
-        await supabaseStore.setActiveBaseline(pid, baselineId)
-            .catch(e => console.error('[store] sync setActiveBaseline:', e?.message || e));
+        if (proj) {
+            await supabaseStore.setActiveBaseline(pid, baselineId)
+                .catch(e => console.error('[store] sync setActiveBaseline:', e?.message || e));
+        }
+
+        /* ÉMIS APRÈS L'ÉCRITURE, comme createBaseline, deleteBaseline et
+           renameBaseline. Cette méthode était la seule des quatre à émettre
+           avant, ce qui n'avait pas d'importance tant qu'elle n'écrivait
+           rien — mais en a depuis #43 : le surlignage de la ligne, seul
+           retour visible du geste, apparaissait pendant que la requête
+           était encore en vol. Un rechargement immédiat l'annulait, et le
+           choix était perdu alors que l'écran l'avait confirmé. */
+        this._emit('baseline:activate', { projectId: pid, baselineId });
     }
 
     toggleShowBaseline() {
