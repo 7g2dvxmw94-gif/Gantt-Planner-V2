@@ -40,6 +40,26 @@ async function ouvrirProjet(page, nom) {
     await expectProjectName(page, nom);
 }
 
+/** Supprime une ressource SI elle est encore là.
+ *
+ *  La tolérance n'est pas de la complaisance : une ressource créée par
+ *  l'import appartient au projet importé, et
+ *  `resources.project_id ... on delete cascade` (migration 001) la fait
+ *  disparaître AVEC lui. Après suppression du projet et rechargement, il
+ *  n'y a donc légitimement plus rien à supprimer.
+ *
+ *  Ce nettoyage avait été écrit sur l'état d'AVANT le correctif, où la
+ *  ressource n'était jamais écrite en base et survivait donc à tout. Il
+ *  échouait maintenant que le rattachement fonctionne — un cas où c'est
+ *  le test, et non le produit, que le correctif a rendu faux. */
+async function supprimerRessourceSiPresente(page, nom) {
+    const carte = page.locator('.resource-card', { hasText: nom });
+    if (await carte.count() === 0) return;
+    page.once('dialog', (dialog) => dialog.accept());
+    await carte.locator('.resource-action-delete').click();
+    await expect(carte).toHaveCount(0);
+}
+
 test('import Excel : les ressources sont rattachées au projet importé', async ({ page }) => {
     const suffixe    = Date.now();
     const nomAccueil = `E2E Excel Accueil ${suffixe}`;
@@ -75,10 +95,7 @@ test('import Excel : les ressources sont rattachées au projet importé', async 
     await ouvrirProjet(page, nomAccueil);
     await page.locator('#tabResources').click();
     await page.locator('.resource-scope-btn', { hasText: 'Toutes les ressources' }).click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('.resource-card', { hasText: ressource })
-        .locator('.resource-action-delete').click();
-    await expect(page.locator('.resource-card', { hasText: ressource })).toHaveCount(0);
+    await supprimerRessourceSiPresente(page, ressource);
     await page.locator('#tabTimeline').click();
     await deleteActiveProject(page);
 });
@@ -137,10 +154,7 @@ test('import Excel : le projet importé survit à un rechargement', async ({ pag
     await ouvrirProjet(page, nomAccueil);
     await page.locator('#tabResources').click();
     await page.locator('.resource-scope-btn', { hasText: 'Toutes les ressources' }).click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.locator('.resource-card', { hasText: ressource })
-        .locator('.resource-action-delete').click();
-    await expect(page.locator('.resource-card', { hasText: ressource })).toHaveCount(0);
+    await supprimerRessourceSiPresente(page, ressource);
     await page.locator('#tabTimeline').click();
     await deleteActiveProject(page);
 });
