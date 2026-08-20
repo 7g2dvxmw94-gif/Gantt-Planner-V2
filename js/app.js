@@ -1471,8 +1471,12 @@ class App {
 
         const undoBtn = $('#undoBtn');
         if (undoBtn) {
-            undoBtn.addEventListener('click', () => {
-                if (store.undo()) {
+            /* async + await : store.undo() est asynchrone depuis qu'il
+               synchronise. Sans le await, la condition porterait sur une
+               promesse — toujours vraie — et « Action annulée » s'afficherait
+               même avec un historique vide. Même piège qu'en #36 et #40. */
+            undoBtn.addEventListener('click', async () => {
+                if (await store.undo()) {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
@@ -1483,8 +1487,8 @@ class App {
 
         const redoBtn = $('#redoBtn');
         if (redoBtn) {
-            redoBtn.addEventListener('click', () => {
-                if (store.redo()) {
+            redoBtn.addEventListener('click', async () => {
+                if (await store.redo()) {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
@@ -3132,12 +3136,12 @@ thead{display:table-header-group}
         const _prevent = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
 
         // Use capture phase on window (earliest possible interception)
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', async (e) => {
             const mod = e.ctrlKey || e.metaKey;
             // Ctrl+Z / Cmd+Z: Undo
             if (mod && !e.shiftKey && e.key === 'z') {
                 _prevent(e);
-                if (store.undo()) {
+                if (await store.undo()) {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
@@ -3149,7 +3153,7 @@ thead{display:table-header-group}
             // Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z: Redo
             if ((mod && e.key === 'y') || (mod && e.shiftKey && e.key === 'Z')) {
                 _prevent(e);
-                if (store.redo()) {
+                if (await store.redo()) {
                     ganttRenderer.render();
                     this._renderStats();
                     this._renderProjectName();
