@@ -99,12 +99,36 @@ export function businessDaysBetween(start, end) {
 
 /**
  * Calculate the number of calendar days between two dates
+ *
+ * NORMALISATION UTC AVANT SOUSTRACTION.
+ *
+ * La version precedente soustrayait les deux minuits LOCAUX rendus par
+ * parseISO() et divisait par 86 400 000. Or deux minuits locaux ne sont
+ * separes de 24 h que si aucun changement d'heure ne les separe : le
+ * dimanche de bascule vers l'heure d'hiver dure 25 h, et
+ * Math.ceil(25 / 24) valait 2. Toute periode enjambant ce dimanche
+ * gagnait un jour.
+ *
+ * Le printemps passait a travers les mailles — 23 h, et
+ * Math.ceil(23 / 24) vaut bien 1 —, ce qui n'exposait qu'un des deux
+ * changements annuels.
+ *
+ * Invisible en CI, qui tourne en UTC : un fuseau sans heure d'ete. Mais
+ * cette application code les jours feries francais en dur et parle
+ * francais — ses utilisateurs sont a Paris, la ou le calcul se trompait.
+ *
+ * Date.UTC() sur (annee, mois, jour) rend des instants espaces de 24 h
+ * exactement, quel que soit le fuseau. Le quotient est donc deja un
+ * entier, positif comme negatif : Math.round() ne corrige que la
+ * poussiere de la representation flottante. Math.ceil() ferait
+ * desormais l'affaire aussi — c'est l'arrondi d'une valeur FRACTIONNAIRE
+ * qui posait probleme, pas l'arrondi lui-meme.
  */
 export function daysBetween(start, end) {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    const diffTime = endDate.getTime() - startDate.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const jour = d => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    return Math.round((jour(endDate) - jour(startDate)) / (1000 * 60 * 60 * 24));
 }
 
 /* countWorkingDays(start, end) a été SUPPRIMÉE ici.
