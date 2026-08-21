@@ -2633,7 +2633,7 @@ ${assignLines.join('\n')}
         const priorityLabels = { high: t('task.priority.high'), medium: t('task.priority.medium'), low: t('task.priority.low') };
         const stats = store.getProjectStats();
 
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${project.name}</title>
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(project.name)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
 body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:11px;color:#1e293b;padding:30px}
@@ -2683,8 +2683,8 @@ thead{display:table-header-group}
 @media print{body{padding:15px}@page{margin:10mm;size:landscape}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}
 .page-break{page-break-before:always}
 </style></head><body>
-<h1>${project.name}</h1>
-<div class="subtitle">${project.description || t('pdf.exportedOn', { date: new Date().toLocaleDateString() })}</div>
+<h1>${escapeHtml(project.name)}</h1>
+<div class="subtitle">${escapeHtml(project.description) || t('pdf.exportedOn', { date: new Date().toLocaleDateString() })}</div>
 <div class="stats">
 <div class="stat"><div class="stat-val">${stats.totalTasks}</div><div class="stat-lbl">${t('pdf.stats.tasks')}</div></div>
 <div class="stat"><div class="stat-val">${stats.progress}%</div><div class="stat-lbl">${t('pdf.stats.progress')}</div></div>
@@ -2699,7 +2699,7 @@ thead{display:table-header-group}
             const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
             rootTasks.forEach(task => {
                 if (task.isPhase) {
-                    html += `<tr class="phase-row"><td colspan="7">${task.name} (${task.progress}%)</td></tr>`;
+                    html += `<tr class="phase-row"><td colspan="7">${escapeHtml(task.name)} (${task.progress}%)</td></tr>`;
                     const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
                     children.forEach(child => {
                         html += this._pdfTaskRow(child, resources, statusLabels, priorityLabels);
@@ -2728,7 +2728,7 @@ thead{display:table-header-group}
             html += this._pdfCostsSection(project);
         }
 
-        html += `<div class="footer">${t('pdf.footer', { name: project.name, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
+        html += `<div class="footer">${t('pdf.footer', { name: escapeHtml(project.name), date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
 </body></html>`;
 
         const printWindow = window.open('', '_blank');
@@ -2848,7 +2848,7 @@ thead{display:table-header-group}
             const visEnd = new Date(Math.min(te.getTime() + DAY, endExcl.getTime()));
 
             let rowHtml = `<div class="gantt-tl-row">`;
-            rowHtml += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : (task.isMilestone ? '◆ ' : '')}${task.name}</div>`;
+            rowHtml += `<div class="gantt-tl-label${task.isPhase ? ' phase' : ''}" style="padding-left:${4 + indent * 16}px">${task.isPhase ? '▾ ' : (task.isMilestone ? '◆ ' : '')}${escapeHtml(task.name)}</div>`;
             rowHtml += `<div class="gantt-tl-track">`;
 
             if (visStart < endExcl && visEnd > start) {
@@ -2863,7 +2863,7 @@ thead{display:table-header-group}
                 } else {
                     const approxPx = (widthPct / 100) * estTrackPx;
                     const barLabel = approxPx > 60
-                        ? `${task.name.substring(0, Math.floor(approxPx / 8))} ${task.progress}%`
+                        ? `${escapeHtml(task.name.substring(0, Math.floor(approxPx / 8)))} ${task.progress}%`
                         : (approxPx > 25 ? `${task.progress}%` : '');
                     rowHtml += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${color}">${barLabel}</div>`;
                 }
@@ -2957,7 +2957,7 @@ thead{display:table-header-group}
                 const gVar = gEst - gActual;
                 const gVarColor = gVar < 0 ? '#ef4444' : gVar < gEst * 0.1 ? '#f59e0b' : '#10b981';
                 html += `<tr class="phase-row">
-<td colspan="3">${group.phase.name} <span style="font-weight:400;font-size:9px;color:#64748b;">(${group.items.length} tâche${group.items.length !== 1 ? 's' : ''})</span></td>
+<td colspan="3">${escapeHtml(group.phase.name)} <span style="font-weight:400;font-size:9px;color:#64748b;">(${group.items.length} tâche${group.items.length !== 1 ? 's' : ''})</span></td>
 <td style="text-align:right;">${gFixed > 0 ? fmt(gFixed) : '—'}</td>
 <td style="text-align:right;">${fmt(gEst)}</td>
 <td style="text-align:right;">${fmt(gActual)}</td>
@@ -2972,7 +2972,7 @@ thead{display:table-header-group}
                 const ecartColor = ecart < 0 ? '#ef4444' : ecart < tc.cost * 0.1 ? '#f59e0b' : '#10b981';
                 const indent = group.phase ? '&nbsp;&nbsp;&nbsp;' : '';
                 html += `<tr>
-<td>${indent}${tc.task.name}</td>
+<td>${indent}${escapeHtml(tc.task.name)}</td>
 <td>${resNames}</td>
 <td style="text-align:center;">${tc.durationDays} j</td>
 <td style="text-align:right;">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
@@ -3018,8 +3018,8 @@ thead{display:table-header-group}
 
             html += `<div class="res-card">`;
             html += `<div class="res-header">`;
-            html += `<div class="res-avatar" style="background:${resource.color}">${resource.avatar}</div>`;
-            html += `<div><div class="res-name">${resource.name}</div><div class="res-role">${resource.role || ''}</div></div>`;
+            html += `<div class="res-avatar" style="background:${escapeHtml(resource.color)}">${escapeHtml(resource.avatar)}</div>`;
+            html += `<div><div class="res-name">${escapeHtml(resource.name)}</div><div class="res-role">${escapeHtml(resource.role) || ''}</div></div>`;
             html += `<div style="margin-left:auto;font-size:10px;color:#64748b">${assignedTasks.length} tâche${assignedTasks.length !== 1 ? 's' : ''}</div>`;
             html += `</div>`;
 
@@ -3029,7 +3029,7 @@ thead{display:table-header-group}
             if (assignedTasks.length > 0) {
                 assignedTasks.sort((a, b) => parseISO(a.startDate) - parseISO(b.startDate)).forEach(task => {
                     html += `<div class="res-task">`;
-                    html += `<span class="res-task-name"><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span> ${task.name}</span>`;
+                    html += `<span class="res-task-name"><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span> ${escapeHtml(task.name)}</span>`;
                     html += `<span class="res-task-dates">${formatDateDisplay(task.startDate)} → ${formatDateDisplay(task.endDate)}</span>`;
                     html += `</div>`;
                 });
@@ -3049,10 +3049,10 @@ thead{display:table-header-group}
             return r ? r.name : '';
         }).filter(Boolean).join(', ');
         return `<tr>
-<td>&nbsp;&nbsp;${task.name}</td>
+<td>&nbsp;&nbsp;${escapeHtml(task.name)}</td>
 <td>${formatDateDisplay(task.startDate)}</td>
 <td>${formatDateDisplay(task.endDate)}</td>
-<td>${assignees || '—'}</td>
+<td>${escapeHtml(assignees) || '—'}</td>
 <td><span class="badge badge-${task.status}">${statusLabels[task.status] || task.status}</span></td>
 <td><span class="badge badge-${task.priority}">${priorityLabels[task.priority] || task.priority}</span></td>
 <td><div class="progress-bar"><div class="progress-fill" style="width:${task.progress}%"></div></div> ${task.progress}%</td>
