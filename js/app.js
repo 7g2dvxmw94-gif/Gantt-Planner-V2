@@ -2857,15 +2857,15 @@ thead{display:table-header-group}
                 const color = task.color || '#6366F1';
 
                 if (task.isPhase) {
-                    rowHtml += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${color}"></div>`;
+                    rowHtml += `<div class="gantt-tl-phase" style="left:${leftPct}%;width:${widthPct}%;background:${escapeHtml(color)}"></div>`;
                 } else if (task.isMilestone) {
-                    rowHtml += `<div class="gantt-tl-milestone" style="left:calc(${leftPct}% - 7px);background:${color}"></div>`;
+                    rowHtml += `<div class="gantt-tl-milestone" style="left:calc(${leftPct}% - 7px);background:${escapeHtml(color)}"></div>`;
                 } else {
                     const approxPx = (widthPct / 100) * estTrackPx;
                     const barLabel = approxPx > 60
                         ? `${escapeHtml(task.name.substring(0, Math.floor(approxPx / 8)))} ${task.progress}%`
                         : (approxPx > 25 ? `${task.progress}%` : '');
-                    rowHtml += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${color}">${barLabel}</div>`;
+                    rowHtml += `<div class="gantt-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${escapeHtml(color)}">${barLabel}</div>`;
                 }
             }
 
@@ -2973,7 +2973,7 @@ thead{display:table-header-group}
                 const indent = group.phase ? '&nbsp;&nbsp;&nbsp;' : '';
                 html += `<tr>
 <td>${indent}${escapeHtml(tc.task.name)}</td>
-<td>${resNames}</td>
+<td>${escapeHtml(resNames)}</td>
 <td style="text-align:center;">${tc.durationDays} j</td>
 <td style="text-align:right;">${tc.fixedCost > 0 ? fmt(tc.fixedCost) : '—'}</td>
 <td style="text-align:right;font-weight:600;">${fmt(tc.cost)}</td>
@@ -4181,7 +4181,7 @@ thead{display:table-header-group}
                     : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`;
                 tableRows += `<tr class="costs-phase-row costs-phase-toggle-row" data-phase-key="${key}" style="cursor:pointer;">
                     <td colspan="4" class="costs-phase-name">
-                        <span class="costs-phase-chevron" style="display:inline-flex;align-items:center;margin-right:6px;opacity:0.7;vertical-align:middle;">${chevron}</span>${group.phase.name}
+                        <span class="costs-phase-chevron" style="display:inline-flex;align-items:center;margin-right:6px;opacity:0.7;vertical-align:middle;">${chevron}</span>${escapeHtml(group.phase.name)}
                         <span style="margin-left:8px;font-size:0.75rem;font-weight:400;color:var(--text-muted);">(${group.items.length})</span>
                     </td>
                     <td style="text-align:right;font-weight:600;white-space:nowrap;">${groupFixed > 0 ? fmt(groupFixed) : '—'}</td>
@@ -4194,14 +4194,14 @@ thead{display:table-header-group}
             }
 
             group.items.forEach(tc => {
-                const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em class="costs-no-resource">—</em>';
+                const resNames = tc.assignedResources.map(r => escapeHtml(r.name)).join(', ') || '<em class="costs-no-resource">—</em>';
                 const rates = tc.assignedResources.map(r => formatRate(r.rateType === 'daily' ? r.dailyRate : r.hourlyRate, r.rateType === 'daily' ? 'daily' : 'hourly')).join(', ') || '—';
                 const actual = typeof tc.task.actualCost === 'number' ? tc.task.actualCost : tc.costDone;
                 const ecart = tc.cost - actual;
                 const ecartColor = ecart < 0 ? '#EF4444' : ecart < tc.cost * 0.1 ? '#F59E0B' : '#10B981';
 
                 tableRows += `<tr class="costs-task-row${group.phase ? ' costs-task-indented' : ''}" data-task-id="${tc.task.id}">
-                    <td class="costs-task-name">${tc.task.name}</td>
+                    <td class="costs-task-name">${escapeHtml(tc.task.name)}</td>
                     <td>${resNames}</td>
                     <td style="text-align:center;">${tc.durationDays} j</td>
                     <td style="text-align:center;">${rates}</td>
@@ -4648,13 +4648,13 @@ thead{display:table-header-group}
             return dir === 'asc' ? va - vb : vb - va;
         });
         return sorted.map(tc => {
-            const resNames = tc.assignedResources.map(r => r.name).join(', ') || '<em>—</em>';
+            const resNames = tc.assignedResources.map(r => escapeHtml(r.name)).join(', ') || '<em>—</em>';
             const rates    = tc.assignedResources.map(r => formatRate(r.hourlyRate, 'hourly')).join(', ') || '—';
             const pct      = tc.cost > 0 ? Math.round((tc.costDone / tc.cost) * 100) : 0;
             const barColor = tc.task.progress >= 100 ? '#10B981' : tc.task.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
             const fixedTip = tc.fixedCosts?.length > 0 ? ` title="${tc.fixedCosts.map(fc => fc.name + ' : ' + formatCurrency(fc.amount)).join('\n')}"` : '';
             return `<tr>
-                <td class="dt-name">${tc.task.name}</td>
+                <td class="dt-name">${escapeHtml(tc.task.name)}</td>
                 <td>${resNames}</td>
                 <td class="dt-center dt-secondary">${rates}</td>
                 <td class="dt-center">${tc.durationDays}j</td>
