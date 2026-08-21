@@ -107,24 +107,16 @@ export function daysBetween(start, end) {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-/**
- * Count working days (Mon–Fri) between two dates, inclusive.
- * Returns at least 1.
- */
-export function countWorkingDays(start, end) {
-    const s = parseISO(start);
-    const e = parseISO(end);
-    s.setHours(0, 0, 0, 0);
-    e.setHours(0, 0, 0, 0);
-    let count = 0;
-    const cur = new Date(s);
-    while (cur <= e) {
-        const day = cur.getDay();
-        if (day !== 0 && day !== 6) count++;
-        cur.setDate(cur.getDate() + 1);
-    }
-    return Math.max(1, count);
-}
+/* countWorkingDays(start, end) a été SUPPRIMÉE ici.
+ *
+ * Elle comptait les jours ouvrés en dur — lundi-vendredi, fériés ignorés,
+ * jours travaillés configurés ignorés — sans accepter de calendrier. Son
+ * dernier appelant était le calcul de coûts, qui facturait donc les jours
+ * fériés ; il utilise désormais workingDaysBetween(start, end, calendar).
+ *
+ * Ne pas la réintroduire : workingDaysBetween() fait le même décompte
+ * inclusif en s'appuyant sur isWorkingDay(), et prend le calendrier. La
+ * laisser exportée sans appelant aurait invité à refaire le même défaut. */
 
 /**
  * Add days to a date
