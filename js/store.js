@@ -3,7 +3,7 @@
    Reactive store with localStorage persistence
    ======================================== */
 
-import { generateId, daysBetween, countWorkingDays, addDays, formatDateISO,
+import { generateId, daysBetween, addDays, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
@@ -2752,6 +2752,8 @@ class Store {
         const tasks = this.getTasks(pid).filter(t => !t.isPhase && !t.isMilestone);
         const resources = this.getResources();
         const HOURS_PER_DAY = 8;
+        // Lu une fois : _getCalendar() mémoïse, mais la boucle est par tâche.
+        const cal = this._getCalendar();
 
         // Whether the project excludes weekends by default (true if not set)
         const project = this._data.projects.find(p => p.id === pid);
@@ -2769,9 +2771,18 @@ class Store {
                 .map(id => this.getResource(id))
                 .filter(Boolean);
 
-            // Calendar days used for display; working days computed per resource for billing
+            /* Calendar days used for display; working days computed per resource for billing.
+               Le décompte ouvré passe par le CALENDRIER du projet, comme
+               partout ailleurs dans le moteur. countWorkingDays() ne
+               prenait aucun calendrier et tranchait en dur sur
+               `day !== 0 && day !== 6` : les jours fériés étaient facturés,
+               et les jours ouvrés configurés — un samedi travaillé — ne
+               l'étaient pas.
+               Le plancher à 1 jour est celui que countWorkingDays()
+               appliquait déjà ; le conserver évite qu'une tâche entièrement
+               posée sur des jours chômés ne se facture zéro. */
             const calendarDays = Math.max(1, daysBetween(task.startDate, task.endDate) + 1);
-            const workingDays  = countWorkingDays(task.startDate, task.endDate);
+            const workingDays  = Math.max(1, workingDaysBetween(task.startDate, task.endDate, cal));
 
             let resourceCost = 0;
             for (const r of assignedResources) {

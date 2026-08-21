@@ -1100,8 +1100,13 @@ class TaskModal {
         const end   = this._taskEnd.value;
         if (!start || !end) return;
 
-        /* Duree affichee en jours OUVRES, coherente avec le moteur et
-           avec le calcul de couts (countWorkingDays). */
+        /* Duree affichee en jours OUVRES, coherente avec le moteur et avec
+           le calcul de couts — les deux passent par workingDaysBetween().
+           L'invariant etait FAUX jusqu'ici : le calcul de couts appelait
+           countWorkingDays(), qui ignorait les feries et les jours ouvres
+           configures, si bien que la duree affichee ici et le nombre de
+           jours factures divergeaient des qu'un ferie tombait dans la
+           periode. */
         const cal = store.getCalendar();
         this._durationInput.value = Math.max(1, workingDaysBetween(start, end, cal));
     }
