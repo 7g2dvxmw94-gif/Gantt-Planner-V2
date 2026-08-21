@@ -9,7 +9,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -1103,10 +1103,25 @@ class App {
         let allocatedDays = 0;
         let maxConcurrent = 0;
 
+        /* Le calendrier ouvré du projet, et non un lundi-vendredi codé en
+           dur. isWorkingDay() honore les jours travaillés configurés ET les
+           jours fériés — c'est déjà ce dont se servent les durées, le
+           recalage et les dépendances ; ce calcul était le seul du moteur à
+           s'en passer.
+
+           Une équipe travaillant le samedi perdait cette journée DEUX fois :
+           au numérateur, la journée allouée n'était pas comptée ; au
+           dénominateur, elle n'était pas reconnue comme ouvrée. Une
+           ressource occupée à plein temps un samedi affichait 0 %. Les
+           fériés, eux, gonflaient le dénominateur et diluaient la charge.
+
+           Lu une seule fois : _getCalendar() mémoïse, mais la boucle peut
+           parcourir plusieurs centaines de jours. */
+        const calendrier = store.getCalendar();
+
         const current = new Date(projectStart);
         while (current <= projectEnd) {
-            const day = current.getDay();
-            if (day !== 0 && day !== 6) {
+            if (isWorkingDay(current, calendrier)) {
                 totalWorkDays++;
                 const active = assignedTasks.filter(t => {
                     const ts = parseISO(t.startDate);
