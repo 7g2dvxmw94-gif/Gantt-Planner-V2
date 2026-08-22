@@ -1699,10 +1699,35 @@ class App {
                    donc pas de piège de promesse ici — l'attente garantit
                    seulement que le choix est durable avant que l'utilisateur
                    ne recharge. */
-                item.addEventListener('click', async (e) => {
+                /* ATTEIGNABLE ET OPÉRABLE AU CLAVIER. La ligne portait un
+                   gestionnaire de clic sans tabindex ni gestionnaire de
+                   touches : choisir une baseline était impossible autrement
+                   qu'à la souris. Le bouton radio qu'elle contient est
+                   volontairement hors de l'ordre de tabulation — « item row
+                   handles activation » —, il fallait donc que la ligne y
+                   entre à sa place.
+
+                   role="switch" plutôt que "button" : le geste bascule
+                   l'activation (isActive ? null : bl.id) au lieu de
+                   déclencher une action unique, et aria-checked expose cet
+                   état, que la classe --active ne signalait qu'à l'œil. */
+                item.tabIndex = 0;
+                item.setAttribute('role', 'switch');
+                item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+
+                const basculer = async (e) => {
                     e.stopPropagation();
                     await store.setActiveBaseline(isActive ? null : bl.id);
                     this._updateBaselineBtnState();
+                };
+                item.addEventListener('click', basculer);
+                /* Entrée et Espace, les deux touches d'activation attendues
+                   sur un contrôle. preventDefault() sur Espace : sans lui,
+                   le popover défilerait sous la frappe. */
+                item.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    basculer(e);
                 });
 
                 // Radio-style activate button
