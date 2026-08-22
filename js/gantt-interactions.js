@@ -5,7 +5,7 @@
 
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
-import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog, parseISO } from './utils.js';
+import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog, parseISO, escapeHtml } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -443,8 +443,8 @@ class GanttInteractions {
 
         const fmt = (iso) => iso ? formatDateDisplay(iso) : '\u2014';
 
-        const dot = `<span class="gtt-dot" style="background:${task.color || '#6366F1'}"></span>`;
-        let html = `<div class="gtt-header">${dot}<span class="gtt-title">${task.name}</span></div>`;
+        const dot = `<span class="gtt-dot" style="background:${escapeHtml(task.color || '#6366F1')}"></span>`;
+        let html = `<div class="gtt-header">${dot}<span class="gtt-title">${escapeHtml(task.name)}</span></div>`;
         html += `<div class="gtt-body">`;
 
         if (task.isMilestone) {
@@ -457,7 +457,7 @@ class GanttInteractions {
         } else if (task.isPermit) {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.depositDate || task.startDate)} \u2192 ${fmt(task.decisionDate || task.endDate)}</span></div>`;
             if (task.permitStatus) html += `<div class="gtt-row"><span class="gtt-icon">\ud83c\udff7</span><span>${t(`permit.status.${task.permitStatus}`)}</span></div>`;
-            if (task.permitDossier) html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udccb</span><span>N\u00b0 ${task.permitDossier}</span></div>`;
+            if (task.permitDossier) html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udccb</span><span>N\u00b0 ${escapeHtml(task.permitDossier)}</span></div>`;
         } else {
             html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcc5</span><span>${fmt(task.startDate)} \u2192 ${fmt(task.endDate)}</span></div>`;
             const dur = (task.startDate && task.endDate)
@@ -472,7 +472,7 @@ class GanttInteractions {
         }
 
         if (assigneeNames.length > 0) {
-            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udc64</span><span>${assigneeNames.join(', ')}</span></div>`;
+            html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udc64</span><span>${escapeHtml(assigneeNames.join(', '))}</span></div>`;
         }
 
         // Baseline section — shown whenever a baseline is active (independent of showBaseline toggle)
@@ -487,7 +487,7 @@ class GanttInteractions {
                 const varBg = variance > 0 ? 'rgba(239,68,68,.15)' : variance < 0 ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.1)';
                 const varLabel = variance > 0 ? t('baseline.late', { variance }) : variance < 0 ? t('baseline.early', { variance: Math.abs(variance) }) : t('baseline.onTime');
                 html += `<div class="gtt-sep"></div>`;
-                html += `<div class="gtt-bl-title">${baseline.name}</div>`;
+                html += `<div class="gtt-bl-title">${escapeHtml(baseline.name)}</div>`;
                 if (task.isMilestone) {
                     html += `<div class="gtt-row"><span class="gtt-icon">◈</span><span style="color:#94A3B8">${fmt(blTask.startDate)}</span></div>`;
                 } else {
