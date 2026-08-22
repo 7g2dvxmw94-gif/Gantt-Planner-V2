@@ -596,10 +596,13 @@ export const collaborationUI = {
 
 /* ---- Helpers ---- */
 
+/* textContent, et non innerHTML : aucun appelant ne passe de balisage, et
+   deux d'entre eux interpolent l'adresse saisie par l'utilisateur, dont la
+   seule validation est un test `includes('@')`. */
 function _showMsg(el, type, text) {
     el.style.display = text ? 'block' : 'none';
     el.className = `share-invite-msg ${type}`;
-    el.innerHTML = text;
+    el.textContent = text;
 }
 
 /* La fonction _escape locale a ete remplacee par escapeHtml de
