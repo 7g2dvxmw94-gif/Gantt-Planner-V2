@@ -98,6 +98,34 @@ export function businessDaysBetween(start, end) {
 }
 
 /**
+ * Ajoute un nombre d'ANNEES CALENDAIRES a une date.
+ *
+ * Pas addDays(d, n * 365) : trois ans ne font 1095 jours que si aucun
+ * 29 fevrier ne tombe dans l'intervalle — environ une annee sur quatre.
+ * Le reste du temps, le compte en jours retombe la veille.
+ *
+ * setFullYear() cale sur le meme quantieme, ce que le droit entend par
+ * « trois ans apres le 15 septembre 2026 » : le 15 septembre 2029.
+ *
+ * SEUL CAS OU LE QUANTIEME N'EXISTE PAS : une decision datee du
+ * 29 fevrier, dont l'echeance tomberait sur une annee non bissextile.
+ * setFullYear() reporte alors au 1er mars.
+ *
+ * LIMITE CONNUE, NON TRAITEE ICI : l'article 641 du code de procedure
+ * civile prevoit qu'a defaut de quantieme identique, un delai exprime en
+ * annees expire le DERNIER JOUR DU MOIS — soit le 28 fevrier, et non le
+ * 1er mars. Le report de JavaScript diverge donc du droit d'un jour, dans
+ * ce seul cas. Le corriger demanderait de caler sur la fin de mois ; c'est
+ * une regle juridique que je n'ai pas verifiee contre une source, et
+ * aucun rouge ne la couvre. Signalee plutot qu'implementee au juge.
+ */
+export function addYears(date, years) {
+    const d = parseISO(date);
+    d.setFullYear(d.getFullYear() + years);
+    return d;
+}
+
+/**
  * Calculate the number of calendar days between two dates
  *
  * NORMALISATION UTC AVANT SOUSTRACTION.
