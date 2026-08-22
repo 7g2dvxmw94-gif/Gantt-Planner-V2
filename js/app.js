@@ -427,6 +427,23 @@ class App {
                 }
                 default: va = a.name.toLowerCase(); vb = b.name.toLowerCase();
             }
+            /* COLLATION FRANÇAISE pour les clés textuelles. L'opérateur <
+               compare unité de code par unité de code : les lettres
+               accentuées étant au-dessus de « z » dans Unicode, « étude »
+               passait après « zonage », et « aménagement » après
+               « amiante ». Dans une application française, « tri
+               alphabétique » désigne l'ordre français, où é se range avec e.
+
+               Les clés numériques — priorité, avancement, type — gardent la
+               comparaison arithmétique : localeCompare() les convertirait en
+               chaînes et classerait 10 avant 9.
+
+               Les dates sont des chaînes ISO ; leur ordre lexicographique
+               coïncide avec l'ordre chronologique, et la collation le
+               préserve. */
+            if (typeof va === 'string' && typeof vb === 'string') {
+                return va.localeCompare(vb, 'fr') * dir;
+            }
             if (va < vb) return -1 * dir;
             if (va > vb) return 1 * dir;
             return 0;
