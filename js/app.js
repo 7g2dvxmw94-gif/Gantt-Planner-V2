@@ -3595,7 +3595,7 @@ thead{display:table-header-group}
                     notifications.push({
                         type: pct >= 100 ? 'danger' : 'warning',
                         icon: getCurrencySymbol(),
-                        text: `Budget <strong>${p.name}</strong> à ${pct}%`,
+                        text: `Budget <strong>${escapeHtml(p.name)}</strong> à ${pct}%`,
                         sub: `${formatCurrency(projCosts.totalCostDone)} / ${formatCurrency(p.budget)}`,
                         projectId: p.id,
                     });
@@ -4227,7 +4227,7 @@ thead{display:table-header-group}
                 <label for="costsProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('costs.filterLabel')}</label>
                 <select id="costsProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
-                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
+                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
                 </select>
                 ${hasPhases ? `<button id="costsToggleAllPhases" style="margin-left:auto;background:none;border:1px solid var(--border-default);border-radius:6px;padding:4px 12px;font-size:0.8rem;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;gap:5px;">
                     ${allCollapsed
@@ -4422,7 +4422,7 @@ thead{display:table-header-group}
                 <label for="dashboardProjectFilter" style="font-size:13px; font-weight:600; color:var(--text-secondary);">${t('dashboard.filterLabel')}</label>
                 <select id="dashboardProjectFilter" class="select filter-select" style="min-width:200px;">
                     <option value="all"${filterId === 'all' ? ' selected' : ''}>${t('dashboard.allProjects')}</option>
-                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${p.name}</option>`).join('')}
+                    ${allProjects.map(p => `<option value="${p.id}"${filterId === p.id ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
                 </select>
             </div>
             <!-- KPI Cards -->
@@ -4466,7 +4466,7 @@ thead{display:table-header-group}
                 ${projectStats.map(ps => {
                     const color = ps.progress >= 100 ? '#10B981' : ps.overdue > 0 ? '#EF4444' : '#6366F1';
                     return `<div class="dashboard-project-row" data-project-id="${ps.project.id}" style="cursor:pointer;">
-                        <div class="dashboard-project-name">${ps.project.name}</div>
+                        <div class="dashboard-project-name">${escapeHtml(ps.project.name)}</div>
                         <div class="dashboard-progress-bar">
                             <div class="dashboard-progress-fill" style="width:${ps.progress}%;background:${color};"></div>
                         </div>
@@ -4622,7 +4622,7 @@ thead{display:table-header-group}
             const pColor   = priorityColors[task.priority] || '#64748B';
             const barColor = task.progress > 0 ? 'var(--color-primary)' : 'var(--border-default,#E2E8F0)';
             return `<tr>
-                <td class="dt-name">${task.name}</td>
+                <td class="dt-name">${escapeHtml(task.name)}</td>
                 <td class="dt-secondary">${task.projectName}</td>
                 <td class="dt-center"><span class="dt-badge" style="background:${pColor}18;color:${pColor};border-color:${pColor}35;">${priorityLabels[task.priority] || task.priority || '—'}</span></td>
                 <td class="dt-center dt-deadline" style="color:${deadlineColor};">${deadlineText}</td>
@@ -4808,9 +4808,9 @@ thead{display:table-header-group}
         const appealCleared = allPermits.filter(p => p.permitStatus === 'appeal_cleared').length;
 
         const rows = allPermits.map(permit => {
-            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (escapeHtml(permit.permitType) || '-');
             const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
-            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (escapeHtml(permit.permitStatus) || '-');
             const deadlines = calculatePermitDeadlines(permit);
             let nextDeadline = '';
             if (deadlines.suspended) {
@@ -4831,8 +4831,8 @@ thead{display:table-header-group}
             }
 
             return `<tr class="dashboard-permit-row">
-                <td style="font-weight:500;">${permit.name}</td>
-                <td style="color:var(--text-secondary);">${permit.projectName}</td>
+                <td style="font-weight:500;">${escapeHtml(permit.name)}</td>
+                <td style="color:var(--text-secondary);">${escapeHtml(permit.projectName)}</td>
                 <td>${typeLabel}</td>
                 <td><span class="dashboard-permit-badge" style="background:${statusInfo.color}20;color:${statusInfo.color};border:1px solid ${statusInfo.color}40;">${statusLabel}</span></td>
                 <td style="color:var(--text-secondary);">${permit.depositDate ? formatDateDisplay(permit.depositDate) : '-'}</td>
@@ -4933,9 +4933,9 @@ tr:nth-child(even){background:#fafbfc}
 <table><thead><tr><th>Permis</th><th>Projet</th><th>Type</th><th>Statut</th><th>Dépôt</th><th>Échéance décision</th><th>Purge recours</th><th>Péremption</th></tr></thead><tbody>`;
 
         allPermits.forEach(permit => {
-            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (permit.permitType || '-');
+            const typeLabel = PERMIT_TYPES[permit.permitType] ? t(`permit.type.${permit.permitType}`) : (escapeHtml(permit.permitType) || '-');
             const statusInfo = PERMIT_STATUSES[permit.permitStatus] || { color: '#64748B' };
-            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (permit.permitStatus || '-');
+            const statusLabel = PERMIT_STATUSES[permit.permitStatus] ? t(`permit.status.${permit.permitStatus}`) : (escapeHtml(permit.permitStatus) || '-');
             const deadlines = calculatePermitDeadlines(permit);
 
             let decisionCol = '-';
@@ -4946,8 +4946,8 @@ tr:nth-child(even){background:#fafbfc}
             }
 
             html += `<tr>
-                <td style="font-weight:500;">${permit.name}</td>
-                <td>${permit.projectName}</td>
+                <td style="font-weight:500;">${escapeHtml(permit.name)}</td>
+                <td>${escapeHtml(permit.projectName)}</td>
                 <td>${typeLabel}</td>
                 <td><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></td>
                 <td>${permit.depositDate ? formatDateDisplay(permit.depositDate) : '-'}</td>
@@ -4968,9 +4968,9 @@ tr:nth-child(even){background:#fafbfc}
             const deadlines = calculatePermitDeadlines(permit);
 
             html += `<div class="permit-block">
-                <div class="section-title" style="color:${statusInfo.color};">${permit.name} — ${typeInfo.label}</div>
+                <div class="section-title" style="color:${statusInfo.color};">${escapeHtml(permit.name)} — ${typeInfo.label}</div>
                 <div class="detail-grid">
-                    <div class="detail-label">Projet</div><div class="detail-value">${permit.projectName}</div>
+                    <div class="detail-label">Projet</div><div class="detail-value">${escapeHtml(permit.projectName)}</div>
                     <div class="detail-label">${t('permit.type.label')}</div><div class="detail-value">${typeLabel}</div>
                     <div class="detail-label">${t('permit.status.label')}</div><div class="detail-value"><span class="badge" style="background:${statusInfo.color}20;color:${statusInfo.color};">${statusLabel}</span></div>
                     <div class="detail-label">${t('permit.abf.label')}</div><div class="detail-value">${permit.abfSector ? t('misc.yes') : t('misc.no')}</div>
@@ -5381,7 +5381,7 @@ tr:nth-child(even){background:#fafbfc}
 
     _cloudLoggedInHTML(user) {
         const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
-        const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
+        const email = user && user.email ? `<span class="cloud-user-email">${escapeHtml(user.email)}</span>` : '';
         return `
             <div class="cloud-user-bar">
                 <div class="cloud-user-info">
@@ -5507,7 +5507,7 @@ tr:nth-child(even){background:#fafbfc}
 
                 item.innerHTML = `
                     <div class="cloud-backup-info">
-                        <div class="cloud-backup-name">${b.name}</div>
+                        <div class="cloud-backup-name">${escapeHtml(b.name)}</div>
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
@@ -5755,7 +5755,7 @@ tr:nth-child(even){background:#fafbfc}
 
     _onedriveLoggedInHTML(user) {
         const name = user ? (user.displayName || user.email || t('cloud.defaultUser')) : t('cloud.defaultUser');
-        const email = user && user.email ? `<span class="cloud-user-email">${user.email}</span>` : '';
+        const email = user && user.email ? `<span class="cloud-user-email">${escapeHtml(user.email)}</span>` : '';
         return `
             <div class="cloud-user-bar">
                 <div class="cloud-user-info">
@@ -5881,7 +5881,7 @@ tr:nth-child(even){background:#fafbfc}
 
                 item.innerHTML = `
                     <div class="cloud-backup-info">
-                        <div class="cloud-backup-name">${b.name}</div>
+                        <div class="cloud-backup-name">${escapeHtml(b.name)}</div>
                         <div class="cloud-backup-meta">${date} · ${b.projectCount} projet(s) · ${b.taskCount} tâche(s) · ${size}</div>
                     </div>
                     <div class="cloud-backup-actions">
