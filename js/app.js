@@ -3197,11 +3197,31 @@ thead{display:table-header-group}
     _bindKeyboardShortcuts() {
         const _prevent = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
 
+        /* Un raccourci de l'application ne doit pas se substituer a l'edition
+           de texte. Ctrl+Z, Ctrl+Y et Ctrl+A ont un sens NATIF dans un champ
+           de saisie — annuler la frappe, la retablir, tout selectionner — et
+           _prevent() supprime ce sens en meme temps qu'il le detourne : ni le
+           comportement du navigateur, ni rien d'inoffensif.
+
+           La definition est celle que les branches Suppr et 1/2/3 posaient
+           deja chacune de leur cote ; elle est ici factorisee pour qu'il n'y
+           en ait qu'une, et que les prochaines branches en heritent.
+
+           Elle doit se trouver DANS ce gestionnaire : le champ de recherche
+           de projets tente de s'en proteger par un `keydown → stopPropagation`
+           qui reste sans effet, puisque ce gestionnaire-ci est pose en phase
+           de CAPTURE et s'execute avant celui du champ. */
+        const saisieDeTexte = () => {
+            const el = document.activeElement;
+            return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+        };
+
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', async (e) => {
             const mod = e.ctrlKey || e.metaKey;
             // Ctrl+Z / Cmd+Z: Undo
             if (mod && !e.shiftKey && e.key === 'z') {
+                if (saisieDeTexte()) return;
                 _prevent(e);
                 if (await store.undo()) {
                     ganttRenderer.render();
@@ -3214,6 +3234,7 @@ thead{display:table-header-group}
 
             // Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z: Redo
             if ((mod && e.key === 'y') || (mod && e.shiftKey && e.key === 'Z')) {
+                if (saisieDeTexte()) return;
                 _prevent(e);
                 if (await store.redo()) {
                     ganttRenderer.render();
@@ -3234,16 +3255,14 @@ thead{display:table-header-group}
             }
 
             // Ctrl+A / Cmd+A: Select all tasks (in table view)
-            if (mod && e.key === 'a' && this._activeView === 'board') {
+            if (mod && e.key === 'a' && this._activeView === 'board' && !saisieDeTexte()) {
                 _prevent(e);
                 this._selectAllTasks();
             }
 
             // Delete/Backspace: Delete selected tasks
             if ((e.key === 'Delete' || e.key === 'Backspace') && this._selectedTaskIds.size > 0) {
-                const activeEl = document.activeElement;
-                const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-                if (!isInput) {
+                if (!saisieDeTexte()) {
                     _prevent(e);
                     this._batchDelete();
                 }
@@ -3266,9 +3285,7 @@ thead{display:table-header-group}
 
             // 1,2,3: Switch views
             if (!mod && !e.altKey) {
-                const activeEl = document.activeElement;
-                const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-                if (!isInput) {
+                if (!saisieDeTexte()) {
                     if (e.key === '1') this._switchViewByIndex(0);
                     if (e.key === '2') this._switchViewByIndex(1);
                     if (e.key === '3') this._switchViewByIndex(2);
