@@ -3,7 +3,7 @@
    Reactive store with localStorage persistence
    ======================================== */
 
-import { generateId, daysBetween, addDays, formatDateISO,
+import { generateId, daysBetween, addDays, addYears, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
@@ -315,7 +315,12 @@ function calculatePermitDeadlines(permit) {
             deadlines.appealEndDate = formatDateISO(addDays(displayStart, THIRD_PARTY_APPEAL_DAYS));
         }
         // Permit expiry (3 years from decision)
-        deadlines.expiryDate = formatDateISO(addDays(decision, PERMIT_VALIDITY_YEARS * 365));
+        /* addYears et non addDays(…, n * 365) : trois ans ne font 1095
+           jours que si aucun 29 fevrier ne tombe dans l'intervalle. Le
+           reste du temps — environ trois annees sur quatre — le compte en
+           jours retombait la veille, et le permis paraissait perime un
+           jour trop tot. */
+        deadlines.expiryDate = formatDateISO(addYears(decision, PERMIT_VALIDITY_YEARS));
     }
 
     return deadlines;
