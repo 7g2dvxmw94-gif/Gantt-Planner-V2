@@ -74,8 +74,9 @@ test('Ctrl+Z et Ctrl+Y pendant une saisie n\'agissent pas sur l\'historique', as
     const barreA = await creerTache(page, nomA);
     const barreB = await creerTache(page, nomB);
 
-    const toastAnnule  = page.locator('#toastContainer .toast', { hasText: 'Action annulée' });
-    const toastRetabli = page.locator('#toastContainer .toast', { hasText: 'Action rétablie' });
+    /* Sert UNIQUEMENT au discriminant : voir plus bas pourquoi le toast ne
+       peut pas servir à mesurer une absence. */
+    const toastAnnule = page.locator('#toastContainer .toast', { hasText: 'Action annulée' });
 
     /* DISCRIMINANT — HORS D'UN CHAMP, LE RACCOURCI FONCTIONNE. Le focus est
        remis au document, puis Ctrl+Z annule la création de B. Cela établit
@@ -88,10 +89,6 @@ test('Ctrl+Z et Ctrl+Y pendant une saisie n\'agissent pas sur l\'historique', as
     await expect(toastAnnule).toBeVisible({ timeout: 10_000 });
     await expect(barreB).toHaveCount(0);
     await expect(barreA).toBeVisible();
-
-    /* Le toast vit 3,3 s. On attend sa disparition avant de mesurer une
-       ABSENCE de toast, sinon celui du discriminant serait compté. */
-    await expect(toastAnnule).toHaveCount(0, { timeout: 15_000 });
 
     /* La pile d'annulation contient maintenant, au sommet, la création de
        A ; la pile de rétablissement contient celle de B. Un Ctrl+Z parasite
@@ -113,10 +110,14 @@ test('Ctrl+Z et Ctrl+Y pendant une saisie n\'agissent pas sur l\'historique', as
        sur une ABSENCE d'effet, et une absence ne s'observe qu'après avoir
        laissé à l'effet le temps de se produire. Le discriminant vient de
        montrer que l'annulation se manifeste en moins d'une seconde, écriture
-       en base comprise ; 3 s laisse une marge confortable. */
+       en base comprise ; 3 s laisse une marge confortable.
+
+       PAS D'ASSERTION SUR LE TOAST ICI. Un `expect(toast).toHaveCount(0)`
+       serait décoratif : c'est une assertion à réessai, et le toast s'efface
+       de lui-même au bout de 3,3 s, si bien qu'elle finirait toujours par
+       passer — défaut ou pas. La barre de A, elle, ne revient jamais. */
     await page.keyboard.press('Control+z');
     await page.waitForTimeout(3000);
-    await expect(toastAnnule).toHaveCount(0);
     await expect(barreA).toBeVisible();
 
     /* --- SECONDE ASSERTION CENTRALE : Ctrl+Y ---
@@ -124,7 +125,6 @@ test('Ctrl+Z et Ctrl+Y pendant une saisie n\'agissent pas sur l\'historique', as
        gestionnaire, et rétablir n'est pas annuler. B ne doit pas revenir. */
     await page.keyboard.press('Control+y');
     await page.waitForTimeout(3000);
-    await expect(toastRetabli).toHaveCount(0);
     await expect(barreB).toHaveCount(0);
 
     await deleteActiveProject(page);
