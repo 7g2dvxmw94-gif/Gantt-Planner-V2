@@ -2919,6 +2919,26 @@ class Store {
             ef[t.id] = 0;
         });
 
+        /* ANCRAGE DES TACHES SANS LIEN ENTRANT.
+         *
+         * Le reseau ne dit RIEN de la date d'une tache que rien ne precede :
+         * c'est une donnee du planning, posee par l'utilisateur. Les faire
+         * toutes partir de l'instant zero revenait a superposer des taches
+         * separees de plusieurs mois, et le calcul designait alors les taches
+         * les plus LONGUES au lieu des DERNIERES.
+         *
+         * Les taches qui ont un lien entrant ne sont PAS ancrees : leur place
+         * se deduit de leurs contraintes, comme dans tout CPM. Seules les
+         * racines portent une date imposee.
+         *
+         * L'origine est la date de debut la plus precoce du projet. Les dates
+         * ISO se comparent comme des chaines, l'ordre lexicographique etant
+         * ici l'ordre chronologique. */
+        const projectStart = tasks.reduce(
+            (mini, t) => (mini === null || t.startDate < mini) ? t.startDate : mini, null);
+        const ancre = {};
+        tasks.forEach(t => { ancre[t.id] = daysBetween(projectStart, t.startDate); });
+
         // Topological sort
         const visited = new Set();
         const order = [];
@@ -2957,7 +2977,14 @@ class Store {
                     if (debutMini === null || c > debutMini) debutMini = c;
                 }
             });
-            let debut = debutMini !== null ? debutMini : 0;
+            let debut;
+            if (debutMini !== null) {
+                debut = debutMini;
+            } else if (predecessorsOf[id].length === 0) {
+                debut = ancre[id];      // racine : sa date est une donnee
+            } else {
+                debut = 0;              // contrainte seulement par sa FIN (FF/SF)
+            }
             /* Une contrainte de fin plus tardive prime, comme dans
                _computeConstrainedDates : le debut s'en deduit. */
             if (finMini !== null && finMini - duration[id] > debut) {
