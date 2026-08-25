@@ -2883,7 +2883,10 @@ class Store {
         const taskMap = {};
         tasks.forEach(t => { taskMap[t.id] = t; });
 
-        // Build adjacency: task -> successors
+        /* Adjacence PORTEUSE DU LIEN, pas seulement de l'identifiant : le
+           type et le decalage font partie de la contrainte au meme titre
+           que le predecesseur. Les ignorer revenait a lire tout lien comme
+           un Fin->Debut de decalage nul — voir la passe avant. */
         const successorsOf = {};
         const predecessorsOf = {};
         tasks.forEach(t => {
@@ -2894,8 +2897,14 @@ class Store {
             (t.dependencies || []).forEach(dep => {
                 const predId = dep.taskId;
                 if (taskMap[predId]) {
-                    successorsOf[predId].push(t.id);
-                    predecessorsOf[t.id].push(predId);
+                    const lien = {
+                        predId,
+                        succId: t.id,
+                        type: dep.type || 'FS',
+                        lag: Number(dep.lag) || 0,   // absent ou invalide => 0
+                    };
+                    successorsOf[predId].push(lien);
+                    predecessorsOf[t.id].push(lien);
                 }
             });
         });
@@ -2916,19 +2925,46 @@ class Store {
         const visit = (id) => {
             if (visited.has(id)) return;
             visited.add(id);
-            predecessorsOf[id].forEach(pid => visit(pid));
+            predecessorsOf[id].forEach(lien => visit(lien.predId));
             order.push(id);
         };
         tasks.forEach(t => visit(t.id));
 
-        // Forward pass
+        /* Passe avant. Chaque type de lien contraint soit le DEBUT, soit la
+           FIN du successeur — la meme distinction que _computeConstrainedDates
+           fait deja pour placer les taches, et pour les memes raisons :
+             FS  le successeur DEBUTE apres la fin du predecesseur
+             SS  il DEBUTE avec le debut du predecesseur
+             FF  il TERMINE avec la fin du predecesseur
+             SF  il TERMINE avec le debut du predecesseur
+           ef est la borne EXCLUSIVE de la tache (ef = es + duree), si bien
+           qu'un FS sans decalage donne es[succ] = ef[pred] : le lendemain. */
         order.forEach(id => {
-            if (predecessorsOf[id].length === 0) {
-                es[id] = 0;
-            } else {
-                es[id] = Math.max(...predecessorsOf[id].map(pid => ef[pid]));
+            let debutMini = null;   // contrainte portant sur le debut
+            let finMini   = null;   // contrainte portant sur la fin
+            predecessorsOf[id].forEach(({ predId, type, lag }) => {
+                if (type === 'SS') {
+                    const c = es[predId] + lag;
+                    if (debutMini === null || c > debutMini) debutMini = c;
+                } else if (type === 'FF') {
+                    const c = ef[predId] + lag;
+                    if (finMini === null || c > finMini) finMini = c;
+                } else if (type === 'SF') {
+                    const c = es[predId] + lag;
+                    if (finMini === null || c > finMini) finMini = c;
+                } else {                                   // FS
+                    const c = ef[predId] + lag;
+                    if (debutMini === null || c > debutMini) debutMini = c;
+                }
+            });
+            let debut = debutMini !== null ? debutMini : 0;
+            /* Une contrainte de fin plus tardive prime, comme dans
+               _computeConstrainedDates : le debut s'en deduit. */
+            if (finMini !== null && finMini - duration[id] > debut) {
+                debut = finMini - duration[id];
             }
-            ef[id] = es[id] + duration[id];
+            es[id] = debut;
+            ef[id] = debut + duration[id];
         });
 
         const projectEnd = Math.max(...tasks.map(t => ef[t.id]));
@@ -2941,14 +2977,41 @@ class Store {
             ls[t.id] = projectEnd;
         });
 
+        /* Passe arriere, symetrique de la passe avant : un lien qui contraint
+           le DEBUT du successeur borne le DEBUT du predecesseur, un lien qui
+           contraint sa FIN borne la FIN du predecesseur.
+
+           LA BORNE projectEnd RESTE APPLIQUEE MEME QUAND LA TACHE A DES
+           SUCCESSEURS, et ce n'est pas une precaution : une tache qui n'a que
+           des successeurs en SS ne voit sa FIN contrainte par personne. La
+           retarder retarderait pourtant la fin du projet, puisque c'est elle
+           qui la porte. Sans cette borne, elle recevrait une marge qu'elle
+           n'a pas. */
         for (let i = order.length - 1; i >= 0; i--) {
             const id = order[i];
-            if (successorsOf[id].length === 0) {
-                lf[id] = projectEnd;
-            } else {
-                lf[id] = Math.min(...successorsOf[id].map(sid => ls[sid]));
+            let finMaxi   = null;   // contrainte portant sur la fin
+            let debutMaxi = null;   // contrainte portant sur le debut
+            successorsOf[id].forEach(({ succId, type, lag }) => {
+                if (type === 'SS') {
+                    const c = ls[succId] - lag;
+                    if (debutMaxi === null || c < debutMaxi) debutMaxi = c;
+                } else if (type === 'FF') {
+                    const c = lf[succId] - lag;
+                    if (finMaxi === null || c < finMaxi) finMaxi = c;
+                } else if (type === 'SF') {
+                    const c = lf[succId] - lag;
+                    if (debutMaxi === null || c < debutMaxi) debutMaxi = c;
+                } else {                                   // FS
+                    const c = ls[succId] - lag;
+                    if (finMaxi === null || c < finMaxi) finMaxi = c;
+                }
+            });
+            let fin = finMaxi !== null ? Math.min(finMaxi, projectEnd) : projectEnd;
+            if (debutMaxi !== null && debutMaxi + duration[id] < fin) {
+                fin = debutMaxi + duration[id];
             }
-            ls[id] = lf[id] - duration[id];
+            lf[id] = fin;
+            ls[id] = fin - duration[id];
         }
 
         // Critical path: tasks where float (ls - es) === 0
