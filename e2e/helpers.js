@@ -1,12 +1,20 @@
 /* Utilitaires partagés entre les specs E2E. */
 
 import { trackActiveProject } from './cleanup.js';
+import { DELAI_APP_PRETE } from './login.js';
 
 /** Attend que App.init() soit passé (store.initFromSupabase() est awaité
  *  avant, donc les listeners comme celui du sélecteur de projet ne sont
- *  attachés qu'à ce moment — cliquer avant ne fait rien). */
+ *  attachés qu'à ce moment — cliquer avant ne fait rien).
+ *
+ *  LE DÉLAI EST PASSÉ DE 15 À 30 SECONDES. Le 23 août 2026, le run
+ *  32657688615 a vu douze tests buter ici en 15 s ; neuf s'en sont remis à
+ *  la reprise, trois non. Un démarrage lent n'est pas un démarrage cassé, et
+ *  attendre davantage ne retire rien à la capacité de détection : si
+ *  l'application ne démarre vraiment plus, le test échoue toujours — quinze
+ *  secondes plus tard. */
 export async function waitForAppReady(page) {
-    await page.locator('body[data-app-ready="true"]').waitFor({ timeout: 15_000 });
+    await page.locator('body[data-app-ready="true"]').waitFor({ timeout: DELAI_APP_PRETE });
 }
 
 /** Crée un projet via le bouton "Nouveau projet" (window.prompt natif).

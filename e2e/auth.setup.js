@@ -1,6 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import { mkdir } from 'fs/promises';
 import { dirname, resolve } from 'path';
+import { connecterAvecReprises, DELAI_APP_PRETE } from './login.js';
 
 const AUTH_FILE = resolve(process.cwd(), 'e2e/.auth/user.json');
 
@@ -13,12 +14,9 @@ setup('login', async ({ page }) => {
         );
     }
 
-    await page.goto('auth.html');
-    await page.locator('#loginEmail').fill(email);
-    await page.locator('#loginPassword').fill(password);
-    await page.locator('#btnLogin').click();
-
-    await page.waitForURL(/index\.html/, { timeout: 15_000 });
+    /* Avec reprises espacées : l'échec de ce setup emporte toute la suite.
+       Voir login.js pour l'incident qui l'a motivé. */
+    await connecterAvecReprises(page, email, password);
 
     // store.initFromSupabase() (awaité par App.init()) appelle
     // purgeForeignLocalData() en tout premier, qui EFFACE
@@ -27,7 +25,7 @@ setup('login', async ({ page }) => {
     // attendre la fin de l'init (marqueur data-app-ready) avant d'écrire le
     // flag, sinon la purge l'efface aussitôt et l'overlay d'onboarding
     // (même z-index que les dropdowns) intercepte les clics des tests.
-    await page.locator('body[data-app-ready="true"]').waitFor({ timeout: 15_000 });
+    await page.locator('body[data-app-ready="true"]').waitFor({ timeout: DELAI_APP_PRETE });
     await page.evaluate(() => localStorage.setItem('gantt_onboarding_done', '1'));
 
     // S'assurer qu'un projet "seed" persistant existe. Le bouton de

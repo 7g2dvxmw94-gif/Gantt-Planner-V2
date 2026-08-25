@@ -10,7 +10,12 @@ export default defineConfig({
     workers: 1,
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
-    timeout: 30_000,
+    /* 60 s, contre 30 auparavant. Le test le plus long en tourne environ 16 ;
+       les 30 s laissaient donc peu d'air quand l'application démarrait
+       lentement, et un test pouvait expirer alors qu'il aurait abouti.
+       Allonger ce budget ne masque rien : un test réellement bloqué échoue
+       toujours, simplement trente secondes plus tard. */
+    timeout: 60_000,
 
     use: {
         ...devices['Desktop Chrome'],
@@ -42,6 +47,11 @@ export default defineConfig({
             name: 'setup',
             testDir: './',
             testMatch: '**/auth.setup.js',
+            /* Le setup fait bien plus qu'un test : connexion, attente de
+               l'init, vérification du projet seed, écriture du storageState —
+               et désormais jusqu'à trois tentatives de connexion espacées.
+               Le budget commun ne pouvait pas les contenir. */
+            timeout: 180_000,
         },
         {
             name: 'chromium',
