@@ -764,6 +764,24 @@ class GanttInteractions {
             updates.skipSnap = true;
             store.updateTask(d.taskId, updates);
 
+            /* Reappliquer les contraintes de la tache DEPLACEE, comme le fait
+               deja task-modal.js apres un enregistrement.
+               updateTask() propage aux SUCCESSEURS ; personne ne rappelait a
+               la tache elle-meme ou ses predecesseurs l'obligent a se tenir.
+               La souris pouvait donc creer un ecart que
+               applyPredecessorConstraints declare impossible — et que
+               propagateDependencies effacerait sans prevenir au premier
+               mouvement du predecesseur. L'application enregistrait une
+               modification qu'elle ne savait pas conserver.
+
+               Appel INCONDITIONNEL, et non reserve au mode 'move' : un
+               resize-left deplace lui aussi le debut, donc viole le meme
+               invariant. Sur un resize-right, la fonction sort d'elle-meme —
+               les dates calculees egalent les dates courantes, puisque le
+               span est relu depuis la tache. Elle sort aussi, en tete, pour
+               toute tache sans dependance : le cas courant ne coute rien. */
+            store.applyPredecessorConstraints(d.taskId);
+
             // Log critical path alert for user-initiated drag changes
             if (isOnCriticalPath && taskBeforeDrag) {
                 const typeLabel = taskBeforeDrag.isMilestone ? 'jalon' : 'tâche';
