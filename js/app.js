@@ -477,22 +477,52 @@ class App {
         thCb.appendChild(selectAllCb);
         headerRow.appendChild(thCb);
 
+        /* Rend un en-tete de colonne triable : etat visuel, etat ANNONCE, et
+           activation a la souris COMME au clavier.
+           Cette fabrique existe parce que les deux blocs qui suivaient
+           etaient des copies l'une de l'autre — d'ou un meme oubli present
+           en deux exemplaires. Une seule definition, desormais, et la
+           prochaine colonne en heritera. */
+        const rendreTriable = (th, cle) => {
+            th.classList.add('sortable');
+            const actif = this._tableSortKey === cle;
+            const croissant = this._tableSortDir === 'asc';
+            if (actif) th.classList.add(croissant ? 'sort-asc' : 'sort-desc');
+
+            /* L'etat du tri n'etait porte que par la classe CSS, donc par la
+               seule apparence. aria-sort est l'attribut normalise par
+               WAI-ARIA ; 'none' sur les colonnes triables non triees dit
+               qu'elles peuvent l'etre. */
+            th.setAttribute('aria-sort', actif ? (croissant ? 'ascending' : 'descending') : 'none');
+
+            /* Un <th> n'est pas focalisable par nature : sans tabindex, la
+               colonne n'etait ni atteignable par Tab ni activable par
+               Entree. Meme famille que #53 sur le choix d'une baseline. */
+            th.tabIndex = 0;
+
+            const trier = () => {
+                if (this._tableSortKey === cle) {
+                    this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this._tableSortKey = cle;
+                    this._tableSortDir = 'asc';
+                }
+                this._renderBoardView();
+            };
+            th.addEventListener('click', trier);
+            th.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                /* Sur Espace, sans quoi la page defilerait en meme temps. */
+                e.preventDefault();
+                trier();
+            });
+        };
+
         // Type column header (sortable)
         const thType = document.createElement('th');
-        thType.className = 'table-type-col sortable';
+        thType.className = 'table-type-col';
         thType.textContent = t('board.type');
-        if (this._tableSortKey === 'type') {
-            thType.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-        }
-        thType.addEventListener('click', () => {
-            if (this._tableSortKey === 'type') {
-                this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
-            } else {
-                this._tableSortKey = 'type';
-                this._tableSortDir = 'asc';
-            }
-            this._renderBoardView();
-        });
+        rendreTriable(thType, 'type');
         headerRow.appendChild(thType);
 
         // Columns: BL columns appear whenever a baseline is active (regardless of showBaseline toggle)
@@ -521,19 +551,7 @@ class App {
                 th.className = 'table-bl-col table-bl-col--header';
                 if (col.tooltip) th.title = col.tooltip;
             } else {
-                th.className = 'sortable';
-                if (this._tableSortKey === col.key) {
-                    th.classList.add(this._tableSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-                }
-                th.addEventListener('click', () => {
-                    if (this._tableSortKey === col.key) {
-                        this._tableSortDir = this._tableSortDir === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this._tableSortKey = col.key;
-                        this._tableSortDir = 'asc';
-                    }
-                    this._renderBoardView();
-                });
+                rendreTriable(th, col.key);
             }
             headerRow.appendChild(th);
         });
