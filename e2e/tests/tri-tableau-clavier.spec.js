@@ -129,3 +129,49 @@ test('l\'en-tête de tri annonce son état', async ({ page }) => {
 
     await deleteActiveProject(page);
 });
+
+/* Troisième défaut sur le même élément, observé en écrivant #60 et signalé
+ * alors sans être traité.
+ *
+ * TRIER FAIT PERDRE LE FOCUS. _renderBoardView() reconstruit tout le
+ * tableau : le <th> qui portait le focus est détruit, remplacé par un
+ * nouveau nœud, et le focus retombe sur le <body>. Celui qui navigue au
+ * clavier doit donc reparcourir toutes les tabulations depuis le début
+ * après CHAQUE tri — et il ne peut pas inverser l'ordre d'une colonne, qui
+ * demande une seconde activation du même en-tête.
+ *
+ * C'EST LE CORRECTIF DE #60 QUI REND CE DÉFAUT ATTEIGNABLE : avant lui,
+ * l'en-tête n'était pas focalisable du tout, et la question ne se posait
+ * pas. Rendre un contrôle opérable au clavier oblige à le rendre utilisable
+ * plus d'une fois.
+ *
+ * LE VERDICT EST OBJECTIF : un contrôle qu'on vient d'activer ne doit pas
+ * se dérober sous les doigts. C'est le principe même du § AC1 volet 1, et
+ * la conséquence est mesurable — le focus est ailleurs.
+ */
+test('l\'en-tête garde le focus après un tri au clavier', async ({ page }) => {
+    const suffixe = Date.now();
+    const { entete, cellules, nomComplet } =
+        await prepare(page, `E2E TriFocus ${suffixe}`, suffixe);
+
+    /* PREMIER DISCRIMINANT — L'EN-TÊTE PREND BIEN LE FOCUS. Acquis depuis
+       #60 ; l'exiger ici établit que ce qui suit mesure la PERTE du focus
+       et non son absence initiale. */
+    await entete.focus();
+    await expect(entete).toBeFocused();
+
+    await page.keyboard.press('Enter');
+
+    /* SECOND DISCRIMINANT — LA TOUCHE A BIEN AGI. Le tri a basculé, donc le
+       tableau a été reconstruit : sans cela, un focus intact plus bas ne
+       prouverait rien, l'ancien nœud n'ayant jamais été remplacé. */
+    await expect(entete).toHaveClass(/sort-desc/);
+    await expect(cellules).toHaveText(ORDRE_DESC.map(nomComplet));
+
+    /* --- L'ASSERTION CENTRALE ---
+       Le nœud a changé, le focus doit avoir suivi. Le localisateur se
+       résout à chaque essai, donc il désigne bien le NOUVEL en-tête. */
+    await expect(entete).toBeFocused();
+
+    await deleteActiveProject(page);
+});

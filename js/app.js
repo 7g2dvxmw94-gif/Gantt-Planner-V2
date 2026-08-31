@@ -499,6 +499,10 @@ class App {
                colonne n'etait ni atteignable par Tab ni activable par
                Entree. Meme famille que #53 sur le choix d'une baseline. */
             th.tabIndex = 0;
+            /* Repere stable a travers la reconstruction du tableau : le
+               noeud, lui, ne survit pas. Sert a retrouver le nouvel en-tete
+               pour lui rendre le focus, juste en dessous. */
+            th.dataset.sortKey = cle;
 
             const trier = () => {
                 if (this._tableSortKey === cle) {
@@ -508,6 +512,19 @@ class App {
                     this._tableSortDir = 'asc';
                 }
                 this._renderBoardView();
+
+                /* RENDRE LE FOCUS. _renderBoardView() reconstruit tout le
+                   tableau : le <th> qui portait le focus est detruit et
+                   celui-ci retombe sur le <body>. Sans cela, qui navigue au
+                   clavier devrait reparcourir toutes les tabulations apres
+                   chaque tri — et ne pourrait pas inverser l'ordre d'une
+                   colonne, qui demande une seconde activation du MEME
+                   en-tete.
+                   base.css distingue :focus-visible de :focus, si bien que
+                   ce focus rendu n'affiche un lisere que pour qui vient du
+                   clavier ; a la souris, il reste invisible. */
+                const nouveau = $(`#boardView th.sortable[data-sort-key="${cle}"]`);
+                if (nouveau) nouveau.focus();
             };
             th.addEventListener('click', trier);
             th.addEventListener('keydown', (e) => {
