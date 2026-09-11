@@ -236,7 +236,23 @@
     background: var(--bg-base);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
+    /* Les proprietes sont enumerees, et non couvertes par `all`, parce que
+       `all` INCLUT `visibility`.
+
+       Un champ place dans une fenetre modale herite de la `visibility` de
+       l'overlay. A l'ouverture, celle-ci passe de `hidden` a `visible` ; le
+       champ demarre alors sa PROPRE transition sur cette valeur heritee, et
+       a l'instant zero il vaut encore `hidden`. Un element dont la
+       visibilite calculee est `hidden` n'est pas focalisable, donc le
+       `.focus()` appele dans la meme tache synchrone ne fait rien.
+
+       Les trois proprietes retenues sont celles que les regles voisines
+       animent reellement : `.input:focus` change la bordure et l'ombre,
+       le basculement de theme change le fond. Aucune ne concerne
+       `visibility`, que personne n'a jamais voulu animer ici. */
+    transition: border-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                background-color var(--transition-fast);
 }
 
 .input:focus {
