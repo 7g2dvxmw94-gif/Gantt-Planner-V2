@@ -16,7 +16,16 @@
     border-radius: var(--radius-md);
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    /* `all` INCLUT `visibility` : un controle place dans une fenetre modale
+       herite de la `visibility` de l'overlay, et demarrerait a l'ouverture
+       sa PROPRE transition sur cette valeur heritee — encore `hidden` a
+       l'instant zero, donc pas focalisable. Voir #63, meme mecanisme.
+
+       `all` est CONSERVE plutot qu'enumere, contrairement a `.input` : ces
+       regles ont de nombreuses variantes (:hover, :disabled, .active,
+       [data-value]) et une enumeration risquerait d'en perdre une sans
+       qu'on le voie. Le suffixe ne change rien d'autre que `visibility`. */
+    transition: all var(--transition-fast), visibility 0s;
     white-space: nowrap;
     user-select: none;
 }
@@ -125,7 +134,16 @@
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    /* `all` INCLUT `visibility` : un controle place dans une fenetre modale
+       herite de la `visibility` de l'overlay, et demarrerait a l'ouverture
+       sa PROPRE transition sur cette valeur heritee — encore `hidden` a
+       l'instant zero, donc pas focalisable. Voir #63, meme mecanisme.
+
+       `all` est CONSERVE plutot qu'enumere, contrairement a `.input` : ces
+       regles ont de nombreuses variantes (:hover, :disabled, .active,
+       [data-value]) et une enumeration risquerait d'en perdre une sans
+       qu'on le voie. Le suffixe ne change rien d'autre que `visibility`. */
+    transition: all var(--transition-fast), visibility 0s;
 }
 
 .icon-btn:hover {
@@ -277,7 +295,16 @@
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    /* `all` INCLUT `visibility` : un controle place dans une fenetre modale
+       herite de la `visibility` de l'overlay, et demarrerait a l'ouverture
+       sa PROPRE transition sur cette valeur heritee — encore `hidden` a
+       l'instant zero, donc pas focalisable. Voir #63, meme mecanisme.
+
+       `all` est CONSERVE plutot qu'enumere, contrairement a `.input` : ces
+       regles ont de nombreuses variantes (:hover, :disabled, .active,
+       [data-value]) et une enumeration risquerait d'en perdre une sans
+       qu'on le voie. Le suffixe ne change rien d'autre que `visibility`. */
+    transition: all var(--transition-fast), visibility 0s;
 }
 
 .select:focus {
@@ -652,7 +679,16 @@
     border-radius: var(--radius-full);
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    /* `all` INCLUT `visibility` : un controle place dans une fenetre modale
+       herite de la `visibility` de l'overlay, et demarrerait a l'ouverture
+       sa PROPRE transition sur cette valeur heritee — encore `hidden` a
+       l'instant zero, donc pas focalisable. Voir #63, meme mecanisme.
+
+       `all` est CONSERVE plutot qu'enumere, contrairement a `.input` : ces
+       regles ont de nombreuses variantes (:hover, :disabled, .active,
+       [data-value]) et une enumeration risquerait d'en perdre une sans
+       qu'on le voie. Le suffixe ne change rien d'autre que `visibility`. */
+    transition: all var(--transition-fast), visibility 0s;
     padding: 0;
     outline: none;
 }
@@ -2125,7 +2161,16 @@ textarea.input {
     font-weight: var(--font-weight-medium);
     font-family: var(--font-sans);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    /* `all` INCLUT `visibility` : un controle place dans une fenetre modale
+       herite de la `visibility` de l'overlay, et demarrerait a l'ouverture
+       sa PROPRE transition sur cette valeur heritee — encore `hidden` a
+       l'instant zero, donc pas focalisable. Voir #63, meme mecanisme.
+
+       `all` est CONSERVE plutot qu'enumere, contrairement a `.input` : ces
+       regles ont de nombreuses variantes (:hover, :disabled, .active,
+       [data-value]) et une enumeration risquerait d'en perdre une sans
+       qu'on le voie. Le suffixe ne change rien d'autre que `visibility`. */
+    transition: all var(--transition-fast), visibility 0s;
     text-align: center;
 }
 
