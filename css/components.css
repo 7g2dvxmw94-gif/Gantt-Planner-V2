@@ -335,6 +335,22 @@
 .modal-overlay.active {
     opacity: 1;
     visibility: visible;
+    /* `visibility` bascule INSTANTANEMENT a l'affichage, alors qu'elle
+       reste differee a la fermeture (regle ci-dessus).
+
+       Sans ce 0s, une fenetre ne peut pas prendre le focus a l'ouverture.
+       Les modales appellent `.focus()` dans la meme tache synchrone que
+       l'ajout de `.active` ; le recalcul de style DEMARRE alors la
+       transition, et a l'instant zero d'une transition la valeur calculee
+       est encore celle de depart — `visibility: hidden`. Un element dont
+       la visibilite calculee est `hidden` n'est pas focalisable :
+       `.focus()` devient un no-op, sans erreur ni trace.
+
+       Le sens de la FERMETURE est inchange. Les transitions sont lues sur
+       l'etat vers lequel on va : retirer `.active` ramene a
+       `.modal-overlay`, qui garde son `visibility` retarde — et c'est ce
+       retard qui laisse l'opacite s'eteindre avant la disparition. */
+    transition: opacity var(--transition-base), visibility 0s;
 }
 
 .modal {
