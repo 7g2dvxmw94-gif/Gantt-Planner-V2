@@ -3251,6 +3251,22 @@ thead{display:table-header-group}
             return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
         };
 
+        /* Une fenetre modale est-elle affichee ? La question est posee aux
+           elements qui le declarent EUX-MEMES — `aria-modal="true"` — et non
+           a une liste de noms de classes, parce que l'application en emploie
+           trois familles fermees de trois facons differentes :
+           `.modal-overlay` masquee par `visibility`, `.cloud-modal-overlay`
+           creee puis retiree du DOM, `.share-modal-overlay` masquee par
+           `display`. Une enumeration de classes serait juste aujourd'hui et
+           fausse a la prochaine fenetre ajoutee.
+
+           checkVisibility() couvre les trois cas, A CONDITION de lui demander
+           de tenir compte de `visibility` : par defaut il ne regarde que
+           `display`, et laisserait donc passer la famille la plus courante. */
+        const modaleOuverte = () => Array.from(
+            document.querySelectorAll('[aria-modal="true"]')
+        ).some(el => el.checkVisibility({ visibilityProperty: true }));
+
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', async (e) => {
             const mod = e.ctrlKey || e.metaKey;
@@ -3282,6 +3298,20 @@ thead{display:table-header-group}
 
             // Ctrl+F / Cmd+F: Focus search
             if (mod && e.key === 'f') {
+                /* Pas tant qu'une fenetre modale est ouverte. `#searchInput`
+                   est dans l'en-tete, DERRIERE le voile : y envoyer le focus
+                   dement le `aria-modal="true"` que la fenetre pose — sa
+                   promesse que rien au dehors n'est atteignable — et le piege
+                   a focus que task-modal.js fait respecter a Tab. Ce piege ne
+                   peut rien voir d'ici : il ecoute `document`, quand ce
+                   gestionnaire-ci intercepte sur `window` en phase de CAPTURE,
+                   donc plus tot. La garde doit donc etre ICI.
+
+                   Rendre la touche plutot que la confisquer : sans le
+                   _prevent() qui suit, la recherche native du navigateur
+                   reprend son cours, ce qui est le seul comportement utile
+                   qu'on puisse offrir a ce stade. */
+                if (modaleOuverte()) return;
                 const searchInput = $('#searchInput');
                 if (searchInput) {
                     _prevent(e);
