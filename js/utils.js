@@ -126,6 +126,43 @@ export function addYears(date, years) {
 }
 
 /**
+ * Ajoute un nombre de MOIS CALENDAIRES a une date.
+ *
+ * Pas addDays(d, n * 30) : sept mois sur douze ne comptent pas trente
+ * jours. La meme raison qu'addYears ci-dessus, mais qui mord bien plus
+ * souvent — un an sur quatre pour les annees, tous les mois sauf cinq
+ * pour les mois.
+ *
+ * LE CALAGE SUR LA FIN DE MOIS N'EST PAS UN RAFFINEMENT, c'est ce qui
+ * separe cette fonction d'un setMonth() direct. JavaScript fait DEBORDER
+ * un quantieme qui n'existe pas dans le mois d'arrivee : le 31 janvier
+ * plus un mois y devient le 3 mars, dans un mois qui n'est meme pas le
+ * bon. Aucune lecture de « un mois plus tard » ne donne cela.
+ *
+ * setDate(1) AVANT setMonth() pour la meme raison : sans cela le
+ * debordement se produit pendant le changement de mois, avant qu'on
+ * puisse le corriger.
+ *
+ * new Date(a, m + 1, 0) donne le dernier jour du mois m — le jour zero du
+ * suivant. C'est la forme idiomatique, et la seule qui tienne compte des
+ * annees bissextiles sans les nommer.
+ *
+ * Le calage rejoint l'article 641 du code de procedure civile, qui veut
+ * qu'a defaut de quantieme identique un delai expire le dernier jour du
+ * mois. Ce n'est pas la raison d'etre de la fonction — le debordement de
+ * JavaScript est faux independamment du droit — mais les deux coincident.
+ */
+export function addMonths(date, months) {
+    const d = parseISO(date);
+    const quantieme = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + months);
+    const dernierJour = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(quantieme, dernierJour));
+    return d;
+}
+
+/**
  * Calculate the number of calendar days between two dates
  *
  * NORMALISATION UTC AVANT SOUSTRACTION.
