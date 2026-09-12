@@ -2888,10 +2888,9 @@ class Store {
            predecesseur. L'ignorer revenait a lire tout lien comme un
            Fin->Debut — voir la passe arriere.
 
-           `dep.lag` n'est PAS repris ici, et son absence est deliberee : le
-           decalage entre dans le calcul par l'ecart MESURE sur le planning,
-           plus bas, et non par sa valeur saisie. Le porter en double
-           laisserait croire qu'il sert encore. */
+           Le DECALAGE l'est aussi : il sert plus bas a calculer, par les
+           fonctions memes du planificateur, la date que le lien exige du
+           successeur. */
         const successorsOf = {};
         const predecessorsOf = {};
         tasks.forEach(t => {
@@ -2906,6 +2905,7 @@ class Store {
                         predId,
                         succId: t.id,
                         type: dep.type || 'FS',
+                        lag: Number(dep.lag) || 0,   // absent ou invalide => 0
                     };
                     successorsOf[predId].push(lien);
                     predecessorsOf[t.id].push(lien);
@@ -2968,41 +2968,60 @@ class Store {
         };
         tasks.forEach(t => visit(t.id));
 
-        /* ECART OBSERVE SUR CHAQUE LIEN, EN JOURS OUVRES.
+        /* ECART EXIGE PAR CHAQUE LIEN, EN JOURS OUVRES.
          *
-         * C'est ici que le decalage du lien entre dans le calcul — non pas
-         * tel qu'il est saisi, mais tel qu'il a PRODUIT le planning.
+         * C'est ici que le decalage entre dans le calcul, et la nuance
+         * decide de tout : l'ecart est celui que le lien EXIGE, pas la
+         * distance qu'on observe entre les deux taches.
          *
-         * Les decalages sont exprimes en jours CALENDAIRES, a dessein :
-         * c'est l'usage meme de l'option (instruction d'un permis, sechage,
-         * livraison). Les additionner a un reseau en jours ouvres serait
-         * faux, et les convertir ne l'est pas moins : le nombre de jours
-         * ouvres qu'un delai calendaire recouvre depend de l'endroit ou il
-         * tombe dans la semaine. Il n'existe donc PAS de conversion
-         * constante.
+         * Lire la distance constatee serait tentant — le planificateur a
+         * deja tout place — mais cela figerait la MARGE dans le reseau.
+         * Une branche courte qui finit trois jours avant que son successeur
+         * n'ait besoin d'elle a precisement trois jours de marge ; prendre
+         * ces trois jours pour une contrainte revient a la lui retirer, et
+         * toutes les taches deviennent critiques.
          *
-         * L'ecart mesure resout la question sans la trancher :
-         * _computeConstrainedDates() a deja applique le decalage pour poser
-         * les dates, et la distance qui en resulte est exactement la
-         * contrainte que la passe arriere doit respecter. Chaque type de
-         * lien se mesure entre les deux bouts qu'il relie :
-         *   FS  fin du predecesseur   -> debut du successeur
-         *   SS  debut                 -> debut
-         *   FF  fin                   -> fin
-         *   SF  debut                 -> fin
+         * L'ecart est donc calcule en appliquant le lien aux dates REELLES
+         * du predecesseur, PAR LES MEMES FONCTIONS QUE _computeConstrainedDates.
+         * C'est ce qui empeche les deux calculs de diverger a nouveau : ils
+         * ne se ressemblent pas, ils appellent le meme code.
          *
-         * Un ecart negatif est possible si une tache a ete deplacee sans
-         * que ses contraintes soient reappliquees. Le calcul reste alors
-         * fidele au planning REEL, ce qui vaut mieux que de le corriger en
-         * silence. */
+         * Cela resout aussi la question des unites. Les decalages sont en
+         * jours CALENDAIRES a dessein — instruction d'un permis, sechage,
+         * livraison — et il n'existe PAS de conversion constante vers les
+         * jours ouvres : cinq jours poses un mardi n'en recouvrent pas
+         * autant que cinq jours poses un jeudi. En passant par la date que
+         * le lien impose, la conversion se fait au bon endroit du
+         * calendrier, une fois, sans avoir a etre formulee. */
+        const decalerCalendaire = (date, n) => {
+            const jour = parseISO(date);
+            jour.setDate(jour.getDate() + n);
+            return jour;
+        };
+        /* rang() attend une chaine ISO ; nextWorkingDay() rend une Date. */
+        const rangDate = (d) => rang(formatDateISO(d));
+
         const liens = [];
         tasks.forEach(t => liens.push(...predecessorsOf[t.id]));
         liens.forEach(lien => {
-            const { predId, succId, type } = lien;
-            if (type === 'SS')      lien.ecart = es[succId] - es[predId];
-            else if (type === 'FF') lien.ecart = ef[succId] - ef[predId];
-            else if (type === 'SF') lien.ecart = ef[succId] - es[predId];
-            else                    lien.ecart = es[succId] - ef[predId];   // FS
+            const { predId, type, lag } = lien;
+            const pred = taskMap[predId];
+            if (type === 'SS') {
+                // le successeur DEBUTE au plus tot a cette date
+                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
+                lien.ecart = rangDate(exige) - es[predId];
+            } else if (type === 'FF') {
+                // le successeur TERMINE au plus tot a cette date ; ef est
+                // la borne EXCLUSIVE, d'ou le +1
+                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, lag), cal);
+                lien.ecart = (rangDate(exige) + 1) - ef[predId];
+            } else if (type === 'SF') {
+                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
+                lien.ecart = (rangDate(exige) + 1) - es[predId];
+            } else {                                           // FS
+                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), cal);
+                lien.ecart = rangDate(exige) - ef[predId];
+            }
         });
 
         const projectEnd = Math.max(...tasks.map(t => ef[t.id]));
