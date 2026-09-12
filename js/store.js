@@ -2884,9 +2884,13 @@ class Store {
         tasks.forEach(t => { taskMap[t.id] = t; });
 
         /* Adjacence PORTEUSE DU LIEN, pas seulement de l'identifiant : le
-           type et le decalage font partie de la contrainte au meme titre
-           que le predecesseur. Les ignorer revenait a lire tout lien comme
-           un Fin->Debut de decalage nul — voir la passe avant. */
+           TYPE fait partie de la contrainte au meme titre que le
+           predecesseur. L'ignorer revenait a lire tout lien comme un
+           Fin->Debut — voir la passe arriere.
+
+           Le DECALAGE l'est aussi : il sert plus bas a calculer, par les
+           fonctions memes du planificateur, la date que le lien exige du
+           successeur. */
         const successorsOf = {};
         const predecessorsOf = {};
         tasks.forEach(t => {
@@ -2909,37 +2913,51 @@ class Store {
             });
         });
 
-        // Forward pass: earliest start / earliest finish
-        const es = {}; // earliest start
-        const ef = {}; // earliest finish
+        /* TOUT LE RESEAU EST EN JOURS OUVRES, comme le planificateur.
+         *
+         * _computeConstrainedDates() ne connait que les jours ouvres — span
+         * par workingDaysBetween(), placement par nextWorkingDay() et
+         * addWorkingDays(). Compter ici en jours CALENDAIRES revenait a
+         * mesurer un planning avec une autre regle que celle qui l'a
+         * construit : une tache enjambant un week-end paraissait plus
+         * longue qu'elle n'est, et un successeur en Fin->Debut etait place
+         * le lendemain calendaire de son predecesseur, samedi compris. Les
+         * deux erreurs s'ajoutaient, et le verdict pouvait s'inverser.
+         *
+         * L'origine est la date de debut la plus precoce du projet. Les
+         * dates ISO se comparent comme des chaines, l'ordre lexicographique
+         * etant ici l'ordre chronologique. */
+        const cal = this._getCalendar();
+        const origine = tasks.reduce(
+            (mini, t) => (mini === null || t.startDate < mini) ? t.startDate : mini, null);
+        /* workingDaysBetween compte les jours ouvres de l'intervalle FERME :
+           il vaut 1 pour l'origine elle-meme, d'ou le -1 pour obtenir un
+           rang qui part de zero. */
+        const rang = (date) => Math.max(0, workingDaysBetween(origine, date, cal) - 1);
+
+        /* ES ET EF SONT LUS SUR LE PLANNING, PAS RECALCULES.
+         *
+         * C'est le changement de principe de cette version, et il vise la
+         * cause commune de #56, #57 et du present defaut : la fonction
+         * RE-DERIVAIT le placement des taches a partir des liens, alors que
+         * _computeConstrainedDates() l'avait deja fait. Deux implementations
+         * de la meme regle, qui ont diverge trois fois.
+         *
+         * Les taches sont deja la ou leurs contraintes les mettent —
+         * applyPredecessorConstraints() s'en charge a chaque edition. Leur
+         * date de debut EST leur debut au plus tot. Le reseau n'a donc plus
+         * a la deviner, et l'ancrage des racines introduit par #57 s'en
+         * trouve generalise : toute tache est ancree sur sa date reelle. */
+        const es = {};          // debut au plus tot, en rang de jour ouvre
+        const ef = {};          // fin au plus tot, borne EXCLUSIVE
         const duration = {};
         tasks.forEach(t => {
-            duration[t.id] = daysBetween(t.startDate, t.endDate) + 1;
-            es[t.id] = 0;
-            ef[t.id] = 0;
+            duration[t.id] = Math.max(1, workingDaysBetween(t.startDate, t.endDate, cal) || 1);
+            es[t.id] = rang(t.startDate);
+            ef[t.id] = es[t.id] + duration[t.id];
         });
 
-        /* ANCRAGE DES TACHES SANS LIEN ENTRANT.
-         *
-         * Le reseau ne dit RIEN de la date d'une tache que rien ne precede :
-         * c'est une donnee du planning, posee par l'utilisateur. Les faire
-         * toutes partir de l'instant zero revenait a superposer des taches
-         * separees de plusieurs mois, et le calcul designait alors les taches
-         * les plus LONGUES au lieu des DERNIERES.
-         *
-         * Les taches qui ont un lien entrant ne sont PAS ancrees : leur place
-         * se deduit de leurs contraintes, comme dans tout CPM. Seules les
-         * racines portent une date imposee.
-         *
-         * L'origine est la date de debut la plus precoce du projet. Les dates
-         * ISO se comparent comme des chaines, l'ordre lexicographique etant
-         * ici l'ordre chronologique. */
-        const projectStart = tasks.reduce(
-            (mini, t) => (mini === null || t.startDate < mini) ? t.startDate : mini, null);
-        const ancre = {};
-        tasks.forEach(t => { ancre[t.id] = daysBetween(projectStart, t.startDate); });
-
-        // Topological sort
+        // Tri topologique : la passe arriere remonte les successeurs d'abord.
         const visited = new Set();
         const order = [];
         const visit = (id) => {
@@ -2950,48 +2968,60 @@ class Store {
         };
         tasks.forEach(t => visit(t.id));
 
-        /* Passe avant. Chaque type de lien contraint soit le DEBUT, soit la
-           FIN du successeur — la meme distinction que _computeConstrainedDates
-           fait deja pour placer les taches, et pour les memes raisons :
-             FS  le successeur DEBUTE apres la fin du predecesseur
-             SS  il DEBUTE avec le debut du predecesseur
-             FF  il TERMINE avec la fin du predecesseur
-             SF  il TERMINE avec le debut du predecesseur
-           ef est la borne EXCLUSIVE de la tache (ef = es + duree), si bien
-           qu'un FS sans decalage donne es[succ] = ef[pred] : le lendemain. */
-        order.forEach(id => {
-            let debutMini = null;   // contrainte portant sur le debut
-            let finMini   = null;   // contrainte portant sur la fin
-            predecessorsOf[id].forEach(({ predId, type, lag }) => {
-                if (type === 'SS') {
-                    const c = es[predId] + lag;
-                    if (debutMini === null || c > debutMini) debutMini = c;
-                } else if (type === 'FF') {
-                    const c = ef[predId] + lag;
-                    if (finMini === null || c > finMini) finMini = c;
-                } else if (type === 'SF') {
-                    const c = es[predId] + lag;
-                    if (finMini === null || c > finMini) finMini = c;
-                } else {                                   // FS
-                    const c = ef[predId] + lag;
-                    if (debutMini === null || c > debutMini) debutMini = c;
-                }
-            });
-            let debut;
-            if (debutMini !== null) {
-                debut = debutMini;
-            } else if (predecessorsOf[id].length === 0) {
-                debut = ancre[id];      // racine : sa date est une donnee
-            } else {
-                debut = 0;              // contrainte seulement par sa FIN (FF/SF)
+        /* ECART EXIGE PAR CHAQUE LIEN, EN JOURS OUVRES.
+         *
+         * C'est ici que le decalage entre dans le calcul, et la nuance
+         * decide de tout : l'ecart est celui que le lien EXIGE, pas la
+         * distance qu'on observe entre les deux taches.
+         *
+         * Lire la distance constatee serait tentant — le planificateur a
+         * deja tout place — mais cela figerait la MARGE dans le reseau.
+         * Une branche courte qui finit trois jours avant que son successeur
+         * n'ait besoin d'elle a precisement trois jours de marge ; prendre
+         * ces trois jours pour une contrainte revient a la lui retirer, et
+         * toutes les taches deviennent critiques.
+         *
+         * L'ecart est donc calcule en appliquant le lien aux dates REELLES
+         * du predecesseur, PAR LES MEMES FONCTIONS QUE _computeConstrainedDates.
+         * C'est ce qui empeche les deux calculs de diverger a nouveau : ils
+         * ne se ressemblent pas, ils appellent le meme code.
+         *
+         * Cela resout aussi la question des unites. Les decalages sont en
+         * jours CALENDAIRES a dessein — instruction d'un permis, sechage,
+         * livraison — et il n'existe PAS de conversion constante vers les
+         * jours ouvres : cinq jours poses un mardi n'en recouvrent pas
+         * autant que cinq jours poses un jeudi. En passant par la date que
+         * le lien impose, la conversion se fait au bon endroit du
+         * calendrier, une fois, sans avoir a etre formulee. */
+        const decalerCalendaire = (date, n) => {
+            const jour = parseISO(date);
+            jour.setDate(jour.getDate() + n);
+            return jour;
+        };
+        /* rang() attend une chaine ISO ; nextWorkingDay() rend une Date. */
+        const rangDate = (d) => rang(formatDateISO(d));
+
+        const liens = [];
+        tasks.forEach(t => liens.push(...predecessorsOf[t.id]));
+        liens.forEach(lien => {
+            const { predId, type, lag } = lien;
+            const pred = taskMap[predId];
+            if (type === 'SS') {
+                // le successeur DEBUTE au plus tot a cette date
+                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
+                lien.ecart = rangDate(exige) - es[predId];
+            } else if (type === 'FF') {
+                // le successeur TERMINE au plus tot a cette date ; ef est
+                // la borne EXCLUSIVE, d'ou le +1
+                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, lag), cal);
+                lien.ecart = (rangDate(exige) + 1) - ef[predId];
+            } else if (type === 'SF') {
+                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
+                lien.ecart = (rangDate(exige) + 1) - es[predId];
+            } else {                                           // FS
+                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), cal);
+                lien.ecart = rangDate(exige) - ef[predId];
             }
-            /* Une contrainte de fin plus tardive prime, comme dans
-               _computeConstrainedDates : le debut s'en deduit. */
-            if (finMini !== null && finMini - duration[id] > debut) {
-                debut = finMini - duration[id];
-            }
-            es[id] = debut;
-            ef[id] = debut + duration[id];
         });
 
         const projectEnd = Math.max(...tasks.map(t => ef[t.id]));
@@ -3018,18 +3048,18 @@ class Store {
             const id = order[i];
             let finMaxi   = null;   // contrainte portant sur la fin
             let debutMaxi = null;   // contrainte portant sur le debut
-            successorsOf[id].forEach(({ succId, type, lag }) => {
+            successorsOf[id].forEach(({ succId, type, ecart }) => {
                 if (type === 'SS') {
-                    const c = ls[succId] - lag;
+                    const c = ls[succId] - ecart;
                     if (debutMaxi === null || c < debutMaxi) debutMaxi = c;
                 } else if (type === 'FF') {
-                    const c = lf[succId] - lag;
+                    const c = lf[succId] - ecart;
                     if (finMaxi === null || c < finMaxi) finMaxi = c;
                 } else if (type === 'SF') {
-                    const c = lf[succId] - lag;
+                    const c = lf[succId] - ecart;
                     if (debutMaxi === null || c < debutMaxi) debutMaxi = c;
                 } else {                                   // FS
-                    const c = ls[succId] - lag;
+                    const c = ls[succId] - ecart;
                     if (finMaxi === null || c < finMaxi) finMaxi = c;
                 }
             });
