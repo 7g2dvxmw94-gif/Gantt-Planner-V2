@@ -3,7 +3,7 @@
    Reactive store with localStorage persistence
    ======================================== */
 
-import { generateId, daysBetween, addDays, addYears, formatDateISO,
+import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
@@ -285,8 +285,15 @@ function calculatePermitDeadlines(permit) {
 
     if (permit.depositDate) {
         const deposit = parseISO(permit.depositDate);
-        // Completeness deadline (1 month from deposit)
-        deadlines.completenessDeadline = formatDateISO(addDays(deposit, 30));
+        /* UN MOIS, ET NON TRENTE JOURS. Le commentaire d'origine annoncait
+           deja « 1 month from deposit » — c'est le calcul qui ne suivait
+           pas. Sept mois sur douze ne comptent pas trente jours, et
+           addMonths() cale sur le dernier jour du mois quand le quantieme
+           n'existe pas : un dossier depose le 31 janvier a sa limite au
+           28 fevrier, non au 2 mars.
+
+           Meme raison qu'addYears plus bas pour la peremption. */
+        deadlines.completenessDeadline = formatDateISO(addMonths(deposit, 1));
         // Decision deadline
         const baseDate = permit.completenessDate ? parseISO(permit.completenessDate) : deposit;
         let effectiveInstruction = instructionDays;

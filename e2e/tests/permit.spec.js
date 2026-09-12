@@ -14,7 +14,15 @@ import { createProject, deleteActiveProject } from '../helpers.js';
 
 const DEPOSIT = '2026-08-10';
 const DECISION_PC = '2026-11-08';   // dépôt + 90 j (PERMIT_TYPES.PC.instructionDays)
-const COMPLETENESS = '2026-09-09';  // dépôt + 30 j (délai de complétude)
+/* CETTE CONSTANTE DISAIT '2026-09-09' — dépôt + 30 jours — et figeait
+   ainsi un défaut : calculatePermitDeadlines annonce « 1 month from
+   deposit » et comptait trente jours. Un mois après le 10 août est le
+   10 septembre. Voir permis-completude-mois.spec.js, qui mesure l'écart
+   sur des dates où les deux lectures divergent franchement.
+
+   La corriger ici plutôt que de la laisser était la seule option honnête :
+   un test qui verrouille un comportement fautif empêche de le corriger. */
+const COMPLETENESS = '2026-09-10';  // dépôt + 1 mois (délai de complétude)
 
 /** Rend une date ISO comme l'app le fait (utils.js formatDateDisplay).
  *  Calculé DANS la page : le format dépend de la locale et de l'ICU du
