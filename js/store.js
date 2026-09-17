@@ -2369,14 +2369,35 @@ class Store {
      * (taking the latest constraint), not just the one that triggered propagation.
      * This correctly handles tasks with multiple predecessors (critical path logic).
      */
-    propagateDependencies(taskId, visited = new Set()) {
-        /* Le garde `visited` reste une protection contre la recursion
-           infinie, mais il n'est plus la seule ligne de defense : les
-           cycles sont desormais refuses a la creation (updateTask +
-           validateDependencyChanges). On le conserve par prudence, pour
-           des donnees anterieures au correctif. */
-        if (visited.has(taskId)) return;
-        visited.add(taskId);
+    propagateDependencies(taskId, enCours = new Set()) {
+        /* LE GARDE MARQUE LE CHEMIN COURANT, PAS LES TACHES DEJA VUES.
+           La distinction decide de la correction du resultat.
+
+           Un ensemble GLOBAL empechait la redescente sous une tache deja
+           traversee — alors que le RECALCUL de cette tache, lui, avait
+           bien lieu une seconde fois, dans la boucle du predecesseur
+           suivant. Une tache a plusieurs predecesseurs pouvait donc bouger
+           au dernier de ces passages sans que ses successeurs en soient
+           informes, et le planning enregistrait un successeur place AVANT
+           la fin de son predecesseur.
+
+               A -> {B, C} -> D -> E : par B, D bouge et E suit ; par C,
+               plus tardive, D bouge ENCORE et E reste en arriere.
+
+           Le retrait en fin de parcours rend l'ordre des predecesseurs
+           indifferent : chaque chemin peut redescendre.
+
+           LA PROTECTION CONTRE LA RECURSION INFINIE EST INTACTE. Un cycle
+           se referme necessairement sur une tache du chemin courant, que
+           le garde arrete. Les cycles sont d'ailleurs refuses des la
+           creation (updateTask + validateDependencyChanges) ; ceci reste
+           la ligne de defense pour des donnees anterieures.
+
+           LE COUT NE S'EMBALLE PAS : la sortie anticipee plus bas — le
+           successeur ne bouge pas, donc on ne redescend pas — elague
+           l'essentiel des chemins des que les dates se stabilisent. */
+        if (enCours.has(taskId)) return;
+        enCours.add(taskId);
 
         const task = this.getTask(taskId);
         if (!task) return;
@@ -2396,8 +2417,13 @@ class Store {
             supabaseStore.upsertTask(succ)
                 .catch(e => console.error('[store] sync propagateDependencies:', e));
 
-            this.propagateDependencies(succ.id, visited);
+            this.propagateDependencies(succ.id, enCours);
         });
+
+        /* Le retrait est ce qui distingue un marqueur de chemin d'un
+           ensemble de taches vues : sans lui, le garde ci-dessus
+           redeviendrait global et le defaut avec. */
+        enCours.delete(taskId);
 
         this._save();
     }
