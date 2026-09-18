@@ -1059,6 +1059,31 @@ tr.critical-path:hover {
     z-index: 1;
 }
 
+/* Marque de recalage : la tache a ete deplacee par ses predecesseurs
+   depuis son dernier enregistrement. Posee au coin superieur droit et
+   debordant legerement, pour rester visible sur une barre d'un seul jour
+   (36 px au zoom « jour »), ou le libelle occupe deja toute la largeur.
+   Les evenements de souris ne sont PAS bloques : _handleMouseDown remonte
+   par e.target.closest('.gantt-bar'), donc le glissement part aussi de la
+   marque, et l'infobulle native reste accessible au survol. */
+.gantt-bar-recalage {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #F59E0B;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+    cursor: help;
+    z-index: 3;
+    box-shadow: 0 0 0 2px var(--bg-base);
+}
+
 .gantt-variance-tag {
     position: absolute;
     bottom: 5px;

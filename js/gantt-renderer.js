@@ -31,6 +31,12 @@ class GanttRenderer {
         this._tooltipEl = null;
         this._tooltipTaskId = null;
         this._visibleTaskIds = null;
+        /* Taches recalees par leurs contraintes depuis leur dernier
+           enregistrement, indexees par id. Etat d'AFFICHAGE, volontairement
+           non persiste : taskToRow() ne serialise que des champs explicites,
+           et ecrire de l'etat d'interface en base serait un changement de
+           modele de donnees, non une mise en forme. */
+        this._recalages = new Map();
     }
 
     init() {
@@ -39,6 +45,31 @@ class GanttRenderer {
 
         // Listen for store changes
         store.on('change', () => this.render());
+
+        /* BRANCHEMENT DE task:constrained.
+         *
+         * L'evenement etait emis par applyPredecessorConstraints() au motif
+         * que « sans ce signal, l'utilisateur voit sa tache sauter sans
+         * comprendre pourquoi » — et personne ne l'ecoutait.
+         *
+         * L'ORDRE DES TROIS ABONNEMENTS N'EST PAS INDIFFERENT. Une edition
+         * emet task:update PUIS, si les contraintes deplacent la tache,
+         * task:constrained. Poser la marque apres l'avoir levee donne donc
+         * exactement la regle voulue : elle tient jusqu'au prochain
+         * enregistrement de la tache, et un re-enregistrement sans
+         * deplacement la leve — applyPredecessorConstraints sort alors tot,
+         * sans rien reemettre.
+         *
+         * Chaque _emit declenche aussi 'change', donc le rendu suit sans
+         * qu'on ait a le demander ici. */
+        store.on('task:update', (task) => {
+            if (task && task.id) this._recalages.delete(task.id);
+        });
+        store.on('task:constrained', (detail) => {
+            if (detail && detail.taskId) this._recalages.set(detail.taskId, detail);
+        });
+        // Les marques d'un projet n'ont aucun sens dans un autre.
+        store.on('project:change', () => this._recalages.clear());
 
         // Bind virtual scroll
         const wrapper = this._container.closest('.gantt-wrapper');
@@ -583,6 +614,29 @@ class GanttRenderer {
 
         // Label
         bar.appendChild(createElement('span', { className: 'gantt-bar-label' }, task.name));
+
+        /* Marque de recalage : la tache a ete deplacee par ses
+           predecesseurs depuis son dernier enregistrement.
+           LE TEXTE VISIBLE SE LIMITE A UN GLYPHE, le detail allant dans le
+           nom accessible et l'infobulle native. Mettre le nom du
+           predecesseur en clair sur la barre ferait repondre la barre
+           recalee au nom de son predecesseur, ce qui brouille aussi bien
+           la lecture que les selecteurs. */
+        const recalage = this._recalages.get(task.id);
+        if (recalage && recalage.from && recalage.to) {
+            const causes = (recalage.predecessors || []).map(p => p.name).filter(Boolean);
+            const texte = t('task.recalage.aria', {
+                from:   formatDateShort(recalage.from.startDate),
+                to:     formatDateShort(recalage.to.startDate),
+                causes: causes.join(', ') || '—',
+            });
+            bar.appendChild(createElement('span', {
+                className: 'gantt-bar-recalage',
+                role: 'img',
+                'aria-label': texte,
+                title: texte,
+            }, '!'));
+        }
 
         // Resize handles
         bar.appendChild(createElement('div', { className: 'gantt-bar-handle gantt-bar-handle-left' }));
