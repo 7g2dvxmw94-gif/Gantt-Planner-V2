@@ -9,11 +9,18 @@ import { createProject, deleteActiveProject } from '../helpers.js';
    C'est la logique la plus spécifique au métier de l'outil, et la seule
    dont une régression serait silencieuse : un délai faux reste un délai
    plausible à l'écran. Le test vérifie donc l'arithmétique elle-même
-   (90 j pour un PC, 30 j pour une DP, +30 j en secteur ABF, échéances
-   dérivées de la date de dépôt), pas seulement la présence des champs. */
+   (3 mois pour un PC, 1 mois pour une DP, +1 mois en secteur ABF,
+   échéances dérivées de la date de dépôt), pas seulement la présence des
+   champs. */
 
 const DEPOSIT = '2026-08-10';
-const DECISION_PC = '2026-11-08';   // dépôt + 90 j (PERMIT_TYPES.PC.instructionDays)
+/* CETTE CONSTANTE DISAIT '2026-11-08' — dépôt + 90 jours — et figeait le
+   même défaut que COMPLETENESS ci-dessous, à huit lignes d'écart dans la
+   même fonction. L'article R*423-23 c) du code de l'urbanisme compte
+   TROIS MOIS pour un permis de construire, non quatre-vingt-dix jours :
+   trois mois après le 10 août, c'est le 10 novembre. Voir
+   permis-instruction-mois.spec.js. */
+const DECISION_PC = '2026-11-10';   // dépôt + 3 mois (R*423-23 c)
 /* CETTE CONSTANTE DISAIT '2026-09-09' — dépôt + 30 jours — et figeait
    ainsi un défaut : calculatePermitDeadlines annonce « 1 month from
    deposit » et comptait trente jours. Un mois après le 10 août est le
@@ -74,26 +81,27 @@ test('créer un permis : les champs réglementaires apparaissent et les délais 
     await expect(page.locator('#permitStatus')).toBeVisible();
     await expect(depositField(page)).toBeVisible();
 
-    // --- B4.3 / B4.4 : PC → 90 jours d'instruction, calculés, pas codés en dur ---
+    // --- B4.3 / B4.4 : PC → 3 mois d'instruction, calculés, pas codés en dur ---
     await expect(page.locator('#permitType')).toHaveValue('PC');
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('90 jours');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('3 mois');
 
-    // Une déclaration préalable retombe à 30 j : si les deux types donnaient
-    // la même valeur, l'assertion ci-dessus ne prouverait rien.
+    // Une déclaration préalable retombe à 1 mois : si les deux types
+    // donnaient la même valeur, l'assertion ci-dessus ne prouverait rien.
     await page.locator('#permitType').selectOption('DP');
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('30 jours');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('1 mois');
     await page.locator('#permitType').selectOption('PC');
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('90 jours');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('3 mois');
 
-    /* Secteur ABF : +30 j réglementaires (ABF_EXTRA_DAYS). Le libellé passe
-       alors par une clé i18n distincte (permit.deadline.instructionDaysABF)
-       qui explicite la majoration — on l'assert en entier, cette mention
-       étant justement ce qui permet à l'utilisateur de comprendre d'où
-       sortent les 30 jours supplémentaires. */
+    /* Secteur ABF : +1 mois réglementaire (R*423-24, majoration pour les
+       abords des monuments historiques et les sites patrimoniaux
+       remarquables). Le libellé passe alors par une clé i18n distincte qui
+       explicite la majoration — on l'assert en entier, cette mention étant
+       justement ce qui permet à l'utilisateur de comprendre d'où sort le
+       mois supplémentaire. */
     await page.locator('#permitABF').check();
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('120 jours (ABF +30j)');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('4 mois (ABF +1 mois)');
     await page.locator('#permitABF').uncheck();
-    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('90 jours');
+    await expect(deadlineValue(page, "Délai d'instruction")).toHaveText('3 mois');
 
     // --- Échéances dérivées de la date de dépôt ---
     await depositField(page).fill(DEPOSIT);

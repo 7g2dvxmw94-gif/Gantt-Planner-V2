@@ -1136,10 +1136,10 @@ class TaskModal {
         const items = [];
         const typeInfo = PERMIT_TYPES[permitData.permitType];
         if (typeInfo) {
-            const days = deadlines.instructionDays || typeInfo.instructionDays;
+            const months = deadlines.instructionMonths || typeInfo.instructionMonths;
             const instrLabel = permitData.abfSector
-                ? t('permit.deadline.instructionDaysABF', { days })
-                : t('permit.deadline.instructionDays', { days });
+                ? t('permit.deadline.instructionMonthsABF', { months })
+                : t('permit.deadline.instructionMonths', { months });
             items.push({ label: t('permit.deadline.instruction'), value: instrLabel });
         }
 

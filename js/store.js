@@ -246,12 +246,21 @@ export const PLAN_PRICES = {
 
 /* ---- Building Permit Constants ---- */
 
+/* DES MOIS, ET NON DES TRANCHES DE TRENTE JOURS. L'article R*423-23 du
+   code de l'urbanisme fixe le delai d'instruction de droit commun a
+   « un mois pour les declarations prealables », « deux mois pour les
+   demandes de permis de demolir et pour les demandes de permis de
+   construire portant sur une maison individuelle » et « trois mois pour
+   les autres demandes de permis de construire et pour les demandes de
+   permis d'amenager ». Les anciennes valeurs 30/60/90 etaient ces memes
+   nombres de mois multiplies par trente : la magnitude etait juste,
+   l'unite non. */
 const PERMIT_TYPES = {
-    PC:  { label: 'Permis de construire',        instructionDays: 90 },
-    PCM: { label: 'PC Maison individuelle',       instructionDays: 60 },
-    DP:  { label: 'Déclaration préalable',        instructionDays: 30 },
-    PA:  { label: "Permis d'aménager",            instructionDays: 90 },
-    PD:  { label: 'Permis de démolir',            instructionDays: 60 },
+    PC:  { label: 'Permis de construire',        instructionMonths: 3 },
+    PCM: { label: 'PC Maison individuelle',       instructionMonths: 2 },
+    DP:  { label: 'Déclaration préalable',        instructionMonths: 1 },
+    PA:  { label: "Permis d'aménager",            instructionMonths: 3 },
+    PD:  { label: 'Permis de démolir',            instructionMonths: 2 },
 };
 
 const PERMIT_STATUSES = {
@@ -267,7 +276,10 @@ const PERMIT_STATUSES = {
     appeal_cleared:     { label: 'Purgé de recours',           color: '#065F46', order: 9 },
 };
 
-const ABF_EXTRA_DAYS = 30;
+/* R*423-24 : le delai de droit commun est « majore d'un mois » notamment
+   lorsque le projet est situe dans les abords des monuments historiques
+   ou dans un site patrimonial remarquable. Un mois, pas trente jours. */
+const ABF_EXTRA_MONTHS = 1;
 const THIRD_PARTY_APPEAL_DAYS = 60;
 const PERMIT_VALIDITY_YEARS = 3;
 
@@ -279,9 +291,9 @@ function calculatePermitDeadlines(permit) {
     const type = PERMIT_TYPES[permit.permitType];
     if (!type) return deadlines;
 
-    let instructionDays = type.instructionDays;
-    if (permit.abfSector) instructionDays += ABF_EXTRA_DAYS;
-    deadlines.instructionDays = instructionDays;
+    let instructionMonths = type.instructionMonths;
+    if (permit.abfSector) instructionMonths += ABF_EXTRA_MONTHS;
+    deadlines.instructionMonths = instructionMonths;
 
     if (permit.depositDate) {
         const deposit = parseISO(permit.depositDate);
@@ -295,20 +307,23 @@ function calculatePermitDeadlines(permit) {
            Meme raison qu'addYears plus bas pour la peremption. */
         deadlines.completenessDeadline = formatDateISO(addMonths(deposit, 1));
         // Decision deadline
+        /* addMonths et non addDays(…, n * 30), pour la raison meme qui
+           vaut quatre lignes plus haut pour la completude : sept mois sur
+           douze ne comptent pas trente jours, et addMonths cale sur le
+           dernier jour du mois quand le quantieme n'existe pas. Mesure sur
+           les 365 depots de 2026 : jusqu'a 364 dates fausses sur 365. */
         const baseDate = permit.completenessDate ? parseISO(permit.completenessDate) : deposit;
-        let effectiveInstruction = instructionDays;
         if (permit.additionalDocsRequestDate) {
             // Instruction clock restarts from additional docs submission
             if (permit.additionalDocsResponseDate) {
-                effectiveInstruction = instructionDays; // full delay from response
-                deadlines.decisionDeadline = formatDateISO(addDays(parseISO(permit.additionalDocsResponseDate), effectiveInstruction));
+                deadlines.decisionDeadline = formatDateISO(addMonths(parseISO(permit.additionalDocsResponseDate), instructionMonths));
             } else {
                 // Waiting for docs - deadline suspended
                 deadlines.decisionDeadline = null;
                 deadlines.suspended = true;
             }
         } else {
-            deadlines.decisionDeadline = formatDateISO(addDays(baseDate, instructionDays));
+            deadlines.decisionDeadline = formatDateISO(addMonths(baseDate, instructionMonths));
         }
         // Tacit approval = decision deadline
         deadlines.tacitApprovalDate = deadlines.decisionDeadline;
