@@ -2468,11 +2468,30 @@ class Store {
         const children = this._data.tasks.filter(t => t.parentId === phaseId);
         if (children.length === 0) return;
 
-        // Recalculate dates
-        const dates = children.map(c => new Date(c.startDate).getTime());
-        const endDates = children.map(c => new Date(c.endDate).getTime());
-        phase.startDate = formatDateISO(new Date(Math.min(...dates)));
-        phase.endDate = formatDateISO(new Date(Math.max(...endDates)));
+        /* AUCUNE CONVERSION EN Date : la borne se prend sur les CHAINES.
+         *
+         * L'en-tete d'utils.js interdit en toutes lettres le melange que
+         * cette fonction faisait :
+         * new Date('2026-05-01') est interprete en UTC, tandis que
+         * formatDateISO — qui passe par parseISO — lit les composantes
+         * LOCALES. Melanger les deux faisait reculer la phase d'un jour,
+         * aux DEUX bouts, pour tout utilisateur a l'ouest de Greenwich :
+         * minuit UTC y tombe la veille.
+         *
+         * Le defaut etait invisible depuis l'integration continue, dont
+         * les machines tournent en UTC, et la phase decalee partait en
+         * base par l'upsert de fin de fonction.
+         *
+         * parseISO() aurait suffi a corriger le defaut. Comparer les
+         * chaines va plus loin : les dates ISO s'ordonnent
+         * lexicographiquement comme chronologiquement, si bien qu'aucune
+         * conversion n'a lieu — donc aucune ne peut se tromper. Le meme
+         * raisonnement sert deja pour projectStart dans
+         * getCriticalPath(). */
+        phase.startDate = children.reduce(
+            (mini, c) => (mini === null || c.startDate < mini) ? c.startDate : mini, null);
+        phase.endDate = children.reduce(
+            (maxi, c) => (maxi === null || c.endDate > maxi) ? c.endDate : maxi, null);
 
         // Recalculate progress
         const totalProgress = children.reduce((sum, c) => sum + (c.progress || 0), 0);
