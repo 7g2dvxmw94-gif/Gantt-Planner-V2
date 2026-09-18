@@ -4,7 +4,7 @@
    ======================================== */
 
 import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
-import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
+import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, parseISO, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -555,8 +555,8 @@ class GanttRenderer {
     /* ---- Task Bar ---- */
 
     _renderTaskBar(container, task) {
-        const left = this._dateToPosition(new Date(task.startDate));
-        const right = this._dateToPosition(addDays(new Date(task.endDate), 1));
+        const left = this._dateToPosition(parseISO(task.startDate));
+        const right = this._dateToPosition(addDays(parseISO(task.endDate), 1));
         if (left === null || right === null) return;
 
         const width = Math.max(right - left, 20);
@@ -600,8 +600,8 @@ class GanttRenderer {
     /* ---- Phase Bar ---- */
 
     _renderPhaseBar(container, task) {
-        const left = this._dateToPosition(new Date(task.startDate));
-        const right = this._dateToPosition(addDays(new Date(task.endDate), 1));
+        const left = this._dateToPosition(parseISO(task.startDate));
+        const right = this._dateToPosition(addDays(parseISO(task.endDate), 1));
         if (left === null || right === null) return;
 
         const width = Math.max(right - left, 20);
@@ -627,7 +627,7 @@ class GanttRenderer {
     /* ---- Milestone ---- */
 
     _renderMilestone(container, task) {
-        const pos = this._dateToPosition(new Date(task.startDate));
+        const pos = this._dateToPosition(parseISO(task.startDate));
         if (pos === null) return;
 
         const milestone = createElement('div', {
@@ -651,8 +651,8 @@ class GanttRenderer {
     /* ---- Permit Bar ---- */
 
     _renderPermitBar(container, task) {
-        const left = this._dateToPosition(new Date(task.startDate));
-        const right = this._dateToPosition(addDays(new Date(task.endDate), 1));
+        const left = this._dateToPosition(parseISO(task.startDate));
+        const right = this._dateToPosition(addDays(parseISO(task.endDate), 1));
         if (left === null || right === null) return;
 
         const width = Math.max(right - left, 40);
@@ -723,8 +723,8 @@ class GanttRenderer {
     /* ---- Baseline Rendering ---- */
 
     _renderBaselineBar(container, task, blTask) {
-        const left = this._dateToPosition(new Date(blTask.startDate));
-        const right = this._dateToPosition(addDays(new Date(blTask.endDate), 1));
+        const left = this._dateToPosition(parseISO(blTask.startDate));
+        const right = this._dateToPosition(addDays(parseISO(blTask.endDate), 1));
         if (left === null || right === null) return;
 
         const width = Math.max(right - left, 10);
@@ -736,7 +736,7 @@ class GanttRenderer {
         container.appendChild(bar);
 
         // Variance tag
-        const variance = Math.round((new Date(task.endDate) - new Date(blTask.endDate)) / 86400000);
+        const variance = daysBetween(blTask.endDate, task.endDate);
         if (variance !== 0) {
             const tag = createElement('div', {
                 className: 'gantt-variance-tag ' + (variance > 0 ? 'gantt-variance-late' : 'gantt-variance-early'),
@@ -748,7 +748,7 @@ class GanttRenderer {
     }
 
     _renderBaselineMilestone(container, task, blTask) {
-        const pos = this._dateToPosition(new Date(blTask.startDate));
+        const pos = this._dateToPosition(parseISO(blTask.startDate));
         if (pos === null) return;
 
         const diamond = createElement('div', {
@@ -758,7 +758,7 @@ class GanttRenderer {
         });
         container.appendChild(diamond);
 
-        const variance = Math.round((new Date(task.startDate) - new Date(blTask.startDate)) / 86400000);
+        const variance = daysBetween(blTask.startDate, task.startDate);
         if (variance !== 0) {
             const tag = createElement('div', {
                 className: 'gantt-variance-tag ' + (variance > 0 ? 'gantt-variance-late' : 'gantt-variance-early'),
@@ -771,6 +771,15 @@ class GanttRenderer {
 
     /* ---- Date <-> Position ---- */
 
+    /* Les appelants passent des dates LOCALES (parseISO), jamais le
+       resultat de `new Date('AAAA-MM-JJ')` — qui vaut minuit UTC, donc la
+       VEILLE a l'ouest de Greenwich une fois ramene par le setHours()
+       ci-dessous. Les barres reculaient alors d'une colonne tandis que la
+       ligne du jour, partie d'un instant deja local, restait en place :
+       le decalage n'etait pas uniforme, il se voyait.
+
+       C'est la regle que l'en-tete d'utils.js pose pour tout le projet —
+       construire et lire les dates en LOCAL, exclusivement. */
     _dateToPosition(date) {
         const d = new Date(date);
         d.setHours(0, 0, 0, 0);
