@@ -129,5 +129,17 @@ test('le délai d\'instruction se compte en mois, pas en tranches de trente jour
        sur un autre dossier. */
     await expect(valeurEcheance(page, "Délai d'instruction")).toHaveText('3 mois');
 
+    /* FERMER LA MODALE AVANT DE NETTOYER, et ce n'est pas une politesse.
+       Une première version terminait sur deleteActiveProject() sans
+       refermer : l'overlay reste `active` et intercepte le clic sur le
+       sélecteur de projet, ce que le run 35382016992 a dit mot pour mot —
+       « <div id="taskModalOverlay" class="modal-overlay active"> intercepts
+       pointer events ». Toutes les assertions ci-dessus avaient passé ;
+       seul le nettoyage échouait. gantt-drag.spec.js documente déjà ce
+       piège. On valide plutôt qu'on annule, comme permit.spec.js : le
+       chemin est éprouvé et ne risque pas de confirmation d'abandon. */
+    await page.getByRole('button', { name: 'Créer' }).click();
+    await expect(page.locator('#taskModalOverlay')).toBeHidden({ timeout: 15_000 });
+
     await deleteActiveProject(page);
 });
