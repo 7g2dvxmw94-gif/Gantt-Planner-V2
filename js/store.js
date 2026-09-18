@@ -2369,7 +2369,24 @@ class Store {
      * (taking the latest constraint), not just the one that triggered propagation.
      * This correctly handles tasks with multiple predecessors (critical path logic).
      */
-    propagateDependencies(taskId, enCours = new Set()) {
+    propagateDependencies(taskId, enCours = new Set(), aEcrire = null) {
+        /* UNE SEULE ECRITURE PAR TACHE, ET APRES COUP.
+         *
+         * upsertTask() FIGE LA LIGNE AU MOMENT DE L'APPEL : taskToRow()
+         * est synchrone et s'execute avant le premier await. Ecrire a
+         * chaque deplacement envoyait donc les valeurs INTERMEDIAIRES —
+         * et une jonction de losange, recalculee une fois par branche,
+         * partait deux fois, la premiere perimee.
+         *
+         * Deux requetes HTTP independantes sur la meme ligne, sans ordre
+         * d'arrivee garanti : si la perimee passe en second, la base
+         * garde une date fausse pendant que l'ecran affiche la bonne.
+         *
+         * On accumule donc les taches touchees et on ecrit une fois, a la
+         * fin du parcours complet — la ou les dates sont stabilisees. */
+        const sommet = aEcrire === null;
+        if (sommet) aEcrire = new Set();
+
         /* LE GARDE MARQUE LE CHEMIN COURANT, PAS LES TACHES DEJA VUES.
            La distinction decide de la correction du resultat.
 
@@ -2414,16 +2431,26 @@ class Store {
             succ.endDate   = cible.endDate;
 
             if (succ.parentId) this._recalculatePhase(succ.parentId);
-            supabaseStore.upsertTask(succ)
-                .catch(e => console.error('[store] sync propagateDependencies:', e));
+            aEcrire.add(succ.id);
 
-            this.propagateDependencies(succ.id, enCours);
+            this.propagateDependencies(succ.id, enCours, aEcrire);
         });
 
         /* Le retrait est ce qui distingue un marqueur de chemin d'un
            ensemble de taches vues : sans lui, le garde ci-dessus
            redeviendrait global et le defaut avec. */
         enCours.delete(taskId);
+
+        /* Seul l'appel RACINE ecrit : les appels imbriques n'ont pas fini
+           de deplacer, et leurs valeurs peuvent encore changer. */
+        if (sommet) {
+            aEcrire.forEach(id => {
+                const t = this.getTask(id);
+                if (!t) return;
+                supabaseStore.upsertTask(t)
+                    .catch(e => console.error('[store] sync propagateDependencies:', e));
+            });
+        }
 
         this._save();
     }
