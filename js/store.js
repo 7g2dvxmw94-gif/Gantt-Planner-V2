@@ -2923,8 +2923,15 @@ class Store {
             };
         }
 
-        const starts = tasks.map(t => new Date(t.startDate).getTime());
-        const ends = tasks.map(t => new Date(t.endDate).getTime());
+        /* parseISO, jamais `new Date(chaine)` : cette derniere interprete
+           'AAAA-MM-JJ' en UTC, alors que les .getFullYear()/.getMonth()
+           ci-dessous lisent les composantes LOCALES. A l'ouest de
+           Greenwich, minuit UTC du 1er septembre est le 31 aout a 20 h :
+           getMonth() repondait AOUT, et la frise s'arretait la veille du
+           jour ou finit la derniere tache. C'est la regle que l'en-tete
+           d'utils.js pose pour tout le projet. */
+        const starts = tasks.map(t => parseISO(t.startDate).getTime());
+        const ends = tasks.map(t => parseISO(t.endDate).getTime());
         const minDate = new Date(Math.min(...starts));
         const maxDate = new Date(Math.max(...ends));
 
