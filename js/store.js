@@ -280,7 +280,11 @@ const PERMIT_STATUSES = {
    lorsque le projet est situe dans les abords des monuments historiques
    ou dans un site patrimonial remarquable. Un mois, pas trente jours. */
 const ABF_EXTRA_MONTHS = 1;
-const THIRD_PARTY_APPEAL_DAYS = 60;
+/* R*600-2 : le delai de recours des tiers court « a compter du premier
+   jour d'une periode continue de DEUX MOIS d'affichage sur le terrain ».
+   Deux mois, pas soixante jours — sur les 365 dates d'affichage de 2026,
+   364 donnent une fin de recours differente selon l'unite retenue. */
+const THIRD_PARTY_APPEAL_MONTHS = 2;
 const PERMIT_VALIDITY_YEARS = 3;
 
 /**
@@ -334,7 +338,7 @@ function calculatePermitDeadlines(permit) {
         // Display start (posting on site)
         if (permit.displayStartDate) {
             const displayStart = parseISO(permit.displayStartDate);
-            deadlines.appealEndDate = formatDateISO(addDays(displayStart, THIRD_PARTY_APPEAL_DAYS));
+            deadlines.appealEndDate = formatDateISO(addMonths(displayStart, THIRD_PARTY_APPEAL_MONTHS));
         }
         // Permit expiry (3 years from decision)
         /* addYears et non addDays(…, n * 365) : trois ans ne font 1095
