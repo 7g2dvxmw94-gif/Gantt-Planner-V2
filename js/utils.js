@@ -104,25 +104,27 @@ export function businessDaysBetween(start, end) {
  * 29 fevrier ne tombe dans l'intervalle — environ une annee sur quatre.
  * Le reste du temps, le compte en jours retombe la veille.
  *
- * setFullYear() cale sur le meme quantieme, ce que le droit entend par
- * « trois ans apres le 15 septembre 2026 » : le 15 septembre 2029.
+ * LE CALAGE SE FAIT SUR LE QUANTIEME, ce que le droit entend par « trois
+ * ans apres le 15 septembre 2026 » : le 15 septembre 2029.
  *
- * SEUL CAS OU LE QUANTIEME N'EXISTE PAS : une decision datee du
+ * SEUL CAS OU CE QUANTIEME N'EXISTE PAS : une decision datee du
  * 29 fevrier, dont l'echeance tomberait sur une annee non bissextile.
- * setFullYear() reporte alors au 1er mars.
+ * L'article 641 du code de procedure civile le regle — « a defaut d'un
+ * quantieme identique, le delai expire le DERNIER JOUR DU MOIS » : une
+ * decision du 29 fevrier 2028 se perime le 28 fevrier 2031.
  *
- * LIMITE CONNUE, NON TRAITEE ICI : l'article 641 du code de procedure
- * civile prevoit qu'a defaut de quantieme identique, un delai exprime en
- * annees expire le DERNIER JOUR DU MOIS — soit le 28 fevrier, et non le
- * 1er mars. Le report de JavaScript diverge donc du droit d'un jour, dans
- * ce seul cas. Le corriger demanderait de caler sur la fin de mois ; c'est
- * une regle juridique que je n'ai pas verifiee contre une source, et
- * aucun rouge ne la couvre. Signalee plutot qu'implementee au juge.
+ * L'ANCIENNE IMPLEMENTATION, fondee sur setFullYear(), reportait au
+ * 1er mars et faisait paraitre le permis valide un jour de trop.
+ *
+ * DELEGUE A addMonths PLUTOT QUE DE RECOPIER SON CALAGE. addMonths
+ * appliquait deja la bonne regle ; la reecrire ici aurait donne deux
+ * implementations d'un meme article, libres de rediverger — la forme de
+ * defaut qui a produit #56, #57 et #66. Douze mois font une annee, et
+ * addMonths conserve le quantieme quand il existe : les annees ordinaires
+ * ne bougent pas.
  */
 export function addYears(date, years) {
-    const d = parseISO(date);
-    d.setFullYear(d.getFullYear() + years);
-    return d;
+    return addMonths(date, years * 12);
 }
 
 /**

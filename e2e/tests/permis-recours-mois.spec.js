@@ -101,8 +101,8 @@ test('la fin du recours des tiers se compte en mois, pas en soixante jours', asy
        panneau est rendu — de sorte qu'un échec plus bas ne pourra venir
        que de l'unité employée pour le recours. Trois ans après le 15 juin
        2026, c'est le 15 juin 2029 : un quantième qui existe dans le mois
-       d'arrivée, donc hors du cas que l'article 641 du code de procédure
-       civile règle et qu'addYears traite encore mal. Cette attente passe
+       d'arrivée, donc hors du cas du quantième manquant que règle
+       l'article 641 du code de procédure civile. Cette attente passe
        avant comme après le correctif. */
     await expect(valeurEcheance(page, 'Péremption permis'))
         .toHaveText(await dateAffichee(page, PEREMPTION));
