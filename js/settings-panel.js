@@ -792,7 +792,33 @@ class SettingsPanel {
 
     _bindKeyboard() {
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this._isOpen) this._cancel();
+            if (e.key === 'Escape' && this._isOpen) { this._cancel(); return; }
+
+            /* PIEGE DE FOCUS. Le panneau se comportait en modale sur tous
+               les points sauf celui-ci : role="dialog", plan des modales,
+               defilement du corps verrouille, focus pris a l'ouverture et
+               rendu a la fermeture, Echap qui ferme — mais Tab en sortait.
+               _buildPanel() ajoute le panneau a la FIN du corps et
+               #settingsPanelClose en est le premier focalisable : une
+               tabulation arriere partait donc vers la page, derriere le
+               voile, ou l'on agissait a l'aveugle sur une application
+               qu'on croyait suspendue.
+
+               MEME SELECTEUR ET MEME LOGIQUE QUE task-modal.js, a dessein.
+               Deux pieges ecrits differemment finiraient par diverger —
+               c'est la forme de defaut qui a produit #56, #57 et #66. */
+            if (e.key === 'Tab' && this._isOpen) {
+                const focalisables = this._panel.querySelectorAll(
+                    'button, [href], input:not([type="hidden"]):not([style*="display: none"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (!focalisables.length) return;
+                const premier = focalisables[0];
+                const dernier = focalisables[focalisables.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === premier) { e.preventDefault(); dernier.focus(); }
+                } else {
+                    if (document.activeElement === dernier) { e.preventDefault(); premier.focus(); }
+                }
+            }
         });
     }
 
@@ -1429,6 +1455,24 @@ class SettingsPanel {
         document.body.style.overflow = 'hidden';
         // Re-render active tab to get fresh store values
         this._switchTab(this._activeTab);
+        /* CE REPORT DE 100 ms N'EST PAS UNE COQUETTERIE, NE PAS LE RETIRER.
+           .settings-overlay a la meme forme que .modal-overlay avant #63 :
+           `visibility: hidden` avec une transition SUR visibility, bascule
+           par une classe. Or a l'instant zero d'une transition, la valeur
+           calculee est encore celle de depart — donc `hidden` —, et
+           .focus() sur un element invisible est un non-evenement
+           silencieux. Le panneau s'ouvrirait sans que le focus y entre, et
+           rien ne le signalerait ; le piege de focus pose dans
+           _bindKeyboard() serait lui aussi sans effet, n'ayant aucun point
+           de depart a retenir.
+
+           LA CAUSE N'EST PAS TRAITEE ICI, ET C'EST DELIBERE. La corriger
+           demanderait de sortir `visibility` de la transition, comme #63
+           l'a fait pour la fenetre de tache. Mais ce report masque le
+           defaut de facon fiable : aucun rouge ne l'atteint, et rien dans
+           cette base ne revele puis focalise un controle du panneau — le
+           cas que #65 avait du traiter. Signale plutot que corrige a
+           l'aveugle. */
         const closeBtn = this._panel.querySelector('#settingsPanelClose');
         if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
     }
