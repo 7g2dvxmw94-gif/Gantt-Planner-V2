@@ -3267,6 +3267,63 @@ thead{display:table-header-group}
             document.querySelectorAll('[aria-modal="true"]')
         ).some(el => el.checkVisibility({ visibilityProperty: true }));
 
+        /* La fenetre modale actuellement affichee, ou null. Meme question
+           que modaleOuverte(), mais on veut l'element : c'est la racine du
+           piege a focus ci-dessous. */
+        const modaleAffichee = () => Array.from(
+            document.querySelectorAll('[aria-modal="true"]')
+        ).find(el => el.checkVisibility({ visibilityProperty: true })) || null;
+
+        /* PIEGE A FOCUS GENERIQUE, ADOSSE A LA MEME CONVENTION.
+           `aria-modal="true"` promet que rien au dehors n'est atteignable —
+           c'est ce que dit deja le commentaire de Ctrl+F ci-dessous. Neuf
+           elements le declarent ; deux seulement le tenaient, task-modal.js
+           et settings-panel.js. Les sept autres — import MS Project,
+           raccourcis, contact, Google Drive, OneDrive, partage, onboarding —
+           laissaient Tab sortir vers la page masquee.
+
+           GENERIQUE PLUTOT QUE SEPT FOIS LE MEME CODE : la convention est
+           deja interrogee ici, et sept pieges ecrits separement finiraient
+           par diverger — la forme de defaut qui a produit #56, #57 et #66.
+
+           `e.defaultPrevented` LAISSE LA PRIORITE AUX PIEGES EXISTANTS.
+           task-modal.js et settings-panel.js ecoutent `document` et
+           appellent preventDefault() quand ils bouclent ; ce gestionnaire-ci
+           intercepte sur `window` en phase de CAPTURE, donc plus tot, et ne
+           peut pas voir leur decision. Il se borne donc a ne rien faire
+           quand la racine trouvee est celle qu'ils couvrent deja —
+           task-modal.js pose justement aria-modal sur l'element que son
+           propre piege prend pour racine, de sorte que les deux calculs
+           coincideraient, mais deux gestionnaires qui deplacent le focus
+           pour le meme evenement restent une source de surprises. */
+        const PIEGES_PROPRES = ['.task-modal', '.settings-panel'];
+        window.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab' || e.defaultPrevented) return;
+            const modale = modaleAffichee();
+            if (!modale) return;
+            if (PIEGES_PROPRES.some(sel => modale.matches(sel) || modale.closest(sel))) return;
+
+            const focalisables = modale.querySelectorAll(
+                'button, [href], input:not([type="hidden"]):not([style*="display: none"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (!focalisables.length) return;
+            const premier = focalisables[0];
+            const dernier = focalisables[focalisables.length - 1];
+
+            /* Focus DEHORS : la fenetre s'est ouverte sans le prendre, ou
+               une tabulation l'a deja fait sortir. On le ramene dedans
+               plutot que de laisser la page masquee se faire parcourir. */
+            if (!modale.contains(document.activeElement)) {
+                e.preventDefault();
+                (e.shiftKey ? dernier : premier).focus();
+                return;
+            }
+            if (e.shiftKey) {
+                if (document.activeElement === premier) { e.preventDefault(); dernier.focus(); }
+            } else {
+                if (document.activeElement === dernier) { e.preventDefault(); premier.focus(); }
+            }
+        }, true);
+
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', async (e) => {
             const mod = e.ctrlKey || e.metaKey;
@@ -5360,6 +5417,21 @@ tr:nth-child(even){background:#fafbfc}
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        /* PRENDRE LE FOCUS, faute de quoi `aria-modal="true"` ment des
+           l'ouverture. Le chemin d'arrivee vient des reglages, dont le
+           close() rend le focus a #settingsBtn — dans l'en-tete, DERRIERE
+           le voile : sans cette ligne la fenetre s'ouvre avec le focus
+           deja dehors, et la premiere tabulation parcourt la page masquee.
+
+           EXPLICITE ICI PLUTOT QUE GENERIQUE : le piege a Tab pose plus
+           haut vaut pour les neuf fenetres parce qu'il applique une seule
+           regle, lisible sans les voir toutes. Choisir QUOI focaliser est
+           au contraire un jugement par fenetre — on le pose donc la ou un
+           rouge le couvre, et les autres suivront avec le leur. */
+        const premier = overlay.querySelector(
+            'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (premier) premier.focus();
 
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.remove();
