@@ -1,14 +1,15 @@
 # Conventions de travail
 
 Ce fichier consigne la manière dont ce dépôt est travaillé. Il ne
-l'invente pas : il enregistre une pratique suivie sans interruption des
-PR #59 à #78, pour qu'elle cesse d'être redéduite de l'historique à
-chaque session.
+l'invente pas : il enregistre une pratique suivie des PR **#11 à #78**,
+pour qu'elle cesse d'être redéduite de l'historique à chaque session.
 
 ## Une branche, un défaut, une PR
 
 Chaque défaut a sa branche et sa pull request. L'historique de `main` le
-montre : `#59 → #78`, un défaut par commit de fusion, sans exception.
+montre : `#11 → #78`, un défaut par commit de fusion, avec **un seul
+trou** — #62, que GitHub a refusé de rouvrir après une réécriture de
+branche et que #64 a remplacée.
 
 Nommage observé : `fix/<sujet>` pour une correction, `feat/<sujet>` pour
 un branchement ou un ajout.
