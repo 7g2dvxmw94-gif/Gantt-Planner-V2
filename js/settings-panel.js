@@ -1452,6 +1452,21 @@ class SettingsPanel {
         this._isOpen = true;
         this._overlay.classList.add('active');
         this._panel.classList.add('open');
+        /* SE DECLARER MODAL, MAIS SEULEMENT UNE FOIS OUVERT. Le garde-fou
+           de Ctrl+F (app.js, modaleOuverte()) ne connait que les elements
+           qui portent aria-modal="true" : sans cette declaration, Ctrl+F
+           envoyait le focus sur #searchInput, derriere le voile.
+
+           PAS DANS _buildPanel(), A DESSEIN. Le panneau ferme est masque
+           par transform: translateX(100%) — hors ecran, mais ni display:
+           none ni visibility: hidden — et checkVisibility() le tient donc
+           pour VISIBLE (mesure dans Chromium : left 1280 pour une fenetre
+           de 1280, checkVisibility() -> true). Declare modal en
+           permanence, il ferait croire au garde-fou qu'une fenetre est
+           toujours ouverte, et le piege generique de #78, qui prend la
+           premiere modale visible, s'effacerait devant lui au detriment
+           des autres fenetres. close() retire donc l'attribut. */
+        this._panel.setAttribute('aria-modal', 'true');
         document.body.style.overflow = 'hidden';
         // Re-render active tab to get fresh store values
         this._switchTab(this._activeTab);
@@ -1481,6 +1496,8 @@ class SettingsPanel {
         this._isOpen = false;
         this._overlay.classList.remove('active');
         this._panel.classList.remove('open');
+        // Un panneau ferme n'est pas une modale : voir open().
+        this._panel.removeAttribute('aria-modal');
         document.body.style.overflow = '';
         const btn = document.getElementById('settingsBtn');
         if (btn) btn.focus();
