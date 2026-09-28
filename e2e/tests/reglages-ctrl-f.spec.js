@@ -81,6 +81,24 @@ test('Ctrl+F ne fait pas sortir le focus du panneau de réglages', async ({ page
 test('après fermeture des réglages, Ctrl+F retrouve la recherche', async ({ page }) => {
     await ouvrirReglages(page);
 
+    /* ATTENDRE LE FOCUS INITIAL AVANT DE FERMER — et ce n'est pas une
+       précaution de principe. Une première version fermait aussitôt, et
+       le run 36451438060 l'a donnée instable : échec au premier essai
+       (#searchInput « inactive »), succès à la reprise.
+
+       LA CAUSE EST UN SECOND DÉFAUT DU PRODUIT, mesuré dans Chromium avec
+       le texte réel d'open() et de close() : open() diffère le focus de
+       100 ms par un setTimeout que close() n'annule jamais. Fermé avant
+       ces 100 ms, le panneau voit le minuteur se déclencher APRÈS Ctrl+F
+       et renvoyer le focus sur #settingsPanelClose — panneau fermé, hors
+       écran. Ce défaut-là aura sa propre PR ; ce test-ci ne le mesure pas,
+       il garde contre le correctif naïf de celui-ci, et doit donc partir
+       d'un état où le minuteur a déjà joué. */
+    await expect.poll(
+        () => page.evaluate(() => document.activeElement && document.activeElement.id),
+        { timeout: 10_000 },
+    ).toBe('settingsPanelClose');
+
     // Fermeture par Échap, le chemin clavier : _cancel() puis close().
     await page.keyboard.press('Escape');
     await expect(page.locator('.settings-panel.open')).toHaveCount(0, { timeout: 10_000 });
