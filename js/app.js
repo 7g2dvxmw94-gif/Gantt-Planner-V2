@@ -16,6 +16,7 @@ import { oneDriveBackup } from './onedrive-backup.js';
 import { settingsPanel } from './settings-panel.js';
 import { auth } from './auth.js';
 import { collaborationUI } from './collaboration-ui.js';
+import { evaluerDcma } from './dcma.js';
 
 class App {
     constructor() {
@@ -1534,6 +1535,14 @@ class App {
         const criticalPathBtn = $('#criticalPathBtn');
         if (criticalPathBtn) {
             criticalPathBtn.addEventListener('click', () => this._toggleCriticalPath());
+        }
+
+        /* Rapport DCMA : une analyse en LECTURE SEULE. Il n'a donc pas sa
+           place dans editOnlyIds, contrairement au chemin critique qui y
+           figure sans raison — un lecteur doit pouvoir le consulter. */
+        const dcmaBtn = $('#dcmaBtn');
+        if (dcmaBtn) {
+            dcmaBtn.addEventListener('click', () => this._showDcmaReport());
         }
 
         const undoBtn = $('#undoBtn');
@@ -6155,6 +6164,144 @@ tr:nth-child(even){background:#fafbfc}
         }
         ganttRenderer.render();
         this._renderBoardView();
+    }
+
+    /* ---- Rapport DCMA 14 points ---- */
+
+    /** Calcule le rapport du projet ACTIF a l'ouverture, et l'affiche dans
+     *  une fenetre modale. Le calcul vit dans dcma.js, qui ne lit rien
+     *  lui-meme : tout ce qu'il mesure lui est passe ici. */
+    _showDcmaReport() {
+        const projet = store.getActiveProject();
+        if (!projet) return;
+        document.getElementById('dcmaReportModal')?.remove();
+
+        const baseline = store.getActiveBaseline();
+        const rapport = evaluerDcma({
+            taches: store.getTasks(),
+            calendrier: store.getCalendar(),
+            /* Date d'etat : aujourd'hui, en heure locale, comme l'alerte de
+               retard. Elle deviendra un champ du projet ; le rapport dit
+               d'ici la que c'est une approximation. */
+            dateEtat: formatDateISO(new Date()),
+            sourceDateEtat: 'aujourdhui',
+            echeance: null,
+            baseline: baseline || null,
+            analyse: store.analyzeNetwork(),
+            placer: (tache, getTask) => store.computeConstrainedDatesIn(tache, getTask),
+        });
+
+        const nomDe = new Map(store.getTasks().map(tk => [tk.id, tk.name]));
+        const langue = getCurrentLang() === 'en' ? 'en-GB' : 'fr-FR';
+        const nombre = (x, dec = 1) => x.toLocaleString(langue, { maximumFractionDigits: dec });
+        const dateLisible = (iso) => iso ? formatDateDisplay(iso) : '—';
+
+        const valeurDe = (p) => {
+            if (p.valeur === null || p.valeur === undefined) return '—';
+            if (p.unite === '%') return `${nombre(p.valeur)} % (${p.numerateur}/${p.denominateur})`;
+            if (p.unite === 'ratio') return nombre(p.valeur, 2);
+            if (p.unite === 'test') return t('dcma.test.recul', { recul: p.valeur, retard: p.retard });
+            return String(p.valeur);
+        };
+        const seuilDe = (p) => {
+            if (!p.seuil || p.seuil.valeur === null) return '—';
+            const op = p.seuil.op === '<=' ? '≤' : '≥';
+            if (p.unite === '%') return `${op} ${nombre(p.seuil.valeur)} %`;
+            if (p.unite === 'ratio') return `${op} ${nombre(p.seuil.valeur, 2)}`;
+            return `${op} ${p.seuil.valeur}`;
+        };
+        const seuilTest = t('dcma.test.seuil');
+        const noteDe = (p) => [
+            ...(p.raison ? [t(`dcma.raison.${p.raison}`)] : []),
+            ...(p.approche || []).map(a => t(`dcma.approche.${a}`)),
+        ].join(' · ');
+        const ETATS = { ok: 'ok', alerte: 'alerte', na: 'na', 'sans-objet': 'sansObjet', info: 'info' };
+        const PASTILLES = { ok: 'badge-success', alerte: 'badge-error', na: 'badge-neutral', 'sans-objet': 'badge-neutral', info: 'badge-info' };
+
+        const lignes = rapport.points.map(p => `
+            <tr data-dcma-point="${p.n}" data-etat="${p.etat}">
+                <td class="dcma-n">${p.n}</td>
+                <td class="dcma-controle">${escapeHtml(t(`dcma.point.${p.cle}`))}</td>
+                <td class="dcma-valeur">${escapeHtml(valeurDe(p))}</td>
+                <td class="dcma-seuil">${escapeHtml(p.unite === 'test' ? seuilTest : seuilDe(p))}</td>
+                <td><span class="badge ${PASTILLES[p.etat]} dcma-etat">${escapeHtml(t(`dcma.etat.${ETATS[p.etat]}`))}</span></td>
+                <td class="dcma-note">${escapeHtml(noteDe(p))}</td>
+            </tr>`).join('');
+
+        const nomTache = (id) => escapeHtml(nomDe.get(id) ?? id);
+        const a = rapport.anomalies;
+        const elementsAnomalies = [
+            ...a.liensFantomes.map(l => `<li data-dcma-anomalie="fantome">${escapeHtml(t('dcma.anomalie.fantome', { tache: nomDe.get(l.tacheId) ?? l.tacheId }))}</li>`),
+            ...a.liensVersPhase.map(l => `<li data-dcma-anomalie="phase">${escapeHtml(t('dcma.anomalie.phase', { tache: nomDe.get(l.tacheId) ?? l.tacheId, phase: nomDe.get(l.versId) ?? l.versId }))}</li>`),
+            ...a.liensSansType.map(l => `<li data-dcma-anomalie="sansType">${escapeHtml(t('dcma.anomalie.sansType', { tache: nomDe.get(l.tacheId) ?? l.tacheId }))}</li>`),
+            ...a.margesNegatives.map(id => `<li data-dcma-anomalie="margeNegative">${escapeHtml(t('dcma.anomalie.margeNegative', { tache: nomDe.get(id) ?? id }))}</li>`),
+        ];
+
+        /* Le calendrier utilise est celui de l'UTILISATEUR, pas du projet :
+           deux collaborateurs peuvent obtenir des resultats differents. Le
+           rapport l'affiche pour que l'ecart s'explique. */
+        const cal = rapport.calendrier;
+        const jours = (cal.workingDays || []).map(j =>
+            new Date(2026, 5, 7 + j).toLocaleDateString(langue, { weekday: 'short' })).join(' ');
+        const calendrierLisible = [jours,
+            ...(cal.useFrenchHolidays ? [t('dcma.calendrier.feries')] : []),
+            ...((cal.holidays || []).length ? [t('dcma.calendrier.perso', { n: cal.holidays.length })] : []),
+        ].join(' · ');
+
+        const overlay = document.createElement('div');
+        overlay.id = 'dcmaReportModal';
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal dcma-modal" role="dialog" aria-modal="true" aria-labelledby="dcmaTitle">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="dcmaTitle">${escapeHtml(t('dcma.title'))}</h2>
+                    <button class="icon-btn dcma-close" aria-label="${escapeHtml(t('dcma.close'))}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p class="dcma-intro">${escapeHtml(t('dcma.intro'))}</p>
+                    <dl class="dcma-meta">
+                        <dt>${escapeHtml(t('dcma.projet'))}</dt><dd class="dcma-projet">${escapeHtml(projet.name)}</dd>
+                        <dt>${escapeHtml(t('dcma.dateEtat'))}</dt><dd class="dcma-date-etat">${escapeHtml(t('dcma.dateEtatAujourdhui', { date: dateLisible(rapport.dateEtat) }))}</dd>
+                        <dt>${escapeHtml(t('dcma.calendrier'))}</dt><dd class="dcma-calendrier">${escapeHtml(calendrierLisible)}</dd>
+                        <dt>${escapeHtml(t('dcma.baseline'))}</dt><dd class="dcma-baseline">${escapeHtml(baseline ? baseline.name : t('dcma.baselineAucune'))}</dd>
+                        <dt>${escapeHtml(t('dcma.perimetre'))}</dt><dd class="dcma-perimetre">${escapeHtml(t('dcma.perimetreValeur', { taches: rapport.population, liens: rapport.liens }))}</dd>
+                    </dl>
+                    <table class="cost-table dcma-table">
+                        <thead><tr>
+                            <th>${escapeHtml(t('dcma.col.n'))}</th><th>${escapeHtml(t('dcma.col.controle'))}</th>
+                            <th>${escapeHtml(t('dcma.col.valeur'))}</th><th>${escapeHtml(t('dcma.col.seuil'))}</th>
+                            <th>${escapeHtml(t('dcma.col.etat'))}</th><th>${escapeHtml(t('dcma.col.note'))}</th>
+                        </tr></thead>
+                        <tbody>${lignes}</tbody>
+                    </table>
+                    <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.anomalies'))}</h3>
+                    ${elementsAnomalies.length
+                        ? `<ul class="dcma-anomalies">${elementsAnomalies.join('')}</ul>`
+                        : `<p class="dcma-aucune">${escapeHtml(t('dcma.anomaliesAucune'))}</p>`}
+                    ${rapport.permisExclus.length ? `
+                    <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.permis'))}</h3>
+                    <p class="dcma-permis-note">${escapeHtml(t('dcma.permisNote'))}</p>
+                    <ul class="dcma-permis">${rapport.permisExclus.map(id => `<li>${nomTache(id)}</li>`).join('')}</ul>` : ''}
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const bouton = $('#dcmaBtn');
+        const fermer = () => {
+            overlay.remove();
+            if (bouton) bouton.focus();
+        };
+        const croix = overlay.querySelector('.dcma-close');
+        croix.addEventListener('click', fermer);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) fermer(); });
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); fermer(); }
+        });
+        /* Focus explicite et SYNCHRONE : `.modal-overlay.active` bascule sa
+           visibilite sans transition a l'ouverture (components.css), le
+           bouton est donc focalisable des maintenant — aucun minuteur a
+           annuler a la fermeture (voir #81). */
+        croix.focus();
     }
 
     /* ---- Context Menu ---- */
