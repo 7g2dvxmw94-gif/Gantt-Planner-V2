@@ -2982,8 +2982,23 @@ class Store {
      * Returns an array of task IDs on the critical path.
      */
     getCriticalPath() {
+        return this.analyzeNetwork().critical;
+    }
+
+    /** Analyse du reseau du projet actif : chemin critique ET marge totale.
+     *
+     *  C'EST LE CALCUL DE getCriticalPath(), PAS UN SECOND. Le controle DCMA
+     *  a besoin de la marge totale de chaque tache (points 6, 7, 12) ; la
+     *  recalculer ailleurs aurait ouvert une quatrieme divergence entre deux
+     *  implementations de la meme regle — voir plus bas #56, #57 et #66.
+     *  getCriticalPath() renvoie donc .critical de cette analyse, inchange.
+     *
+     *  @returns {{critical: string[], float: Object<string, number>, projectEnd: number|null}}
+     *           float : marge totale par tache (hors phases), en jours OUVRES ;
+     *           projectEnd : fin du projet en rang de jour ouvre (borne exclusive). */
+    analyzeNetwork() {
         const tasks = this.getTasks().filter(t => !t.isPhase);
-        if (tasks.length === 0) return [];
+        if (tasks.length === 0) return { critical: [], float: {}, projectEnd: null };
 
         const taskMap = {};
         tasks.forEach(t => { taskMap[t.id] = t; });
@@ -3178,14 +3193,30 @@ class Store {
 
         // Critical path: tasks where float (ls - es) === 0
         const critical = [];
+        const floatById = {};
         tasks.forEach(t => {
             const float = ls[t.id] - es[t.id];
+            floatById[t.id] = float;
             if (Math.abs(float) < 0.001) {
                 critical.push(t.id);
             }
         });
 
-        return critical;
+        return { critical, float: floatById, projectEnd };
+    }
+
+    /** Dates qu'imposeraient ses predecesseurs a `task`, lus dans `getTask`
+     *  plutot que dans le store.
+     *
+     *  C'est _computeConstrainedDates() — le calcul meme du placement —
+     *  applique a une COPIE des taches. Le test du chemin critique (DCMA,
+     *  point 12) rejoue ainsi le planning avec un retard injecte, sans rien
+     *  modifier ni ecrire : applyPredecessorConstraints(),
+     *  propagateDependencies() et _recalculatePhase() ecrivent dans
+     *  Supabase, et ne doivent jamais toucher une copie. */
+    computeConstrainedDatesIn(task, getTask) {
+        const cal = this._getCalendar();
+        return this._computeConstrainedDates.call({ getTask, _getCalendar: () => cal }, task);
     }
 
     /* ---- Import ---- */

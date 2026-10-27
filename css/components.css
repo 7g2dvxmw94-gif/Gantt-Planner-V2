@@ -244,6 +244,12 @@
     color: var(--color-info);
 }
 
+/* Pastille sans couleur d'etat : « non mesurable », « sans objet ». */
+.badge-neutral {
+    background: var(--bg-muted, #f1f5f9);
+    color: var(--text-secondary, #64748b);
+}
+
 /* ---- Input ---- */
 .input {
     width: 100%;
@@ -1325,6 +1331,59 @@ textarea.input {
 .cost-table tfoot td {
     padding-top: 10px;
     border-bottom: none;
+}
+
+/* ---- Rapport DCMA 14 points (app.js, _showDcmaReport) ---- */
+.dcma-modal {
+    max-width: 920px;
+}
+.dcma-intro {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+.dcma-meta {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-4);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+}
+.dcma-meta dt {
+    color: var(--text-muted, #999);
+}
+.dcma-table .dcma-etat {
+    white-space: nowrap;
+}
+.dcma-table td.dcma-controle {
+    width: 34%;
+}
+.dcma-table td.dcma-n {
+    color: var(--text-muted, #999);
+    width: 2.5em;
+}
+.dcma-table td.dcma-valeur,
+.dcma-table td.dcma-seuil {
+    white-space: nowrap;
+}
+.dcma-table td.dcma-note {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+.dcma-sous-titre {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    margin: var(--space-5) 0 var(--space-2);
+}
+.dcma-anomalies,
+.dcma-permis {
+    padding-left: var(--space-5);
+    font-size: var(--font-size-sm);
+}
+.dcma-aucune,
+.dcma-permis-note {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
 }
 
 /* ---- Sortable table headers ---- */
