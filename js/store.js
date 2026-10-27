@@ -1630,6 +1630,24 @@ class Store {
      *  il n'y a donc pas de piège de promesse ici. L'attente sert à autre
      *  chose — garantir que le choix est durable avant que l'utilisateur ne
      *  ferme ou ne recharge la page. */
+    /** Date d'etat et echeance du projet (rapport DCMA, migration 028).
+     *  Attend l'ecriture : le rapport se recalcule ensuite, et un
+     *  rechargement immediat doit relire les valeurs saisies. */
+    async setProjectDates(projectId, { statusDate = null, deadline = null }) {
+        if (!this.canEdit()) { console.warn('[store] setProjectDates: read-only project'); return false; }
+        const proj = this._data.projects.find(p => p.id === projectId);
+        if (!proj) return false;
+        proj.statusDate = statusDate || null;
+        proj.deadline   = deadline   || null;
+        try {
+            await supabaseStore.setProjectDates(projectId, { statusDate: proj.statusDate, deadline: proj.deadline });
+            return true;
+        } catch (e) {
+            console.error('[store] sync setProjectDates:', e?.message || e);
+            return false;
+        }
+    }
+
     async setActiveBaseline(baselineId) {
         const pid = this._data.settings.activeProjectId;
         const proj = this._data.projects.find(p => p.id === pid);

@@ -1342,6 +1342,28 @@ textarea.input {
     color: var(--text-secondary);
     margin-bottom: var(--space-4);
 }
+.dcma-dates {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+}
+.dcma-champ {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+.dcma-champ .input {
+    width: 11em;
+}
+.dcma-dates-aide {
+    flex-basis: 100%;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted, #999);
+}
 .dcma-meta {
     display: grid;
     grid-template-columns: max-content 1fr;

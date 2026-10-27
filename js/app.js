@@ -6168,24 +6168,93 @@ tr:nth-child(even){background:#fafbfc}
 
     /* ---- Rapport DCMA 14 points ---- */
 
-    /** Calcule le rapport du projet ACTIF a l'ouverture, et l'affiche dans
-     *  une fenetre modale. Le calcul vit dans dcma.js, qui ne lit rien
-     *  lui-meme : tout ce qu'il mesure lui est passe ici. */
+    /** Ouvre le rapport DCMA du projet ACTIF dans une fenetre modale.
+     *
+     *  Deux champs du projet le parametrent (migration 028) : la date
+     *  d'etat et l'echeance. Ils restent en place quand on les modifie ;
+     *  seuls les resultats, en dessous, sont recalcules — reconstruire les
+     *  champs ferait perdre le focus a celui qu'on vient de remplir. */
     _showDcmaReport() {
         const projet = store.getActiveProject();
         if (!projet) return;
         document.getElementById('dcmaReportModal')?.remove();
 
+        const modifiable = store.canEdit();
+        const desactive = modifiable ? '' : ' disabled';
+        const overlay = document.createElement('div');
+        overlay.id = 'dcmaReportModal';
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal dcma-modal" role="dialog" aria-modal="true" aria-labelledby="dcmaTitle">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="dcmaTitle">${escapeHtml(t('dcma.title'))}</h2>
+                    <button class="icon-btn dcma-close" aria-label="${escapeHtml(t('dcma.close'))}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p class="dcma-intro">${escapeHtml(t('dcma.intro'))}</p>
+                    <div class="dcma-dates">
+                        <label class="dcma-champ">
+                            <span>${escapeHtml(t('dcma.dateEtat'))}</span>
+                            <input type="date" class="input" id="dcmaDateEtat" value="${escapeHtml(projet.statusDate || '')}"${desactive}>
+                        </label>
+                        <label class="dcma-champ">
+                            <span>${escapeHtml(t('dcma.echeance'))}</span>
+                            <input type="date" class="input" id="dcmaEcheance" value="${escapeHtml(projet.deadline || '')}"${desactive}>
+                        </label>
+                        <p class="dcma-dates-aide">${escapeHtml(t('dcma.datesAide'))}</p>
+                    </div>
+                    <div class="dcma-resultats"></div>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const resultats = overlay.querySelector('.dcma-resultats');
+        const rendre = () => { resultats.innerHTML = this._dcmaResultatsHTML(store.getActiveProject() || projet); };
+        rendre();
+
+        const champDate = overlay.querySelector('#dcmaDateEtat');
+        const champEcheance = overlay.querySelector('#dcmaEcheance');
+        const enregistrer = async () => {
+            await store.setProjectDates(projet.id, {
+                statusDate: champDate.value || null,
+                deadline: champEcheance.value || null,
+            });
+            rendre();
+        };
+        champDate.addEventListener('change', enregistrer);
+        champEcheance.addEventListener('change', enregistrer);
+
+        const bouton = $('#dcmaBtn');
+        const fermer = () => {
+            overlay.remove();
+            if (bouton) bouton.focus();
+        };
+        const croix = overlay.querySelector('.dcma-close');
+        croix.addEventListener('click', fermer);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) fermer(); });
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); fermer(); }
+        });
+        /* Focus explicite et SYNCHRONE : `.modal-overlay.active` bascule sa
+           visibilite sans transition a l'ouverture (components.css), le
+           bouton est donc focalisable des maintenant — aucun minuteur a
+           annuler a la fermeture (voir #81). */
+        croix.focus();
+    }
+
+    /** Calcule le rapport et en rend le HTML. Le calcul vit dans dcma.js,
+     *  qui ne lit rien lui-meme : tout ce qu'il mesure lui est passe ici. */
+    _dcmaResultatsHTML(projet) {
         const baseline = store.getActiveBaseline();
+        /* Date d'etat : celle du projet, ou a defaut aujourd'hui en heure
+           locale, comme l'alerte de retard — et le rapport le dit. */
+        const dateEtat = projet.statusDate || formatDateISO(new Date());
         const rapport = evaluerDcma({
             taches: store.getTasks(),
             calendrier: store.getCalendar(),
-            /* Date d'etat : aujourd'hui, en heure locale, comme l'alerte de
-               retard. Elle deviendra un champ du projet ; le rapport dit
-               d'ici la que c'est une approximation. */
-            dateEtat: formatDateISO(new Date()),
-            sourceDateEtat: 'aujourdhui',
-            echeance: null,
+            dateEtat,
+            sourceDateEtat: projet.statusDate ? 'projet' : 'aujourdhui',
+            echeance: projet.deadline || null,
             baseline: baseline || null,
             analyse: store.analyzeNetwork(),
             placer: (tache, getTask) => store.computeConstrainedDatesIn(tache, getTask),
@@ -6247,61 +6316,35 @@ tr:nth-child(even){background:#fafbfc}
             ...(cal.useFrenchHolidays ? [t('dcma.calendrier.feries')] : []),
             ...((cal.holidays || []).length ? [t('dcma.calendrier.perso', { n: cal.holidays.length })] : []),
         ].join(' · ');
+        const dateEtatLisible = rapport.sourceDateEtat === 'projet'
+            ? dateLisible(rapport.dateEtat)
+            : t('dcma.dateEtatAujourdhui', { date: dateLisible(rapport.dateEtat) });
 
-        const overlay = document.createElement('div');
-        overlay.id = 'dcmaReportModal';
-        overlay.className = 'modal-overlay active';
-        overlay.innerHTML = `
-            <div class="modal dcma-modal" role="dialog" aria-modal="true" aria-labelledby="dcmaTitle">
-                <div class="modal-header">
-                    <h2 class="modal-title" id="dcmaTitle">${escapeHtml(t('dcma.title'))}</h2>
-                    <button class="icon-btn dcma-close" aria-label="${escapeHtml(t('dcma.close'))}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body">
-                    <p class="dcma-intro">${escapeHtml(t('dcma.intro'))}</p>
-                    <dl class="dcma-meta">
-                        <dt>${escapeHtml(t('dcma.projet'))}</dt><dd class="dcma-projet">${escapeHtml(projet.name)}</dd>
-                        <dt>${escapeHtml(t('dcma.dateEtat'))}</dt><dd class="dcma-date-etat">${escapeHtml(t('dcma.dateEtatAujourdhui', { date: dateLisible(rapport.dateEtat) }))}</dd>
-                        <dt>${escapeHtml(t('dcma.calendrier'))}</dt><dd class="dcma-calendrier">${escapeHtml(calendrierLisible)}</dd>
-                        <dt>${escapeHtml(t('dcma.baseline'))}</dt><dd class="dcma-baseline">${escapeHtml(baseline ? baseline.name : t('dcma.baselineAucune'))}</dd>
-                        <dt>${escapeHtml(t('dcma.perimetre'))}</dt><dd class="dcma-perimetre">${escapeHtml(t('dcma.perimetreValeur', { taches: rapport.population, liens: rapport.liens }))}</dd>
-                    </dl>
-                    <table class="cost-table dcma-table">
-                        <thead><tr>
-                            <th>${escapeHtml(t('dcma.col.n'))}</th><th>${escapeHtml(t('dcma.col.controle'))}</th>
-                            <th>${escapeHtml(t('dcma.col.valeur'))}</th><th>${escapeHtml(t('dcma.col.seuil'))}</th>
-                            <th>${escapeHtml(t('dcma.col.etat'))}</th><th>${escapeHtml(t('dcma.col.note'))}</th>
-                        </tr></thead>
-                        <tbody>${lignes}</tbody>
-                    </table>
-                    <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.anomalies'))}</h3>
-                    ${elementsAnomalies.length
-                        ? `<ul class="dcma-anomalies">${elementsAnomalies.join('')}</ul>`
-                        : `<p class="dcma-aucune">${escapeHtml(t('dcma.anomaliesAucune'))}</p>`}
-                    ${rapport.permisExclus.length ? `
-                    <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.permis'))}</h3>
-                    <p class="dcma-permis-note">${escapeHtml(t('dcma.permisNote'))}</p>
-                    <ul class="dcma-permis">${rapport.permisExclus.map(id => `<li>${nomTache(id)}</li>`).join('')}</ul>` : ''}
-                </div>
-            </div>`;
-        document.body.appendChild(overlay);
-
-        const bouton = $('#dcmaBtn');
-        const fermer = () => {
-            overlay.remove();
-            if (bouton) bouton.focus();
-        };
-        const croix = overlay.querySelector('.dcma-close');
-        croix.addEventListener('click', fermer);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) fermer(); });
-        overlay.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { e.preventDefault(); fermer(); }
-        });
-        /* Focus explicite et SYNCHRONE : `.modal-overlay.active` bascule sa
-           visibilite sans transition a l'ouverture (components.css), le
-           bouton est donc focalisable des maintenant — aucun minuteur a
-           annuler a la fermeture (voir #81). */
-        croix.focus();
+        return `
+            <dl class="dcma-meta">
+                <dt>${escapeHtml(t('dcma.projet'))}</dt><dd class="dcma-projet">${escapeHtml(projet.name)}</dd>
+                <dt>${escapeHtml(t('dcma.dateEtat'))}</dt><dd class="dcma-date-etat">${escapeHtml(dateEtatLisible)}</dd>
+                <dt>${escapeHtml(t('dcma.echeance'))}</dt><dd class="dcma-echeance">${escapeHtml(rapport.echeance ? dateLisible(rapport.echeance) : t('dcma.echeanceAucune'))}</dd>
+                <dt>${escapeHtml(t('dcma.calendrier'))}</dt><dd class="dcma-calendrier">${escapeHtml(calendrierLisible)}</dd>
+                <dt>${escapeHtml(t('dcma.baseline'))}</dt><dd class="dcma-baseline">${escapeHtml(baseline ? baseline.name : t('dcma.baselineAucune'))}</dd>
+                <dt>${escapeHtml(t('dcma.perimetre'))}</dt><dd class="dcma-perimetre">${escapeHtml(t('dcma.perimetreValeur', { taches: rapport.population, liens: rapport.liens }))}</dd>
+            </dl>
+            <table class="cost-table dcma-table">
+                <thead><tr>
+                    <th>${escapeHtml(t('dcma.col.n'))}</th><th>${escapeHtml(t('dcma.col.controle'))}</th>
+                    <th>${escapeHtml(t('dcma.col.valeur'))}</th><th>${escapeHtml(t('dcma.col.seuil'))}</th>
+                    <th>${escapeHtml(t('dcma.col.etat'))}</th><th>${escapeHtml(t('dcma.col.note'))}</th>
+                </tr></thead>
+                <tbody>${lignes}</tbody>
+            </table>
+            <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.anomalies'))}</h3>
+            ${elementsAnomalies.length
+                ? `<ul class="dcma-anomalies">${elementsAnomalies.join('')}</ul>`
+                : `<p class="dcma-aucune">${escapeHtml(t('dcma.anomaliesAucune'))}</p>`}
+            ${rapport.permisExclus.length ? `
+            <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.permis'))}</h3>
+            <p class="dcma-permis-note">${escapeHtml(t('dcma.permisNote'))}</p>
+            <ul class="dcma-permis">${rapport.permisExclus.map(id => `<li>${nomTache(id)}</li>`).join('')}</ul>` : ''}`;
     }
 
     /* ---- Context Menu ---- */
