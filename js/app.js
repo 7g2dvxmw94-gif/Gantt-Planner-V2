@@ -6208,6 +6208,12 @@ tr:nth-child(even){background:#fafbfc}
             </div>`;
         document.body.appendChild(overlay);
 
+        const bouton = $('#dcmaBtn');
+        const fermer = () => {
+            overlay.remove();
+            if (bouton) bouton.focus();
+        };
+
         const resultats = overlay.querySelector('.dcma-resultats');
         const rendre = () => { resultats.innerHTML = this._dcmaResultatsHTML(store.getActiveProject() || projet); };
         rendre();
@@ -6224,11 +6230,21 @@ tr:nth-child(even){background:#fafbfc}
         champDate.addEventListener('change', enregistrer);
         champEcheance.addEventListener('change', enregistrer);
 
-        const bouton = $('#dcmaBtn');
-        const fermer = () => {
-            overlay.remove();
-            if (bouton) bouton.focus();
-        };
+        /* Selectionner les taches en cause : la fenetre se ferme et elles
+           sont selectionnees dans le Gantt et le Tableau, avec la barre
+           d'actions habituelle. Delegation sur le conteneur : les boutons
+           sont reconstruits a chaque recalcul. */
+        resultats.addEventListener('click', (e) => {
+            const declencheur = e.target.closest('[data-dcma-selection]');
+            if (!declencheur) return;
+            const ids = (this._dcmaFautives && this._dcmaFautives.get(declencheur.dataset.dcmaSelection)) || [];
+            fermer();
+            this._selectedTaskIds.clear();
+            ids.forEach(id => this._selectedTaskIds.add(id));
+            this._updateSelectionUI();
+            this._showToast(t('dcma.selectionFaite', { n: ids.length }), 'info');
+        });
+
         const croix = overlay.querySelector('.dcma-close');
         croix.addEventListener('click', fermer);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) fermer(); });
@@ -6287,6 +6303,7 @@ tr:nth-child(even){background:#fafbfc}
         const ETATS = { ok: 'ok', alerte: 'alerte', na: 'na', 'sans-objet': 'sansObjet', info: 'info' };
         const PASTILLES = { ok: 'badge-success', alerte: 'badge-error', na: 'badge-neutral', 'sans-objet': 'badge-neutral', info: 'badge-info' };
 
+        this._dcmaFautives = new Map(rapport.points.map(p => [String(p.n), p.fautives]));
         const lignes = rapport.points.map(p => `
             <tr data-dcma-point="${p.n}" data-etat="${p.etat}">
                 <td class="dcma-n">${p.n}</td>
@@ -6294,7 +6311,8 @@ tr:nth-child(even){background:#fafbfc}
                 <td class="dcma-valeur">${escapeHtml(valeurDe(p))}</td>
                 <td class="dcma-seuil">${escapeHtml(p.unite === 'test' ? seuilTest : seuilDe(p))}</td>
                 <td><span class="badge ${PASTILLES[p.etat]} dcma-etat">${escapeHtml(t(`dcma.etat.${ETATS[p.etat]}`))}</span></td>
-                <td class="dcma-note">${escapeHtml(noteDe(p))}</td>
+                <td class="dcma-note">${escapeHtml(noteDe(p))}${p.fautives.length && p.etat !== 'ok' ? `
+                    <button type="button" class="btn btn-ghost btn-sm dcma-selectionner" data-dcma-selection="${p.n}">${escapeHtml(t('dcma.selectionner', { n: p.fautives.length }))}</button>` : ''}</td>
             </tr>`).join('');
 
         const nomTache = (id) => escapeHtml(nomDe.get(id) ?? id);
