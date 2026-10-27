@@ -36,6 +36,7 @@ class SettingsPanel {
         this._panel = null;
         this._overlay = null;
         this._isOpen = false;
+        this._focusTimer = null;
         this._activeTab = 'profil';
         this._snapshot = null;
         /* Ecritures de personnalisation encore en vol vers Supabase.
@@ -1489,10 +1490,24 @@ class SettingsPanel {
            cas que #65 avait du traiter. Signale plutot que corrige a
            l'aveugle. */
         const closeBtn = this._panel.querySelector('#settingsPanelClose');
-        if (closeBtn) setTimeout(() => closeBtn.focus(), 100);
+        clearTimeout(this._focusTimer);
+        if (closeBtn) this._focusTimer = setTimeout(() => {
+            this._focusTimer = null;
+            closeBtn.focus();
+        }, 100);
     }
 
     close() {
+        /* LE REPORT D'open() NE DOIT PAS SURVIVRE A LA FERMETURE. Referme
+           avant ses 100 ms — Entree puis Echap tres rapproches, un
+           double-clic quasi instantane —, le panneau voyait le minuteur
+           jouer apres coup et reprendre le focus que close() venait de
+           rendre a #settingsBtn, pour le poser sur #settingsPanelClose :
+           panneau ferme, bouton hors ecran, focus invisible. Les boutons des onglets Synchro, Aide et
+           Abonnement ferment le panneau puis ouvrent une autre fenetre : le
+           minuteur lui volait aussi le focus (mesure pour la fenetre Drive). */
+        clearTimeout(this._focusTimer);
+        this._focusTimer = null;
         this._isOpen = false;
         this._overlay.classList.remove('active');
         this._panel.classList.remove('open');
