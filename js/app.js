@@ -2649,7 +2649,15 @@ ${assignLines.join('\n')}
                         <div class="pdf-export-option-label">Coûts</div>
                         <div class="pdf-export-option-desc">Tableau des coûts estimés, réels et écarts par tâche.</div>
                     </div>
-                </label>
+                </label>${mode === 'ppt' ? '' : `
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="dcma">
+                    <span class="pdf-export-option-icon">✓</span>
+                    <div>
+                        <div class="pdf-export-option-label">${escapeHtml(t('pdf.dialog.dcma.label'))}</div>
+                        <div class="pdf-export-option-desc">${escapeHtml(t('pdf.dialog.dcma.desc'))}</div>
+                    </div>
+                </label>`}
             </div>
             <div class="pdf-export-date-section" id="pdfDateSection">
                 <div class="pdf-export-date-label">${t('pdf.dialog.dateLabel')}</div>
@@ -2814,6 +2822,12 @@ thead{display:table-header-group}
             html += this._pdfCostsSection(project);
         }
 
+        // ---- RAPPORT DCMA 14 POINTS ----
+        if (sections.includes('dcma')) {
+            if (sections.length > 1) html += `<div class="page-break"></div>`;
+            html += this._pdfDcmaSection(project);
+        }
+
         html += `<div class="footer">${t('pdf.footer', { name: escapeHtml(project.name), date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
 </body></html>`;
 
@@ -2822,6 +2836,30 @@ thead{display:table-header-group}
         printWindow.document.close();
         printWindow.onload = () => { printWindow.print(); };
         this._showToast(t('toast.pdfPrintReady'), 'success');
+    }
+
+    /** Le rapport DCMA pour l'export PDF : la meme mise en forme que la
+     *  fenetre (_dcmaPresentation), dans les styles du document imprime. */
+    _pdfDcmaSection(project) {
+        const pr = this._dcmaPresentation(project);
+        const e = escapeHtml;
+        const COULEURS = { ok: 'badge-done', alerte: 'badge-high', info: 'badge-in_progress', na: 'badge-todo', 'sans-objet': 'badge-todo' };
+        let html = `<h2 class="dcma-pdf">${e(t('dcma.title'))}</h2>`;
+        html += `<div class="subtitle">${e(t('dcma.intro'))}</div>`;
+        html += `<table><tbody>${[
+            ['dcma.dateEtat', pr.meta.dateEtat], ['dcma.echeance', pr.meta.echeance], ['dcma.calendrier', pr.meta.calendrier],
+            ['dcma.baseline', pr.meta.baseline], ['dcma.perimetre', pr.meta.perimetre],
+        ].map(([cle, v]) => `<tr><td>${e(t(cle))}</td><td>${e(v)}</td></tr>`).join('')}</tbody></table>`;
+        html += `<table><thead><tr><th>${e(t('dcma.col.n'))}</th><th>${e(t('dcma.col.controle'))}</th><th>${e(t('dcma.col.valeur'))}</th><th>${e(t('dcma.col.seuil'))}</th><th>${e(t('dcma.col.etat'))}</th><th>${e(t('dcma.col.note'))}</th></tr></thead><tbody>`;
+        html += pr.lignes.map(l => `<tr data-dcma-point="${l.n}"><td>${l.n}</td><td>${e(l.controle)}</td><td>${e(l.valeur)}</td><td>${e(l.seuil)}</td><td><span class="badge ${COULEURS[l.etat]}">${e(l.etatLibelle)}</span></td><td>${e(l.note)}</td></tr>`).join('');
+        html += `</tbody></table>`;
+        if (pr.anomalies.length) {
+            html += `<h2>${e(t('dcma.anomalies'))}</h2><ul>${pr.anomalies.map(an => `<li>${e(an.texte)}</li>`).join('')}</ul>`;
+        }
+        if (pr.permis.length) {
+            html += `<h2>${e(t('dcma.permis'))}</h2><div class="subtitle">${e(t('dcma.permisNote'))}</div><ul>${pr.permis.map(n => `<li>${e(n)}</li>`).join('')}</ul>`;
+        }
+        return html;
     }
 
     _pdfTimelineSection(tasks, resources, tlStart, tlEnd) {
@@ -6258,9 +6296,13 @@ tr:nth-child(even){background:#fafbfc}
         croix.focus();
     }
 
-    /** Calcule le rapport et en rend le HTML. Le calcul vit dans dcma.js,
-     *  qui ne lit rien lui-meme : tout ce qu'il mesure lui est passe ici. */
-    _dcmaResultatsHTML(projet) {
+    /** Calcule le rapport DCMA et le met en forme, EN TEXTE BRUT.
+     *
+     *  Une seule mise en forme pour la fenetre (_dcmaResultatsHTML) et pour
+     *  l'export PDF (_pdfDcmaSection) : deux copies de ces regles de
+     *  presentation finiraient par diverger. Le calcul vit dans dcma.js, qui
+     *  ne lit rien lui-meme : tout ce qu'il mesure lui est passe ici. */
+    _dcmaPresentation(projet) {
         const baseline = store.getActiveBaseline();
         /* Date d'etat : celle du projet, ou a defaut aujourd'hui en heure
            locale, comme l'alerte de retard — et le rapport le dit. */
@@ -6277,6 +6319,7 @@ tr:nth-child(even){background:#fafbfc}
         });
 
         const nomDe = new Map(store.getTasks().map(tk => [tk.id, tk.name]));
+        const nom = (id) => nomDe.get(id) ?? id;
         const langue = getCurrentLang() === 'en' ? 'en-GB' : 'fr-FR';
         const nombre = (x, dec = 1) => x.toLocaleString(langue, { maximumFractionDigits: dec });
         const dateLisible = (iso) => iso ? formatDateDisplay(iso) : '—';
@@ -6289,39 +6332,34 @@ tr:nth-child(even){background:#fafbfc}
             return String(p.valeur);
         };
         const seuilDe = (p) => {
+            if (p.unite === 'test') return t('dcma.test.seuil');
             if (!p.seuil || p.seuil.valeur === null) return '—';
             const op = p.seuil.op === '<=' ? '≤' : '≥';
             if (p.unite === '%') return `${op} ${nombre(p.seuil.valeur)} %`;
             if (p.unite === 'ratio') return `${op} ${nombre(p.seuil.valeur, 2)}`;
             return `${op} ${p.seuil.valeur}`;
         };
-        const seuilTest = t('dcma.test.seuil');
         const noteDe = (p) => [
             ...(p.raison ? [t(`dcma.raison.${p.raison}`)] : []),
             ...(p.approche || []).map(a => t(`dcma.approche.${a}`)),
         ].join(' · ');
         const ETATS = { ok: 'ok', alerte: 'alerte', na: 'na', 'sans-objet': 'sansObjet', info: 'info' };
-        const PASTILLES = { ok: 'badge-success', alerte: 'badge-error', na: 'badge-neutral', 'sans-objet': 'badge-neutral', info: 'badge-info' };
 
-        this._dcmaFautives = new Map(rapport.points.map(p => [String(p.n), p.fautives]));
-        const lignes = rapport.points.map(p => `
-            <tr data-dcma-point="${p.n}" data-etat="${p.etat}">
-                <td class="dcma-n">${p.n}</td>
-                <td class="dcma-controle">${escapeHtml(t(`dcma.point.${p.cle}`))}</td>
-                <td class="dcma-valeur">${escapeHtml(valeurDe(p))}</td>
-                <td class="dcma-seuil">${escapeHtml(p.unite === 'test' ? seuilTest : seuilDe(p))}</td>
-                <td><span class="badge ${PASTILLES[p.etat]} dcma-etat">${escapeHtml(t(`dcma.etat.${ETATS[p.etat]}`))}</span></td>
-                <td class="dcma-note">${escapeHtml(noteDe(p))}${p.fautives.length && p.etat !== 'ok' ? `
-                    <button type="button" class="btn btn-ghost btn-sm dcma-selectionner" data-dcma-selection="${p.n}">${escapeHtml(t('dcma.selectionner', { n: p.fautives.length }))}</button>` : ''}</td>
-            </tr>`).join('');
+        const lignes = rapport.points.map(p => ({
+            n: p.n, etat: p.etat, fautives: p.fautives,
+            controle: t(`dcma.point.${p.cle}`),
+            valeur: valeurDe(p),
+            seuil: seuilDe(p),
+            etatLibelle: t(`dcma.etat.${ETATS[p.etat]}`),
+            note: noteDe(p),
+        }));
 
-        const nomTache = (id) => escapeHtml(nomDe.get(id) ?? id);
         const a = rapport.anomalies;
-        const elementsAnomalies = [
-            ...a.liensFantomes.map(l => `<li data-dcma-anomalie="fantome">${escapeHtml(t('dcma.anomalie.fantome', { tache: nomDe.get(l.tacheId) ?? l.tacheId }))}</li>`),
-            ...a.liensVersPhase.map(l => `<li data-dcma-anomalie="phase">${escapeHtml(t('dcma.anomalie.phase', { tache: nomDe.get(l.tacheId) ?? l.tacheId, phase: nomDe.get(l.versId) ?? l.versId }))}</li>`),
-            ...a.liensSansType.map(l => `<li data-dcma-anomalie="sansType">${escapeHtml(t('dcma.anomalie.sansType', { tache: nomDe.get(l.tacheId) ?? l.tacheId }))}</li>`),
-            ...a.margesNegatives.map(id => `<li data-dcma-anomalie="margeNegative">${escapeHtml(t('dcma.anomalie.margeNegative', { tache: nomDe.get(id) ?? id }))}</li>`),
+        const anomalies = [
+            ...a.liensFantomes.map(l => ({ type: 'fantome', texte: t('dcma.anomalie.fantome', { tache: nom(l.tacheId) }) })),
+            ...a.liensVersPhase.map(l => ({ type: 'phase', texte: t('dcma.anomalie.phase', { tache: nom(l.tacheId), phase: nom(l.versId) }) })),
+            ...a.liensSansType.map(l => ({ type: 'sansType', texte: t('dcma.anomalie.sansType', { tache: nom(l.tacheId) }) })),
+            ...a.margesNegatives.map(id => ({ type: 'margeNegative', texte: t('dcma.anomalie.margeNegative', { tache: nom(id) }) })),
         ];
 
         /* Le calendrier utilise est celui de l'UTILISATEUR, pas du projet :
@@ -6330,39 +6368,72 @@ tr:nth-child(even){background:#fafbfc}
         const cal = rapport.calendrier;
         const jours = (cal.workingDays || []).map(j =>
             new Date(2026, 5, 7 + j).toLocaleDateString(langue, { weekday: 'short' })).join(' ');
-        const calendrierLisible = [jours,
+        const calendrier = [jours,
             ...(cal.useFrenchHolidays ? [t('dcma.calendrier.feries')] : []),
             ...((cal.holidays || []).length ? [t('dcma.calendrier.perso', { n: cal.holidays.length })] : []),
         ].join(' · ');
-        const dateEtatLisible = rapport.sourceDateEtat === 'projet'
-            ? dateLisible(rapport.dateEtat)
-            : t('dcma.dateEtatAujourdhui', { date: dateLisible(rapport.dateEtat) });
+
+        return {
+            rapport,
+            lignes,
+            anomalies,
+            permis: rapport.permisExclus.map(nom),
+            meta: {
+                projet: projet.name,
+                dateEtat: rapport.sourceDateEtat === 'projet'
+                    ? dateLisible(rapport.dateEtat)
+                    : t('dcma.dateEtatAujourdhui', { date: dateLisible(rapport.dateEtat) }),
+                echeance: rapport.echeance ? dateLisible(rapport.echeance) : t('dcma.echeanceAucune'),
+                calendrier,
+                baseline: baseline ? baseline.name : t('dcma.baselineAucune'),
+                perimetre: t('dcma.perimetreValeur', { taches: rapport.population, liens: rapport.liens }),
+            },
+        };
+    }
+
+    /** Le rapport en HTML, pour la fenetre. Tout texte passe par escapeHtml. */
+    _dcmaResultatsHTML(projet) {
+        const pr = this._dcmaPresentation(projet);
+        this._dcmaFautives = new Map(pr.lignes.map(l => [String(l.n), l.fautives]));
+        const PASTILLES = { ok: 'badge-success', alerte: 'badge-error', na: 'badge-neutral', 'sans-objet': 'badge-neutral', info: 'badge-info' };
+        const e = escapeHtml;
+
+        const lignes = pr.lignes.map(l => `
+            <tr data-dcma-point="${l.n}" data-etat="${l.etat}">
+                <td class="dcma-n">${l.n}</td>
+                <td class="dcma-controle">${e(l.controle)}</td>
+                <td class="dcma-valeur">${e(l.valeur)}</td>
+                <td class="dcma-seuil">${e(l.seuil)}</td>
+                <td><span class="badge ${PASTILLES[l.etat]} dcma-etat">${e(l.etatLibelle)}</span></td>
+                <td class="dcma-note">${e(l.note)}${l.fautives.length && l.etat !== 'ok' ? `
+                    <button type="button" class="btn btn-ghost btn-sm dcma-selectionner" data-dcma-selection="${l.n}">${e(t('dcma.selectionner', { n: l.fautives.length }))}</button>` : ''}</td>
+            </tr>`).join('');
 
         return `
             <dl class="dcma-meta">
-                <dt>${escapeHtml(t('dcma.projet'))}</dt><dd class="dcma-projet">${escapeHtml(projet.name)}</dd>
-                <dt>${escapeHtml(t('dcma.dateEtat'))}</dt><dd class="dcma-date-etat">${escapeHtml(dateEtatLisible)}</dd>
-                <dt>${escapeHtml(t('dcma.echeance'))}</dt><dd class="dcma-echeance">${escapeHtml(rapport.echeance ? dateLisible(rapport.echeance) : t('dcma.echeanceAucune'))}</dd>
-                <dt>${escapeHtml(t('dcma.calendrier'))}</dt><dd class="dcma-calendrier">${escapeHtml(calendrierLisible)}</dd>
-                <dt>${escapeHtml(t('dcma.baseline'))}</dt><dd class="dcma-baseline">${escapeHtml(baseline ? baseline.name : t('dcma.baselineAucune'))}</dd>
-                <dt>${escapeHtml(t('dcma.perimetre'))}</dt><dd class="dcma-perimetre">${escapeHtml(t('dcma.perimetreValeur', { taches: rapport.population, liens: rapport.liens }))}</dd>
+                <dt>${e(t('dcma.projet'))}</dt><dd class="dcma-projet">${e(pr.meta.projet)}</dd>
+                <dt>${e(t('dcma.dateEtat'))}</dt><dd class="dcma-date-etat">${e(pr.meta.dateEtat)}</dd>
+                <dt>${e(t('dcma.echeance'))}</dt><dd class="dcma-echeance">${e(pr.meta.echeance)}</dd>
+                <dt>${e(t('dcma.calendrier'))}</dt><dd class="dcma-calendrier">${e(pr.meta.calendrier)}</dd>
+                <dt>${e(t('dcma.baseline'))}</dt><dd class="dcma-baseline">${e(pr.meta.baseline)}</dd>
+                <dt>${e(t('dcma.perimetre'))}</dt><dd class="dcma-perimetre">${e(pr.meta.perimetre)}</dd>
             </dl>
             <table class="cost-table dcma-table">
                 <thead><tr>
-                    <th>${escapeHtml(t('dcma.col.n'))}</th><th>${escapeHtml(t('dcma.col.controle'))}</th>
-                    <th>${escapeHtml(t('dcma.col.valeur'))}</th><th>${escapeHtml(t('dcma.col.seuil'))}</th>
-                    <th>${escapeHtml(t('dcma.col.etat'))}</th><th>${escapeHtml(t('dcma.col.note'))}</th>
+                    <th>${e(t('dcma.col.n'))}</th><th>${e(t('dcma.col.controle'))}</th>
+                    <th>${e(t('dcma.col.valeur'))}</th><th>${e(t('dcma.col.seuil'))}</th>
+                    <th>${e(t('dcma.col.etat'))}</th><th>${e(t('dcma.col.note'))}</th>
                 </tr></thead>
                 <tbody>${lignes}</tbody>
             </table>
-            <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.anomalies'))}</h3>
-            ${elementsAnomalies.length
-                ? `<ul class="dcma-anomalies">${elementsAnomalies.join('')}</ul>`
-                : `<p class="dcma-aucune">${escapeHtml(t('dcma.anomaliesAucune'))}</p>`}
-            ${rapport.permisExclus.length ? `
-            <h3 class="dcma-sous-titre">${escapeHtml(t('dcma.permis'))}</h3>
-            <p class="dcma-permis-note">${escapeHtml(t('dcma.permisNote'))}</p>
-            <ul class="dcma-permis">${rapport.permisExclus.map(id => `<li>${nomTache(id)}</li>`).join('')}</ul>` : ''}`;
+            <h3 class="dcma-sous-titre">${e(t('dcma.anomalies'))}</h3>
+            ${pr.anomalies.length
+                ? `<ul class="dcma-anomalies">${pr.anomalies.map(an => `<li data-dcma-anomalie="${an.type}">${e(an.texte)}</li>`).join('')}</ul>`
+                : `<p class="dcma-aucune">${e(t('dcma.anomaliesAucune'))}</p>`}
+            ${pr.permis.length ? `
+            <h3 class="dcma-sous-titre">${e(t('dcma.permis'))}</h3>
+            <p class="dcma-permis-note">${e(t('dcma.permisNote'))}</p>
+            <ul class="dcma-permis">${pr.permis.map(n => `<li>${e(n)}</li>`).join('')}</ul>` : ''}`;
     }
 
     /* ---- Context Menu ---- */
