@@ -3230,7 +3230,11 @@ class Store {
                             if (typeof d === 'string') {
                                 return { taskId: idMap[d] || d, type: 'FS' };
                             }
-                            return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS' };
+                            /* Le decalage voyage avec le lien : l'export le
+                               contient, l'omettre ici effacait toute avance et
+                               tout retard au reimport. Meme forme que la
+                               modale (task-modal.js, _getSelectedPredecessors). */
+                            return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS', lag: Number(d.lag) || 0 };
                         }),
                     };
                     this._data.tasks.push(newTask);
@@ -3411,7 +3415,8 @@ class Store {
                         if (typeof d === 'string') {
                             return { taskId: idMap[d] || d, type: 'FS' };
                         }
-                        return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS' };
+                        // Le decalage voyage avec le lien : voir importProject().
+                        return { taskId: idMap[d.taskId] || d.taskId, type: d.type || 'FS', lag: Number(d.lag) || 0 };
                     }),
                 };
                 this._data.tasks.push(newTask);
