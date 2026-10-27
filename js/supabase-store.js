@@ -96,6 +96,8 @@ function rowToProject(row) {
         zoomLevel:       row.zoom_level || 'week',
         resourceIds:     [],
         activeBaselineId: row.active_baseline_id || null,
+        statusDate:      row.status_date || null,   // migration 028
+        deadline:        row.deadline    || null,   // migration 028
         createdAt:       row.created_at,
         updatedAt:       row.updated_at,
         _role:           row._role || 'owner', // rôle de l'utilisateur courant
@@ -423,6 +425,25 @@ export const supabaseStore = {
             .eq('id', projectId);
         if (error) {
             console.error('[supabaseStore] setActiveBaseline:', error);
+            throw error;
+        }
+    },
+
+    /** Écrit projects.status_date et projects.deadline (migration 028).
+     *
+     *  Même chemin que setActiveBaseline(), et pour la même raison : la RPC
+     *  upsert_project ne nomme pas ces colonnes. Elle ne les écrase donc
+     *  jamais non plus — un renommage du projet ne les efface pas.
+     *
+     *  Chaque valeur peut être null : vider le champ est un geste
+     *  légitime, qui ramène la date d'état au jour même. */
+    async setProjectDates(projectId, { statusDate, deadline }) {
+        const { error } = await supabase
+            .from('projects')
+            .update({ status_date: statusDate || null, deadline: deadline || null })
+            .eq('id', projectId);
+        if (error) {
+            console.error('[supabaseStore] setProjectDates:', error);
             throw error;
         }
     },
