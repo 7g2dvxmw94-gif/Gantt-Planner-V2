@@ -1632,15 +1632,27 @@ class Store {
      *  ferme ou ne recharge la page. */
     /** Date d'etat et echeance du projet (rapport DCMA, migration 028).
      *  Attend l'ecriture : le rapport se recalcule ensuite, et un
-     *  rechargement immediat doit relire les valeurs saisies. */
+     *  rechargement immediat doit relire les valeurs saisies.
+     *
+     *  LES ECRITURES SONT MISES EN FILE. Chaque appel ecrit les DEUX
+     *  colonnes ; remplir la date d'etat puis l'echeance en envoie donc
+     *  deux, la premiere avec une echeance encore vide. Partis ensemble,
+     *  rien ne les ordonnait : la premiere, arrivee en dernier, effacait
+     *  l'echeance en base (CI, run 40594450369). Chaque ecriture attend
+     *  desormais la precedente, et envoie les valeurs en memoire AU MOMENT
+     *  OU ELLE PART : la derniere porte toujours l'etat le plus recent. */
     async setProjectDates(projectId, { statusDate = null, deadline = null }) {
         if (!this.canEdit()) { console.warn('[store] setProjectDates: read-only project'); return false; }
         const proj = this._data.projects.find(p => p.id === projectId);
         if (!proj) return false;
         proj.statusDate = statusDate || null;
         proj.deadline   = deadline   || null;
+        const ecriture = (this._projectDatesWrite || Promise.resolve())
+            .catch(() => {})
+            .then(() => supabaseStore.setProjectDates(projectId, { statusDate: proj.statusDate, deadline: proj.deadline }));
+        this._projectDatesWrite = ecriture;
         try {
-            await supabaseStore.setProjectDates(projectId, { statusDate: proj.statusDate, deadline: proj.deadline });
+            await ecriture;
             return true;
         } catch (e) {
             console.error('[store] sync setProjectDates:', e?.message || e);
