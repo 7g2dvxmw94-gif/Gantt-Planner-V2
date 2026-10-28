@@ -1857,7 +1857,13 @@ tr.critical-path:hover {
     border: 1px solid transparent;
     border-radius: var(--radius-lg);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
+    /* SOUS LE VOILE DES FENETRES MODALES. La barre est un element de la
+       PAGE : elle survit a l'ouverture d'une fenetre quand une selection
+       existe. A 10000, elle passait au-dessus du voile (--z-modal, 100) et
+       « Supprimer » restait cliquable derriere une fenetre aria-modal. Juste
+       sous --z-modal, elle reste au-dessus du Gantt : fenetre fermee, un
+       clic au centre de « Supprimer » l'atteint toujours. */
+    z-index: calc(var(--z-modal) - 1);
     font-size: var(--font-size-sm);
     animation: batchBarSlideUp 200ms ease-out;
 }
