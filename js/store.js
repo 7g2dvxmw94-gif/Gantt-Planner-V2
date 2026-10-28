@@ -1640,7 +1640,13 @@ class Store {
      *  rien ne les ordonnait : la premiere, arrivee en dernier, effacait
      *  l'echeance en base (CI, run 40594450369). Chaque ecriture attend
      *  desormais la precedente, et envoie les valeurs en memoire AU MOMENT
-     *  OU ELLE PART : la derniere porte toujours l'etat le plus recent. */
+     *  OU ELLE PART : la derniere porte toujours l'etat le plus recent.
+     *
+     *  ET L'APPEL NE REND LA MAIN QU'UNE FOIS LA FILE VIDE. Le rapport se
+     *  redessine au retour de cet appel, a partir de la memoire — qui porte
+     *  deja les saisies suivantes. Rendre la main au retour de SA seule
+     *  ecriture affichait donc comme enregistree une valeur dont l'ecriture
+     *  attendait encore son tour : un rechargement a ce moment la perdait. */
     async setProjectDates(projectId, { statusDate = null, deadline = null }) {
         if (!this.canEdit()) { console.warn('[store] setProjectDates: read-only project'); return false; }
         const proj = this._data.projects.find(p => p.id === projectId);
@@ -1653,6 +1659,12 @@ class Store {
         this._projectDatesWrite = ecriture;
         try {
             await ecriture;
+            // Les ecritures lancees entre-temps, jusqu'a la derniere.
+            let fin;
+            while (fin !== this._projectDatesWrite) {
+                fin = this._projectDatesWrite;
+                await fin.catch(() => {});
+            }
             return true;
         } catch (e) {
             console.error('[store] sync setProjectDates:', e?.message || e);
