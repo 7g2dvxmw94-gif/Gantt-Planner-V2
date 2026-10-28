@@ -32,7 +32,7 @@
    avancement >= 100 %, comme l'alerte de retard existante.
    ============================================================ */
 
-import { workingDaysBetween, addWorkingDays, formatDateISO } from './utils.js';
+import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay } from './utils.js';
 
 /** PAM 4.6 et 4.8 : « 44 working days (2 months) ». */
 export const SEUIL_JOURS_OUVRES = 44;
@@ -60,13 +60,24 @@ const terminee   = (t) => avancement(t) >= 100;
 const maxIso = (dates) => dates.reduce((m, d) => (d && (m === null || d > m)) ? d : m, null);
 
 /** Ecart SIGNE en jours ouvres de `de` a `a` : 0 pour deux dates egales,
- *  positif si `a` est plus tard. workingDaysBetween() compte l'intervalle
- *  FERME et rend 0 quand les dates sont inversees : le signe se gere ici. */
+ *  positif si `a` est plus tard.
+ *
+ *  C'est le nombre de jours ouvres de l'intervalle SEMI-OUVERT ]min, max] :
+ *  la borne de depart ne compte pas — qu'elle soit ouvree ou non. Retirer
+ *  « 1 » a workingDaysBetween() supposait cette borne ouvree : une echeance
+ *  posee un samedi, un dimanche ou un ferie, AVANT la fin prevue, perdait
+ *  alors un jour de retard — un projet finissant le lundi paraissait a
+ *  l'heure pour une echeance le samedi precedent.
+ *
+ *  C'est aussi la difference des rangs du moteur — rang(max) - rang(min)
+ *  dans analyzeNetwork(), qui assimile un jour non ouvre au jour ouvre
+ *  precedent. Les marges translatees ici viennent de ce moteur : les deux
+ *  comptes doivent coincider. */
 function ecartOuvre(de, a, cal) {
     if (!de || !a || de === a) return 0;
-    return a > de
-        ? workingDaysBetween(de, a, cal) - 1
-        : -(workingDaysBetween(a, de, cal) - 1);
+    const [min, max] = a > de ? [de, a] : [a, de];
+    const n = workingDaysBetween(min, max, cal) - (isWorkingDay(min, cal) ? 1 : 0);
+    return a > de ? n : -n;
 }
 
 /** Duree en jours ouvres, bornes incluses, minimum 1 — la regle du moteur
