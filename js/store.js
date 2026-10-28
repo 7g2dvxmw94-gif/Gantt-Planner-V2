@@ -3076,14 +3076,25 @@ class Store {
          *
          * L'origine est la date de debut la plus precoce du projet. Les
          * dates ISO se comparent comme des chaines, l'ordre lexicographique
-         * etant ici l'ordre chronologique. */
+         * etant ici l'ordre chronologique.
+         *
+         * SEULES LES DATES VALIDES Y CONCOURENT. La chaine vide precede
+         * toute date ISO : une tache sans dates — start_date nulle en base,
+         * que rowToTask rend en '', ou date illisible a l'import Excel —
+         * devenait l'origine. rang() rendait alors 0 pour toutes les dates,
+         * et les marges de TOUT le reseau etaient fausses.
+         *
+         * Sans AUCUNE date de debut valide, il n'y a pas d'origine, et rang()
+         * reste a 0 : null, passe a workingDaysBetween(), se lirait comme le
+         * 1er janvier 1970 et creuserait des marges de milliers de jours. */
         const cal = this._getCalendar();
+        const datee = (d) => !!d && !isNaN(parseISO(d).getTime());
         const origine = tasks.reduce(
-            (mini, t) => (mini === null || t.startDate < mini) ? t.startDate : mini, null);
+            (mini, t) => (datee(t.startDate) && (mini === null || t.startDate < mini)) ? t.startDate : mini, null);
         /* workingDaysBetween compte les jours ouvres de l'intervalle FERME :
            il vaut 1 pour l'origine elle-meme, d'ou le -1 pour obtenir un
            rang qui part de zero. */
-        const rang = (date) => Math.max(0, workingDaysBetween(origine, date, cal) - 1);
+        const rang = (date) => origine === null ? 0 : Math.max(0, workingDaysBetween(origine, date, cal) - 1);
 
         /* ES ET EF SONT LUS SUR LE PLANNING, PAS RECALCULES.
          *
