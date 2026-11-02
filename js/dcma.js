@@ -74,9 +74,22 @@ function ecartOuvre(de, a, cal) {
 const dureeOuvree = (debut, fin, cal) => Math.max(1, workingDaysBetween(debut, fin, cal) || 1);
 
 const pourcent = (n, d) => Math.round((n / d) * 1000) / 10;
+/* Le pourcentage EXACT, pour l'etat seulement. pourcent() reste l'arrondi
+   affiche, calcule comme avant : le reecrire a partir de pourcentExact()
+   changeait l'affichage des demi-dixiemes — 23/80 passait de 28,8 a 28,7,
+   (23/80)*100*10 valant 287,49999999999994 en flottant. */
+const pourcentExact = (n, d) => (n / d) * 100;
 const arrondi2 = (x) => Math.round(x * 100) / 100;
 
-/** Etat d'une mesure par rapport a son seuil. */
+/** Etat d'une mesure par rapport a son seuil.
+ *
+ *  A APPELER SUR LA VALEUR EXACTE, JAMAIS SUR LA VALEUR ARRONDIE. L'arrondi
+ *  ne sert qu'a l'affichage : comparer la valeur arrondie declarait
+ *  « conforme » un BEI de 18/19 = 0,947 (affiche 0,95), 6 taches sans
+ *  logique sur 119 (5,04 %, affiche 5 %) ou une avance sur 2 001 liens
+ *  (affichee 0 %), alors que le PAM dit « less than 0.95 », « an excess of
+ *  5% » et « the goal for this metric is 0 ». Chaque point mesure en
+ *  pourcentage ou en ratio porte donc `exact` a cote de `valeur`. */
 function etatSeuil(valeur, seuil) {
     if (valeur === null) return 'na';
     return seuil.op === '<=' ? (valeur <= seuil.valeur ? 'ok' : 'alerte')
@@ -89,9 +102,10 @@ function pointPourcent(n, cle, fautives, denominateur, seuil, extra = {}) {
         return { n, cle, valeur: null, unite: '%', numerateur: 0, denominateur: 0,
                  seuil, etat: 'na', raison: 'aucune-tache', fautives: [], ...extra };
     }
-    const valeur = pourcent(fautives.length, denominateur);
-    return { n, cle, valeur, unite: '%', numerateur: fautives.length, denominateur,
-             seuil, etat: extra.etat || etatSeuil(valeur, seuil), fautives, ...extra };
+    const exact = pourcentExact(fautives.length, denominateur);
+    return { n, cle, valeur: pourcent(fautives.length, denominateur), exact, unite: '%',
+             numerateur: fautives.length, denominateur,
+             seuil, etat: extra.etat || etatSeuil(exact, seuil), fautives, ...extra };
 }
 
 /** Rejoue le placement des taches sur une COPIE, en ordre topologique, avec
@@ -235,7 +249,8 @@ export function evaluerDcma(entree) {
         if (p.denominateur) {
             p.numerateur = p.numerateurLiens;
             p.valeur = pourcent(p.numerateurLiens, p.denominateur);
-            p.etat = etatSeuil(p.valeur, p.seuil);
+            p.exact = pourcentExact(p.numerateurLiens, p.denominateur);
+            p.etat = etatSeuil(p.exact, p.seuil);
         }
         delete p.numerateurLiens;
     });
@@ -249,7 +264,8 @@ export function evaluerDcma(entree) {
         if (p.denominateur) {
             p.numerateur = fs;
             p.valeur = pourcent(fs, p.denominateur);
-            p.etat = etatSeuil(p.valeur, p.seuil);
+            p.exact = pourcentExact(fs, p.denominateur);
+            p.etat = etatSeuil(p.exact, p.seuil);
         }
         points.push(p);
     }
@@ -385,9 +401,10 @@ export function evaluerDcma(entree) {
                           etat: 'na', raison: 'fin-passee', fautives: [] });
         } else {
             const tf = ecartOuvre(finPrevue, cible, cal);
-            const valeur = arrondi2((cpl + tf) / cpl);
-            points.push({ n: 13, cle: 'cpli', valeur, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
-                          etat: etatSeuil(valeur, { op: '>=', valeur: 0.95 }),
+            const exact = (cpl + tf) / cpl;
+            const valeur = arrondi2(exact);
+            points.push({ n: 13, cle: 'cpli', valeur, exact, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
+                          etat: etatSeuil(exact, { op: '>=', valeur: 0.95 }),
                           cpl, tf, cible, finPrevue, fautives: [],
                           approche: [...(echeance ? [] : ['cible-baseline']), ...approcheDate] });
         }
@@ -409,9 +426,10 @@ export function evaluerDcma(entree) {
             points.push({ n: 14, cle: 'bei', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: 'aucune-tache', fautives: [] });
         } else {
-            const valeur = arrondi2(faites / denominateur);
-            points.push({ n: 14, cle: 'bei', valeur, unite: 'ratio', numerateur: faites, denominateur,
-                          seuil: { op: '>=', valeur: 0.95 }, etat: etatSeuil(valeur, { op: '>=', valeur: 0.95 }),
+            const exact = faites / denominateur;
+            const valeur = arrondi2(exact);
+            points.push({ n: 14, cle: 'bei', valeur, exact, unite: 'ratio', numerateur: faites, denominateur,
+                          seuil: { op: '>=', valeur: 0.95 }, etat: etatSeuil(exact, { op: '>=', valeur: 0.95 }),
                           fautives: blEchues.filter(({ t }) => !terminee(t)).map(({ t }) => t.id),
                           approche: ['sans-dates-reelles', ...approcheDate] });
         }
