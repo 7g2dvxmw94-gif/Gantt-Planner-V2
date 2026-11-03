@@ -2545,14 +2545,34 @@ class Store {
          *
          * parseISO() aurait suffi a corriger le defaut. Comparer les
          * chaines va plus loin : les dates ISO s'ordonnent
-         * lexicographiquement comme chronologiquement, si bien qu'aucune
-         * conversion n'a lieu — donc aucune ne peut se tromper. Le meme
-         * raisonnement sert deja pour projectStart dans
-         * getCriticalPath(). */
+         * lexicographiquement comme chronologiquement, si bien que l'ordre
+         * ne passe par aucune conversion — donc aucune ne peut le fausser.
+         * Le meme raisonnement sert pour l'origine du reseau dans
+         * analyzeNetwork(), que getCriticalPath() lit.
+         *
+         * MAIS CET ORDRE NE VAUT QU'ENTRE DATES. La chaine vide precede
+         * toute date ISO : un seul enfant sans dates — start_date nulle en
+         * base, que rowToTask rend en '', ou date illisible a l'import
+         * Excel — donnait a la phase une date de debut VIDE, que l'upsert
+         * de fin de fonction envoyait en base. SEULES LES DATES VALIDES
+         * CONCOURENT donc, aux deux bornes. parseISO() ne sert qu'a ce
+         * tri : la comparaison reste celle des chaines.
+         *
+         * A la fin, la chaine vide ne l'emportait pas : au maximum, elle
+         * ne bat aucune date. Le meme filtre s'y applique, pour que les
+         * deux bornes suivent une seule regle — et une date ABSENTE
+         * (undefined) chez le premier enfant, elle, restait aux deux.
+         *
+         * Sans AUCUN enfant date, la phase reste sans dates, comme avant :
+         * la chaine vide, celle que rowToTask donne a une tache sans
+         * dates. PAS null : parseISO('') est une date invalide, mais
+         * parseISO(null) est l'instant zero — le 1er janvier 1970 en UTC —,
+         * une date VALIDE. */
+        const datee = (d) => !!d && !isNaN(parseISO(d).getTime());
         phase.startDate = children.reduce(
-            (mini, c) => (mini === null || c.startDate < mini) ? c.startDate : mini, null);
+            (mini, c) => (datee(c.startDate) && (mini === '' || c.startDate < mini)) ? c.startDate : mini, '');
         phase.endDate = children.reduce(
-            (maxi, c) => (maxi === null || c.endDate > maxi) ? c.endDate : maxi, null);
+            (maxi, c) => (datee(c.endDate) && (maxi === '' || c.endDate > maxi)) ? c.endDate : maxi, '');
 
         // Recalculate progress
         const totalProgress = children.reduce((sum, c) => sum + (c.progress || 0), 0);
