@@ -6358,6 +6358,7 @@ tr:nth-child(even){background:#fafbfc}
         const anomalies = [
             ...a.liensFantomes.map(l => ({ type: 'fantome', texte: t('dcma.anomalie.fantome', { tache: nom(l.tacheId) }) })),
             ...a.liensVersPhase.map(l => ({ type: 'phase', texte: t('dcma.anomalie.phase', { tache: nom(l.tacheId), phase: nom(l.versId) }) })),
+            ...a.liensDePhase.map(l => ({ type: 'dePhase', texte: t('dcma.anomalie.dePhase', { phase: nom(l.phaseId), vers: nom(l.versId) }) })),
             ...a.liensSansType.map(l => ({ type: 'sansType', texte: t('dcma.anomalie.sansType', { tache: nom(l.tacheId) }) })),
             ...a.margesNegatives.map(id => ({ type: 'margeNegative', texte: t('dcma.anomalie.margeNegative', { tache: nom(id) }) })),
         ];
