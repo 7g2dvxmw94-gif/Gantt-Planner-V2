@@ -408,8 +408,17 @@ export function evaluerDcma(entree) {
             points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: 'sans-cible', fautives: [] });
         } else if (cpl <= 0) {
+            /* CPL NUL NE VEUT PAS DIRE FIN PASSEE. workingDaysBetween() compte
+               l'intervalle FERME [date d'etat, fin prevue] : il rend 0 quand la
+               fin precede la date d'etat, mais aussi quand l'intervalle ne
+               contient aucun jour ouvre — date d'etat un samedi, fin prevue le
+               dimanche ou le meme samedi. Le CPLI n'est pas calculable dans les
+               deux cas (CPL au denominateur) ; c'est L'ORDRE DES DATES, pas le
+               compte, qui dit si la fin est passee. Sans fin prevue, il n'y a
+               pas d'ordre a lire : d'ou le `!!finPrevue`. */
+            const finAVenir = !!finPrevue && finPrevue >= dateEtat;
             points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
-                          etat: 'na', raison: 'fin-passee', fautives: [] });
+                          etat: 'na', raison: finAVenir ? 'sans-jour-ouvre-restant' : 'fin-passee', fautives: [] });
         } else {
             const tf = ecartOuvre(finPrevue, cible, cal);
             const exact = (cpl + tf) / cpl;
