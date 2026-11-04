@@ -3373,6 +3373,29 @@ thead{display:table-header-group}
 
         // Use capture phase on window (earliest possible interception)
         window.addEventListener('keydown', async (e) => {
+            /* AUCUN RACCOURCI DE LA PAGE TANT QU'UNE FENETRE QUI SE DECLARE
+               aria-modal EST OUVERTE. Chacun agit sur ce qui est DERRIERE le
+               voile — la selection, l'historique, la vue —, ce que
+               `aria-modal="true"` promet d'empecher. La garde ne valait que
+               pour Ctrl+F : Suppr
+               proposait de supprimer la selection d'arriere-plan, Ctrl+Z
+               annulait une action derriere la fenetre, « ? » ouvrait l'aide
+               par-dessus, et Echap vidait la selection en fermant la fenetre.
+               Les fenetres qui donnent le focus a un bouton y etaient
+               exposees des leur ouverture : saisieDeTexte() n'y voit rien.
+
+               Rendre la touche plutot que la confisquer : sans _prevent(),
+               la fenetre garde ses propres touches (Echap la ferme) et le
+               navigateur les siennes (Ctrl+F lance sa recherche).
+
+               LA GARDE NE VOIT QUE CE QUI SE DECLARE (voir modaleOuverte()).
+               Deux fenetres a voile ne le font pas encore, et les raccourcis
+               agissent toujours derriere elles : la boite d'export PDF /
+               PowerPoint (#pdfExportDialog) et la popup de partage de projet.
+               Leur poser role="dialog" et aria-modal="true" est un autre
+               correctif. */
+            if (modaleOuverte()) return;
+
             const mod = e.ctrlKey || e.metaKey;
             // Ctrl+Z / Cmd+Z: Undo
             if (mod && !e.shiftKey && e.key === 'z') {
@@ -3402,20 +3425,16 @@ thead{display:table-header-group}
 
             // Ctrl+F / Cmd+F: Focus search
             if (mod && e.key === 'f') {
-                /* Pas tant qu'une fenetre modale est ouverte. `#searchInput`
-                   est dans l'en-tete, DERRIERE le voile : y envoyer le focus
+                /* Pas tant qu'une fenetre modale est ouverte — la garde en
+                   tete de ce gestionnaire s'en charge. `#searchInput` est
+                   dans l'en-tete, DERRIERE le voile : y envoyer le focus
                    dement le `aria-modal="true"` que la fenetre pose — sa
                    promesse que rien au dehors n'est atteignable — et le piege
                    a focus que task-modal.js fait respecter a Tab. Ce piege ne
                    peut rien voir d'ici : il ecoute `document`, quand ce
                    gestionnaire-ci intercepte sur `window` en phase de CAPTURE,
-                   donc plus tot. La garde doit donc etre ICI.
-
-                   Rendre la touche plutot que la confisquer : sans le
-                   _prevent() qui suit, la recherche native du navigateur
-                   reprend son cours, ce qui est le seul comportement utile
-                   qu'on puisse offrir a ce stade. */
-                if (modaleOuverte()) return;
+                   donc plus tot. La garde doit donc etre DANS ce
+                   gestionnaire. */
                 const searchInput = $('#searchInput');
                 if (searchInput) {
                     _prevent(e);
