@@ -311,13 +311,20 @@ export function evaluerDcma(entree) {
     }
 
     /* 8 — Duree elevee. Le PAM mesure la duree de BASELINE quand elle existe.
-       Les permis sont exclus : leur duree est celle d'une instruction legale. */
+       Les permis sont exclus : leur duree est celle d'une instruction legale.
+
+       UNE ENTREE DE BASELINE SANS SES DEUX DATES N'A PAS DE DUREE. Une
+       capture faite apres un import Excel garde les taches que l'import n'a
+       pas su dater, avec des dates vides : dureeOuvree('', '') vaut 1, et
+       une tache de plusieurs mois passait pour une tache d'un jour. La duree
+       courante en tient alors lieu, comme pour une tache absente. */
     const parBaseline = new Map(((baseline && baseline.tasks) || []).map(b => [b.id, b]));
     const P8 = P.filter(t => !estPermis(t));
     points.push(pointPourcent(8, 'dureeElevee',
         ids(P8.filter(t => {
             const b = parBaseline.get(t.id);
-            return dureeOuvree(b ? b.startDate : t.startDate, b ? b.endDate : t.endDate, cal) > SEUIL_JOURS_OUVRES;
+            const ref = b && b.startDate && b.endDate ? b : t;
+            return dureeOuvree(ref.startDate, ref.endDate, cal) > SEUIL_JOURS_OUVRES;
         })),
         P8.length, { op: '<=', valeur: 5 }));
 
@@ -422,15 +429,19 @@ export function evaluerDcma(entree) {
     }
 
     /* 14 — BEI = taches terminees / taches qui devaient l'etre. Le PAM
-       (3.1.2.4) ajoute au denominateur les taches sans fin de baseline —
-       ici, celles creees apres la capture. Le numerateur compte TOUTES les
-       taches terminees, avances comprises : le BEI peut depasser 1. */
+       (3.1.2.4) ajoute au denominateur les taches sans fin de baseline :
+       « Tasks missing baseline finish dates are included in the
+       denominator ». Ce sont celles creees apres la capture, mais aussi
+       celles que la capture a gardees SANS DATE DE FIN — une entree n'est
+       pas une fin. Le numerateur compte TOUTES les taches terminees,
+       avances comprises : le BEI peut depasser 1. */
     if (!baseline) {
         points.push({ n: 14, cle: 'bei', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                       etat: 'na', raison: 'sans-baseline', fautives: [] });
     } else {
         const reelles = nonPhases.filter(t => !estJalon(t));
-        const absentes = reelles.filter(t => !parBaseline.has(t.id));
+        // Disjointes de blEchues, qui n'admet que des fins de baseline renseignees.
+        const absentes = reelles.filter(t => !(parBaseline.get(t.id) || {}).endDate);
         const denominateur = blEchues.length + absentes.length;
         const faites = reelles.filter(terminee).length;
         if (!denominateur) {
