@@ -2976,13 +2976,6 @@ class Store {
 
     getTimelineRange(zoomLevel) {
         const tasks = this.getTasks();
-        if (tasks.length === 0) {
-            const today = new Date();
-            return {
-                start: new Date(today.getFullYear(), today.getMonth(), 1),
-                end: addDays(today, 90),
-            };
-        }
 
         /* parseISO, jamais `new Date(chaine)` : cette derniere interprete
            'AAAA-MM-JJ' en UTC, alors que les .getFullYear()/.getMonth()
@@ -2990,11 +2983,37 @@ class Store {
            Greenwich, minuit UTC du 1er septembre est le 31 aout a 20 h :
            getMonth() repondait AOUT, et la frise s'arretait la veille du
            jour ou finit la derniere tache. C'est la regle que l'en-tete
-           d'utils.js pose pour tout le projet. */
-        const starts = tasks.map(t => parseISO(t.startDate).getTime());
-        const ends = tasks.map(t => parseISO(t.endDate).getTime());
-        const minDate = new Date(Math.min(...starts));
-        const maxDate = new Date(Math.max(...ends));
+           d'utils.js pose pour tout le projet.
+
+           SEULES LES DATES VALIDES CONCOURENT AUX BORNES. parseISO('') vaut
+           NaN, et Math.min / Math.max propagent NaN : une seule tache sans
+           dates — start_date nulle en base, que rowToTask rend en '', ou
+           date illisible a l'import Excel — faisait partir les DEUX bornes
+           en Invalid Date, a tous les zooms. getDaysBetween() et
+           getMonthsBetween() rendaient alors zero colonne, et la frise
+           n'avait plus de largeur. Meme forme, et meme predicat, que
+           l'origine d'analyzeNetwork() (#91).
+
+           LES DEUX BORNES SE PRENNENT SUR L'UNION des debuts et des fins
+           valides, pas sur le plus petit debut et la plus grande fin.
+           L'import Excel lit chaque colonne a part : une tache peut n'avoir
+           que son debut, ou que sa fin. Bornes prises cote par cote, un
+           debut seul posterieur a toutes les fins resterait hors de la
+           frise, et un debut seul posterieur a une fin seule INVERSERAIT la
+           plage — zero colonne, le symptome meme qu'on corrige. Pour des taches
+           entierement datees, debut avant fin, l'union ne change rien.
+           Sans AUCUNE date valide, c'est le repli « aucune tache ». */
+        const datee = (d) => !!d && !isNaN(parseISO(d).getTime());
+        const toutes = tasks.flatMap(t => [t.startDate, t.endDate]).filter(datee).map(d => parseISO(d).getTime());
+        if (toutes.length === 0) {
+            const today = new Date();
+            return {
+                start: new Date(today.getFullYear(), today.getMonth(), 1),
+                end: addDays(today, 90),
+            };
+        }
+        const minDate = new Date(Math.min(...toutes));
+        const maxDate = new Date(Math.max(...toutes));
 
         if (zoomLevel === 'quarter') {
             // Snap to quarter boundaries with a small margin
