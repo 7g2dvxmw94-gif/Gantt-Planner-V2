@@ -414,6 +414,12 @@ export function evaluerDcma(entree) {
         if (!cible) {
             points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: 'sans-cible', fautives: [] });
+        } else if (!finPrevue) {
+            /* Aucune tache datee : il n'y a pas de fin prevue, donc rien qui
+               puisse preceder la date d'etat. cpl vaut 0 ici aussi, et la
+               branche suivante l'aurait dite « passee ». */
+            points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
+                          etat: 'na', raison: 'aucune-tache', fautives: [] });
         } else if (cpl <= 0) {
             points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: 'fin-passee', fautives: [] });
