@@ -1525,13 +1525,19 @@ const I18N = {
 function t(key, replacements = {}) {
     const lang = localStorage.getItem('gantt_lang') || 'fr';
     const dict = I18N[lang] || I18N.fr;
-    let str = (dict && dict[key]) ? dict[key] : (I18N.fr[key] || key);
+    const str = (dict && dict[key]) ? dict[key] : (I18N.fr[key] || key);
 
-    Object.entries(replacements).forEach(([k, v]) => {
-        str = str.split('{' + k + '}').join(String(v));
-    });
-
-    return str;
+    /* Substitution en UNE SEULE PASSE, sur le gabarit d'origine. Une valeur
+       est inseree telle quelle et N'EST JAMAIS RELUE : une tache nommee
+       "Reception {phase}" reste ce nom. Remplacer les cles l'une apres
+       l'autre, sur le texte deja substitue, le reecrivait en "Reception
+       Gros oeuvre", et l'ordre des cles de l'objet decidait du resultat.
+       Un {nom} sans valeur reste tel quel ; la valeur passe par String(v).
+       Le remplacement est une fonction : un "$&" dans un nom n'est pas
+       interprete. */
+    const valeurs = new Map(Object.entries(replacements));
+    return str.replace(/\{([^{}]*)\}/g, (marque, nom) =>
+        valeurs.has(nom) ? String(valeurs.get(nom)) : marque);
 }
 
 function setLanguage(lang) {
