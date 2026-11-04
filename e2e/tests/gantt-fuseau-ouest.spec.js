@@ -51,6 +51,15 @@ import { createProject, deleteActiveProject } from '../helpers.js';
  * LA CIBLE TOMBE UN JOUR OUVRÉ, à dessein : addTask() recale les dates
  * sur les jours ouvrés, et une tâche posée un samedi serait déplacée —
  * l'écart mesuré ne viendrait plus du seul défaut.
+ *
+ * « OUVRÉ » SELON LE CALENDRIER DE L'APPLICATION, FÉRIÉS COMPRIS. Une
+ * première version ne sautait que les week-ends. Le 4 novembre 2026, la
+ * cible est tombée le mercredi 11, jour férié : addTask() l'a recalée au
+ * 12, et le troisième discriminant l'a arrêtée (run 41799074158). Le
+ * test échouait ainsi chaque jour dont la cible tombait sur un férié,
+ * quel que soit le code mesuré. La cible est désormais prise avec
+ * isWorkingDay() et le calendrier même du store, celui dont addTask() se
+ * sert.
  */
 
 test.use({ timezoneId: 'America/New_York' });
@@ -68,20 +77,26 @@ test('une barre s\'aligne sur sa colonne aussi à l\'ouest de Greenwich', async 
        condition du défaut. */
     expect(await page.evaluate(() => new Date().getTimezoneOffset())).toBeGreaterThan(0);
 
-    /* La cible : une semaine plus tard, reportée au lundi si elle tombe
-       un week-end. Tout est calculé en heure LOCALE dans la page, donc
-       dans le même référentiel que la ligne du jour. */
-    const { cible, ecartJours } = await page.evaluate(() => {
+    await createProject(page, `E2E GanttOuest ${suffixe}`);
+
+    /* La cible : une semaine plus tard, reportée au premier jour ouvré
+       suivant si elle tombe un week-end OU UN FÉRIÉ — selon le calendrier
+       du store, celui dont addTask() se sert pour recaler. Tout est
+       calculé en heure LOCALE dans la page, donc dans le même référentiel
+       que la ligne du jour. */
+    const { cible, ecartJours } = await page.evaluate(async () => {
+        const base = document.baseURI;
+        const { isWorkingDay } = await import(new URL('js/utils.js', base).href);
+        const { store } = await import(new URL('js/store.js', base).href);
+        const cal = store._getCalendar();
+        const iso = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
         const aujourdhui = new Date();
         aujourdhui.setHours(0, 0, 0, 0);
         const d = new Date(aujourdhui);
         d.setDate(d.getDate() + 7);
-        while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        return { cible: iso, ecartJours: Math.round((d - aujourdhui) / 86400000) };
+        while (!isWorkingDay(iso(d), cal)) d.setDate(d.getDate() + 1);
+        return { cible: iso(d), ecartJours: Math.round((d - aujourdhui) / 86400000) };
     });
-
-    await createProject(page, `E2E GanttOuest ${suffixe}`);
 
     /* SECOND DISCRIMINANT — LE ZOOM EST CONNU ET LINÉAIRE EN JOURS.
        Aux zooms « mois » et « quarter », _dateToPosition() place la date
