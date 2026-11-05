@@ -3765,6 +3765,25 @@ thead{display:table-header-group}
         this._updateNotifications();
     }
 
+    /* ECHAPPEMENT A LA SOURCE. text et sub sont du HTML : les deux surfaces
+       qui lisent cette liste, le panneau des notifications
+       (_toggleNotifPanel) et les alertes du tableau de bord
+       (_renderDashboard), les inserent tels quels par innerHTML. Deux
+       alertes y portent un balisage VOULU : le <strong> du jalon (i18n
+       'dashboard.notif.milestone') et celui du budget. Echapper a
+       l'insertion le detruirait ; chaque valeur venue des donnees est donc
+       echappee ICI, une fois, et elle seule.
+       Ces valeurs viennent souvent d'UN AUTRE COMPTE : le message d'une
+       notification Supabase, que redigent les RPC notify_task_deleted,
+       notify_project_shared et notify_project_removed (migrations 008, 009
+       et 011) avec profiles.full_name (ou l'e-mail) et le nom du projet ou
+       de la tache ; le nom du projet, tire de task_name ou du projet charge ;
+       dans un projet partage, les noms de taches et de projet des alertes
+       locales. Inseres bruts, ce qu'un compte ecrivait devenait du balisage
+       dans la page d'un autre.
+       Le reste n'est pas une donnee : type et icon sont des constantes
+       (getCurrencySymbol() lit une table de devises), days et les montants
+       sont calcules, et le texte du budget echappait deja p.name. */
     _getNotifications() {
         const today = formatDateISO(new Date());
         const soon = formatDateISO(addDays(new Date(), 3));
@@ -3781,8 +3800,8 @@ thead{display:table-header-group}
             notifications.push({
                 type,
                 icon,
-                text:     n.message,
-                sub,
+                text:     escapeHtml(n.message),
+                sub:      escapeHtml(sub),
                 _supId:   n.id,
                 _supRead: !!n.readAt,
             });
@@ -3799,8 +3818,8 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'danger',
                     icon: '\u26A0',
-                    text: t('dashboard.notif.late', { name: tk.name, days }),
-                    sub: p.name,
+                    text: t('dashboard.notif.late', { name: escapeHtml(tk.name), days }),
+                    sub: escapeHtml(p.name),
                     taskId: tk.id,
                     projectId: p.id,
                 });
@@ -3812,8 +3831,8 @@ thead{display:table-header-group}
                 notifications.push({
                     type: 'warning',
                     icon: '\u25C6',
-                    text: t('dashboard.notif.milestone', { name: tk.name, days }),
-                    sub: p.name,
+                    text: t('dashboard.notif.milestone', { name: escapeHtml(tk.name), days }),
+                    sub: escapeHtml(p.name),
                     taskId: tk.id,
                     projectId: p.id,
                 });
@@ -3827,8 +3846,8 @@ thead{display:table-header-group}
                 notifications.push({
                     type: typeMap[pn.level] || 'info',
                     icon: iconMap[pn.type] || '\uD83D\uDCC4',
-                    text: pn.message,
-                    sub: p.name,
+                    text: escapeHtml(pn.message),
+                    sub: escapeHtml(p.name),
                     taskId: pn.taskId,
                     projectId: p.id,
                 });
