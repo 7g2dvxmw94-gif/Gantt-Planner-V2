@@ -3,7 +3,8 @@
    Gantly - Step 2
    ======================================== */
 
-import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines,
+         buildParentIndex, findParentLoop } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween,
@@ -1254,10 +1255,18 @@ class TaskModal {
     _populateParents(selectedParentId) {
         this._parentSelect.innerHTML = '';
         this._parentSelect.appendChild(createElement('option', { value: '' }, t('task.parent.none')));
-        const phases = store.getTasks().filter(t => t.isPhase);
-        phases.forEach(phase => {
-            // Don't allow a task to be its own parent
-            if (this._editingTaskId && phase.id === this._editingTaskId) return;
+        const taches = store.getTasks();
+        /* Ni la tache elle-meme, ni AUCUNE de ses descendantes : une phase
+           rattachee sous sa propre sous-phase fermerait une boucle, et la
+           boucle entiere disparaitrait du Gantt. La regle est celle que le
+           store applique a l'ecriture (findParentLoop), pour que la liste
+           et le refus ne puissent pas diverger. L'index porte TOUTES les
+           taches, pas les seules phases : une phase changee en tache garde
+           ses enfants, et la descendance passe par elle. Il est construit
+           une seule fois. */
+        const parents = buildParentIndex(taches);
+        taches.filter(tache => tache.isPhase).forEach(phase => {
+            if (this._editingTaskId && findParentLoop(parents, this._editingTaskId, phase.id)) return;
             const opt = createElement('option', { value: phase.id }, phase.name);
             if (phase.id === selectedParentId) opt.selected = true;
             this._parentSelect.appendChild(opt);
