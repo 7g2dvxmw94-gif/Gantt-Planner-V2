@@ -117,6 +117,7 @@ test('DCMA, liens : logique, avances, décalages, types et anomalies', async ({ 
     expect(r.rapport.anomalies).toEqual({
         liensFantomes: [{ tacheId: 'G', versId: 'X' }],
         liensVersPhase: [{ tacheId: 'J', versId: 'PH' }],
+        liensDePhase: [],
         liensSansType: [{ tacheId: 'N', versId: 'A' }],
         margesNegatives: [],
     });

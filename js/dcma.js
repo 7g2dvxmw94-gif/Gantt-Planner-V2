@@ -211,15 +211,26 @@ export function evaluerDcma(entree) {
        valide que s'il vise une tache existante du projet qui n'est pas une
        phase : un lien vers une tache supprimee survit dans dependencies
        (deleteTask ne nettoie pas), et un lien vers une phase est honore par
-       le placement mais ignore par le chemin critique. */
-    const anomalies = { liensFantomes: [], liensVersPhase: [], liensSansType: [], margesNegatives: [] };
+       le placement mais ignore par le chemin critique.
+
+       UN LIEN PORTE PAR UNE PHASE N'EST PAS VALIDE NON PLUS, ET IL SE
+       SIGNALE DE MEME. analyzeNetwork() ecarte les phases des deux cotes du
+       lien : il ne lit pas plus le lien d'une phase que le lien vers une
+       phase. Ne parcourir que les non-phases faisait disparaitre le premier
+       du rapport sans une ligne, alors que l'import MS Project XML en
+       produit (une recapitulative garde ses PredecessorLink) et que la
+       fenetre de tache masque les predecesseurs d'une phase. Il n'est pas
+       compte, seulement signale ; vers une tache supprimee, il est fantome
+       comme un autre. */
+    const anomalies = { liensFantomes: [], liensVersPhase: [], liensDePhase: [], liensSansType: [], margesNegatives: [] };
     const liens = [];
     const nbPred = new Map(), nbSucc = new Map();
     nonPhases.forEach(t => { nbPred.set(t.id, 0); nbSucc.set(t.id, 0); });
-    nonPhases.forEach(succ => {
+    taches.forEach(succ => {
         (succ.dependencies || []).forEach(dep => {
             const pred = parId.get(dep.taskId);
             if (!pred) { anomalies.liensFantomes.push({ tacheId: succ.id, versId: dep.taskId }); return; }
+            if (estPhase(succ)) { anomalies.liensDePhase.push({ phaseId: succ.id, versId: pred.id }); return; }
             if (estPhase(pred)) { anomalies.liensVersPhase.push({ tacheId: succ.id, versId: pred.id }); return; }
             if (!dep.type) anomalies.liensSansType.push({ tacheId: succ.id, versId: pred.id });
             liens.push({ pred, succ, type: dep.type || 'FS', lag: Number(dep.lag) || 0 });
