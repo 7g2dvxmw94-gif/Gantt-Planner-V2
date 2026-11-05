@@ -3977,22 +3977,42 @@ thead{display:table-header-group}
 
         const entityIcon = { task: '📋', phase: '📁', resource: '👤', baseline: '📊', share: '🔗' };
 
+        /* ECHAPPEMENT : les entrees de project_history sont ecrites par les
+           AUTRES MEMBRES du projet. La RPC log_project_history (migration
+           018) recopie l'action et le nom de l'entite tels que le client les
+           envoie ; le nom de l'acteur y est reduit a des initiales
+           (to_initials), et la version de 012 le lit dans le profil, que
+           chacun choisit. La politique "history: insert if editor"
+           (migration 013) laisse tout editeur inserer une ligne directement,
+           avec le nom d'acteur qu'il veut ; et l'action porte elle-meme des
+           noms ("a retire
+           ${m.name} du projet", collaboration-ui.js). Interpoles tels quels
+           dans innerHTML, ce qu'un membre ecrit devenait du balisage dans la
+           page des autres. Tout ce qui vient d'une entree passe donc par
+           escapeHtml, une seule fois, la ou il est insere : actorName,
+           action, entityName, et les initiales -- tirees du nom BRUT puis
+           echappees, car un nom qui commence par "<" donne "<D", lu comme le
+           debut d'une balise ; les echapper avant de les tirer donnerait
+           "&D". Le libelle du jour et l'heure sont formates depuis
+           createdAt par Date et ne peuvent porter de balisage ("Invalid
+           Date" au pire) : ils sont echappes aussi, pour que la regle soit
+           sans exception. L'icone vient d'une table constante. */
         body.innerHTML = Object.entries(groups).map(([day, items]) => `
-            <div style="padding:0.5rem 1.25rem 0.25rem;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#9ca3af);">${day}</div>
+            <div style="padding:0.5rem 1.25rem 0.25rem;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#9ca3af);">${escapeHtml(day)}</div>
             ${items.map(e => {
                 const time = new Date(e.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                 const initials = (e.actorName || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
                 const icon = entityIcon[e.entityType] || '•';
                 return `
                 <div style="display:flex;align-items:flex-start;gap:0.625rem;padding:0.5rem 1.25rem;transition:background .15s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background=''">
-                    <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:var(--text-inverse);font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">${initials}</div>
+                    <div style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:var(--text-inverse);font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;">${escapeHtml(initials)}</div>
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:0.82rem;color:var(--text-primary);line-height:1.35;">
-                            <strong>${e.actorName}</strong> ${e.action}
-                            ${e.entityName ? `<span style="color:var(--color-primary);font-weight:600;"> "${e.entityName}"</span>` : ''}
+                            <strong>${escapeHtml(e.actorName)}</strong> ${escapeHtml(e.action)}
+                            ${e.entityName ? `<span style="color:var(--color-primary);font-weight:600;"> "${escapeHtml(e.entityName)}"</span>` : ''}
                             <span style="margin-left:4px;">${icon}</span>
                         </div>
-                        <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:1px;">${time}</div>
+                        <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:1px;">${escapeHtml(time)}</div>
                     </div>
                 </div>`;
             }).join('')}
