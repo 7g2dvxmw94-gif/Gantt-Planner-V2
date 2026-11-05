@@ -4253,6 +4253,17 @@ thead{display:table-header-group}
         const hasRemoved = removedNotifs.length > 0;
         const mixedTypes = hasShared && hasRemoved;
 
+        /* ECHAPPEMENT : le nom du projet (task_name avant le "|") et celui de
+           l'acteur viennent d'UN AUTRE COMPTE. Les RPC notify_project_shared
+           et notify_project_removed (migrations 009 et 011) recopient dans la
+           notification projects.name et profiles.full_name (ou l'e-mail).
+           Interpoles tels quels dans innerHTML, ce qu'un compte ecrit devenait
+           du balisage dans la page d'un autre. Les deux passent donc par
+           escapeHtml : projectName dans les deux gabarits de ligne
+           ci-dessous, actorName par bodyTxt, echappe la ou il est insere. Le
+           reste du gabarit n'est pas une donnee : title ne porte qu'un
+           nombre ; emoji, accentColor, roleLabel et roleColor sont des
+           constantes. */
         // Helper: build project row HTML
         const projectRow = (n, forceRemoved = false) => {
             const parts       = (n.taskName || '').split('|');
@@ -4262,14 +4273,14 @@ thead{display:table-header-group}
             if (isRemoved) {
                 return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;border-radius:8px;background:#FEF2F2;margin-bottom:0.4rem;">
                     <span style="font-size:1rem;">🚫</span>
-                    <span style="font-weight:600;color:#111;flex:1;text-align:left;">${projectName}</span>
+                    <span style="font-weight:600;color:#111;flex:1;text-align:left;">${escapeHtml(projectName)}</span>
                 </div>`;
             }
             const roleLabel = role === 'editor' ? '✏️ Écriture' : '👁 Lecture';
             const roleColor = role === 'editor' ? '#6366F1' : '#6B7280';
             return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;border-radius:8px;background:#F3F4F6;margin-bottom:0.4rem;">
                 <span style="font-size:1rem;">📁</span>
-                <span style="font-weight:600;color:#111;flex:1;text-align:left;">${projectName}</span>
+                <span style="font-weight:600;color:#111;flex:1;text-align:left;">${escapeHtml(projectName)}</span>
                 <span style="padding:0.2rem 0.6rem;border-radius:20px;background:${roleColor}1A;color:${roleColor};font-weight:600;font-size:0.78rem;white-space:nowrap;">${roleLabel}</span>
             </div>`;
         };
@@ -4319,7 +4330,7 @@ thead{display:table-header-group}
         box.innerHTML = `
             <div style="font-size:2.5rem;margin-bottom:0.75rem;">${emoji}</div>
             <h2 style="margin:0 0 0.4rem;font-size:1.15rem;color:#111;">${title}</h2>
-            <p style="margin:0 0 1rem;color:#555;font-size:0.9rem;">${bodyTxt}</p>
+            <p style="margin:0 0 1rem;color:#555;font-size:0.9rem;">${escapeHtml(bodyTxt)}</p>
             <div style="overflow-y:auto;flex:1;margin-bottom:1.25rem;">${projectsHtml}</div>
             <button id="_sharedOkBtn" style="background:${accentColor};color:#fff;border:none;border-radius:8px;padding:0.65rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;width:100%;flex-shrink:0;">OK</button>
         `;
