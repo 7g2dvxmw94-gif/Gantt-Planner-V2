@@ -231,6 +231,69 @@ export function findAllCycles(tasks) {
     return cycles;
 }
 
+/* ============================================================
+   Boucles de rattachement (parentId)
+   ------------------------------------------------------------
+   L'arbre des taches doit rester une foret : en remontant les
+   parents depuis n'importe quelle tache, on finit sur une racine.
+   Rattacher une phase a elle-meme ou a l'une de ses descendantes
+   ferme une boucle, et la boucle entiere sort de l'arbre :
+   getTaskTree() part des racines, et aucune tache de la boucle
+   n'en a plus. Mesure sur la chaine A > B > C > T, A rattachee
+   a C : A, B, C et T disparaissaient du Gantt et du
+   rechargement ; A et B, de l'export CSV aussi (C et T en sont
+   absentes meme sans boucle : cet export s'arrete a deux
+   niveaux). Et deleteTask() sur une boucle debordait la pile
+   sans rien supprimer.
+
+   La regle est ICI, une seule fois. La fiche s'en sert pour ne
+   pas proposer de parent fautif, updateTask() pour le refuser
+   sur les chemins qui passent par lui : la fiche, et le
+   glisser-deposer, dont la propre garde (_isDescendant) ne
+   regarde que les phases.
+
+   Elle NE COUVRE PAS l'import JSON (importProject,
+   importAllProjects) ni le chargement depuis la base : ils
+   posent le parentId sans passer par updateTask(), et une
+   boucle venue d'un fichier, ou deja en base, reste en place.
+
+   Meme facture que la detection de cycles ci-dessus : index
+   construit une fois, remontee iterative, sans recursion.
+   ============================================================ */
+
+/** Index taskId -> parentId (null pour une racine). */
+export function buildParentIndex(tasks) {
+    const index = new Map();
+    for (const t of tasks) index.set(t.id, t.parentId || null);
+    return index;
+}
+
+/** Rattacher taskId sous parentId fermerait-il une boucle ?
+ *  Retourne la boucle [taskId, parentId, ..., taskId], ou null.
+ *  On remonte les parents depuis parentId : la boucle se ferme si
+ *  la remontee repasse par taskId — y compris tout de suite, quand
+ *  parentId EST taskId. Une boucle deja presente plus haut, qui ne
+ *  passe pas par taskId, arrete la remontee au lieu de la faire
+ *  tourner sans fin. */
+export function findParentLoop(index, taskId, parentId) {
+    if (!parentId) return null;
+    const chaine = [taskId];
+    const vus = new Set();
+    let courant = parentId;
+    while (courant && !vus.has(courant)) {
+        chaine.push(courant);
+        if (courant === taskId) return chaine;
+        vus.add(courant);
+        courant = index.get(courant) || null;
+    }
+    return null;
+}
+
+/** La meme question, posee sur la liste des taches. */
+export function wouldCreateParentLoop(tasks, taskId, parentId) {
+    return findParentLoop(buildParentIndex(tasks), taskId, parentId);
+}
+
 // Stripe Price IDs — remplacez par vos vrais IDs après création sur stripe.com
 export const STRIPE_PRICES = {
     pro_monthly:  'price_PRO_MONTHLY_PLACEHOLDER',
@@ -1901,6 +1964,22 @@ class Store {
                 const noms = cycle.map(id => this.getTask(id)?.name || id).join(' → ');
                 console.warn(`[store] updateTask refuse : cycle de dependances ${noms}`);
                 this._emit('dependency:cycle', { taskId, cycle, path: noms });
+                return null;
+            }
+        }
+
+        /* Refus des boucles de rattachement (voir findParentLoop).
+         *
+         * Meme contrat que le refus des cycles ci-dessus : avant toute
+         * ecriture, la modification entiere est refusee et l'appelant
+         * recoit null. Sans ce controle, la fiche ecrivait une phase sous
+         * sa propre sous-phase, et le glisser-deposer en faisait autant
+         * avec une phase changee en tache qui avait garde ses enfants. */
+        if (updates && Object.prototype.hasOwnProperty.call(updates, 'parentId')) {
+            const boucle = wouldCreateParentLoop(this._data.tasks, taskId, updates.parentId);
+            if (boucle) {
+                const noms = boucle.map(id => this.getTask(id)?.name || id).join(' → ');
+                console.warn(`[store] updateTask refuse : boucle de rattachement ${noms}`);
                 return null;
             }
         }
