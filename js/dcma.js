@@ -32,7 +32,7 @@
    avancement >= 100 %, comme l'alerte de retard existante.
    ============================================================ */
 
-import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay } from './utils.js';
+import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay, parseISO } from './utils.js';
 
 /** PAM 4.6 et 4.8 : « 44 working days (2 months) ». */
 export const SEUIL_JOURS_OUVRES = 44;
@@ -58,6 +58,10 @@ const terminee   = (t) => avancement(t) >= 100;
 /** Plus grande date ISO d'une liste (les chaines ISO se comparent comme des
  *  dates). */
 const maxIso = (dates) => dates.reduce((m, d) => (d && (m === null || d > m)) ? d : m, null);
+
+/** Date ISO VALIDE : ni vide, ni absente, ni illisible. Le meme predicat
+ *  que l'origine du reseau dans store.analyzeNetwork(). */
+const datee = (d) => !!d && !isNaN(parseISO(d).getTime());
 
 /** Ecart SIGNE en jours ouvres de `de` a `a` : 0 pour deux dates egales,
  *  positif si `a` est plus tard.
@@ -173,7 +177,25 @@ function rejouerPlacement(taches, placer, cibleId, retard, cal) {
         if (estPhase(t)) {
             const ks = (enfants.get(id) || []).map(getTask).filter(Boolean);
             if (ks.length) {
-                t.startDate = ks.reduce((m, k) => (k.startDate < m ? k.startDate : m), ks[0].startDate);
+                /* SEULS LES DEBUTS VALIDES CONCOURENT AU MINIMUM. La chaine
+                   vide precede toute date ISO : un seul enfant sans dates
+                   donnait a la phase de la copie un debut VIDE, meme quand la
+                   phase recue avait le sien. Une tache liee a la phase en
+                   Debut->Debut ou Debut->Fin etait alors placee au
+                   « NaN-NaN-NaN », que maxIso() prend pour la date la plus
+                   tardive : les deux rejeux finissaient a cette meme valeur,
+                   et le point 12 mesurait un recul nul sur une logique saine.
+
+                   Le minimum part de la chaine vide, pas du premier enfant :
+                   celui-ci peut etre lui-meme sans dates. Et le debut se
+                   recalcule meme quand la phase recue n'en a pas :
+                   _recalculatePhase() peut l'avoir laisse vide.
+
+                   La fin passe deja par maxIso(), qui ecarte les valeurs
+                   vides. Sans aucun debut valide, la phase reste sans debut :
+                   la chaine vide, celle que rowToTask donne a une tache sans
+                   dates. */
+                t.startDate = ks.reduce((m, k) => (datee(k.startDate) && (m === '' || k.startDate < m)) ? k.startDate : m, '');
                 t.endDate   = maxIso(ks.map(k => k.endDate));
             }
             return;
