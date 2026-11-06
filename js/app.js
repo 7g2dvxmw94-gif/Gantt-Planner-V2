@@ -2610,10 +2610,20 @@ ${assignLines.join('\n')}
 
         const dialog = document.createElement('div');
         dialog.className = 'pdf-export-dialog';
+        /* SE DECLARER MODALE, comme toute fenetre a voile le doit. La garde
+           des raccourcis (modaleOuverte()) et le piege a focus generique de
+           _bindKeyboardShortcuts() ne connaissent que `aria-modal="true"` :
+           sans cette declaration, fenetre ouverte et focus sur son bouton de
+           generation, Suppr proposait de supprimer la selection
+           d'arriere-plan, « ? » ouvrait l'aide par-dessus, et Tab sortait
+           vers la page masquee. */
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-labelledby', 'pdfExportTitle');
 
         dialog.innerHTML = `
             <div class="pdf-export-header">
-                <h3>${mode === 'ppt' ? 'Export PowerPoint' : 'Export PDF'}</h3>
+                <h3 id="pdfExportTitle">${mode === 'ppt' ? 'Export PowerPoint' : 'Export PDF'}</h3>
                 <button class="pdf-export-close" aria-label="Fermer">&times;</button>
             </div>
             <p class="pdf-export-desc">${t('pdf.dialog.desc')}</p>
@@ -3323,15 +3333,17 @@ thead{display:table-header-group}
 
         /* PIEGE A FOCUS GENERIQUE, ADOSSE A LA MEME CONVENTION.
            `aria-modal="true"` promet que rien au dehors n'est atteignable —
-           c'est ce que dit deja le commentaire de Ctrl+F ci-dessous. Neuf
-           elements le declarent ; deux seulement le tenaient, task-modal.js
-           et settings-panel.js. Les sept autres — import MS Project,
-           raccourcis, contact, Google Drive, OneDrive, partage, onboarding —
-           laissaient Tab sortir vers la page masquee.
+           c'est ce que dit deja le commentaire de Ctrl+F ci-dessous. Seules
+           les fenetres de PIEGES_PROPRES ci-dessous (task-modal.js,
+           settings-panel.js) tiennent cette promesse par elles-memes ;
+           toutes les autres qui la declarent s'en remettent au piege
+           generique — sans lui, Tab sortait vers la page masquee. Pas de
+           decompte ni de liste ici : l'un et l'autre seraient faux a la
+           prochaine fenetre declaree.
 
-           GENERIQUE PLUTOT QUE SEPT FOIS LE MEME CODE : la convention est
-           deja interrogee ici, et sept pieges ecrits separement finiraient
-           par diverger — la forme de defaut qui a produit #56, #57 et #66.
+           GENERIQUE PLUTOT QU'UN PIEGE PAR FENETRE : la convention est deja
+           interrogee ici, et des pieges ecrits separement finiraient par
+           diverger — la forme de defaut qui a produit #56, #57 et #66.
 
            `e.defaultPrevented` LAISSE LA PRIORITE AUX PIEGES EXISTANTS.
            task-modal.js et settings-panel.js ecoutent `document` et
@@ -3389,11 +3401,13 @@ thead{display:table-header-group}
                navigateur les siennes (Ctrl+F lance sa recherche).
 
                LA GARDE NE VOIT QUE CE QUI SE DECLARE (voir modaleOuverte()).
-               Deux fenetres a voile ne le font pas encore, et les raccourcis
-               agissent toujours derriere elles : la boite d'export PDF /
-               PowerPoint (#pdfExportDialog) et la popup de partage de projet.
-               Leur poser role="dialog" et aria-modal="true" est un autre
-               correctif. */
+               Toute fenetre a voile doit donc porter role="dialog" et
+               aria-modal="true". La boite d'export PDF / PowerPoint
+               (#pdfExportDialog) et la popup de partage de projet le portent
+               desormais. La fenetre d'abonnement (#upgradeModalOverlay,
+               _showUpgradeModal()) ne se declare pas encore, et les
+               raccourcis agissent toujours derriere elle. La declarer est un
+               autre correctif. */
             if (modaleOuverte()) return;
 
             const mod = e.ctrlKey || e.metaKey;
@@ -4365,6 +4379,15 @@ thead{display:table-header-group}
 
         const box = document.createElement('div');
         box.style.cssText = 'background:#fff;border-radius:16px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;max-height:80vh;display:flex;flex-direction:column;';
+        /* SE DECLARER MODALE, pour la meme raison que la boite d'export PDF
+           (voir _showPDFExportDialog) : sans `aria-modal="true"`, les
+           raccourcis agissaient derriere la popup et Tab parcourait la page
+           masquee. Le nom passe par aria-label plutot que par un id : rien
+           ne retire une popup deja affichee avant d'en ajouter une autre,
+           et deux titres au meme id se confondraient. */
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-modal', 'true');
+        box.setAttribute('aria-label', title);
 
         box.innerHTML = `
             <div style="font-size:2.5rem;margin-bottom:0.75rem;">${emoji}</div>
