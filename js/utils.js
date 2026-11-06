@@ -378,6 +378,33 @@ export function $$(selector, parent = document) {
     return [...parent.querySelectorAll(selector)];
 }
 
+/* ---- Recherche ---- */
+
+/**
+ * Forme d'un texte pour la RECHERCHE : ni casse, ni accents.
+ *
+ * « Écran » et « ecran » donnent tous deux « ecran » : un planificateur tape
+ * sans accents ni majuscules, et ses noms de tâches en portent partout. La
+ * décomposition NFD sépare chaque lettre de son accent, que l'on retire.
+ *
+ * Trois écarts de la typographie française qu'elle ne couvre pas :
+ *   - les ligatures œ et æ, qui ne se décomposent pas : « Gros œuvre » doit
+ *     se trouver en tapant « oeuvre » ;
+ *   - l'apostrophe courbe ’ (et ses voisines), ramenée à l'apostrophe
+ *     droite du clavier ;
+ *   - les tirets typographiques – et —, ramenés au trait d'union.
+ */
+export function normaliserRecherche(texte) {
+    return String(texte ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/œ/g, 'oe')
+        .replace(/æ/g, 'ae')
+        .replace(/[\u2018\u2019\u02bc]/g, "'")
+        .replace(/[\u2010-\u2015\u2212]/g, '-');
+}
+
 /* ---- Color Utilities ---- */
 
 /**
