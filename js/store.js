@@ -2258,7 +2258,13 @@ class Store {
      *  Application STRICTE : la tache est placee exactement ou ses
      *  contraintes l'exigent. Pour introduire un ecart, il faut un
      *  decalage sur le lien — pas un deplacement a la souris, qui
-     *  serait perdu au premier mouvement du predecesseur. */
+     *  serait perdu au premier mouvement du predecesseur.
+     *
+     *  AUCUN SIGNAL PROPRE AU RECALAGE n'est emis : l'evenement
+     *  task:constrained ne servait qu'a la marque « ! » posee sur la
+     *  barre, retiree a la demande de l'utilisateur
+     *  (recalage-sans-marque.spec.js). Le reemettre sans abonne serait
+     *  reconstruire un mecanisme debranche ; task:update suffit au rendu. */
     applyPredecessorConstraints(taskId) {
         const task = this.getTask(taskId);
         if (!task) return;
@@ -2267,8 +2273,6 @@ class Store {
         if (!cible) return;
         if (cible.startDate === task.startDate && cible.endDate === task.endDate) return;
 
-        const avant = { startDate: task.startDate, endDate: task.endDate };
-
         task.startDate = cible.startDate;
         task.endDate   = cible.endDate;
 
@@ -2276,19 +2280,6 @@ class Store {
         this.propagateDependencies(taskId);
         this._save();
         this._emit('task:update', task);
-
-        /* Informer l'interface : sans ce signal, l'utilisateur voit sa
-           tache sauter sans comprendre pourquoi. */
-        this._emit('task:constrained', {
-            taskId,
-            from: avant,
-            to: { startDate: task.startDate, endDate: task.endDate },
-            predecessors: (task.dependencies || []).map(d => ({
-                name: this.getTask(d.taskId)?.name || d.taskId,
-                type: d.type,
-                lag:  Number(d.lag) || 0,
-            })),
-        });
 
         supabaseStore.upsertTask(task)
             .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
