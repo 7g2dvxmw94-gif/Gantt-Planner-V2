@@ -51,10 +51,15 @@ test('glisser une tâche de 3 jours vers la droite met à jour ses dates', async
     await page.mouse.move(startX + 3 * colWidth, startY, { steps: 10 });
     await page.mouse.up();
 
-    // Rouvrir la tâche et vérifier que les dates ont bien avancé de 3 jours.
+    /* Rouvrir la tâche : le début a avancé de 3 jours, et la durée de 3 jours
+       OUVRÉS (lundi 10 → mercredi 12) est gardée. Lâchée le jeudi 13, la
+       barre enjambe le week-end — le samedi 15 est en outre l'Assomption —
+       et finit donc le lundi 17 (jeudi 13, vendredi 14, lundi 17). L'attendu
+       était le samedi 15 : il gardait l'écart CALENDAIRE, soit 2 jours
+       ouvrés au lieu de 3 (voir glisser-duree-ouvree.spec.js). */
     await bar.dblclick();
     await expect(page.locator('#taskStart')).toHaveValue('2026-08-13');
-    await expect(page.locator('#taskEnd')).toHaveValue('2026-08-15');
+    await expect(page.locator('#taskEnd')).toHaveValue('2026-08-17');
     await page.locator('#taskModalOverlay').locator('button', { hasText: 'Annuler' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();
 
