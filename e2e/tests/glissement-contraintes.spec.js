@@ -39,14 +39,12 @@ import { createProject, deleteActiveProject } from '../helpers.js';
  * propagateDependencies. L'application accepte donc une modification
  * qu'elle ne sait pas conserver.
  *
- * DÉCOUVERT EN VÉRIFIANT CELA, ET NON TRAITÉ ICI :
- * applyPredecessorConstraints émet un événement `task:constrained` — avec
- * les dates avant/après et la liste des prédécesseurs — au motif que « sans
- * ce signal, l'utilisateur voit sa tâche sauter sans comprendre pourquoi ».
- * Or PERSONNE NE L'ÉCOUTE : un grep sur tout js/ ne trouve que l'émission.
- * Le mécanisme d'information a été construit puis laissé débranché. Ce qui
- * suit ne le rebranche pas : décider quoi montrer à l'utilisateur est une
- * question d'interface, et aucun rouge ne la couvre.
+ * DÉCOUVERT EN VÉRIFIANT CELA, ET NON TRAITÉ ICI : applyPredecessorConstraints
+ * émettait alors un événement `task:constrained` que personne n'écoutait.
+ * #73 l'a branché sur une marque « ! » posée sur la barre de la tâche
+ * recalée ; l'utilisateur a ensuite demandé le retrait de cette marque, et
+ * l'événement est parti avec elle (recalage-sans-marque.spec.js). Rien de
+ * ce qui suit n'en dépend : on n'y lit que des dates.
  */
 
 /** Juin 2026 commence un lundi. */

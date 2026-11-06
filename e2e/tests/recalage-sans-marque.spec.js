@@ -8,12 +8,12 @@ import { createProject, deleteActiveProject } from '../helpers.js';
  * un jalon/activité, j'ai toujours ce point d'exclamation pour me prévenir
  * d'un décalage, supprime cette fonctionnalité ».
  *
- * Ce point d'exclamation est la marque de recalage posée par #73 :
- * applyPredecessorConstraints() (store.js) émet `task:constrained` quand
- * les contraintes déplacent une tâche, et gantt-renderer.js pose alors sur
- * la barre un <span class="gantt-bar-recalage">!</span>, jusqu'au prochain
- * enregistrement de la tâche. Lier une tâche née plus loin que sa position
- * contrainte suffit à la faire paraître.
+ * Ce point d'exclamation était la marque de recalage posée par #73 :
+ * applyPredecessorConstraints() (store.js) émettait `task:constrained`
+ * quand les contraintes déplaçaient une tâche, et gantt-renderer.js posait
+ * alors sur la barre un <span class="gantt-bar-recalage">!</span>, jusqu'au
+ * prochain enregistrement de la tâche. Lier une tâche née plus loin que sa
+ * position contrainte suffisait à la faire paraître.
  *
  * CE QUI EST RETIRÉ : la marque. CE QUI RESTE : le recalage lui-même. La
  * tâche liée continue d'être placée par ses prédécesseurs ; seul le signal

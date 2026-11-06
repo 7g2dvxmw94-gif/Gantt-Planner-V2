@@ -241,6 +241,8 @@
 | 3 | Vérification | Vérifier dans Gantt | Ligne de dépendance visible | |
 | 4 | Contrainte | Vérifier tâche B décalée | Tâche B respecte la dépendance | |
 | 5 | Chemin critique | Activer chemin critique | Dépendance critiques en rouge | |
+| 6 | Sans marque | Regarder la barre de B après son déplacement | Aucun « ! » sur la barre : le déplacement se lit aux dates | |
+| 7 | Jalon | Créer un jalon précédé par A, puis une tâche précédée par ce jalon | Les deux sont placés après leur prédécesseur, sans « ! » | |
 
 ---
 
