@@ -47,11 +47,19 @@ function taskToRow(t) {
         fixed_costs:          t.fixedCosts   || [],
         actual_cost:          typeof t.actualCost === 'number' ? t.actualCost : null,
         // Permit fields
+        /* CORRECTIF : n° de dossier, commune et service instructeur sont
+           lus sous les noms qu'emploient la fiche (task-modal.js,
+           _getPermitData / _fillPermitFields), le Gantt et son infobulle :
+           permitDossier, permitCommune, permitService. Ils etaient lus ici
+           sous dossierNumber, commune et serviceInstructeur, que personne
+           n'ecrit : la ligne partait avec ces trois colonnes a null, et le
+           rechargement rendait des champs vides. Meme nom dans rowToTask
+           ci-dessous ; un seul nom par champ, partout. */
         permit_type:              t.permitType              || null,
         permit_status:            t.permitStatus            || null,
-        dossier_number:           t.dossierNumber           || null,
-        commune:                  t.commune                 || null,
-        service_instructeur:      t.serviceInstructeur      || null,
+        dossier_number:           t.permitDossier           || null,
+        commune:                  t.permitCommune           || null,
+        service_instructeur:      t.permitService           || null,
         abf_sector:               t.abfSector               || false,
         deposit_date:             t.depositDate             || null,
         completeness_date:        t.completenessDate        || null,
@@ -130,9 +138,9 @@ function rowToTask(row) {
         // Permit fields
         permitType:          row.permit_type          || '',
         permitStatus:        row.permit_status        || '',
-        dossierNumber:       row.dossier_number       || '',
-        commune:             row.commune              || '',
-        serviceInstructeur:  row.service_instructeur  || '',
+        permitDossier:       row.dossier_number       || '',   // voir taskToRow
+        permitCommune:       row.commune              || '',
+        permitService:       row.service_instructeur  || '',
         abfSector:           row.abf_sector           || false,
         depositDate:         row.deposit_date         || '',
         completenessDate:    row.completeness_date    || '',
