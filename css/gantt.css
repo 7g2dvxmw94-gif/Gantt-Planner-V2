@@ -474,6 +474,22 @@
     gap: var(--space-1);
 }
 
+/* Champ de recherche au-dessus d'une liste de liens, et son compte de
+   resultats (vide tant qu'on ne cherche rien). */
+.dep-search {
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-sm);
+}
+
+.dep-search-status {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.dep-search-status:not(:empty) {
+    margin-bottom: var(--space-1);
+}
+
 .dep-list label {
     display: flex;
     align-items: center;

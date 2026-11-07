@@ -8,7 +8,7 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines,
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween,
-         TASK_COLORS, getCurrencySymbol, syncLog} from './utils.js';
+         TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
 
 class TaskModal {
     constructor() {
@@ -294,7 +294,8 @@ class TaskModal {
         // Predecessors (with link type)
         const predGroup = createElement('div', { className: 'form-group' });
         predGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.predecessors')));
-        this._predList = createElement('div', { className: 'dep-list' });
+        this._predList = createElement('div', { className: 'dep-list', id: 'taskPredList' });
+        this._predSearch = this._createDepSearch(predGroup, this._predList, t('task.depSearch.predecessors'));
         /* Des que l'utilisateur corrige sa selection, le message d'erreur
            disparait : il ne doit pas rester affiche alors qu'il ne
            correspond plus a l'etat du formulaire. */
@@ -305,7 +306,8 @@ class TaskModal {
         // Successors (with link type)
         const succGroup = createElement('div', { className: 'form-group' });
         succGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.successors')));
-        this._succList = createElement('div', { className: 'dep-list' });
+        this._succList = createElement('div', { className: 'dep-list', id: 'taskSuccList' });
+        this._succSearch = this._createDepSearch(succGroup, this._succList, t('task.depSearch.successors'));
         succGroup.appendChild(this._succList);
         depRow.appendChild(succGroup);
         body.appendChild(depRow);
@@ -864,6 +866,98 @@ class TaskModal {
         return this._selectedAssigneeIds ? Array.from(this._selectedAssigneeIds) : [];
     }
 
+    /* ---- Recherche dans les listes de liens ----
+     *
+     * Les listes « Précédée par » et « Succédée par » proposent TOUTES les
+     * autres taches du projet : sur un planning de mille lignes, trouver la
+     * bonne case par defilement n'est pas praticable. Un champ de recherche
+     * au-dessus de chacune les filtre.
+     *
+     * LE FILTRE NE FAIT QUE MASQUER. Chaque ligne reste dans la liste, sa
+     * case garde son etat, et _getSelectedPredecessors() comme
+     * _getSelectedSuccessors() parcourent TOUTES les lignes, masquees
+     * comprises (querySelectorAll ne regarde pas l'affichage). Rechercher
+     * ne change donc rien a ce qui est enregistre.
+     *
+     * UNE LIGNE COCHEE N'EST JAMAIS MASQUEE : un lien existant ne doit pas
+     * sortir de la vue parce qu'il ne correspond pas a ce qu'on cherche.
+     * Les liens existants sont en outre places en tete de liste a la
+     * construction, ou ils se voient sans defiler.
+     *
+     * La comparaison ignore casse et accents (normaliserRecherche), et
+     * chaque mot tape doit figurer dans le nom, dans n'importe quel ordre :
+     * « dalle r+1 coulage » trouve « Coulage dalle R+1 ». */
+
+    _createDepSearch(group, list, label) {
+        const input = createElement('input', {
+            type: 'search',
+            className: 'input dep-search',
+            placeholder: t('task.depSearch.placeholder'),
+            'aria-label': label,
+            'aria-controls': list.id,
+            autocomplete: 'off',
+            spellcheck: 'false',
+        });
+        const status = createElement('div', { className: 'dep-search-status', role: 'status' });
+        const search = { input, status, rows: [] };
+        input.addEventListener('input', () => this._filterDepList(search));
+        /* Echap VIDE la recherche et NE FERME PAS la fiche. La fiche se
+           ferme sur Echap (_bindEvents, ecouteur sur document) sans rien
+           enregistrer ni demander : un planificateur qui efface sa
+           recherche par le geste habituel d'un champ de recherche perdrait
+           toute sa saisie. stopPropagation() suffit : l'ecouteur de la
+           fiche est sur document, en phase de bouillonnement, et ceux
+           d'app.js, poses plus tot sur window en capture, s'effacent des
+           qu'une fenetre aria-modal est ouverte. preventDefault() retire
+           l'effacement natif du champ type=search, remplace par le notre,
+           qui refiltre. */
+        input.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (input.value) {
+                input.value = '';
+                this._filterDepList(search);
+            }
+        });
+        group.appendChild(input);
+        group.appendChild(status);
+        return search;
+    }
+
+    /** Vide la recherche avant une reconstruction de la liste. Le champ est
+     *  masque quand la liste n'a aucune ligne a filtrer. */
+    _resetDepSearch(search, hasRows) {
+        search.input.value = '';
+        search.status.textContent = '';
+        search.rows = [];
+        search.input.style.display = hasRows ? '' : 'none';
+    }
+
+    /** Ligne de liste a filtrer : sa case, et son nom deja normalise. */
+    _registerDepRow(search, row, cb, name) {
+        search.rows.push({ row, cb, key: normaliserRecherche(name) });
+    }
+
+    _filterDepList(search) {
+        const words = normaliserRecherche(search.input.value).split(/\s+/).filter(Boolean);
+        let matches = 0;
+        search.rows.forEach(({ row, cb, key }) => {
+            const match = words.every(w => key.includes(w));
+            if (match) matches++;
+            /* 'flex' et non '' : la ligne porte son affichage en style
+               en ligne, l'effacer la ferait retomber en bloc. */
+            row.style.display = (match || cb.checked) ? 'flex' : 'none';
+        });
+        if (words.length === 0) {
+            search.status.textContent = '';
+        } else if (matches === 0) {
+            search.status.textContent = t('task.depSearch.none', { q: search.input.value.trim() });
+        } else {
+            search.status.textContent = t('task.depSearch.count', { n: matches, total: search.rows.length });
+        }
+    }
+
     _populatePredecessors(taskId, currentDeps) {
         /* Toute reconstruction efface un message precedent : il ne doit
            pas survivre a une reouverture du modal. */
@@ -871,6 +965,7 @@ class TaskModal {
         this._predList.innerHTML = '';
         const deps = currentDeps || [];
         const tasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
+        this._resetDepSearch(this._predSearch, tasks.length > 0);
         if (tasks.length === 0) {
             this._predList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
@@ -878,7 +973,10 @@ class TaskModal {
             return;
         }
         const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
-        tasks.forEach(t => {
+        /* Liens existants en tete (voir « Recherche dans les listes de
+           liens » ci-dessus), chaque groupe dans l'ordre du planning. */
+        const linked = (t) => deps.some(d => d.taskId === t.id);
+        [...tasks.filter(linked), ...tasks.filter(t => !linked(t))].forEach(t => {
             const existing = deps.find(d => d.taskId === t.id);
             const row = createElement('div', {
                 style: { display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-1) var(--space-2)' },
@@ -934,6 +1032,7 @@ class TaskModal {
             row.appendChild(sel);
             row.appendChild(lagWrap);
             this._predList.appendChild(row);
+            this._registerDepRow(this._predSearch, row, cb, t.name);
         });
     }
 
@@ -1023,6 +1122,7 @@ class TaskModal {
     _populateSuccessors(taskId) {
         this._succList.innerHTML = '';
         if (!taskId) {
+            this._resetDepSearch(this._succSearch, false);
             this._succList.appendChild(createElement('div', {
                 style: { fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', padding: 'var(--space-2)' },
             }, t('task.saveFirstForSuccessors')));
@@ -1030,9 +1130,12 @@ class TaskModal {
         }
         const successors = store.getSuccessors(taskId);
         const allTasks = store.getTasks().filter(t => !t.isPhase && t.id !== taskId);
+        this._resetDepSearch(this._succSearch, allTasks.length > 0);
         const LINK_TYPES = [['FS', 'Fin→Début'], ['SS', 'Début→Début'], ['FF', 'Fin→Fin'], ['SF', 'Début→Fin']];
 
-        allTasks.forEach(t => {
+        /* Successeurs existants en tete, comme pour les predecesseurs. */
+        const linked = (t) => (t.dependencies || []).some(d => d.taskId === taskId);
+        [...allTasks.filter(linked), ...allTasks.filter(t => !linked(t))].forEach(t => {
             const link = (t.dependencies || []).find(d => d.taskId === taskId);
             const row = createElement('div', {
                 style: { display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-1) var(--space-2)' },
@@ -1059,6 +1162,7 @@ class TaskModal {
             cb.addEventListener('change', () => { sel.style.display = cb.checked ? '' : 'none'; });
             row.appendChild(sel);
             this._succList.appendChild(row);
+            this._registerDepRow(this._succSearch, row, cb, t.name);
         });
     }
 
