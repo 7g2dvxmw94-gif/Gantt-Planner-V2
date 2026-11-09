@@ -732,6 +732,67 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
     return n;
 }
 
+/* ============================================================
+   Contraintes de date (« Doit finir le », « Debut au plus tot le »...)
+   ------------------------------------------------------------
+   Les six contraintes a date de MS Project. « Des que possible »
+   n'a pas de code : c'est l'absence de contrainte, null. En base,
+   colonnes constraint_type et constraint_date (migration 029).
+   ============================================================ */
+
+/** Les six codes : debut au plus tot le, debut au plus tard le, fin au
+ *  plus tot le, fin au plus tard le, doit commencer le, doit finir le.
+ *  La fiche ne les propose pas encore ; sa liste suivra cet ordre. */
+export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
+
+/** Les contraintes DURES : les seules qui pourront l'emporter contre un
+ *  lien, et celles que comptera le point 5 du rapport DCMA. Une seule
+ *  table est prevue pour les deux usages. RIEN NE LA LIT ENCORE : ni le
+ *  moteur ni dcma.js ne l'importent, et le point 5 repond toujours
+ *  « sans objet ». */
+export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
+
+/**
+ * La contrainte de date d'une tache : { type, date }, ou null.
+ *
+ * Tout ce qui INTERPRETERA les champs constraintType et constraintDate
+ * devra passer par lui (le moteur, les marges, la fiche, le rendu, le
+ * DCMA, l'export MS Project, l'export CSV) : undefined, '', 'ASAP' ou
+ * une valeur illisible vaudront alors partout « Des que possible ».
+ * Aujourd'hui, un seul appelant : taskToRow (supabase-store.js). Seule
+ * l'ECRITURE EN BASE est donc normalisee.
+ *
+ * DEUX EXCEPTIONS lisent ou gardent les champs BRUTS, sans passer par
+ * lui :
+ * - l'export JSON serialise les taches du store telles quelles :
+ *   _exportJSON et _exportAllJSON (app.js), ainsi que les sauvegardes
+ *   Drive et OneDrive, qui ecrivent le meme contenu ;
+ * - l'etat en memoire d'un import non recharge : importProject()
+ *   (store.js) recopie la tache du fichier par `...t`. Jusqu'au
+ *   rechargement, elle garde donc la valeur du fichier, meme illisible
+ *   ('XYZ', '2026-02-30', '12/06/2026'), et un export JSON fait a ce
+ *   moment la porte. Apres rechargement, la memoire est celle de la base.
+ *
+ * null pour une phase (ses dates sont celles de ses enfants), pour un
+ * type hors CONTRAINTES, et pour une date qui n'est pas EXACTEMENT
+ * 'AAAA-MM-JJ' d'un jour qui existe. Le controle passe par un
+ * aller-retour, et non par parseISO seul : parseISO('2026-02-30') rend
+ * le 2 mars, et ne dit donc pas que ce jour n'existe pas. Une telle date
+ * ne doit jamais partir en base. Mesure sur un Postgres 16 local :
+ * '2026-02-30' est refusee, et la ligne ENTIERE est alors rejetee, dates
+ * de la tache comprises ; '12/06/2026' est acceptee, mais lue au
+ * 6 decembre sous le DateStyle « ISO, MDY ».
+ */
+export function contrainteDe(tache) {
+    if (!tache || tache.isPhase) return null;
+    const type = tache.constraintType;
+    const date = tache.constraintDate;
+    if (!CONTRAINTES.includes(type)) return null;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    if (formatDateISO(parseISO(date)) !== date) return null;
+    return { type, date };
+}
+
 /**
  * Echappe les caracteres speciaux HTML.
  *

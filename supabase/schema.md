@@ -71,6 +71,14 @@ Phase (is_phase: true)
   └─ Permis (is_permit: true)
 ```
 
+**Contrainte de date** (migration 029) : `constraint_type` vaut `null` (« Dès
+que possible ») ou l'un des six codes de MS Project, `SNET`, `SNLT`, `FNET`,
+`FNLT`, `MSO` ou `MFO`. `constraint_date` est la date saisie, jamais la date
+recalée sur le calendrier. Les deux sont nulles ou renseignées ensemble
+(contraintes `CHECK`). Le client n'écrit que ce que rend `contrainteDe`
+(`js/utils.js`) : un type inconnu ou une date illisible partent à `null`,
+sans faire rejeter la ligne.
+
 ---
 
 ### `resources`

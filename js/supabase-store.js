@@ -6,6 +6,7 @@
 
 import { supabase } from './supabase-client.js';
 import { auth } from './auth.js';
+import { contrainteDe } from './utils.js';
 
 /* ---- Mappers Store → Supabase (camelCase → snake_case) ---- */
 
@@ -26,6 +27,12 @@ function projectToRow(p, ownerId) {
 }
 
 function taskToRow(t) {
+    /* Contrainte de date (migration 029) : seulement ce que rend
+       contrainteDe(), donc le type et la date ensemble, ou aucun des deux.
+       Une valeur illisible n'est jamais envoyee : Postgres rejetterait la
+       ligne entiere (tache perdue, dates comprises), ou lirait '12/06/2026'
+       au 6 decembre (DateStyle « ISO, MDY »). Voir utils.js. */
+    const contrainte = contrainteDe(t);
     return {
         id:                   t.id,
         project_id:           t.projectId,
@@ -46,6 +53,8 @@ function taskToRow(t) {
         dependencies:         t.dependencies || [],
         fixed_costs:          t.fixedCosts   || [],
         actual_cost:          typeof t.actualCost === 'number' ? t.actualCost : null,
+        constraint_type:      contrainte ? contrainte.type : null,   // migration 029
+        constraint_date:      contrainte ? contrainte.date : null,
         // Permit fields
         /* CORRECTIF : n° de dossier, commune et service instructeur sont
            lus sous les noms qu'emploient la fiche (task-modal.js,
@@ -133,6 +142,8 @@ function rowToTask(row) {
         dependencies: row.dependencies || [],
         fixedCosts:   row.fixed_costs  || [],
         actualCost:   typeof row.actual_cost === 'number' ? row.actual_cost : null,
+        constraintType: row.constraint_type || null,   // migration 029
+        constraintDate: row.constraint_date || null,
         assignees:    [],   // rechargé séparément via task_assignees
         assignee:     null,
         // Permit fields
