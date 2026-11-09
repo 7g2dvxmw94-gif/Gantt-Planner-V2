@@ -5,7 +5,8 @@
 
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
-import { formatDateISO, formatDateDisplay, addDays, daysBetween, syncLog, parseISO, escapeHtml } from './utils.js';
+import { formatDateISO, formatDateDisplay, addDays, syncLog, parseISO, escapeHtml,
+         workingDaysBetween, addWorkingDays } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -742,12 +743,30 @@ class GanttInteractions {
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth + 1), -1);
 
                 if (d.mode === 'move') {
-                    // Preserve the original task duration when moving
-                    const origDuration = daysBetween(parseISO(d.origStartDate), parseISO(d.origEndDate));
+                    /* Duree OUVREE conservee, comme partout ailleurs.
+                     *
+                     * On gardait ici l'ecart CALENDAIRE entre debut et fin.
+                     * Or la fiche affiche la duree en jours ouvres, la saisie
+                     * la preserve (_snapToWorkingDays) et le moteur de liens
+                     * la relit sur les dates qu'on vient d'ecrire
+                     * (_computeConstrainedDates, store.js). Des qu'un
+                     * week-end ou un ferie entrait dans la barre ou en
+                     * sortait, la tache perdait ou gagnait des jours : lundi
+                     * 8 -> mercredi 10 juin 2026, trois jours ouvres, lachee
+                     * le vendredi 12 finissait le dimanche 14, un seul ;
+                     * liee, le moteur la ramenait au lundi 8 -> lundi 8
+                     * (glisser-duree-ouvree.spec.js).
+                     *
+                     * Meme compte que le moteur : au moins un jour, la fin
+                     * etant comptee depuis le premier jour ouvre a partir du
+                     * debut. Le debut, lui, reste la ou la souris l'a lache :
+                     * un glisser n'est pas recale (voir updateTask). Vaut
+                     * pour toute tache, liee ou non : la duree ne depend pas
+                     * des liens. */
+                    const cal = store.getCalendar();
+                    const duree = Math.max(1, workingDaysBetween(d.origStartDate, d.origEndDate, cal) || 1);
                     updates.startDate = formatDateISO(newStart);
-                    // daysBetween returns numeric difference; for Aug 10-12 it's 2
-                    // To preserve the span, endDate = startDate + daysBetween(startDate, endDate)
-                    updates.endDate = formatDateISO(addDays(newStart, origDuration));
+                    updates.endDate = formatDateISO(addWorkingDays(newStart, duree - 1, cal));
                 } else if (d.mode === 'resize-left') {
                     updates.startDate = formatDateISO(newStart);
                 } else if (d.mode === 'resize-right') {

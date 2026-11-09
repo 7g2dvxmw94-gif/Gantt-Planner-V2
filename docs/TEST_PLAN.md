@@ -341,6 +341,7 @@
 | 4 | Dépendances | Vérifier les dépendances | Tâches dépendantes décalées | |
 | 5 | Undo | Appuyer Ctrl+Z | Modification annulée | |
 | 6 | Redo | Appuyer Ctrl+Y | Modification rétablie | |
+| 7 | Week-end | Glisser une tâche de 3 jours ouvrés pour qu'elle enjambe un week-end ou un férié, libre puis liée | La fiche affiche toujours 3 jours ouvrés : la fin saute le week-end ou le férié ; la liée est ramenée par son lien sans rétrécir | |
 
 ---
 
