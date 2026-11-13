@@ -795,10 +795,21 @@ class GanttInteractions {
 
                Appel INCONDITIONNEL, et non reserve au mode 'move' : un
                resize-left deplace lui aussi le debut, donc viole le meme
-               invariant. Sur un resize-right, la fonction sort d'elle-meme —
-               les dates calculees egalent les dates courantes, puisque le
-               span est relu depuis la tache. Elle sort aussi, en tete, pour
-               toute tache sans dependance : le cas courant ne coute rien. */
+               invariant. Sur un resize-right, la fonction sort d'elle-meme
+               pour une tache que rien ne contraint par sa FIN — les dates
+               calculees egalent les dates courantes, puisque le span est
+               relu depuis la tache. Pas pour une tache contrainte par sa
+               fin, qui garde la duree tiree :
+               une « Doit finir le » (MFO) etiree revient finir a sa date,
+               donc son debut recule d'autant ; une « Fin au plus tard le »
+               (FNLT) etiree au-dela de sa date fait de meme ; une « Fin au
+               plus tot le » (FNET) raccourcie en deca de sa date est
+               repoussee jusqu'a elle. Elle sort aussi, en tete, pour toute
+               tache sans dependance NI contrainte : le cas courant ne coute
+               rien. Une tache contrainte, liee ou non, est replacee sur sa
+               contrainte : une « Doit commencer le » ou une « Doit finir
+               le » deplacee a la souris revient a sa date, tant que le
+               glisser n'emmene pas la date avec lui. */
             store.applyPredecessorConstraints(d.taskId);
 
             // Log critical path alert for user-initiated drag changes
