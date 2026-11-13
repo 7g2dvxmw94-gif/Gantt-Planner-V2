@@ -478,7 +478,9 @@ export function evaluerDcma(entree) {
 
     /* 13 — CPLI = (CPL + TF) / CPL. CPL : jours ouvres de la date d'etat a la
        fin prevue. TF : marge de la fin prevue sur la cible — l'echeance, ou a
-       defaut la fin de la baseline (approche). */
+       defaut la fin de la baseline (approche) —, bornee par la marge
+       negative qu'une contrainte de date impose en amont d'un lien rompu
+       (voir plus bas). */
     {
         const finBaseline = baseline
             ? maxIso(baseline.tasks.filter(b => { const t = parId.get(b.id); return t && !estPhase(t); }).map(b => b.endDate))
@@ -507,7 +509,21 @@ export function evaluerDcma(entree) {
             points.push({ n: 13, cle: 'cpli', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: finAVenir ? 'sans-jour-ouvre-restant' : 'fin-passee', fautives: [] });
         } else {
-            const tf = ecartOuvre(finPrevue, cible, cal);
+            /* UNE CONTRAINTE QUI ROMPT UN LIEN ABAISSE TF. La contrainte
+               l'emporte sur le lien : la fin prevue peut tenir la cible
+               alors qu'un lien est deja rompu. Une margeContrainte
+               NEGATIVE n'existe que si le planning ne tient pas une
+               contrainte : en amont d'un lien qu'elle rompt, ou sur la tache
+               elle-meme quand ses dates ne la respectent pas ; elle borne TF.
+               Les autres ne comptent pas : une MSO ou une MFO tenue a une
+               margeContrainte nulle, et la retenir ramenerait le CPLI a 1
+               quelle que soit l'echeance. Sans contrainte, margeContrainte
+               vaut Infinity (ou manque, analyses fabriquees des tests) :
+               TF est l'ecart a la cible, comme avant. */
+            const negatives = analyse.margeContrainte
+                ? P.map(t => analyse.margeContrainte[t.id]).filter(m => m < 0)
+                : [];
+            const tf = Math.min(ecartOuvre(finPrevue, cible, cal), ...negatives);
             const exact = (cpl + tf) / cpl;
             const valeur = arrondi2(exact);
             points.push({ n: 13, cle: 'cpli', valeur, exact, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
