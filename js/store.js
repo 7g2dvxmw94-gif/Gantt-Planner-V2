@@ -4094,7 +4094,21 @@ class Store {
 
             const fmtDate = (v) => {
                 if (!v) return '';
-                if (v instanceof Date) return v.toISOString().substring(0, 10);
+                /* Une cellule date d'un .xlsx est un numéro de série, sans
+                   heure ni fuseau. SheetJS (XLSX.read cellDates puis
+                   sheet_to_json, app.js _importExcelFile) rend une Date à
+                   MINUIT LOCAL : son jour se lit donc en champs LOCAUX, par
+                   formatDateISO — la règle écrite dans le commentaire qui
+                   précède parseISO() dans utils.js. toISOString() l'écrivait
+                   en UTC, où minuit local est encore la veille à l'est de
+                   Greenwich : chaque date importée reculait d'un jour, en
+                   France comme ailleurs à l'est.
+                   Une Date invalide (SheetJS en rend une pour un numéro de
+                   série hors de toute plage) faisait lever toISOString() et
+                   refuser tout le fichier ; formatDateISO l'écrirait
+                   'NaN-NaN-NaN'. Elle est traitée comme une chaîne
+                   illisible : pas de date. */
+                if (v instanceof Date) return isNaN(v) ? '' : formatDateISO(v);
                 const s = String(v).trim();
                 // Try ISO
                 if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
