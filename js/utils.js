@@ -745,11 +745,11 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
  *  La fiche ne les propose pas encore ; sa liste suivra cet ordre. */
 export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
 
-/** Les contraintes DURES : les seules qui pourront l'emporter contre un
- *  lien, et celles que comptera le point 5 du rapport DCMA. Une seule
- *  table est prevue pour les deux usages. RIEN NE LA LIT ENCORE : ni le
- *  moteur ni dcma.js ne l'importent, et le point 5 repond toujours
- *  « sans objet ». */
+/** Les contraintes DURES : les seules qui peuvent l'emporter contre un
+ *  lien (appliquerContrainte), et celles que comptera le point 5 du
+ *  rapport DCMA. RIEN NE LIT ENCORE CETTE TABLE : le moteur applique la
+ *  regle de chaque type sans la consulter, dcma.js ne l'importe pas, et le
+ *  point 5 repond toujours « sans objet ». */
 export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
 
 /**
@@ -759,8 +759,9 @@ export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
  * devra passer par lui (le moteur, les marges, la fiche, le rendu, le
  * DCMA, l'export MS Project, l'export CSV) : undefined, '', 'ASAP' ou
  * une valeur illisible vaudront alors partout « Des que possible ».
- * Aujourd'hui, un seul appelant : taskToRow (supabase-store.js). Seule
- * l'ECRITURE EN BASE est donc normalisee.
+ * Aujourd'hui, deux appelants : taskToRow (supabase-store.js), pour
+ * l'ECRITURE EN BASE, et _computeConstrainedDates (store.js), pour le
+ * PLACEMENT.
  *
  * DEUX EXCEPTIONS lisent ou gardent les champs BRUTS, sans passer par
  * lui :
@@ -791,6 +792,107 @@ export function contrainteDe(tache) {
     if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     if (formatDateISO(parseISO(date)) !== date) return null;
     return { type, date };
+}
+
+/**
+ * Ce qu'exige UN lien de son successeur : la borne visee (debut ou fin)
+ * et la date au plus tot de cette borne, en JOURS OUVRES. `date` est une
+ * Date LOCALE.
+ *
+ * La regle des quatre liens : Fin->Debut (FS) et Debut->Debut (SS)
+ * contraignent le debut ; Fin->Fin (FF) et Debut->Fin (SF) la fin. Le
+ * decalage (`lag`, negatif autorise, absent ou invalide => 0) se compte en
+ * jours CALENDAIRES — delai d'instruction, sechage, qui courent week-ends
+ * compris —, puis le resultat est recale sur le jour ouvre suivant.
+ *
+ * Extraite de _computeConstrainedDates (store.js) : la regle, inchangee
+ * (les memes expressions, rendues sous forme de { borne, date } au lieu
+ * d'une cascade if/else), pour etre appelee aussi par ce qui devra dire
+ * si un lien est tenu (detecteur de conflits, marges). analyzeNetwork (store.js) en garde
+ * encore sa propre copie, en rangs de jours ouvres.
+ *
+ * @returns {{borne: 'debut'|'fin', date: Date}|null} null pour un type
+ *          inconnu
+ */
+export function exigenceDuLien(dep, pred, calendar = defaultCalendar()) {
+    const lag = Number(dep.lag) || 0;
+    const decalerCalendaire = (date, n) => {
+        const d = parseISO(date);
+        d.setDate(d.getDate() + n);
+        return d;
+    };
+    switch (dep.type) {
+        case 'FS': return { borne: 'debut', date: nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), calendar) };
+        case 'SS': return { borne: 'debut', date: nextWorkingDay(decalerCalendaire(pred.startDate, lag), calendar) };
+        case 'FF': return { borne: 'fin',   date: nextWorkingDay(decalerCalendaire(pred.endDate, lag), calendar) };
+        case 'SF': return { borne: 'fin',   date: nextWorkingDay(decalerCalendaire(pred.startDate, lag), calendar) };
+        default:   return null;
+    }
+}
+
+/**
+ * La date EFFECTIVE d'une contrainte : sa date, ramenee sur un jour ouvre.
+ *
+ * - « au plus tot » (SNET, FNET) et « doit commencer » (MSO) : au jour
+ *   ouvre SUIVANT. « Pas avant samedi », c'est lundi ; un chantier ouvert
+ *   un samedi ne commence que le lundi.
+ * - « au plus tard » (SNLT, FNLT) et « doit finir » (MFO) : au jour ouvre
+ *   PRECEDENT. Finir apres la date serait la violer : une echeance un
+ *   samedi, c'est le vendredi.
+ *
+ * La date saisie est conservee telle quelle ; celle-ci se recalcule a
+ * chaque placement, et suit donc un changement de calendrier.
+ *
+ * @returns {Date} date locale
+ */
+export function dateEffectiveContrainte(type, date, calendar = defaultCalendar()) {
+    return (type === 'SNET' || type === 'FNET' || type === 'MSO')
+        ? nextWorkingDay(date, calendar)
+        : previousWorkingDay(date, calendar);
+}
+
+/**
+ * Applique une contrainte de date a un placement : LA CONTRAINTE
+ * L'EMPORTE, comme dans MS Project par defaut (« Tasks will always honor
+ * their constraint dates »).
+ *
+ * `socle` est le placement que donnent les liens (ou, sans lien, les
+ * dates de la tache) ; `span` sa duree en jours ouvres, conservee.
+ * `contrainte` est ce que rend contrainteDe() : null laisse le socle
+ * intact, au bit pres.
+ *
+ *   SNET  debut >= D      (ne fait que retarder : ne rompt aucun lien)
+ *   FNET  fin   >= D      (idem)
+ *   SNLT  debut <= D      (peut rompre un lien)
+ *   FNLT  fin   <= D      (peut rompre un lien)
+ *   MSO   debut  = D      (rompt un lien qui exigeait plus tard)
+ *   MFO   fin    = D      (idem)
+ *
+ * D est dateEffectiveContrainte(). Une contrainte qui fixe un bout donne
+ * l'autre par la duree ; un jalon (span 1) a debut = fin.
+ *
+ * @returns {{startDate: string, endDate: string}}
+ */
+export function appliquerContrainte(socle, span, contrainte, calendar = defaultCalendar()) {
+    if (!contrainte) return socle;
+    const D = formatDateISO(dateEffectiveContrainte(contrainte.type, contrainte.date, calendar));
+    const parDebut = (debut) => ({
+        startDate: debut,
+        endDate: formatDateISO(addWorkingDays(debut, span - 1, calendar)),
+    });
+    const parFin = (fin) => ({
+        startDate: formatDateISO(addWorkingDays(fin, -(span - 1), calendar)),
+        endDate: fin,
+    });
+    switch (contrainte.type) {
+        case 'SNET': return socle.startDate < D ? parDebut(D) : socle;
+        case 'SNLT': return socle.startDate > D ? parDebut(D) : socle;
+        case 'FNET': return socle.endDate   < D ? parFin(D)   : socle;
+        case 'FNLT': return socle.endDate   > D ? parFin(D)   : socle;
+        case 'MSO':  return parDebut(D);
+        case 'MFO':  return parFin(D);
+        default:     return socle;
+    }
 }
 
 /**

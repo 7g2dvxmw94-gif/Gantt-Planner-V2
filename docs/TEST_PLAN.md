@@ -243,6 +243,7 @@
 | 5 | Chemin critique | Activer chemin critique | Dépendance critiques en rouge | |
 | 6 | Sans marque | Regarder la barre de B après son déplacement | Aucun « ! » sur la barre : le déplacement se lit aux dates | |
 | 7 | Jalon | Créer un jalon précédé par A, puis une tâche précédée par ce jalon | Les deux sont placés après leur prédécesseur, sans « ! » | |
+| 8 | Contrainte de date | B précédée par A (lun 01 → ven 05/06/2026), 3 jours ouvrés, porte une contrainte (contraintes-moteur.spec.js : les 29 cas) | La contrainte l'emporte sur le lien : « Doit commencer le 04/06 » place B 04 → 08/06 ; « Doit finir le » samedi 13/06 la fait finir le vendredi 12 ; une date un samedi ou un dimanche va au jour ouvré suivant pour « au plus tôt » et « doit commencer », au précédent pour « au plus tard » et « doit finir » ; « Début au plus tôt le 03/06 » ne la déplace pas ; une tâche sans lien est placée par sa seule contrainte | |
 
 ---
 
@@ -342,6 +343,7 @@
 | 5 | Undo | Appuyer Ctrl+Z | Modification annulée | |
 | 6 | Redo | Appuyer Ctrl+Y | Modification rétablie | |
 | 7 | Week-end | Glisser une tâche de 3 jours ouvrés pour qu'elle enjambe un week-end ou un férié, libre puis liée | La fiche affiche toujours 3 jours ouvrés : la fin saute le week-end ou le férié ; la liée est ramenée par son lien sans rétrécir | |
+| 8 | Contrainte et propagation | A (01 → 05/06), B Fin→Début de A « Doit finir le 10/06 », C Fin→Début de B, D Fin→Début de A ; repousser A à 08 → 12/06 dans sa fiche | D suit A (15 → 17/06) ; B tient sa date (08 → 10/06) et C reste derrière B (11 → 12/06) | |
 
 ---
 

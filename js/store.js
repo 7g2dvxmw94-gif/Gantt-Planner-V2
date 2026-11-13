@@ -5,7 +5,8 @@
 
 import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
-         workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog } from './utils.js';
+         workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
+         contrainteDe, exigenceDuLien, appliquerContrainte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -2104,11 +2105,14 @@ class Store {
 
     /**
      * Apply predecessor constraints to a task.
-     * Adjusts task dates based on its predecessors, then cascades to successors.
+     * Adjusts task dates based on its predecessors and its date
+     * constraint, then cascades to successors.
      */
     /* ---- Contraintes de planification ---- */
 
-    /** Dates imposees a `task` par ses predecesseurs.
+    /** Dates imposees a `task` par ses predecesseurs (et, depuis les
+     *  contraintes de date, par sa contrainte : voir
+     *  _computeConstrainedDates plus bas).
      *
      * Ce calcul est LE point unique de verite. Auparavant la logique
      * etait dupliquee dans applyPredecessorConstraints() et
@@ -2185,7 +2189,8 @@ class Store {
         return { startDate: formatDateISO(s), endDate: formatDateISO(e) };
     }
 
-    /** Dates imposees a `task` par ses predecesseurs, en JOURS OUVRES.
+    /** Dates imposees a `task` par ses predecesseurs ET PAR SA CONTRAINTE
+     *  DE DATE, en JOURS OUVRES.
      *
      * Ce calcul est LE point unique de verite : applyPredecessorConstraints()
      * et propagateDependencies() l'utilisent tous deux. Auparavant la
@@ -2201,41 +2206,44 @@ class Store {
      * DECALAGE (lag) : compte en jours CALENDAIRES, car le besoin reel
      * est un delai d'instruction de permis ou un temps de sechage, qui
      * courent week-ends compris. Le resultat est ensuite recale sur le
-     * jour ouvre suivant.
+     * jour ouvre suivant (exigenceDuLien, utils.js).
+     *
+     * CONTRAINTE DE DATE (« Doit finir le », « Debut au plus tot le »…) :
+     * LA CONTRAINTE L'EMPORTE sur les liens, comme MS Project par defaut.
+     * Le placement des liens — le socle — est calcule d'abord, exactement
+     * comme sans contrainte ; appliquerContrainte() (utils.js) le corrige
+     * ensuite, duree ouvree conservee. Une tache SANS LIEN a pour socle ses
+     * propres dates : sa contrainte suffit a la placer. Sans contrainte,
+     * rien ne change, au bit pres, et une tache sans lien rend toujours
+     * null. La contrainte est lue par contrainteDe() : une phase n'en a
+     * jamais, et une valeur illisible vaut « Des que possible ».
+     *
+     * Ne lit que this.getTask et this._getCalendar : computeConstrainedDatesIn
+     * l'appelle avec un faux `this` qui n'a qu'eux.
      *
      * @returns {{startDate: string, endDate: string}|null}
      */
     _computeConstrainedDates(task) {
-        if (!task || !task.dependencies || !task.dependencies.length) return null;
+        if (!task) return null;
+        const contrainte = contrainteDe(task);
+        const aDesLiens  = !!(task.dependencies && task.dependencies.length);
+        if (!aDesLiens && !contrainte) return null;
 
         const cal  = this._getCalendar();
         const span = Math.max(1, workingDaysBetween(task.startDate, task.endDate, cal) || 1);
 
-        const decalerCalendaire = (date, n) => {
-            const d = parseISO(date);
-            d.setDate(d.getDate() + n);
-            return d;
-        };
-
         let latestStart = null;
         let latestEnd   = null;
 
-        for (const dep of task.dependencies) {
+        for (const dep of (aDesLiens ? task.dependencies : [])) {
             const pred = this.getTask(dep.taskId);
             if (!pred) continue;
-            const lag = Number(dep.lag) || 0;   // absent ou invalide => 0
-
-            if (dep.type === 'FS') {
-                const c = nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), cal);
+            const exigence = exigenceDuLien(dep, pred, cal);
+            if (!exigence) continue;
+            const c = exigence.date;
+            if (exigence.borne === 'debut') {
                 if (!latestStart || c > latestStart) latestStart = c;
-            } else if (dep.type === 'SS') {
-                const c = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
-                if (!latestStart || c > latestStart) latestStart = c;
-            } else if (dep.type === 'FF') {
-                const c = nextWorkingDay(decalerCalendaire(pred.endDate, lag), cal);
-                if (!latestEnd || c > latestEnd) latestEnd = c;
-            } else if (dep.type === 'SF') {
-                const c = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
+            } else {
                 if (!latestEnd || c > latestEnd) latestEnd = c;
             }
         }
@@ -2251,16 +2259,29 @@ class Store {
             newEnd   = latestEnd;                        // FF/SF plus tardive prime
             newStart = addWorkingDays(latestEnd, -(span - 1), cal);
         }
-        if (!newStart) return null;
 
-        return { startDate: formatDateISO(newStart), endDate: formatDateISO(newEnd) };
+        /* Le socle : le placement des liens, ou, faute de lien qui place
+           (aucun, ou des predecesseurs introuvables), les dates de la tache. */
+        const socle = newStart
+            ? { startDate: formatDateISO(newStart), endDate: formatDateISO(newEnd) }
+            : null;
+        if (!contrainte) return socle;
+        return appliquerContrainte(socle || { startDate: task.startDate, endDate: task.endDate },
+            span, contrainte, cal);
     }
 
-    /** Repositionne une tache selon ses predecesseurs.
-     *  Application STRICTE : la tache est placee exactement ou ses
-     *  contraintes l'exigent. Pour introduire un ecart, il faut un
-     *  decalage sur le lien — pas un deplacement a la souris, qui
-     *  serait perdu au premier mouvement du predecesseur.
+    /** Repositionne une tache selon ses predecesseurs et sa contrainte
+     *  de date.
+     *  Application STRICTE : la tache est placee exactement ou ses liens
+     *  et sa contrainte l'exigent. Pour introduire un ecart, il faut un
+     *  decalage sur le lien, ou une contrainte « au plus tot » (SNET,
+     *  FNET) qui retarde la tache au-dela de ce qu'exigent ses liens —
+     *  pas un deplacement a la souris, qui serait perdu au premier
+     *  mouvement du predecesseur.
+     *
+     *  Une tache SANS LIEN mais contrainte est placee aussi, par sa seule
+     *  contrainte : le glisser et la fiche, qui appellent cette fonction,
+     *  la remettent donc sur sa date.
      *
      *  AUCUN SIGNAL PROPRE AU RECALAGE n'est emis : l'evenement
      *  task:constrained ne servait qu'a la marque « ! » posee sur la
@@ -2318,8 +2339,9 @@ class Store {
         return impacts;
     }
 
-    /** Recale toutes les taches du projet sur des jours ouvres, puis
-     *  repropage les contraintes. Operation UNIQUE, a lancer apres
+    /** Recale toutes les taches du projet sur des jours ouvres, place
+     *  les racines contraintes, puis repropage les liens. Operation
+     *  UNIQUE, a lancer apres
      *  avoir verifie previewWorkingDaysImpact().
      *
      *  A executer depuis la console : store.migrateToWorkingDays()
@@ -2331,7 +2353,19 @@ class Store {
         // 1. Recaler chaque tache non-phase sur des jours ouvres
         for (const task of this._data.tasks) {
             if (task.isPhase) continue;
-            const cible = this._snapToWorkingDays(task.startDate, task.endDate);
+            let cible = this._snapToWorkingDays(task.startDate, task.endDate);
+            /* UNE RACINE CONTRAINTE est placee ici par sa contrainte, sur
+               ses dates recalees : la repropagation de l'etape 2 ne place
+               que des SUCCESSEURS, et personne ne la replacerait. On le fait
+               dans la meme passe pour n'envoyer qu'UNE ecriture par tache
+               (upsertTask fige la ligne a l'appel). Sans contrainte,
+               _computeConstrainedDates rend null pour une racine : rien ne
+               change. Les taches liees sont placees, contrainte comprise,
+               par l'etape 2. */
+            if (!task.dependencies || !task.dependencies.length) {
+                const place = this._computeConstrainedDates({ ...task, ...cible });
+                if (place) cible = place;
+            }
             if (cible.startDate === task.startDate && cible.endDate === task.endDate) continue;
             task.startDate = cible.startDate;
             task.endDate   = cible.endDate;
@@ -2349,7 +2383,8 @@ class Store {
             });
         }
 
-        // 2. Repropager les contraintes depuis les taches sans predecesseur
+        // 2. Repropager les liens (et les contraintes des successeurs)
+        //    depuis les taches sans predecesseur
         for (const task of this._data.tasks) {
             if (task.isPhase) continue;
             if (!task.dependencies || !task.dependencies.length) {
@@ -3377,8 +3412,8 @@ class Store {
         return { critical, float: floatById, projectEnd };
     }
 
-    /** Dates qu'imposeraient ses predecesseurs a `task`, lus dans `getTask`
-     *  plutot que dans le store.
+    /** Dates qu'imposeraient a `task` ses predecesseurs, lus dans `getTask`
+     *  plutot que dans le store, et sa contrainte de date.
      *
      *  C'est _computeConstrainedDates() — le calcul meme du placement —
      *  applique a une COPIE des taches. Le test du chemin critique (DCMA,
