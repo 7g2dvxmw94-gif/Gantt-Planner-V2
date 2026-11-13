@@ -445,6 +445,7 @@
 | 3 | Fichier | Vérifier le fichier | Fichier .json créé | |
 | 4 | Contenu | Ouvrir le fichier | JSON valide avec données | |
 | 5 | Import | Importer le fichier | Projet restauré identique | |
+| 6 | Contrainte de date | Importer un JSON dont une tâche porte « Doit finir le » 12/06/2026 (`MFO`), et d'autres une contrainte illisible (type inconnu, 30 février, date au format JJ/MM/AAAA) ; recharger ; réexporter | L'export porte toujours la contrainte. Les contraintes illisibles sont écartées (`null`), et leurs tâches sont là, à leurs dates | |
 
 ---
 
