@@ -339,7 +339,10 @@ export function evaluerDcma(entree) {
     } else {
         points.push({ n: 7, cle: 'margeNegative', valeur: null, unite: '%', numerateur: 0, denominateur: avecMarge.length,
                       seuil: { op: '<=', valeur: 0 }, etat: 'na', raison: 'sans-echeance', fautives: [] });
-        // Sans echeance, une marge negative ne vient que de liens incoherents.
+        /* Sans echeance, une marge negative ne vient que de liens
+           incoherents : un lien que la tache aval ne tient pas. Une telle
+           tache est aussi au chemin critique (analyzeNetwork retient toute
+           marge <= 0), et le point 12 peut donc la choisir pour le retard. */
         anomalies.margesNegatives = ids(nonPhases.filter(t => analyse.float && analyse.float[t.id] < 0));
     }
 
