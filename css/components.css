@@ -779,6 +779,41 @@
     animation: shake 0.3s ease-out;
 }
 
+/* ---- Contrainte de date (fiche de tâche) ---- */
+
+.contrainte-bloc > .form-row {
+    margin: 0;
+}
+
+.contrainte-erreur:empty,
+.contrainte-apercu:empty {
+    display: none;
+}
+
+.contrainte-erreur {
+    color: var(--color-error);
+    font-size: var(--font-size-xs);
+}
+
+.contrainte-apercu {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.contrainte-apercu p {
+    margin: 0;
+}
+
+.contrainte-apercu p + p {
+    margin-top: var(--space-1);
+}
+
+.contrainte-apercu .contrainte-apercu-rompu {
+    color: var(--color-error);
+    font-weight: var(--font-weight-semibold);
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-4px); }

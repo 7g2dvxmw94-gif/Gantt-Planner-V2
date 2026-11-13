@@ -3452,6 +3452,25 @@ class Store {
         return { critical, float: floatById, projectEnd, margeFin, margeContrainte };
     }
 
+    /** Placement qu'obtiendra `task` une fois enregistree par la fiche, SANS
+     *  RIEN ECRIRE : ses dates recalees sur des jours ouvres comme le font
+     *  updateTask() et addTask() (_snapToWorkingDays), puis placees par
+     *  _computeConstrainedDates(), comme le fera ensuite
+     *  applyPredecessorConstraints(). Les predecesseurs sont lus dans le
+     *  store.
+     *
+     *  C'est l'apercu de la fiche (task-modal.js) : il annonce le placement
+     *  et les liens rompus PAR LE CALCUL MEME de l'enregistrement, et non
+     *  par une copie de la regle qui finirait par en diverger.
+     *
+     *  @returns {{startDate: string, endDate: string}|null} null pour une
+     *           phase ou des dates manquantes */
+    placementPrevu(task) {
+        if (!task || task.isPhase || !task.startDate || !task.endDate) return null;
+        const cale = this._snapToWorkingDays(task.startDate, task.endDate);
+        return this._computeConstrainedDates({ ...task, ...cale }) || cale;
+    }
+
     /** Dates qu'imposeraient a `task` ses predecesseurs, lus dans `getTask`
      *  plutot que dans le store, et sa contrainte de date.
      *

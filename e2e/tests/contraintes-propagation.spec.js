@@ -13,8 +13,8 @@ import { trackActiveProject } from '../cleanup.js';
  * contrainte. Une tâche « Doit finir le 10 juin » est donc poussée au 17,
  * et ses propres successeurs avec elle.
  *
- * LE JEU, importé par le bouton « Importer » (aucune interface ne pose
- * encore de contrainte ; la fiche viendra plus tard) :
+ * LE JEU, importé par le bouton « Importer », qui pose plusieurs
+ * contraintes d'un coup (la fiche le permet aussi, une tâche à la fois) :
  *   A  lundi 01 → vendredi 05/06/2026 ;
  *   B  Fin→Début de A, « Doit finir le » 10/06 (MFO), posée 08 → 10/06 ;
  *   C  Fin→Début de B, posée 11 → 12/06 ;
