@@ -216,7 +216,10 @@ function rejouerPlacement(taches, placer, cibleId, retard, cal) {
  * @param {string}  [entree.sourceDateEtat]  'aujourdhui' ou 'projet'
  * @param {string}  [entree.echeance]   'AAAA-MM-JJ' ou null
  * @param {object}  [entree.baseline]   { tasks: [{ id, startDate, endDate }] } ou null
- * @param {object}   entree.analyse     store.analyzeNetwork() : { critical, float }
+ * @param {object}   entree.analyse     store.analyzeNetwork() : { critical, float,
+ *                                      margeFin, margeContrainte } ; les deux
+ *                                      derniers peuvent manquer (analyses
+ *                                      fabriquees des tests)
  * @param {Function}[entree.placer]     (tache, getTask) => {startDate, endDate}|null
  */
 export function evaluerDcma(entree) {
@@ -339,10 +342,14 @@ export function evaluerDcma(entree) {
     } else {
         points.push({ n: 7, cle: 'margeNegative', valeur: null, unite: '%', numerateur: 0, denominateur: avecMarge.length,
                       seuil: { op: '<=', valeur: 0 }, etat: 'na', raison: 'sans-echeance', fautives: [] });
-        /* Sans echeance, une marge negative ne vient que de liens
-           incoherents : un lien que la tache aval ne tient pas. Une telle
+        /* Sans echeance, une marge negative vient de liens incoherents
+           (un lien que la tache aval ne tient pas) ou d'une contrainte de
+           date que le planning ne tient pas (margeContrainte). Une telle
            tache est aussi au chemin critique (analyzeNetwork retient toute
-           marge <= 0), et le point 12 peut donc la choisir pour le retard. */
+           marge <= 0). Le point 12 peut la choisir pour le retard si sa
+           marge PAR LES LIENS (margeFin) est elle aussi nulle ou negative ;
+           une marge negative venue des seules contraintes de date
+           (margeContrainte) ne la designe pas. */
         anomalies.margesNegatives = ids(nonPhases.filter(t => analyse.float && analyse.float[t.id] < 0));
     }
 
@@ -413,14 +420,29 @@ export function evaluerDcma(entree) {
             { approche: ['sans-dates-reelles', ...approcheDate] }));
     }
 
-    /* 12 — Test du chemin critique. On retarde une tache critique incomplete
-       qui a des successeurs — la plus precoce —, on rejoue le placement sur
-       une copie, et la fin du projet, mesuree sans cette tache, doit reculer
-       d'autant. Les deux rejeux (sans et avec retard) passent par le meme
-       code : seul le retard les distingue. */
+    /* 12 — Test du chemin critique. On retarde une tache CRITIQUE PAR LES
+       LIENS, incomplete, qui a des successeurs — la plus precoce —, on
+       rejoue le placement sur une copie, et la fin du projet, mesuree sans
+       cette tache, doit reculer d'autant. Les deux rejeux (sans et avec
+       retard) passent par le meme code : seul le retard les distingue.
+
+       CRITIQUE PAR LES LIENS, PAS PAR SA CONTRAINTE. Depuis que la marge
+       lit les contraintes de date, une MSO ou une MFO tenue est critique,
+       ou qu'elle soit (marge nulle). Hors du chemin qui fait la fin, elle
+       serait souvent la plus precoce : le test la retarderait, sa
+       contrainte la remettrait en place, la fin ne bougerait pas, et le
+       point dirait « alerte » d'un planning sain. Les candidates sont donc
+       les taches de marge par les liens (margeFin) nulle ou negative. Une
+       contrainte dure SUR le chemin reste visee : ses liens la rendent
+       critique, et l'alerte qu'elle donne en absorbant le retard est la
+       lecture voulue. Sans margeFin (analyses fabriquees des tests), la
+       liste critical sert, comme avant. */
     {
         const critiques = new Set(analyse.critical || []);
-        const candidates = P.filter(t => critiques.has(t.id) && nbSucc.get(t.id) > 0)
+        const parLesLiens = analyse.margeFin
+            ? (t) => analyse.margeFin[t.id] !== undefined && analyse.margeFin[t.id] < 0.001
+            : (t) => critiques.has(t.id);
+        const candidates = P.filter(t => parLesLiens(t) && nbSucc.get(t.id) > 0)
             .sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0));
         if (!placer) {
             points.push({ n: 12, cle: 'testChemin', valeur: null, unite: 'test', etat: 'na', raison: 'sans-moteur', fautives: [] });
