@@ -6,7 +6,8 @@
 import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
-         contrainteDe, exigenceDuLien, appliquerContrainte } from './utils.js';
+         contrainteDe, exigenceDuLien, appliquerContrainte,
+         dateEffectiveContrainte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -3181,12 +3182,18 @@ class Store {
      *  implementations de la meme regle — voir plus bas #56, #57 et #66.
      *  getCriticalPath() renvoie donc .critical de cette analyse, inchange.
      *
-     *  @returns {{critical: string[], float: Object<string, number>, projectEnd: number|null}}
-     *           float : marge totale par tache (hors phases), en jours OUVRES ;
+     *  @returns {{critical: string[], float: Object<string, number>, projectEnd: number|null,
+     *            margeFin: Object<string, number>, margeContrainte: Object<string, number>}}
+     *           float : marge totale par tache (hors phases), en jours OUVRES :
+     *             le minimum de margeFin et de margeContrainte ;
+     *           margeFin : la marge bornee par la seule fin du projet (par
+     *             les liens) ;
+     *           margeContrainte : la marge bornee par les seules contraintes
+     *             de date, Infinity sans contrainte en aval ;
      *           projectEnd : fin du projet en rang de jour ouvre (borne exclusive). */
     analyzeNetwork() {
         const tasks = this.getTasks().filter(t => !t.isPhase);
-        if (tasks.length === 0) return { critical: [], float: {}, projectEnd: null };
+        if (tasks.length === 0) return { critical: [], float: {}, projectEnd: null, margeFin: {}, margeContrainte: {} };
 
         const taskMap = {};
         tasks.forEach(t => { taskMap[t.id] = t; });
@@ -3301,9 +3308,10 @@ class Store {
          * toutes les taches deviennent critiques.
          *
          * L'ecart est donc calcule en appliquant le lien aux dates REELLES
-         * du predecesseur, PAR LES MEMES FONCTIONS QUE _computeConstrainedDates.
-         * C'est ce qui empeche les deux calculs de diverger a nouveau : ils
-         * ne se ressemblent pas, ils appellent le meme code.
+         * du predecesseur, PAR LA FONCTION MEME DE _computeConstrainedDates :
+         * exigenceDuLien() (utils.js). C'est ce qui empeche les deux calculs
+         * de diverger a nouveau : ils ne se ressemblent pas, ils appellent
+         * le meme code.
          *
          * Cela resout aussi la question des unites. Les decalages sont en
          * jours CALENDAIRES a dessein — instruction d'un permis, sechage,
@@ -3312,46 +3320,67 @@ class Store {
          * autant que cinq jours poses un jeudi. En passant par la date que
          * le lien impose, la conversion se fait au bon endroit du
          * calendrier, une fois, sans avoir a etre formulee. */
-        const decalerCalendaire = (date, n) => {
-            const jour = parseISO(date);
-            jour.setDate(jour.getDate() + n);
-            return jour;
-        };
-        /* rang() attend une chaine ISO ; nextWorkingDay() rend une Date. */
+        /* rang() attend une chaine ISO ; exigenceDuLien() et
+           dateEffectiveContrainte() rendent une Date. */
         const rangDate = (d) => rang(formatDateISO(d));
 
         const liens = [];
         tasks.forEach(t => liens.push(...predecessorsOf[t.id]));
         liens.forEach(lien => {
             const { predId, type, lag } = lien;
-            const pred = taskMap[predId];
-            if (type === 'SS') {
-                // le successeur DEBUTE au plus tot a cette date
-                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
-                lien.ecart = rangDate(exige) - es[predId];
-            } else if (type === 'FF') {
-                // le successeur TERMINE au plus tot a cette date ; ef est
-                // la borne EXCLUSIVE, d'ou le +1
-                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, lag), cal);
-                lien.ecart = (rangDate(exige) + 1) - ef[predId];
-            } else if (type === 'SF') {
-                const exige = nextWorkingDay(decalerCalendaire(pred.startDate, lag), cal);
-                lien.ecart = (rangDate(exige) + 1) - es[predId];
-            } else {                                           // FS
-                const exige = nextWorkingDay(decalerCalendaire(pred.endDate, 1 + lag), cal);
-                lien.ecart = rangDate(exige) - ef[predId];
-            }
+            /* Un type inconnu se lit en Fin->Debut, comme dans la passe
+               arriere ; exigenceDuLien() rendrait null. */
+            const typeLu = (type === 'SS' || type === 'FF' || type === 'SF') ? type : 'FS';
+            const { borne, date } = exigenceDuLien({ type: typeLu, lag }, taskMap[predId], cal);
+            /* Le successeur DEBUTE au plus tot a `date` (FS, SS) ou TERMINE
+               au plus tot a `date` (FF, SF) ; ef est la borne EXCLUSIVE,
+               d'ou le +1 pour une fin. L'ecart part de la fin du
+               predecesseur (FS, FF) ou de son debut (SS, SF). */
+            const exige = borne === 'debut' ? rangDate(date) : rangDate(date) + 1;
+            const depuis = (typeLu === 'FS' || typeLu === 'FF') ? ef[predId] : es[predId];
+            lien.ecart = exige - depuis;
         });
 
         const projectEnd = Math.max(...tasks.map(t => ef[t.id]));
 
-        // Backward pass: latest start / latest finish
-        const ls = {}; // latest start
-        const lf = {}; // latest finish
+        /* BORNES DES CONTRAINTES DE DATE, en rang de jour ouvre de la date
+           EFFECTIVE — celle du placement, dateEffectiveContrainte() —, et
+           sur la fin au plus tard (borne exclusive, comme lf) :
+             SNLT, MSO   debut au plus tard <= D  =>  lf <= rang(D) + duree
+             FNLT, MFO   fin au plus tard   <= D  =>  lf <= rang(D) + 1
+             SNET, FNET  rien : « au plus tot » ne retient pas une tache
+                         qui glisse, comme dans MS Project.
+           Une MSO ou une MFO tenue a donc une marge au plus nulle : elle ne peut pas
+           bouger d'un jour sans violer sa contrainte, et elle est critique,
+           comme dans MS Project et P6. La contrainte est lue par
+           contrainteDe() : une valeur illisible ne borne rien. */
+        const borneContrainte = {};
         tasks.forEach(t => {
-            lf[t.id] = projectEnd;
-            ls[t.id] = projectEnd;
+            const c = contrainteDe(t);
+            let b = Infinity;
+            if (c) {
+                const D = rangDate(dateEffectiveContrainte(c.type, c.date, cal));
+                if (c.type === 'SNLT' || c.type === 'MSO') b = D + duration[t.id];
+                else if (c.type === 'FNLT' || c.type === 'MFO') b = D + 1;
+            }
+            borneContrainte[t.id] = b;
         });
+
+        /* Passe arriere : DEUX TABLEAUX, DANS LA MEME PASSE.
+             lsFin, lfFin  bornes par la seule fin du projet (projectEnd) :
+                           la marge PAR LES LIENS, celle d'avant les
+                           contraintes ;
+             lsC, lfC      bornes par les seules contraintes de date
+                           (Infinity sans contrainte en aval).
+           La passe n'est faite que de min et de soustractions d'un ecart
+           fixe : bornee par les deux a la fois, elle donnerait, tache par
+           tache, le minimum des deux. Les garder separes ne coute qu'un
+           calcul de plus par lien, et dit d'ou vient la marge : le point 12
+           du DCMA ne retient que les taches critiques par les liens, et une
+           echeance ne devrait deplacer que margeFin (les points 6 et 7 de
+           dcma.js translatent encore la marge entiere). */
+        const lsFin = {}, lfFin = {};
+        const lsC = {}, lfC = {};
 
         /* Passe arriere, symetrique de la passe avant : un lien qui contraint
            le DEBUT du successeur borne le DEBUT du predecesseur, un lien qui
@@ -3363,8 +3392,7 @@ class Store {
            retarder retarderait pourtant la fin du projet, puisque c'est elle
            qui la porte. Sans cette borne, elle recevrait une marge qu'elle
            n'a pas. */
-        for (let i = order.length - 1; i >= 0; i--) {
-            const id = order[i];
+        const remonter = (id, ls, lf, borne) => {
             let finMaxi   = null;   // contrainte portant sur la fin
             let debutMaxi = null;   // contrainte portant sur le debut
             successorsOf[id].forEach(({ succId, type, ecart }) => {
@@ -3382,12 +3410,17 @@ class Store {
                     if (finMaxi === null || c < finMaxi) finMaxi = c;
                 }
             });
-            let fin = finMaxi !== null ? Math.min(finMaxi, projectEnd) : projectEnd;
+            let fin = finMaxi !== null ? Math.min(finMaxi, borne) : borne;
             if (debutMaxi !== null && debutMaxi + duration[id] < fin) {
                 fin = debutMaxi + duration[id];
             }
             lf[id] = fin;
             ls[id] = fin - duration[id];
+        };
+        for (let i = order.length - 1; i >= 0; i--) {
+            const id = order[i];
+            remonter(id, lsFin, lfFin, projectEnd);
+            remonter(id, lsC, lfC, borneContrainte[id]);
         }
 
         /* Chemin critique : les taches de marge (ls - es) NULLE OU NEGATIVE.
@@ -3398,18 +3431,26 @@ class Store {
            marge nulle (Math.abs(float) < 0.001) l'en faisait sortir : elle
            n'etait pas surlignee, et le point 12 du DCMA ne pouvait pas la
            choisir pour le retard. Seule la borne basse tombe ; la borne
-           haute, 0.001, est celle d'avant. */
+           haute, 0.001, est celle d'avant.
+
+           La marge est le minimum des deux : une tache contrainte peut etre
+           critique par sa contrainte seule. Sans contrainte, margeContrainte
+           vaut Infinity partout, et la marge est margeFin, au bit pres. */
         const critical = [];
         const floatById = {};
+        const margeFin = {};
+        const margeContrainte = {};
         tasks.forEach(t => {
-            const float = ls[t.id] - es[t.id];
+            margeFin[t.id] = lsFin[t.id] - es[t.id];
+            margeContrainte[t.id] = lsC[t.id] - es[t.id];
+            const float = Math.min(margeFin[t.id], margeContrainte[t.id]);
             floatById[t.id] = float;
             if (float < 0.001) {
                 critical.push(t.id);
             }
         });
 
-        return { critical, float: floatById, projectEnd };
+        return { critical, float: floatById, projectEnd, margeFin, margeContrainte };
     }
 
     /** Dates qu'imposeraient a `task` ses predecesseurs, lus dans `getTask`

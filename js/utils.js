@@ -759,9 +759,9 @@ export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
  * devra passer par lui (le moteur, les marges, la fiche, le rendu, le
  * DCMA, l'export MS Project, l'export CSV) : undefined, '', 'ASAP' ou
  * une valeur illisible vaudront alors partout « Des que possible ».
- * Aujourd'hui, deux appelants : taskToRow (supabase-store.js), pour
- * l'ECRITURE EN BASE, et _computeConstrainedDates (store.js), pour le
- * PLACEMENT.
+ * Aujourd'hui, trois appelants : taskToRow (supabase-store.js), pour
+ * l'ECRITURE EN BASE, _computeConstrainedDates (store.js), pour le
+ * PLACEMENT, et analyzeNetwork (store.js), pour les MARGES.
  *
  * DEUX EXCEPTIONS lisent ou gardent les champs BRUTS, sans passer par
  * lui :
@@ -808,8 +808,9 @@ export function contrainteDe(tache) {
  * Extraite de _computeConstrainedDates (store.js) : la regle, inchangee
  * (les memes expressions, rendues sous forme de { borne, date } au lieu
  * d'une cascade if/else), pour etre appelee aussi par ce qui devra dire
- * si un lien est tenu (detecteur de conflits, marges). analyzeNetwork (store.js) en garde
- * encore sa propre copie, en rangs de jours ouvres.
+ * si un lien est tenu (detecteur de conflits, marges). analyzeNetwork
+ * (store.js) l'appelle aussi : l'ecart de chaque lien, en rangs de jours
+ * ouvres, part de cette date.
  *
  * @returns {{borne: 'debut'|'fin', date: Date}|null} null pour un type
  *          inconnu
