@@ -71,6 +71,21 @@ export function formatDateDisplay(date) {
 }
 
 /**
+ * Date avec son jour de semaine, chiffres en clair : « samedi 13/06/2026 »
+ * (« Saturday, 06/13/2026 » en anglais). Pour dire d'une date qu'elle
+ * tombe un jour non ouvre, le jour de semaine est l'information.
+ */
+export function formatDateJour(date) {
+    const d = parseISO(date);
+    return d.toLocaleDateString(_getLocale(), {
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+/**
  * Format a short date (e.g. "15 Mar")
  */
 export function formatDateShort(date) {
@@ -742,7 +757,8 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
 
 /** Les six codes : debut au plus tot le, debut au plus tard le, fin au
  *  plus tot le, fin au plus tard le, doit commencer le, doit finir le.
- *  La fiche ne les propose pas encore ; sa liste suivra cet ordre. */
+ *  La fiche (task-modal.js) les propose dans cet ordre, apres « Des que
+ *  possible ». */
 export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
 
 /** Les contraintes DURES : les seules qui peuvent l'emporter contre un
@@ -759,9 +775,11 @@ export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
  * devra passer par lui (le moteur, les marges, la fiche, le rendu, le
  * DCMA, l'export MS Project, l'export CSV) : undefined, '', 'ASAP' ou
  * une valeur illisible vaudront alors partout « Des que possible ».
- * Aujourd'hui, trois appelants : taskToRow (supabase-store.js), pour
+ * Aujourd'hui, quatre appelants : taskToRow (supabase-store.js), pour
  * l'ECRITURE EN BASE, _computeConstrainedDates (store.js), pour le
- * PLACEMENT, et analyzeNetwork (store.js), pour les MARGES.
+ * PLACEMENT, analyzeNetwork (store.js), pour les MARGES, et la fiche
+ * (task-modal.js), qui relit la contrainte a l'ouverture et juge la
+ * saisie avant de l'enregistrer.
  *
  * DEUX EXCEPTIONS lisent ou gardent les champs BRUTS, sans passer par
  * lui :

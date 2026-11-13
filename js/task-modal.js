@@ -7,7 +7,9 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines,
          buildParentIndex, findParentLoop } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
-         parseISO, addWorkingDays, workingDaysBetween,
+         parseISO, addWorkingDays, workingDaysBetween, isWorkingDay,
+         CONTRAINTES, contrainteDe, exigenceDuLien, dateEffectiveContrainte,
+         formatDateJour,
          TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
 
 class TaskModal {
@@ -132,6 +134,8 @@ class TaskModal {
         durationGroup.appendChild(this._durationInput);
         datesRow.appendChild(durationGroup);
         body.appendChild(datesRow);
+
+        this._buildContrainteDOM(body);
 
         // Priority + Status + Progress row (3 columns)
         this._metaRow = createElement('div', { className: 'form-row form-row-3' });
@@ -503,6 +507,7 @@ class TaskModal {
         this._datesRow.style.display = isPhase ? 'none' : '';
         this._metaRow.style.display = isPhase ? 'none' : '';
         this._depRow.style.display = isPhase ? 'none' : '';
+        this._contrainteBloc.style.display = isPhase ? 'none' : '';
 
         // Update task name label based on type
         if (this._taskNameLabel) {
@@ -536,6 +541,8 @@ class TaskModal {
         if (type === 'permit') {
             this._updatePermitDeadlines();
         }
+
+        this._majApercuContrainte();
     }
 
     /* ---- Events ---- */
@@ -646,6 +653,10 @@ class TaskModal {
         this._populateParents(parentId);
         this._parentId = parentId;
 
+        // Contrainte : « Des que possible »
+        this._remplirContrainte(null);
+        this._majApercuContrainte();
+
         this._show();
         this._taskName.focus();
     }
@@ -720,6 +731,10 @@ class TaskModal {
         // Parent phase
         this._populateParents(task.parentId);
         this._parentId = task.parentId;
+
+        // Contrainte de date, et l'apercu de ce qu'elle donne
+        this._remplirContrainte(task);
+        this._majApercuContrainte();
 
         // Mode lecture seule pour les viewers
         const readOnly = !store.canEdit();
@@ -1178,6 +1193,200 @@ class TaskModal {
         return result;
     }
 
+    /* ---- Contrainte de date ----
+     *
+     * Une ligne sous les dates : « Contrainte » (Des que possible, puis les
+     * six types de CONTRAINTES, dans leur ordre, sous les libelles de
+     * MS Project) et « Date de contrainte », desactivee pour « Des que
+     * possible ». En dessous, un APERCU de ce que fera l'enregistrement :
+     * la date retenue quand la date saisie n'est pas ouvree, le placement,
+     * et chaque lien entrant que la contrainte ne laisserait pas tenir.
+     *
+     * L'APERCU N'A PAS SON PROPRE CALCUL. Le placement vient de
+     * store.placementPrevu(), c'est-a-dire du recalage d'updateTask() puis
+     * de _computeConstrainedDates(), le calcul meme qu'applique ensuite
+     * applyPredecessorConstraints() ; la date retenue, de
+     * dateEffectiveContrainte() ; ce qu'exige un lien, d'exigenceDuLien().
+     * Une seconde implementation de la regle finirait par diverger de la
+     * premiere, et l'apercu mentirait.
+     *
+     * Masquee pour une PHASE, dont les dates sont celles de ses enfants
+     * (contrainteDe() ne lui en reconnait aucune) ; presente pour une
+     * tache, un jalon et un permis. */
+
+    _buildContrainteDOM(body) {
+        this._contrainteBloc = createElement('div', { className: 'form-group contrainte-bloc' });
+        const ligne = createElement('div', { className: 'form-row' });
+
+        const typeGroup = createElement('div', { className: 'form-group' });
+        typeGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskConstraint' }, t('task.constraint.label')));
+        this._contrainteType = createElement('select', { className: 'select', id: 'taskConstraint' });
+        this._contrainteType.appendChild(createElement('option', { value: '' }, t('task.constraint.asap')));
+        CONTRAINTES.forEach(code => {
+            this._contrainteType.appendChild(createElement('option', { value: code }, t(`task.constraint.${code}`)));
+        });
+        typeGroup.appendChild(this._contrainteType);
+        ligne.appendChild(typeGroup);
+
+        const dateGroup = createElement('div', { className: 'form-group' });
+        dateGroup.appendChild(createElement('label', { className: 'form-label', for: 'taskConstraintDate' }, t('task.constraint.date')));
+        this._contrainteDate = createElement('input', {
+            className: 'input',
+            type: 'date',
+            id: 'taskConstraintDate',
+            'aria-describedby': 'taskConstraintError taskConstraintInfo',
+        });
+        dateGroup.appendChild(this._contrainteDate);
+        ligne.appendChild(dateGroup);
+        this._contrainteBloc.appendChild(ligne);
+
+        /* Le message d'erreur est une alerte (role="alert") : il est lu des
+           qu'il apparait, la ou le seul liseré rouge ne dirait rien a un
+           lecteur d'ecran. L'apercu, lui, est poli : il change a chaque
+           frappe. Les deux sont relies a la date par aria-describedby. */
+        this._contrainteErreur = createElement('div', {
+            className: 'contrainte-erreur', id: 'taskConstraintError', role: 'alert',
+        });
+        this._contrainteInfo = createElement('div', {
+            className: 'contrainte-apercu', id: 'taskConstraintInfo', 'aria-live': 'polite',
+        });
+        this._contrainteBloc.appendChild(this._contrainteErreur);
+        this._contrainteBloc.appendChild(this._contrainteInfo);
+        body.appendChild(this._contrainteBloc);
+
+        this._contrainteType.addEventListener('change', () => {
+            const type = this._contrainteType.value;
+            if (!type) {
+                this._contrainteDate.value = '';
+            } else if (!this._contrainteDate.value) {
+                /* Comme MS Project : un type choisi sans date prend la date
+                   actuelle de son bout — le debut pour SNET, SNLT et MSO, la
+                   fin pour FNET, FNLT et MFO. */
+                const fin = (type === 'FNET' || type === 'FNLT' || type === 'MFO')
+                    && !this._milestoneCheck.input.checked;
+                this._contrainteDate.value = (fin ? this._taskEnd.value : this._taskStart.value) || '';
+            }
+            this._effacerErreurContrainte();
+        });
+        this._contrainteDate.addEventListener('input', () => this._effacerErreurContrainte());
+
+        /* L'apercu suit TOUT le formulaire : dates, duree, type de tache,
+           liens et decalages changent le placement. Un seul ecouteur, sur
+           le corps, en bouillonnement : il passe apres ceux des champs, qui
+           recalculent la fin ou la duree, et lit donc les valeurs a jour. */
+        for (const evt of ['input', 'change', 'click']) {
+            body.addEventListener(evt, () => this._majApercuContrainte());
+        }
+    }
+
+    /** Ce que dit la ligne de contrainte, lu comme contrainteDe() le lira
+     *  a l'enregistrement : { type, date } avec type null pour « Des que
+     *  possible », et `lisible` faux pour un type choisi sans date valide. */
+    _contrainteSaisie() {
+        const type = this._contrainteType.value || null;
+        if (!type) return { type: null, date: null, lisible: true };
+        const date = this._contrainteDate.value || '';
+        const lue  = contrainteDe({ constraintType: type, constraintDate: date });
+        return { type, date: lue ? lue.date : null, lisible: !!lue };
+    }
+
+    _remplirContrainte(task) {
+        /* Relue par contrainteDe(), comme partout : une valeur illisible
+           (gardee en memoire par un import non recharge) s'affiche « Des
+           que possible », ce que le moteur en fait deja. */
+        const c = contrainteDe(task);
+        this._contrainteType.value = c ? c.type : '';
+        this._contrainteDate.value = c ? c.date : '';
+        this._effacerErreurContrainte();
+    }
+
+    _effacerErreurContrainte() {
+        this._contrainteDate.classList.remove('input-error');
+        this._contrainteDate.removeAttribute('aria-invalid');
+        this._contrainteErreur.textContent = '';
+    }
+
+    _afficherErreurContrainte(type) {
+        this._contrainteDate.classList.add('input-error');
+        this._contrainteDate.setAttribute('aria-invalid', 'true');
+        this._contrainteErreur.textContent = t('task.constraint.dateRequise', { type: t(`task.constraint.${type}`) });
+        this._contrainteDate.focus();
+    }
+
+    /** La tache telle que la fiche l'enregistrerait, pour l'apercu. */
+    _tacheDuFormulaire(saisie) {
+        const jalon = this._milestoneCheck.input.checked;
+        const debut = this._taskStart.value;
+        const base  = (this._mode === 'edit' && this._editingTaskId) ? store.getTask(this._editingTaskId) : null;
+        return {
+            ...(base || {}),
+            startDate: debut,
+            endDate: jalon ? debut : this._taskEnd.value,
+            isMilestone: jalon,
+            isPhase: false,
+            dependencies: this._getSelectedPredecessors(),
+            constraintType: saisie.type,
+            constraintDate: saisie.date,
+        };
+    }
+
+    _majApercuContrainte() {
+        if (!this._contrainteInfo) return;
+        const saisie = this._contrainteSaisie();
+        this._contrainteDate.disabled = !saisie.type;
+        this._contrainteInfo.textContent = '';
+        /* Rien a annoncer pour « Des que possible », ni pour une phase, ni
+           tant que la date manque : la validation le dira a
+           l'enregistrement. */
+        if (this._phaseCheck.input.checked || !saisie.type || !saisie.lisible) return;
+
+        const cal    = store.getCalendar();
+        const tache  = this._tacheDuFormulaire(saisie);
+        const place  = store.placementPrevu(tache);
+        const lignes = [];
+
+        if (!isWorkingDay(saisie.date, cal)) {
+            const retenue = formatDateISO(dateEffectiveContrainte(saisie.type, saisie.date, cal));
+            lignes.push(['', t(`task.constraint.nonOuvre.${saisie.type}`, {
+                saisie: formatDateJour(saisie.date), retenue: formatDateJour(retenue),
+            })]);
+        }
+        if (place) {
+            lignes.push(['', place.startDate === place.endDate
+                ? t('task.constraint.placementUnJour', { date: formatDateJour(place.startDate) })
+                : t('task.constraint.placement', {
+                    debut: formatDateJour(place.startDate), fin: formatDateJour(place.endDate),
+                })]);
+
+            /* Chaque lien entrant que le placement ne tient pas : la
+               contrainte l'emporte (decision de l'utilisateur, comme
+               MS Project), et le lien sera rompu. L'ecart se compte en
+               jours ouvres, de la date tenue a la date exigee, toutes deux
+               ouvrees. */
+            for (const dep of tache.dependencies) {
+                const pred = store.getTask(dep.taskId);
+                if (!pred) continue;
+                const exigence = exigenceDuLien(dep, pred, cal);
+                if (!exigence) continue;
+                const exige = formatDateISO(exigence.date);
+                const tient = exigence.borne === 'debut' ? place.startDate : place.endDate;
+                if (tient >= exige) continue;
+                const ecart = workingDaysBetween(tient, exige, cal) - 1;
+                lignes.push(['contrainte-apercu-rompu', t('task.constraint.lienRompu', {
+                    pred: pred.name,
+                    exige: formatDateJour(exige),
+                    tient: formatDateJour(tient),
+                    ecart: t(ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: ecart }),
+                })]);
+            }
+        }
+        /* textContent par construction (createElement) : le nom du
+           predecesseur vient peut-etre d'un autre compte. */
+        lignes.forEach(([classe, texte]) => {
+            this._contrainteInfo.appendChild(createElement('p', { className: classe }, texte));
+        });
+    }
+
     /* ---- Duration <-> Dates sync ---- */
 
     _updateEndFromDuration() {
@@ -1388,6 +1597,20 @@ class TaskModal {
             return;
         }
 
+        /* Contrainte choisie sans date lisible : refusee AVANT toute
+           ecriture, sur le modele du nom vide. La fiche reste ouverte, la
+           date est marquee en erreur et le message, une alerte, dit quoi
+           faire. Sans ce refus, contrainteDe() lirait « Des que possible »
+           et la saisie disparaitrait sans un mot. Une date non ouvree est
+           ACCEPTEE : l'apercu dit la date retenue. Une phase n'a pas de
+           contrainte. */
+        const estPhase = this._phaseCheck.input.checked;
+        const contrainte = estPhase ? { type: null, date: null, lisible: true } : this._contrainteSaisie();
+        if (!contrainte.lisible) {
+            this._afficherErreurContrainte(contrainte.type);
+            return;   // le modal reste ouvert, rien n'est ecrit
+        }
+
         /* Refus des dependances circulaires, AVANT toute ecriture.
          *
          * On valide le LOT COMPLET : predecesseurs de la tache editee ET
@@ -1429,6 +1652,12 @@ class TaskModal {
             isMilestone: this._milestoneCheck.input.checked,
             isPhase: this._phaseCheck.input.checked,
             isPermit: isPermit,
+            /* La contrainte part dans le MEME updateTask (ou addTask) que
+               le reste : un seul instantane, que Ctrl+Z annule d'un coup.
+               applyPredecessorConstraints(), appele ensuite, la lit pour
+               placer la tache, sans instantane. */
+            constraintType: contrainte.type,
+            constraintDate: contrainte.date,
         };
 
         // Add permit-specific data

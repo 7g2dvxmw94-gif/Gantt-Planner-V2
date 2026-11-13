@@ -278,6 +278,21 @@
 
 ---
 
+### B11. Poser une contrainte de date dans la fiche
+A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→Début), placée 08 → 10/06 (contraintes-fiche.spec.js).
+
+| # | Étape | Action | Résultat attendu | ✓/✗ |
+|---|-------|--------|------------------|-----|
+| 1 | Ligne | Ouvrir la fiche de B | Sous les dates : « Contrainte » (« Dès que possible » et les six types, libellés de MS Project) et « Date de contrainte », désactivée pour « Dès que possible » | |
+| 2 | Sans date | Choisir « Doit finir le », vider la date, enregistrer | La fiche reste ouverte, la date est en erreur, un message (alerte) demande la date ; rien n'est enregistré | |
+| 3 | Jour non ouvré | Saisir le samedi 13/06/2026 | Avant d'enregistrer, l'aperçu dit que la tâche finira le vendredi 12/06/2026, placée du 10 au 12/06 | |
+| 4 | Enregistrer | Enregistrer, rouvrir, puis recharger et rouvrir | B est placée 10 → 12/06 ; la fiche relit « Doit finir le » 13/06/2026, avant comme après le rechargement | |
+| 5 | Annuler | Poser « Doit finir le » 12/06, enregistrer, puis Ctrl+Z | B revient 08 → 10/06, « Dès que possible » | |
+| 6 | Lien rompu | Choisir « Doit commencer le » 04/06/2026 | Avant d'enregistrer, l'aperçu dit « Lien rompu avec « A » : il exige le lundi 08/06/2026, la contrainte tiendrait le jeudi 04/06/2026, 2 jours ouvrés plus tôt » ; enregistrée, B est placée 04 → 08/06 | |
+| 7 | Types | Ouvrir la fiche d'un jalon, d'un permis, d'une phase | La ligne est présente pour le jalon et le permis, absente pour la phase | |
+
+---
+
 ## C. Vues du Projet
 
 ### C1. Vue Timeline (Diagramme de Gantt)
