@@ -403,6 +403,7 @@
 | 4 | Tâches critiques | Vérifier les barres | Barres critiques surlignées | |
 | 5 | Dépendances | Vérifier les lignes | Lignes du chemin en rouge | |
 | 6 | Désactivation | Cliquer à nouveau | Chemin critique masqué | |
+| 7 | Marge négative | B Fin→Début de A posée avant la fin de A (lien non tenu), activer le chemin critique | A, à marge négative, est surlignée critique comme B ; une tâche libre à marge positive ne l'est pas | |
 
 ---
 

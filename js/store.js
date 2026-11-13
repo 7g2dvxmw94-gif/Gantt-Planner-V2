@@ -3355,13 +3355,21 @@ class Store {
             ls[id] = fin - duration[id];
         }
 
-        // Critical path: tasks where float (ls - es) === 0
+        /* Chemin critique : les taches de marge (ls - es) NULLE OU NEGATIVE.
+           Une marge negative dit que la tache est deja en retard sur ce que
+           ses successeurs exigent (un lien qui n'est pas tenu) : elle est
+           plus que critique, pas hors du chemin. C'est la regle de MS
+           Project et de P6, « critique si marge <= 0 ». Ne retenir que la
+           marge nulle (Math.abs(float) < 0.001) l'en faisait sortir : elle
+           n'etait pas surlignee, et le point 12 du DCMA ne pouvait pas la
+           choisir pour le retard. Seule la borne basse tombe ; la borne
+           haute, 0.001, est celle d'avant. */
         const critical = [];
         const floatById = {};
         tasks.forEach(t => {
             const float = ls[t.id] - es[t.id];
             floatById[t.id] = float;
-            if (Math.abs(float) < 0.001) {
+            if (float < 0.001) {
                 critical.push(t.id);
             }
         });
