@@ -75,8 +75,8 @@ const datee = (d) => !!d && !isNaN(parseISO(d).getTime());
  *
  *  C'est aussi la difference des rangs du moteur — rang(max) - rang(min)
  *  dans analyzeNetwork(), qui assimile un jour non ouvre au jour ouvre
- *  precedent. Les marges translatees ici viennent de ce moteur : les deux
- *  comptes doivent coincider. */
+ *  precedent. Les marges par les liens translatees ici viennent de ce
+ *  moteur : les deux comptes doivent coincider. */
 function ecartOuvre(de, a, cal) {
     if (!de || !a || de === a) return 0;
     const [min, max] = a > de ? [de, a] : [a, de];
@@ -323,13 +323,29 @@ export function evaluerDcma(entree) {
 
     /* 6 et 7 — Marges. La marge vient du chemin critique, en jours ouvres,
        mesuree contre la fin PREVUE du projet. Avec une echeance, elle se
-       mesure contre l'echeance : toutes les marges se translatent du meme
-       ecart, puisque la passe arriere part d'une borne commune. */
+       mesure contre l'echeance.
+
+       SEULE LA MARGE PAR LES LIENS SUIT L'ECHEANCE. analyzeNetwork() rend
+       la marge comme le minimum de deux : margeFin, bornee par la fin du
+       projet, et margeContrainte, bornee par les contraintes de date. La
+       premiere part de la fin prevue : elle se translate de l'ecart de la
+       fin prevue a l'echeance. La seconde n'en depend pas : une tache qui
+       doit finir le 30/06 a la meme marge, que le projet finisse en
+       decembre ou l'annee suivante. Translater la marge entiere la dirait
+       en retard sur une echeance qui ne la concerne pas.
+       marge = min(margeFin + ecart, margeContrainte). Sans contrainte en
+       aval, margeContrainte vaut Infinity, et la marge est margeFin + ecart,
+       celle d'avant ; sans echeance, l'ecart est nul, et c'est float. Sans
+       margeFin (analyses fabriquees des tests), float tient lieu de marge
+       par les liens, comme avant. */
     const finPrevue = maxIso(nonPhases.map(t => t.endDate));
     const translation = echeance && finPrevue ? ecartOuvre(finPrevue, echeance, cal) : 0;
     const marge = (t) => {
-        const m = analyse.float ? analyse.float[t.id] : undefined;
-        return m === undefined ? null : m + translation;
+        const parLiens = analyse.margeFin || analyse.float;
+        const m = parLiens ? parLiens[t.id] : undefined;
+        if (m === undefined) return null;
+        const mc = analyse.margeContrainte ? analyse.margeContrainte[t.id] : undefined;
+        return mc === undefined ? m + translation : Math.min(m + translation, mc);
     };
     const avecMarge = P.filter(t => marge(t) !== null);
     points.push(pointPourcent(6, 'margeElevee',
