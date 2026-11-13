@@ -3377,8 +3377,7 @@ class Store {
            tache, le minimum des deux. Les garder separes ne coute qu'un
            calcul de plus par lien, et dit d'ou vient la marge : le point 12
            du DCMA ne retient que les taches critiques par les liens, et une
-           echeance ne devrait deplacer que margeFin (les points 6 et 7 de
-           dcma.js translatent encore la marge entiere). */
+           echeance ne deplace que margeFin (points 6 et 7 de dcma.js). */
         const lsFin = {}, lfFin = {};
         const lsC = {}, lfC = {};
 

@@ -408,6 +408,7 @@
 | 7 | Marge négative | B Fin→Début de A posée avant la fin de A (lien non tenu), activer le chemin critique | A, à marge négative, est surlignée critique comme B ; une tâche libre à marge positive ne l'est pas | |
 | 8 | Contraintes de date | A 01→05/06 ; B Fin→Début de A, « Fin au plus tard le 30/06 » ; Z 01/06→31/12 ; M « Doit commencer le 15/06 » ; activer le chemin critique | La marge de A et de B s'arrête au 30/06 (14 jours ouvrés), pas au 31/12 ; M, tenue à sa date, est surlignée critique comme Z ; sans contrainte, marges et chemin inchangés | |
 | 9 | DCMA, point 12 | Une « Doit finir le » tenue hors du chemin qui fait la fin ; ouvrir le rapport DCMA | Le test du chemin critique retarde une tâche critique par ses liens (« ok »), pas la tâche contrainte ; une « Doit finir le » SUR le chemin reste visée, et absorbe le retard (« alerte ») | |
+| 10 | DCMA, points 6 et 7 | Réseau de la ligne 8 ; échéance du projet au 30/11/2026, puis au 30/06/2027 ; ouvrir le rapport DCMA | Seule Z, sans contrainte, suit l'échéance : marge négative au 30/11/2026 (point 7, 25 %), marge élevée au 30/06/2027 (point 6, 25 %) ; A, B et M, tenues par leur contrainte, ne sont dans aucune des deux listes ; sans contrainte, rapport inchangé | |
 
 ---
 
