@@ -6,7 +6,7 @@
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { formatDateISO, formatDateDisplay, addDays, syncLog, parseISO, escapeHtml,
-         workingDaysBetween, addWorkingDays } from './utils.js';
+         workingDaysBetween, addWorkingDays, contrainteDe, libelleContrainte } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -470,6 +470,12 @@ class GanttInteractions {
                 const bar = `<span class="gtt-progress-bar"><span class="gtt-progress-fill" style="width:${pct}%"></span></span>`;
                 html += `<div class="gtt-row"><span class="gtt-icon">\ud83d\udcca</span>${bar}<span class="gtt-progress-label">${pct}%</span></div>`;
             }
+        }
+
+        // Date constraint: the same line as the marker's name (libelleContrainte)
+        const contrainte = contrainteDe(task);
+        if (contrainte) {
+            html += `<div class="gtt-row gtt-contrainte"><span class="gtt-icon">\u23f8</span><span>${escapeHtml(libelleContrainte(contrainte))}</span></div>`;
         }
 
         if (assigneeNames.length > 0) {

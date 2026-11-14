@@ -390,6 +390,36 @@
     box-shadow: var(--shadow-md);
 }
 
+/* ---- Date constraint marker ----
+   Trait vertical à la date de contrainte. L'encoche dit le côté interdit :
+   « au plus tôt » s'ouvre vers la droite (rien avant), « au plus tard » vers
+   la gauche (rien après) ; « doit commencer / finir le » est un trait plein,
+   plus épais. Ne capte pas la souris : il masquerait la poignée de la barre. */
+.gantt-contrainte {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--text-secondary);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.gantt-contrainte::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 6px;
+    height: 2px;
+    background: inherit;
+}
+
+.gantt-contrainte.plus-tot::before { left: 0; }
+.gantt-contrainte.plus-tard::before { right: 0; }
+.gantt-contrainte.doit { width: 3px; margin-left: -1.5px; }
+.gantt-contrainte.doit::before { display: none; }
+
 /* ---- Today Line ---- */
 .today-line {
     position: absolute;

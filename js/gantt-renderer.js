@@ -4,7 +4,8 @@
    ======================================== */
 
 import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
-import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, parseISO, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS } from './utils.js';
+import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, parseISO, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS,
+         contrainteDe, dateEffectiveContrainte, libelleContrainte } from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -502,6 +503,9 @@ class GanttRenderer {
             this._renderTaskBar(timelineCell, task);
         }
 
+        // Date constraint marker (none for a phase: contrainteDe returns null)
+        this._renderContrainte(timelineCell, task);
+
         row.appendChild(timelineCell);
         return row;
     }
@@ -595,6 +599,34 @@ class GanttRenderer {
             const blTask = this._activeBaseline.tasks.find(t => t.id === task.id);
             if (blTask) this._renderBaselineBar(container, task, blTask);
         }
+    }
+
+    /* ---- Date constraint marker ----
+       Un trait vertical à la date que le moteur tient (dateEffectiveContrainte :
+       une « Doit finir le » samedi se tient le vendredi), nommé par la date
+       SAISIE. Bord GAUCHE du jour pour une contrainte de début (SNET, SNLT,
+       MSO), bord DROIT (jour + 1) pour une contrainte de fin (FNET, FNLT,
+       MFO) : la convention de la barre, qui finit au bord droit de son
+       dernier jour. Le repère ne capte pas la souris (CSS) : posé au bord
+       d'une barre, il masquerait sa poignée. L'infobulle de la barre porte
+       la même ligne pour qui survole. */
+
+    _renderContrainte(container, task) {
+        const c = contrainteDe(task);
+        if (!c) return;
+        const tenue = dateEffectiveContrainte(c.type, c.date, store.getCalendar());
+        const fin = c.type === 'FNET' || c.type === 'FNLT' || c.type === 'MFO';
+        const pos = this._dateToPosition(fin ? addDays(tenue, 1) : tenue);
+        if (pos === null) return;
+        const sens = (c.type === 'MSO' || c.type === 'MFO') ? 'doit'
+            : (c.type === 'SNET' || c.type === 'FNET') ? 'plus-tot' : 'plus-tard';
+        container.appendChild(createElement('div', {
+            className: `gantt-contrainte ${sens}`,
+            style: { left: pos + 'px' },
+            role: 'img',
+            'aria-label': libelleContrainte(c),
+            dataset: { contrainte: c.type },
+        }));
     }
 
     /* ---- Phase Bar ---- */

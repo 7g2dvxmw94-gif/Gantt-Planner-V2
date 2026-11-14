@@ -305,6 +305,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 5 | Dépendances | Vérifier les lignes | Lignes de dépendances visibles | |
 | 6 | Aujourd'hui | Vérifier la ligne rouge | Marqueur actuel visible | |
 | 7 | Weekends | Vérifier les différences | Weekends marqués différemment | |
+| 8 | Contrainte de date | Tâche « Début au plus tôt le 03/06/2026 », tenue 08 → 10/06 par son prédécesseur ; tâche « Doit finir le 19/06/2026 » | Un repère au bord gauche du 03/06, nommé « Début au plus tôt le 03/06/2026 » ; un repère au bord droit du 19/06 ; aucun pour une tâche « Dès que possible » (`contraintes-repere.spec.js`) | |
 
 ---
 
@@ -392,6 +393,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 3 | Progression | Vérifier % | Pourcentage affiché | |
 | 4 | Délai | Vérifier si retardée | Indicateur rouge si retard | |
 | 5 | Disparition | Éloigner souris | Infobulle disparaît | |
+| 6 | Contrainte de date | Survoler la barre d'une tâche contrainte | L'infobulle porte la ligne « Début au plus tôt le 03/06/2026 », le même libellé que le repère (`contraintes-repere.spec.js`) | |
 
 ---
 
