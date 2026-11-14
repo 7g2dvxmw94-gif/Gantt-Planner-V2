@@ -294,7 +294,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 9 | Non tenue | Importer R « Doit commencer le » 15/06/2026 aux dates 17 → 19/06, et S, même contrainte, aux dates 15 → 17/06 | « ⚠ 1 conflit » ; la ligne de R dit « Contrainte non tenue : elle exige le 15/06/2026, la tâche tient le 17/06/2026 » ; le repère de R est rouge ; S n'est pas listée (`contraintes-non-tenues.spec.js`) | |
 | 10 | Replacer | Sur la ligne « non tenue » de R, cliquer « Replacer », puis Ctrl+Z | R passe 15 → 17/06 et le bouton des conflits disparaît ; Ctrl+Z la rend à 17 → 19/06 et le bouton revient (`contraintes-replacer.spec.js`) | |
 | 11 | Toast | A 01 → 05/06, B Fin→Début de A, « Doit commencer le » 08/06 ; dans la fiche de A, fin au 09/06 ; puis Ctrl+Z, Ctrl+Y | Un toast d'avertissement « « B » rompt son lien avec « A » » ; aucun à l'import d'un fichier qui porte déjà un conflit, à un enregistrement qui n'en crée pas, à l'annulation ni au rétablissement (`contraintes-conflit-toast.spec.js`) | |
-
+| 12 | Dates tapées | C « Doit finir le 17/06 » (15 → 17) : début tapé 19/06 ; M « Doit commencer le 15/06 » : début tapé 19/06 ; C3 « Doit finir le 17/06 » : fin tapée 19/06 ; durée tapée seule ; B « Doit commencer le 15/06 » liée à A : début tapé 05/06 | C : 19 → 23, « 23/06 » ; M : 19 → 23, « 19/06 » ; C3 : 15 → 19, « 19/06 » ; une durée tapée seule ne déplace pas la contrainte, une contrainte saisie dans la fiche fait foi ; pour B, l'aperçu annonce le lien rompu avant d'enregistrer, puis le toast (`contraintes-dates-tapees.spec.js`) | |
 ---
 
 ## C. Vues du Projet
