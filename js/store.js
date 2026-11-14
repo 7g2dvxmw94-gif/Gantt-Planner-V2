@@ -4,7 +4,7 @@
    ======================================== */
 
 import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
-         parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
+         parseISO, isWorkingDay, nextWorkingDay, previousWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
          contrainteDe, exigenceDuLien, appliquerContrainte,
          dateEffectiveContrainte, conflitsContraintes } from './utils.js';
@@ -207,6 +207,30 @@ export const CONTRAINTES_MSPROJECT = { '2': 'MSO', '3': 'MFO', '4': 'SNET', '5':
 export function numeroContrainteMSProject(type) {
     const trouve = Object.entries(CONTRAINTES_MSPROJECT).find(([, c]) => c === type);
     return trouve ? trouve[0] : null;
+}
+
+/** Sens import : la contrainte d'une <Task> MSPDI, ou null.
+ *
+ *  `dateHeure` est le <ConstraintDate> (« 2026-06-12T17:00:00 »). La
+ *  date est tronquee au jour, sauf a une borne du jour ouvre : une
+ *  contrainte de DEBUT posee a 17:00 ou plus tard ne laisse rien de ce
+ *  jour, et vaut le jour ouvre suivant ; une contrainte de FIN posee a
+ *  08:00 ou plus tot ne laisse rien de ce jour, et vaut le jour ouvre
+ *  precedent. Les heures 08:00 et 17:00 sont celles que l'export ecrit,
+ *  et celles d'un calendrier « Standard » de MS Project.
+ *
+ *  « Le plus tard possible » (1) et « des que possible » (0) rendent null :
+ *  l'appelant avertit pour le premier (decision de l'utilisateur). */
+export function contrainteDepuisMSProject(code, dateHeure, calendar = defaultCalendar()) {
+    const type = CONTRAINTES_MSPROJECT[String(code ?? '').trim()];
+    const texte = String(dateHeure ?? '').trim();
+    if (!type || !/^\d{4}-\d{2}-\d{2}/.test(texte)) return null;
+    let date = texte.substring(0, 10);
+    const heure = texte.substring(11, 16);
+    const debut = type === 'SNET' || type === 'SNLT' || type === 'MSO';
+    if (debut && heure >= '17:00') date = formatDateISO(nextWorkingDay(addDays(date, 1), calendar));
+    else if (!debut && heure && heure <= '08:00') date = formatDateISO(previousWorkingDay(addDays(date, -1), calendar));
+    return { constraintType: type, constraintDate: date };
 }
 
 export function findAllCycles(tasks) {
@@ -3855,6 +3879,14 @@ class Store {
      *  (result)` posé sur l'appel non attendu rendrait la garde d'entrée
      *  inopérante et réafficherait un toast de succès sur un import refusé.
      *  Voir js/app.js, branche ext === 'xml'. */
+    /** Les avertissements du dernier import MS Project, une seule fois :
+     *  la lecture les vide. [{ type: 'alap', nom }] */
+    getAvertissementsImport() {
+        const a = this._avertissementsImport || [];
+        this._avertissementsImport = [];
+        return a;
+    }
+
     async importFromMSProjectXML(xmlString) {
         try {
             const parser = new DOMParser();
@@ -3904,6 +3936,11 @@ class Store {
                 : doc.getElementsByTagName('Assignment'));
 
             const newProjectId = generateId();
+            /* Avertissements de l'import, lus ensuite par l'appelant
+               (getAvertissementsImport) : ce que le fichier porte et que
+               l'application ne sait pas garder. */
+            this._avertissementsImport = [];
+            const calendrier = this._getCalendar();
             const uidToId = {};
             const resUidToId = {};
             const tasks = [];
@@ -3956,6 +3993,20 @@ class Store {
                 const startDate = startStr ? startStr.substring(0, 10) : '';
                 const endDate = finishStr ? finishStr.substring(0, 10) : '';
 
+                /* Contrainte de date (<ConstraintType>, <ConstraintDate>).
+                   Une recapitulative n'en porte pas : une phase suit ses
+                   enfants. « Le plus tard possible » n'existe pas ici
+                   (decision de l'utilisateur) : la tache arrive en « des
+                   que possible », et l'avertissement la nomme. Les dates
+                   de la tache sont gardees telles quelles : une contrainte
+                   qu'elles ne tiennent pas est signalee « non tenue ». */
+                const codeContrainte = getTag(el, 'ConstraintType');
+                const contrainte = isSummary ? null
+                    : contrainteDepuisMSProject(codeContrainte, getTag(el, 'ConstraintDate'), calendrier);
+                if (!isSummary && codeContrainte === '1') {
+                    this._avertissementsImport.push({ type: 'alap', nom: name });
+                }
+
                 const id = generateId();
                 uidToId[uid] = id;
 
@@ -3989,6 +4040,7 @@ class Store {
                     dependencies: [],
                     order: tasks.length,
                     color: isSummary ? '#6366F1' : '#3B82F6',
+                    ...(contrainte || {}),
                 });
             });
 

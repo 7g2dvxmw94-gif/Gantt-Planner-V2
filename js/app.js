@@ -5480,6 +5480,16 @@ tr:nth-child(even){background:#fafbfc}
                         this._renderStats();
                         this._renderProjectName();
                         this._showToast(t('toast.importXmlName', { name: result.name }), 'success');
+                        /* Ce que le fichier portait et que l'application ne
+                           garde pas : les taches « le plus tard possible »,
+                           importees en « des que possible ». Par textContent
+                           (_showToast) : les noms viennent du fichier. */
+                        const alap = store.getAvertissementsImport().filter(a => a.type === 'alap').map(a => a.nom);
+                        if (alap.length) {
+                            const noms = alap.slice(0, 3).map(n => `« ${n} »`).join(', ')
+                                + (alap.length > 3 ? ' ' + t('import.avertissement.autres', { n: alap.length - 3 }) : '');
+                            this._showToast(t('import.avertissement.alap', { n: alap.length, noms }), 'warning');
+                        }
                     } else {
                         this._showToast(t('toast.importErrorXml'), 'error');
                     }
