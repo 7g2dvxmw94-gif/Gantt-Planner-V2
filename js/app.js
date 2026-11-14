@@ -3,14 +3,15 @@
    Gantly
    ======================================== */
 
-import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES, numeroLienMSProject } from './store.js';
+import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES, numeroLienMSProject,
+         numeroContrainteMSProject } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
-         createElement, formatDateChiffres, libelleContrainte } from './utils.js';
+         createElement, formatDateChiffres, libelleContrainte, contrainteDe } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -2103,6 +2104,20 @@ class App {
                 `<LinkLag>0</LinkLag><LagFormat>7</LagFormat></PredecessorLink>`;
         }).join('');
 
+        /* Contrainte de date : <ConstraintType> et <ConstraintDate>, rangs 64
+           et 66 de la sequence de <Task> (schema MSPDI), donc apres
+           <PercentComplete> (44) et avant <PredecessorLink> (85). L'heure
+           suit celle des dates de la tache : 08:00 pour une contrainte de
+           debut, 17:00 pour une contrainte de fin. Rien pour « des que
+           possible » : 0 est le defaut du schema. */
+        const contrainteXML = (task) => {
+            const c = contrainteDe(task);
+            const code = c && numeroContrainteMSProject(c.type);
+            if (!code) return '';
+            const heure = (c.type === 'SNET' || c.type === 'SNLT' || c.type === 'MSO') ? '08:00:00' : '17:00:00';
+            return `<ConstraintType>${code}</ConstraintType><ConstraintDate>${fmtDateTime(c.date, heure)}</ConstraintDate>`;
+        };
+
         // --- Passe 2 : émettre les tâches ---
         const taskLines = [];
         // Root summary task (UID 0)
@@ -2119,6 +2134,7 @@ class App {
                 (task.endDate ? `<Finish>${fmtDateTime(task.endDate, '17:00:00')}</Finish>` : '') +
                 `<Duration>${durISO(task)}</Duration>` +
                 `<PercentComplete>${task.progress || 0}</PercentComplete>` +
+                contrainteXML(task) +
                 liensDe(task) +
                 `</Task>`);
         });
