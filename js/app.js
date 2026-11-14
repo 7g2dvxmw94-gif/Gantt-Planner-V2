@@ -73,6 +73,7 @@ class App {
             },
             onTaskDblClick: (taskId) => taskModal.openEdit(taskId),
             avantEcriture: () => this._garderClesConflits(),
+            confirmerRuptureLien: (details) => this._demanderRuptureLien(details),
             onUpdate: () => {
                 ganttRenderer.render();
                 this._renderStats();
@@ -6355,6 +6356,62 @@ tr:nth-child(even){background:#fafbfc}
         let texte = t(apparus.length > 1 ? 'conflits.toast.plusieurs' : 'conflits.toast.un', { liste: noms.join(', ') });
         if (apparus.length > 3) texte += ' ' + t('conflits.toast.autres', { n: apparus.length - 3 });
         this._showToast(texte, 'warning');
+    }
+
+    /** La fenetre « Rompre un lien ? » (decision 8) : un glisser romprait
+     *  les liens `liens` (liensRompusAuLacher) de `tache`. Rend une promesse
+     *  de la reponse : true pour « Continuer quand meme », false pour
+     *  « Annuler » ou Echap. Construite par createElement / textContent :
+     *  les noms viennent peut-etre d'un autre compte. Un clic sur le voile
+     *  ne repond pas : la question attend. */
+    _demanderRuptureLien({ tache, liens }) {
+        return new Promise((resolve) => {
+            document.getElementById('ruptureLienModal')?.remove();
+            const overlay = createElement('div', { id: 'ruptureLienModal', className: 'modal-overlay active' });
+            const dialog = createElement('div', {
+                className: 'modal rupture-lien-modal', role: 'alertdialog', 'aria-modal': 'true',
+                'aria-labelledby': 'ruptureLienTitre', 'aria-describedby': 'ruptureLienMessage',
+            });
+            const message = createElement('div', { id: 'ruptureLienMessage', className: 'modal-body' });
+            liens.slice(0, 3).forEach(c => message.appendChild(createElement('p', {}, this._ligneRuptureLien(tache, c))));
+            if (liens.length > 3) message.appendChild(createElement('p', {}, t('rupture.autres', { n: liens.length - 3 })));
+            message.appendChild(createElement('p', { className: 'rupture-lien-suite' }, t('rupture.suite')));
+            const annuler = createElement('button', { className: 'btn btn-secondary' }, t('rupture.annuler'));
+            const continuer = createElement('button', { className: 'btn btn-primary' }, t('rupture.continuer'));
+            dialog.appendChild(createElement('div', { className: 'modal-header' },
+                createElement('h2', { className: 'modal-title', id: 'ruptureLienTitre' }, t('rupture.titre'))));
+            dialog.appendChild(message);
+            dialog.appendChild(createElement('div', { className: 'modal-footer' }, [annuler, continuer]));
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            const repondre = (oui) => { overlay.remove(); resolve(oui); };
+            annuler.addEventListener('click', () => repondre(false));
+            continuer.addEventListener('click', () => repondre(true));
+            overlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); repondre(false); }
+            });
+            annuler.focus();
+        });
+    }
+
+    /** Une ligne de la fenetre « Rompre un lien ? ». Courte quand la date
+     *  tenue sur le bout que le lien exige est la date de la contrainte ;
+     *  sinon elle dit aussi cette date tenue, pour que l'ecart se lise
+     *  (« doit finir le 05/06, donc commencer le 03/06... »). */
+    _ligneRuptureLien(tache, c) {
+        const { type, date } = c.contrainte;
+        const boutContrainte = (type === 'MSO' || type === 'SNLT') ? 'debut' : 'fin';
+        const boutLien = (c.type === 'FF' || c.type === 'SF') ? 'fin' : 'debut';
+        const valeurs = {
+            tache: tache.name, pred: c.pred.name,
+            verbe: t(`rupture.verbe.${type}`), date: formatDateChiffres(date),
+            lien: t(`conflits.type.${c.type}`),
+            exige: formatDateChiffres(c.exige), tient: formatDateChiffres(c.tient),
+            ecart: t(c.ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: c.ecart }),
+        };
+        if (boutContrainte === boutLien && c.tient === date) return t('rupture.ligne.courte', valeurs);
+        return t(boutLien === 'debut' ? 'rupture.ligne.debut' : 'rupture.ligne.fin', valeurs);
     }
 
     _fermerConflits() {
