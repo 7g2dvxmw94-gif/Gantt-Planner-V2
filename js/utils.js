@@ -938,12 +938,15 @@ export function conflitsContraintes(taches, getTask, calendar = defaultCalendar(
 }
 
 /**
- * Ce que devient une tache CONTRAINTE glissee a la souris (decision 3 de
- * l'utilisateur : « la contrainte suit la souris »). Pour une « Doit
- * commencer le » (MSO) ou une « Doit finir le » (MFO) ; les contraintes
- * souples rendent encore null (plan v4, PR 16).
+ * Ce que devient une tache CONTRAINTE glissee a la souris. Une « Doit
+ * commencer le » (MSO) ou une « Doit finir le » (MFO) suit toujours la
+ * souris (decision 3). Une contrainte souple (SNET, SNLT, FNET, FNLT) ne
+ * suit que si elle bloquait, et jamais au prix d'un lien rompu (decision
+ * 7) : il faut alors `placer` (le calcul du moteur) et `getTask` ; sans
+ * eux, une souple rend null.
  *
- * - Bout VISE : le debut pour MSO, la fin pour MFO. Bouts bouges : les deux
+ * - Bout VISE : le debut pour MSO, SNET et SNLT, la fin pour MFO, FNET et
+ *   FNLT. Bouts bouges : les deux
  *   en deplacement ('move') ou pour un jalon, le debut en 'resize-left', la
  *   fin en 'resize-right'. Si le bout vise n'a pas bouge, null : la
  *   contrainte reste, et le placement ordinaire s'applique.
@@ -966,24 +969,42 @@ export function conflitsContraintes(taches, getTask, calendar = defaultCalendar(
  * @param {number} p.duree         duree ouvree d'origine
  * @returns {{startDate, endDate, constraintDate}|null}
  */
-export function contrainteApresDeplacement({ avant, mode, debutAffiche, finAffichee, duree, cal = defaultCalendar() }) {
+export function contrainteApresDeplacement({ avant, mode, debutAffiche, finAffichee, duree, placer, getTask, cal = defaultCalendar() }) {
     const c = contrainteDe(avant);
-    if (!c || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
+    if (!c) return null;
+    const dure = c.type === 'MSO' || c.type === 'MFO';
+    if (!dure && !placer) return null;
     const jalon = !!avant.isMilestone;
-    const viseDebut = c.type === 'MSO';
+    const viseDebut = c.type === 'MSO' || c.type === 'SNET' || c.type === 'SNLT';
     const bouge = jalon || mode === 'move' || (viseDebut ? mode === 'resize-left' : mode === 'resize-right');
     if (!bouge) return null;
 
     const cible = dateEffectiveContrainte(c.type, viseDebut ? debutAffiche : finAffichee, cal);
     const iso = formatDateISO(cible);
-    if (jalon) return { startDate: iso, endDate: iso, constraintDate: iso };
+    /* V : le bout vise a la cible, l'autre par la duree (deplacement) ou
+       immobile (redimensionnement). */
     const n = Math.max(1, duree || 1) - 1;
-    if (viseDebut) {
-        const fin = mode === 'move' ? formatDateISO(addWorkingDays(cible, n, cal)) : avant.endDate;
-        return { startDate: iso, endDate: fin, constraintDate: iso };
-    }
-    const debut = mode === 'move' ? formatDateISO(addWorkingDays(cible, -n, cal)) : avant.startDate;
-    return { startDate: debut, endDate: iso, constraintDate: iso };
+    const V = jalon ? { startDate: iso, endDate: iso }
+        : viseDebut
+            ? { startDate: iso, endDate: mode === 'move' ? formatDateISO(addWorkingDays(cible, n, cal)) : avant.endDate }
+            : { startDate: mode === 'move' ? formatDateISO(addWorkingDays(cible, -n, cal)) : avant.startDate, endDate: iso };
+    if (dure) return { ...V, constraintDate: iso };
+
+    /* Souples (decision 7) : la date ne suit que si (i) la contrainte
+       inchangee empecherait le bout vise d'aller a la cible, (ii) la
+       cible l'y met, et (iii) cela ne rompt aucun lien de plus. Sinon la
+       contrainte reste, et V part : le moteur place. */
+    const bout = viseDebut ? 'startDate' : 'endDate';
+    const avec = (date) => {
+        const t = { ...avant, ...V, constraintDate: date };
+        const p = placer(t, getTask);
+        return p ? { ...t, startDate: p.startDate, endDate: p.endDate } : t;
+    };
+    const sansSuivre = avec(c.date);
+    const enSuivant = avec(iso);
+    const liens = (t) => conflitsContraintes([t], getTask, cal).filter(x => x.sorte === 'lien').length;
+    const suit = sansSuivre[bout] !== iso && enSuivant[bout] === iso && liens(enSuivant) <= liens(sansSuivre);
+    return suit ? { ...V, constraintDate: iso } : V;
 }
 
 /**

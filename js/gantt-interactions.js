@@ -805,6 +805,8 @@ class GanttInteractions {
                 const suivie = avant && contrainteApresDeplacement({
                     avant, mode: d.mode, debutAffiche, finAffichee,
                     duree: workingDaysBetween(d.origStartDate, d.origEndDate, cal), cal,
+                    placer: (t, getTask) => store.computeConstrainedDatesIn(t, getTask),
+                    getTask: (id) => store.getTask(id),
                 });
                 if (suivie) Object.assign(updates, suivie);
             }
