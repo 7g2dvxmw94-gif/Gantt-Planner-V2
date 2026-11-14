@@ -293,6 +293,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 8 | Conflit | Après l'étape 6 (B « Doit commencer le » 04/06, lien A→B rompu) | Un bouton « ⚠ 1 conflit » dans la barre d'outils ; le lien A→B est rouge en tirets, le repère de B rouge ; la liste nomme B, A, « Fin→Début », exige le 08/06/2026, tient le 04/06/2026, « 2 jours ouvrés », et dit « Calculé avec votre calendrier » ; « Ouvrir la fiche » ferme la liste et ouvre la fiche de B ; une contrainte souple (SNET, FNET) n'est jamais listée ; A posée 01 → 03/06 : le bouton disparaît (`contraintes-conflits.spec.js`) | |
 | 9 | Non tenue | Importer R « Doit commencer le » 15/06/2026 aux dates 17 → 19/06, et S, même contrainte, aux dates 15 → 17/06 | « ⚠ 1 conflit » ; la ligne de R dit « Contrainte non tenue : elle exige le 15/06/2026, la tâche tient le 17/06/2026 » ; le repère de R est rouge ; S n'est pas listée (`contraintes-non-tenues.spec.js`) | |
 | 10 | Replacer | Sur la ligne « non tenue » de R, cliquer « Replacer », puis Ctrl+Z | R passe 15 → 17/06 et le bouton des conflits disparaît ; Ctrl+Z la rend à 17 → 19/06 et le bouton revient (`contraintes-replacer.spec.js`) | |
+| 11 | Toast | A 01 → 05/06, B Fin→Début de A, « Doit commencer le » 08/06 ; dans la fiche de A, fin au 09/06 ; puis Ctrl+Z, Ctrl+Y | Un toast d'avertissement « « B » rompt son lien avec « A » » ; aucun à l'import d'un fichier qui porte déjà un conflit, à un enregistrement qui n'en crée pas, à l'annulation ni au rétablissement (`contraintes-conflit-toast.spec.js`) | |
 
 ---
 

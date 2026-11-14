@@ -45,6 +45,9 @@ class GanttInteractions {
         this._onTaskClick = opts.onTaskClick;
         this._onTaskDblClick = opts.onTaskDblClick;
         this._onUpdate = opts.onUpdate;
+        /* Appele juste avant l'ecriture d'un glisser horizontal : app.js y
+           releve les conflits d'avant (voir onUpdate). */
+        this._avantEcriture = opts.avantEcriture || null;
         this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
         this._zoomLevelFn = opts.getZoomLevel || null;
@@ -787,6 +790,7 @@ class GanttInteractions {
             const isOnCriticalPath = criticalIds.includes(d.taskId);
 
             updates.skipSnap = true;
+            if (this._avantEcriture) this._avantEcriture();
             store.updateTask(d.taskId, updates);
 
             /* Reappliquer les contraintes de la tache DEPLACEE, comme le fait
