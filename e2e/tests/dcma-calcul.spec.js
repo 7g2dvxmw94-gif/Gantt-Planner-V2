@@ -20,6 +20,10 @@ import { waitForAppReady } from '../helpers.js';
  * points 9, 11, 13 et 14 en dépendent, et le résultat ne doit pas changer
  * d'un jour à l'autre. JUIN 2026 COMMENCE UN LUNDI.
  *
+ * POINT 5 (contraintes dures) : aucune tâche de ces plannings n'en porte,
+ * il vaut donc 0 % « ok » (dcma-contraintes-dures.spec.js le mesure avec
+ * des contraintes).
+ *
  * LE ROUGE ATTENDU POUR LE COMMIT DE TEST : les quatre tests échouent sur
  * leur assertion centrale — le tableau des 14 points —, qui reçoit alors
  * « module DCMA absent — … ». Les discriminants, eux, ne touchent que ce
@@ -107,7 +111,7 @@ test('DCMA, liens : logique, avances, décalages, types et anomalies', async ({ 
 
     // --- L'ASSERTION CENTRALE : les 14 points ---
     expect(tableau(r), 'les 14 points').toBe(
-        '1:66.7:alerte 2:16.7:alerte 3:33.3:alerte 4:83.3:alerte 5:—:sans-objet 6:0:ok 7:—:na '
+        '1:66.7:alerte 2:16.7:alerte 3:33.3:alerte 4:83.3:alerte 5:0:ok 6:0:ok 7:—:na '
         + '8:0:ok 9:7:alerte 10:100:info 11:—:na 12:—:na 13:—:na 14:—:na');
 
     expect(fautives(r, 1)).toEqual(['A', 'E', 'G', 'K', 'J', 'N']);
@@ -154,7 +158,7 @@ test('DCMA, marges et durées : seuil de 44 jours ouvrés, permis à part, éch�
 
     // --- L'ASSERTION CENTRALE, sans échéance ---
     expect(tableau(r), 'les 14 points, sans échéance').toBe(
-        '1:80:alerte 2:0:ok 3:0:ok 4:100:ok 5:—:sans-objet 6:40:alerte 7:—:na '
+        '1:80:alerte 2:0:ok 3:0:ok 4:100:ok 5:0:ok 6:40:alerte 7:—:na '
         + '8:25:alerte 9:5:alerte 10:50:info 11:—:na 12:—:na 13:—:na 14:—:na');
     expect(fautives(r, 6)).toEqual(['A', 'B']);
     expect(fautives(r, 8)).toEqual(['L45']);
@@ -167,7 +171,7 @@ test('DCMA, marges et durées : seuil de 44 jours ouvrés, permis à part, éch�
        (point 6), et le CPLI devient mesurable : (56 − 12) / 56 = 0,79. */
     const r2 = await evaluer(page, taches, { echeance: '2026-08-14' });
     expect(tableau(r2), 'les 14 points, échéance au 14 août').toBe(
-        '1:80:alerte 2:0:ok 3:0:ok 4:100:ok 5:—:sans-objet 6:0:ok 7:20:alerte '
+        '1:80:alerte 2:0:ok 3:0:ok 4:100:ok 5:0:ok 6:0:ok 7:20:alerte '
         + '8:25:alerte 9:5:alerte 10:50:info 11:—:na 12:—:na 13:0.79:alerte 14:—:na');
     expect(fautives(r2, 7)).toEqual(['PC']);
 });
@@ -210,7 +214,7 @@ test('DCMA, référence et date d\'état : dates invalides, tâches manquées, C
 
     // --- L'ASSERTION CENTRALE ---
     expect(tableau(r), 'les 14 points, avec référence').toBe(
-        '1:60:alerte 2:0:ok 3:0:ok 4:100:ok 5:—:sans-objet 6:0:ok 7:—:na '
+        '1:60:alerte 2:0:ok 3:0:ok 4:100:ok 5:0:ok 6:0:ok 7:—:na '
         + '8:0:ok 9:3:alerte 10:100:info 11:75:alerte 12:600:ok 13:0.5:alerte 14:0.4:alerte');
     expect(fautives(r, 9)).toEqual(['C', 'E', 'F']);
     expect(fautives(r, 11)).toEqual(['B', 'C', 'E']);
@@ -252,7 +256,7 @@ test('DCMA, test du chemin critique : le retard se propage, sauf si un lien est 
 
     // --- L'ASSERTION CENTRALE ---
     expect(tableau(sain), 'les 14 points, réseau sain').toBe(
-        '1:75:alerte 2:0:ok 3:50:alerte 4:100:ok 5:—:sans-objet 6:0:ok 7:—:na '
+        '1:75:alerte 2:0:ok 3:50:alerte 4:100:ok 5:0:ok 6:0:ok 7:—:na '
         + '8:0:ok 9:3:alerte 10:100:info 11:—:na 12:602:ok 13:—:na 14:—:na');
     expect(sain.rapport.points[11]).toMatchObject({ cibleId: 'A', retard: 600 });
     expect(rompu.rapport.points[11]).toMatchObject({ valeur: 0, etat: 'alerte', cibleId: 'A', fautives: ['A'] });

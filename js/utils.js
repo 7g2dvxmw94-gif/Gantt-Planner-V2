@@ -774,10 +774,10 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
 export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO', 'MFO']);
 
 /** Les contraintes DURES : les seules qui peuvent l'emporter contre un
- *  lien (appliquerContrainte), et celles que comptera le point 5 du
- *  rapport DCMA. Seul le detecteur de conflits (conflitsContraintes) la
- *  lit, pour les liens rompus : le moteur applique la regle de chaque type sans la consulter,
- *  dcma.js ne l'importe pas, et le point 5 repond toujours « sans objet ». */
+ *  lien (appliquerContrainte), et celles que compte le point 5 du
+ *  rapport DCMA. Deux lecteurs : le detecteur de conflits
+ *  (conflitsContraintes), pour les liens rompus, et le point 5 (dcma.js) ;
+ *  le moteur applique la regle de chaque type sans la consulter. */
 export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
 
 /**
