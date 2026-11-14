@@ -490,6 +490,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 3 | Fichier | Vérifier le fichier | Fichier .csv créé | |
 | 4 | Ouverture | Ouvrir dans Excel | Données bien formatées | |
 | 5 | Colonnes | Vérifier les colonnes | Toutes les données | |
+| 6 | Contraintes | Exporter une tâche « Doit finir le 12/06/2026 » et une sans contrainte | Après les sept colonnes habituelles, « Type de contrainte » et « Date de contrainte » : « Doit finir le » / « 12/06/2026 », et « Dès que possible » / vide (`export-csv-contraintes.spec.js`) | |
 
 ---
 
