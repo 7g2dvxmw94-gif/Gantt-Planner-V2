@@ -6359,6 +6359,17 @@ tr:nth-child(even){background:#fafbfc}
                 document.getElementById('conflitsModal')?.remove();
                 taskModal.openEdit(c.tache.id);
             });
+            /* « Replacer », pour une contrainte non tenue : un geste
+               annulable (store.replacerTache). La liste suit : elle se
+               ferme s'il n'y a plus de conflit, se reconstruit sinon. */
+            let replacer = null;
+            if (c.sorte === 'non-tenue' && store.canEdit()) {
+                replacer = createElement('button', { className: 'btn btn-primary btn-sm' }, t('conflits.replacer'));
+                replacer.addEventListener('click', () => {
+                    store.replacerTache(c.tache.id);
+                    if (document.getElementById('conflitsModal')) this._showConflits();
+                });
+            }
             liste.appendChild(createElement('li', { className: 'conflit-ligne' }, [
                 createElement('p', { className: 'conflit-tache' }, [
                     createElement('strong', {}, c.tache.name),
@@ -6376,7 +6387,7 @@ tr:nth-child(even){background:#fafbfc}
                         tient: formatDateChiffres(c.tient),
                         ecart: t(c.ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: c.ecart }),
                     })),
-                ouvrir,
+                createElement('div', { className: 'conflit-actions' }, replacer ? [replacer, ouvrir] : [ouvrir]),
             ]));
         });
         corps.appendChild(liste);
