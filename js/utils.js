@@ -775,9 +775,9 @@ export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO',
 
 /** Les contraintes DURES : les seules qui peuvent l'emporter contre un
  *  lien (appliquerContrainte), et celles que comptera le point 5 du
- *  rapport DCMA. RIEN NE LIT ENCORE CETTE TABLE : le moteur applique la
- *  regle de chaque type sans la consulter, dcma.js ne l'importe pas, et le
- *  point 5 repond toujours « sans objet ». */
+ *  rapport DCMA. Seul le detecteur de conflits (conflitsContraintes) la
+ *  lit : le moteur applique la regle de chaque type sans la consulter,
+ *  dcma.js ne l'importe pas, et le point 5 repond toujours « sans objet ». */
 export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
 
 /**
@@ -860,6 +860,62 @@ export function exigenceDuLien(dep, pred, calendar = defaultCalendar()) {
         case 'SF': return { borne: 'fin',   date: nextWorkingDay(decalerCalendaire(pred.startDate, lag), calendar) };
         default:   return null;
     }
+}
+
+/**
+ * Les liens entrants d'une tache que son placement `place`
+ * ({ startDate, endDate } ISO) ne tient pas : borne visee avant la date
+ * qu'exige le lien. L'ecart se compte en jours ouvres, de la date tenue
+ * a la date exigee, toutes deux ouvrees : ]tenue, exigee].
+ *
+ * UNE SEULE REGLE pour l'apercu de la fiche (task-modal.js), qui juge un
+ * placement PREVU, et pour le detecteur de conflits ci-dessous, qui juge
+ * le placement ACTUEL : les deux ne peuvent pas diverger.
+ *
+ * @returns {Array<{dep, pred, exige: string, tient: string, ecart: number}>}
+ */
+export function liensNonTenus(tache, place, getTask, calendar = defaultCalendar()) {
+    const rompus = [];
+    for (const dep of (tache.dependencies || [])) {
+        const pred = getTask(dep.taskId);
+        if (!pred || !pred.startDate || !pred.endDate) continue;
+        const exigence = exigenceDuLien(dep, pred, calendar);
+        if (!exigence) continue;
+        const exige = formatDateISO(exigence.date);
+        const tient = exigence.borne === 'debut' ? place.startDate : place.endDate;
+        if (!tient || tient >= exige) continue;
+        rompus.push({ dep, pred, exige, tient, ecart: workingDaysBetween(tient, exige, calendar) - 1 });
+    }
+    return rompus;
+}
+
+/**
+ * Les conflits de contrainte d'un ensemble de taches : chaque lien qu'une
+ * contrainte DURE (CONTRAINTES_DURES) rompt, en l'emportant sur lui.
+ *
+ * Un etat derive du planning, jamais un evenement : il disparait des que
+ * le planning est coherent. Une tache « Des que possible », SNET ou FNET
+ * n'est jamais en conflit : le moteur ne les fait pas l'emporter sur un
+ * lien. Un lien non tenu SANS contrainte dure (donnees anciennes, import
+ * qui perd un decalage negatif) n'est pas un conflit de contrainte : le
+ * DCMA le signale en marge negative.
+ *
+ * Ne parcourt que les taches contraintes (contrainteDe), pas le reseau.
+ *
+ * @returns {Array<{tache, contrainte, pred, type, exige, tient, ecart}>}
+ */
+export function conflitsContraintes(taches, getTask, calendar = defaultCalendar()) {
+    const conflits = [];
+    for (const tache of taches) {
+        const contrainte = contrainteDe(tache);
+        if (!contrainte || !CONTRAINTES_DURES.includes(contrainte.type)) continue;
+        if (!tache.startDate || !tache.endDate) continue;
+        for (const r of liensNonTenus(tache, tache, getTask, calendar)) {
+            conflits.push({ tache, contrainte, pred: r.pred, type: r.dep.type || 'FS',
+                            exige: r.exige, tient: r.tient, ecart: r.ecart });
+        }
+    }
+    return conflits;
 }
 
 /**

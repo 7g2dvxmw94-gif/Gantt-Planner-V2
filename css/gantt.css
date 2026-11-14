@@ -419,6 +419,7 @@
 .gantt-contrainte.plus-tard::before { right: 0; }
 .gantt-contrainte.doit { width: 3px; margin-left: -1.5px; }
 .gantt-contrainte.doit::before { display: none; }
+.gantt-contrainte.en-conflit { background: var(--color-error); }
 
 /* ---- Today Line ---- */
 .today-line {
@@ -464,6 +465,17 @@
 
 .gantt-dependencies-layer polygon.dep-arrow {
     fill: var(--text-muted);
+}
+
+/* Lien rompu par une contrainte : rouge, en tirets. */
+.gantt-dependencies-layer path.dep-line.dep-conflit {
+    stroke: var(--color-error);
+    stroke-width: 2;
+    stroke-dasharray: 5 3;
+}
+
+.gantt-dependencies-layer polygon.dep-arrow.dep-conflit {
+    fill: var(--color-error);
 }
 
 /* ---- Multi-assignee avatars ---- */
