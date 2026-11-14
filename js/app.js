@@ -62,7 +62,8 @@ class App {
             this._renderStats();
             this._refreshCurrentView();
             this._showToast(t('toast.taskUpdated'), 'success');
-        });
+            this._signalerConflitsApparus();
+        }, { avantEcriture: () => this._garderClesConflits() });
 
         // Initialize Gantt interactions (drag, resize, click)
         ganttInteractions.init({
@@ -71,9 +72,11 @@ class App {
                 else this._selectTaskExclusively(taskId);
             },
             onTaskDblClick: (taskId) => taskModal.openEdit(taskId),
+            avantEcriture: () => this._garderClesConflits(),
             onUpdate: () => {
                 ganttRenderer.render();
                 this._renderStats();
+                this._signalerConflitsApparus();
             },
             getColWidth: () => ganttRenderer.effectiveColWidth || 50,
             getZoomLevel: () => ganttRenderer.zoomLevel,
@@ -6321,6 +6324,39 @@ tr:nth-child(even){background:#fafbfc}
         if (n === 0 && document.getElementById('conflitsModal')) this._fermerConflits();
     }
 
+    /** La cle d'un conflit : `tache|pred|type` pour un lien rompu,
+     *  `tache|non-tenue` pour une contrainte non tenue. */
+    _cleConflit(c) {
+        return c.sorte === 'lien' ? `${c.tache.id}|${c.pred.id}|${c.type}` : `${c.tache.id}|non-tenue`;
+    }
+
+    /** Avant une ecriture de l'UTILISATEUR (fiche, glisser, « Replacer ») :
+     *  les conflits d'avant sont gardes, pour _signalerConflitsApparus(). */
+    _garderClesConflits() {
+        this._clesAvantEcriture = new Set(store.getConflitsContraintes().map(c => this._cleConflit(c)));
+    }
+
+    /** Apres cette ecriture : un toast d'avertissement pour les conflits
+     *  APPARUS. Les cles gardees sont CONSOMMEES : sans elles, rien n'est
+     *  compare. Un rappel qui ne suit pas une ecriture (depot vertical d'un
+     *  glisser, suppression par la fiche) ne compare donc rien a des cles
+     *  perimees. Aucun toast pour un import, un changement de projet, un
+     *  rechargement, une annulation ou un retablissement : ils ne passent
+     *  pas par ici. */
+    _signalerConflitsApparus() {
+        const avant = this._clesAvantEcriture;
+        this._clesAvantEcriture = null;
+        if (!avant) return;
+        const apparus = store.getConflitsContraintes().filter(c => !avant.has(this._cleConflit(c)));
+        if (!apparus.length) return;
+        const noms = apparus.slice(0, 3).map(c => c.sorte === 'lien'
+            ? t('conflits.toast.lien', { tache: c.tache.name, pred: c.pred.name })
+            : t('conflits.toast.nonTenue', { tache: c.tache.name }));
+        let texte = t(apparus.length > 1 ? 'conflits.toast.plusieurs' : 'conflits.toast.un', { liste: noms.join(', ') });
+        if (apparus.length > 3) texte += ' ' + t('conflits.toast.autres', { n: apparus.length - 3 });
+        this._showToast(texte, 'warning');
+    }
+
     _fermerConflits() {
         document.getElementById('conflitsModal')?.remove();
         const bouton = $('#conflitsBtn');
@@ -6366,7 +6402,9 @@ tr:nth-child(even){background:#fafbfc}
             if (c.sorte === 'non-tenue' && store.canEdit()) {
                 replacer = createElement('button', { className: 'btn btn-primary btn-sm' }, t('conflits.replacer'));
                 replacer.addEventListener('click', () => {
+                    this._garderClesConflits();
                     store.replacerTache(c.tache.id);
+                    this._signalerConflitsApparus();
                     if (document.getElementById('conflitsModal')) this._showConflits();
                 });
             }

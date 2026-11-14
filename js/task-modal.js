@@ -22,8 +22,14 @@ class TaskModal {
         this._selectedAssigneeIds = new Set();
     }
 
-    init(onSave) {
+    /** @param {Function} onSave - apres un enregistrement ou une suppression
+     *  @param {Function} [opts.avantEcriture] - appele juste avant la
+     *         PREMIERE ecriture d'un enregistrement, validations passees :
+     *         app.js y releve les conflits d'avant, pour dire ensuite ceux
+     *         que l'enregistrement fait apparaitre. */
+    init(onSave, opts = {}) {
         this._onSave = onSave;
+        this._avantEcriture = opts.avantEcriture || null;
         this._buildDOM();
         this._bindEvents();
     }
@@ -1663,6 +1669,8 @@ class TaskModal {
 
         // Parent from the dropdown
         const selectedParent = this._parentSelect.value || null;
+
+        if (this._avantEcriture) this._avantEcriture();
 
         if (this._mode === 'create') {
             data.parentId = selectedParent;
