@@ -6596,7 +6596,9 @@ tr:nth-child(even){background:#fafbfc}
             ...a.liensVersPhase.map(l => ({ type: 'phase', texte: t('dcma.anomalie.phase', { tache: nom(l.tacheId), phase: nom(l.versId) }) })),
             ...a.liensDePhase.map(l => ({ type: 'dePhase', texte: t('dcma.anomalie.dePhase', { phase: nom(l.phaseId), vers: nom(l.versId) }) })),
             ...a.liensSansType.map(l => ({ type: 'sansType', texte: t('dcma.anomalie.sansType', { tache: nom(l.tacheId) }) })),
-            ...a.margesNegatives.map(id => ({ type: 'margeNegative', texte: t('dcma.anomalie.margeNegative', { tache: nom(id) }) })),
+            ...a.margesNegatives.map(m => m.cause === 'contrainte'
+                ? { type: 'margeNegativeContrainte', texte: t('dcma.anomalie.margeNegativeContrainte', { tache: nom(m.tacheId) }) }
+                : { type: 'margeNegative', texte: t('dcma.anomalie.margeNegative', { tache: nom(m.tacheId) }) }),
         ];
 
         /* Le calendrier utilise est celui de l'UTILISATEUR, pas du projet :
