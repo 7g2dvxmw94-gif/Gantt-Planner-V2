@@ -30,9 +30,13 @@
    exclut les recapitulatives, les jalons et les taches terminees. Ici :
    ni phase, ni jalon, avancement < 100 %. « Terminee » veut dire
    avancement >= 100 %, comme l'alerte de retard existante.
+   UNE EXCEPTION, le point 5 (contraintes dures) : il compte AUSSI les
+   jalons incomplets (decision de l'utilisateur), car un jalon « Doit
+   finir le » est l'usage le plus courant d'une contrainte dure.
    ============================================================ */
 
-import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay, parseISO } from './utils.js';
+import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay, parseISO,
+         contrainteDe, CONTRAINTES_DURES } from './utils.js';
 
 /** PAM 4.6 et 4.8 : « 44 working days (2 months) ». */
 export const SEUIL_JOURS_OUVRES = 44;
@@ -317,9 +321,15 @@ export function evaluerDcma(entree) {
         points.push(p);
     }
 
-    // 5 — Contraintes dures : le modele n'en porte aucune.
-    points.push({ n: 5, cle: 'contraintes', valeur: null, unite: '%', numerateur: 0, denominateur: P.length,
-                  seuil: { op: '<=', valeur: 5 }, etat: 'sans-objet', raison: 'sans-contraintes', fautives: [] });
+    /* 5 — Contraintes dures (SNLT, FNLT, MSO, MFO : CONTRAINTES_DURES),
+       lues par contrainteDe comme partout ailleurs. Population : P ET les
+       jalons incomplets (voir POPULATION). Une contrainte souple (SNET,
+       FNET) ne compte pas : elle ne l'emporte jamais sur un lien. */
+    {
+        const P5 = nonPhases.filter(t => !terminee(t));
+        const dure = (t) => { const c = contrainteDe(t); return !!c && CONTRAINTES_DURES.includes(c.type); };
+        points.push(pointPourcent(5, 'contraintes', ids(P5.filter(dure)), P5.length, { op: '<=', valeur: 5 }));
+    }
 
     /* 6 et 7 — Marges. La marge vient du chemin critique, en jours ouvres,
        mesuree contre la fin PREVUE du projet. Avec une echeance, elle se
