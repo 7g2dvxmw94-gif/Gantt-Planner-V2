@@ -6,7 +6,8 @@
 import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { formatDateISO, formatDateDisplay, addDays, syncLog, parseISO, escapeHtml,
-         workingDaysBetween, addWorkingDays, contrainteDe, libelleContrainte } from './utils.js';
+         workingDaysBetween, addWorkingDays, contrainteDe, libelleContrainte,
+         contrainteApresDeplacement } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -738,10 +739,14 @@ class GanttInteractions {
             const newLeft = parseFloat(d.bar.style.left);
 
             const updates = {};
+            /* Les bords AFFICHES au lacher, pour une tache contrainte
+               (contrainteApresDeplacement, plus bas). */
+            let debutAffiche, finAffichee;
 
             if (d.isMilestone) {
                 // Milestone: position is left + 8 (centered), startDate = endDate
-                const newDate = formatDateISO(this._positionToDateFn(newLeft + 8));
+                debutAffiche = finAffichee = this._positionToDateFn(newLeft + 8);
+                const newDate = formatDateISO(debutAffiche);
                 updates.startDate = newDate;
                 updates.endDate = newDate;
             } else {
@@ -750,6 +755,8 @@ class GanttInteractions {
                 // Bar right edge = _dateToPosition(endDate + 1), so subtract 1 day
                 // Add 1px to width to account for sub-pixel rendering or rounding
                 const newEnd = addDays(this._positionToDateFn(newLeft + newWidth + 1), -1);
+                debutAffiche = newStart;
+                finAffichee = newEnd;
 
                 if (d.mode === 'move') {
                     /* Duree OUVREE conservee, comme partout ailleurs.
@@ -781,6 +788,22 @@ class GanttInteractions {
                 } else if (d.mode === 'resize-right') {
                     updates.endDate = formatDateISO(newEnd);
                 }
+            }
+
+            /* Une « Doit commencer le » ou une « Doit finir le » emmene sa
+               date (decision 3) : le bout vise prend le bord affiche, ramene
+               sur un jour ouvre, et la contrainte le suit. Dates ET
+               contrainte partent dans le MEME updateTask : un instantane,
+               un Ctrl+Z. Sans contrainte, ou bout vise immobile : null, et
+               les dates ci-dessus partent telles quelles. */
+            {
+                const avant = store.getTask(d.taskId);
+                const cal = store.getCalendar();
+                const suivie = avant && contrainteApresDeplacement({
+                    avant, mode: d.mode, debutAffiche, finAffichee,
+                    duree: workingDaysBetween(d.origStartDate, d.origEndDate, cal), cal,
+                });
+                if (suivie) Object.assign(updates, suivie);
             }
 
             // Check critical path BEFORE update so we capture pre-change state
@@ -817,9 +840,10 @@ class GanttInteractions {
                repoussee jusqu'a elle. Elle sort aussi, en tete, pour toute
                tache sans dependance NI contrainte : le cas courant ne coute
                rien. Une tache contrainte, liee ou non, est replacee sur sa
-               contrainte : une « Doit commencer le » ou une « Doit finir
-               le » deplacee a la souris revient a sa date, tant que le
-               glisser n'emmene pas la date avec lui. */
+               contrainte. Pour une « Doit commencer le » ou une « Doit
+               finir le » glissee par son bout vise, la contrainte a deja
+               suivi la souris (contrainteApresDeplacement, plus haut) : la
+               tache est donc placee la ou on l'a lachee. */
             store.applyPredecessorConstraints(d.taskId);
 
             // Log critical path alert for user-initiated drag changes

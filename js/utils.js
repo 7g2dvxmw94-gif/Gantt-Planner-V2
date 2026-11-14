@@ -938,6 +938,55 @@ export function conflitsContraintes(taches, getTask, calendar = defaultCalendar(
 }
 
 /**
+ * Ce que devient une tache CONTRAINTE glissee a la souris (decision 3 de
+ * l'utilisateur : « la contrainte suit la souris »). Pour une « Doit
+ * commencer le » (MSO) ou une « Doit finir le » (MFO) ; les contraintes
+ * souples rendent encore null (plan v4, PR 16).
+ *
+ * - Bout VISE : le debut pour MSO, la fin pour MFO. Bouts bouges : les deux
+ *   en deplacement ('move') ou pour un jalon, le debut en 'resize-left', la
+ *   fin en 'resize-right'. Si le bout vise n'a pas bouge, null : la
+ *   contrainte reste, et le placement ordinaire s'applique.
+ * - Cible : le bord AFFICHE du bout vise au lacher (debutAffiche pour un
+ *   debut, finAffichee pour une fin, meme en deplacement : c'est le seul
+ *   repere de l'utilisateur), ramene comme la date effective
+ *   (dateEffectiveContrainte) : jour ouvre suivant pour MSO, precedent
+ *   pour MFO.
+ * - Dates : le bout vise a la cible ; en deplacement, l'autre bout par
+ *   `duree` jours ouvres ; en redimensionnement, l'autre bout ne bouge
+ *   pas ; un jalon prend la cible.
+ * - Le type ne change jamais ; tout part en un seul updateTask, appele par
+ *   _finishDrag (gantt-interactions.js) : un instantane, un Ctrl+Z.
+ *
+ * @param {object} p
+ * @param {object} p.avant         la tache avant le glisser
+ * @param {string} p.mode          'move' | 'resize-left' | 'resize-right'
+ * @param {Date}   p.debutAffiche  bord gauche affiche au lacher
+ * @param {Date}   p.finAffichee   dernier jour couvert par la barre au lacher
+ * @param {number} p.duree         duree ouvree d'origine
+ * @returns {{startDate, endDate, constraintDate}|null}
+ */
+export function contrainteApresDeplacement({ avant, mode, debutAffiche, finAffichee, duree, cal = defaultCalendar() }) {
+    const c = contrainteDe(avant);
+    if (!c || (c.type !== 'MSO' && c.type !== 'MFO')) return null;
+    const jalon = !!avant.isMilestone;
+    const viseDebut = c.type === 'MSO';
+    const bouge = jalon || mode === 'move' || (viseDebut ? mode === 'resize-left' : mode === 'resize-right');
+    if (!bouge) return null;
+
+    const cible = dateEffectiveContrainte(c.type, viseDebut ? debutAffiche : finAffichee, cal);
+    const iso = formatDateISO(cible);
+    if (jalon) return { startDate: iso, endDate: iso, constraintDate: iso };
+    const n = Math.max(1, duree || 1) - 1;
+    if (viseDebut) {
+        const fin = mode === 'move' ? formatDateISO(addWorkingDays(cible, n, cal)) : avant.endDate;
+        return { startDate: iso, endDate: fin, constraintDate: iso };
+    }
+    const debut = mode === 'move' ? formatDateISO(addWorkingDays(cible, -n, cal)) : avant.startDate;
+    return { startDate: debut, endDate: iso, constraintDate: iso };
+}
+
+/**
  * La date EFFECTIVE d'une contrainte : sa date, ramenee sur un jour ouvre.
  *
  * - « au plus tot » (SNET, FNET) et « doit commencer » (MSO) : au jour

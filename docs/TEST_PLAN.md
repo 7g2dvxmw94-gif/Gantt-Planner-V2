@@ -364,6 +364,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 6 | Redo | Appuyer Ctrl+Y | Modification rétablie | |
 | 7 | Week-end | Glisser une tâche de 3 jours ouvrés pour qu'elle enjambe un week-end ou un férié, libre puis liée | La fiche affiche toujours 3 jours ouvrés : la fin saute le week-end ou le férié ; la liée est ramenée par son lien sans rétrécir | |
 | 8 | Contrainte et propagation | A (01 → 05/06), B Fin→Début de A « Doit finir le 10/06 », C Fin→Début de B, D Fin→Début de A ; repousser A à 08 → 12/06 dans sa fiche | D suit A (15 → 17/06) ; B tient sa date (08 → 10/06) et C reste derrière B (11 → 12/06) | |
+| 9 | Glisser une contrainte dure | R « Doit commencer le 15/06 » (15 → 17) glissée de 4 colonnes, puis Ctrl+Z ; R1 « Doit finir le 17/06 » étirée par la droite jusqu'au dimanche 21 ; R2 « Doit commencer le 15/06 » étirée par la gauche au vendredi 12 ; R3 « Doit commencer le 15/06 » étirée par la droite ; jalon « Doit commencer le 12/06 » lâché le dimanche 14 ; « Doit finir le 12/06 » (10 → 12) glissée de 8 colonnes, bord droit sur le samedi 20 | R : 19 → 23/06, « Doit commencer le 19/06/2026 », Ctrl+Z rend 15 → 17 et la date ; R1 : 15 → 19, « 19/06 » ; R2 : 12 → 17, « 12/06 » ; R3 : 15 → 19, contrainte inchangée ; jalon : 15/06 ; la MFO : 17 → 19, « 19/06 » (`contraintes-glisser.spec.js`) | |
 
 ---
 
