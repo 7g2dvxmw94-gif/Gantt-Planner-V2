@@ -9,7 +9,8 @@ import { themeManager } from './theme.js';
 import { ganttRenderer } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay } from './utils.js';
+import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
+         createElement, formatDateChiffres, libelleContrainte } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -106,6 +107,7 @@ class App {
         store.on('change', () => {
             this._renderStats();
             this._renderProjectName();
+            this._majConflitsBtn();
             this._applyRoleGating();
             this._refreshPhaseFilter();
             // Keep board view in sync when it's visible
@@ -114,7 +116,8 @@ class App {
             }
         });
 
-        store.on('project:change', () => this._applyRoleGating());
+        store.on('project:change', () => { this._applyRoleGating(); this._majConflitsBtn(); });
+        this._majConflitsBtn();
 
         // Render trial banner when plan info is loaded
         store.on('plan:loaded', () => this._renderTrialBanner());
@@ -1540,6 +1543,9 @@ class App {
         /* Rapport DCMA : une analyse en LECTURE SEULE. Il n'a donc pas sa
            place dans editOnlyIds, contrairement au chemin critique qui y
            figure sans raison — un lecteur doit pouvoir le consulter. */
+        const conflitsBtn = $('#conflitsBtn');
+        if (conflitsBtn) conflitsBtn.addEventListener('click', () => this._showConflits());
+
         const dcmaBtn = $('#dcmaBtn');
         if (dcmaBtn) {
             dcmaBtn.addEventListener('click', () => this._showDcmaReport());
@@ -6297,6 +6303,89 @@ tr:nth-child(even){background:#fafbfc}
     }
 
     /* ---- Rapport DCMA 14 points ---- */
+
+    /** Le bouton « ⚠ N conflits » : ABSENT tant que le projet actif n'a
+     *  aucun lien rompu par une contrainte (store.getConflitsContraintes).
+     *  Relu a chaque changement du store et de projet actif. */
+    _majConflitsBtn() {
+        const bouton = $('#conflitsBtn');
+        if (!bouton) return;
+        const n = store.getActiveProject() ? store.getConflitsContraintes().length : 0;
+        bouton.hidden = n === 0;
+        const texte = n ? t(n > 1 ? 'conflits.btn.plusieurs' : 'conflits.btn.un', { n }) : '';
+        bouton.querySelector('.conflits-btn-texte').textContent = texte;
+        bouton.setAttribute('aria-label', texte);
+        bouton.title = texte;
+        /* Sans conflit, la liste ouverte n'a plus d'objet : elle se ferme. */
+        if (n === 0 && document.getElementById('conflitsModal')) this._fermerConflits();
+    }
+
+    _fermerConflits() {
+        document.getElementById('conflitsModal')?.remove();
+        const bouton = $('#conflitsBtn');
+        if (bouton && !bouton.hidden) bouton.focus();
+    }
+
+    /** La liste des conflits de contrainte, dans une fenetre modale.
+     *  Construite par createElement / textContent, jamais innerHTML : les
+     *  noms des taches viennent peut-etre d'un autre compte. */
+    _showConflits() {
+        document.getElementById('conflitsModal')?.remove();
+        const conflits = store.getConflitsContraintes();
+        if (!conflits.length) return;
+
+        const overlay = createElement('div', { id: 'conflitsModal', className: 'modal-overlay active' });
+        const dialog = createElement('div', {
+            className: 'modal conflits-modal', role: 'dialog',
+            'aria-modal': 'true', 'aria-labelledby': 'conflitsTitre',
+        });
+        const croix = createElement('button', { className: 'icon-btn conflits-close', 'aria-label': t('conflits.fermer') }, '×');
+        dialog.appendChild(createElement('div', { className: 'modal-header' }, [
+            createElement('h2', { className: 'modal-title', id: 'conflitsTitre' },
+                t(conflits.length > 1 ? 'conflits.btn.plusieurs' : 'conflits.btn.un', { n: conflits.length })),
+            croix,
+        ]));
+
+        const corps = createElement('div', { className: 'modal-body' });
+        corps.appendChild(createElement('p', { className: 'conflits-intro' }, t('conflits.intro')));
+        const liste = createElement('ul', { className: 'conflits-liste' });
+        conflits.forEach(c => {
+            const ouvrir = createElement('button', { className: 'btn btn-secondary btn-sm' }, t('conflits.ouvrir'));
+            ouvrir.addEventListener('click', () => {
+                /* La liste QUITTE le DOM avant que la fiche s'ouvre : deux
+                   fenetres aria-modal visibles a la fois tromperaient le
+                   piege a focus et la garde des raccourcis. */
+                document.getElementById('conflitsModal')?.remove();
+                taskModal.openEdit(c.tache.id);
+            });
+            liste.appendChild(createElement('li', { className: 'conflit-ligne' }, [
+                createElement('p', { className: 'conflit-tache' }, [
+                    createElement('strong', {}, c.tache.name),
+                    createElement('span', { className: 'conflit-contrainte' }, ' — ' + libelleContrainte(c.contrainte)),
+                ]),
+                createElement('p', { className: 'conflit-detail' }, t('conflits.detail', {
+                    pred: c.pred.name,
+                    type: t(`conflits.type.${c.type}`),
+                    exige: formatDateChiffres(c.exige),
+                    tient: formatDateChiffres(c.tient),
+                    ecart: t(c.ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: c.ecart }),
+                })),
+                ouvrir,
+            ]));
+        });
+        corps.appendChild(liste);
+        corps.appendChild(createElement('p', { className: 'conflits-calendrier' }, t('conflits.calendrier')));
+        dialog.appendChild(corps);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        croix.addEventListener('click', () => this._fermerConflits());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) this._fermerConflits(); });
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); this._fermerConflits(); }
+        });
+        croix.focus();
+    }
 
     /** Ouvre le rapport DCMA du projet ACTIF dans une fenetre modale.
      *

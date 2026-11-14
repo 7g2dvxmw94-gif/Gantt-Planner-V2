@@ -106,6 +106,12 @@ class GanttRenderer {
         this._timelineRange = store.getTimelineRange(this._zoomLevel);
         // Cache baseline state for this render pass
         this._activeBaseline = store.getActiveBaseline();
+        // Constraint conflicts of this pass: the marker of each task in conflict turns red
+        this._conflitsParTache = new Map();
+        store.getConflitsContraintes().forEach(c => {
+            if (!this._conflitsParTache.has(c.tache.id)) this._conflitsParTache.set(c.tache.id, []);
+            this._conflitsParTache.get(c.tache.id).push(c);
+        });
 
         // Calculate day columns for positioning
         this._dayColumns = getDaysBetween(this._timelineRange.start, this._timelineRange.end);
@@ -620,11 +626,17 @@ class GanttRenderer {
         if (pos === null) return;
         const sens = (c.type === 'MSO' || c.type === 'MFO') ? 'doit'
             : (c.type === 'SNET' || c.type === 'FNET') ? 'plus-tot' : 'plus-tard';
+        /* En conflit : la contrainte rompt au moins un lien (detecteur de
+           render()). Le nom accessible le dit, en plus du rouge. */
+        const conflits = (this._conflitsParTache && this._conflitsParTache.get(task.id)) || [];
+        const nom = conflits.length
+            ? libelleContrainte(c) + ' — ' + t(conflits.length > 1 ? 'conflits.repere.plusieurs' : 'conflits.repere.un', { n: conflits.length })
+            : libelleContrainte(c);
         container.appendChild(createElement('div', {
-            className: `gantt-contrainte ${sens}`,
+            className: `gantt-contrainte ${sens}` + (conflits.length ? ' en-conflit' : ''),
             style: { left: pos + 'px' },
             role: 'img',
-            'aria-label': libelleContrainte(c),
+            'aria-label': nom,
             dataset: { contrainte: c.type },
         }));
     }
@@ -893,6 +905,11 @@ class GanttRenderer {
             }
         });
 
+        /* Liens rompus par une contrainte, relus ICI et non au debut de
+           render() : refreshDependencies() redessine les liens seuls, apres
+           un glisser, sur un planning qui a pu changer. */
+        const rompus = new Set(store.getConflitsContraintes().map(c => `${c.pred.id}|${c.tache.id}|${c.type}`));
+
         // Collect dependencies with link type
         const deps = [];
         tasks.forEach(task => {
@@ -972,6 +989,15 @@ class GanttRenderer {
                 // Draw elbow path
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.classList.add('dep-line');
+                path.dataset.pred = dep.from;
+                path.dataset.succ = dep.to;
+                const rompu = rompus.has(`${dep.from}|${dep.to}|${dep.type}`);
+                if (rompu) {
+                    path.classList.add('dep-conflit');
+                    const titre = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    titre.textContent = t('conflits.lien.titre');
+                    path.appendChild(titre);
+                }
 
                 const gap = 12;
                 const arrowSize = 6;
@@ -1001,6 +1027,7 @@ class GanttRenderer {
                 // Arrowhead
                 const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
                 arrow.classList.add('dep-arrow');
+                if (rompu) arrow.classList.add('dep-conflit');
                 if (arrowDir === 'right') {
                     arrow.setAttribute('points', `${endX - arrowSize} ${toY - 4}, ${endX} ${toY}, ${endX - arrowSize} ${toY + 4}`);
                 } else {

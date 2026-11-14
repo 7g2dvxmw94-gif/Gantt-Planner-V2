@@ -8,7 +8,7 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines,
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween, isWorkingDay,
-         CONTRAINTES, contrainteDe, exigenceDuLien, dateEffectiveContrainte,
+         CONTRAINTES, contrainteDe, liensNonTenus, dateEffectiveContrainte,
          formatDateJour,
          TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
 
@@ -1206,7 +1206,7 @@ class TaskModal {
      * store.placementPrevu(), c'est-a-dire du recalage d'updateTask() puis
      * de _computeConstrainedDates(), le calcul meme qu'applique ensuite
      * applyPredecessorConstraints() ; la date retenue, de
-     * dateEffectiveContrainte() ; ce qu'exige un lien, d'exigenceDuLien().
+     * dateEffectiveContrainte() ; les liens qu'il ne tient pas, de liensNonTenus().
      * Une seconde implementation de la regle finirait par diverger de la
      * premiere, et l'apercu mentirait.
      *
@@ -1360,18 +1360,9 @@ class TaskModal {
 
             /* Chaque lien entrant que le placement ne tient pas : la
                contrainte l'emporte (decision de l'utilisateur, comme
-               MS Project), et le lien sera rompu. L'ecart se compte en
-               jours ouvres, de la date tenue a la date exigee, toutes deux
-               ouvrees. */
-            for (const dep of tache.dependencies) {
-                const pred = store.getTask(dep.taskId);
-                if (!pred) continue;
-                const exigence = exigenceDuLien(dep, pred, cal);
-                if (!exigence) continue;
-                const exige = formatDateISO(exigence.date);
-                const tient = exigence.borne === 'debut' ? place.startDate : place.endDate;
-                if (tient >= exige) continue;
-                const ecart = workingDaysBetween(tient, exige, cal) - 1;
+               MS Project), et le lien sera rompu. La regle est celle du
+               detecteur de conflits (liensNonTenus, utils.js). */
+            for (const { pred, exige, tient, ecart } of liensNonTenus(tache, place, (id) => store.getTask(id), cal)) {
                 lignes.push(['contrainte-apercu-rompu', t('task.constraint.lienRompu', {
                     pred: pred.name,
                     exige: formatDateJour(exige),

@@ -7,7 +7,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
          contrainteDe, exigenceDuLien, appliquerContrainte,
-         dateEffectiveContrainte } from './utils.js';
+         dateEffectiveContrainte, conflitsContraintes } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -3469,6 +3469,14 @@ class Store {
         if (!task || task.isPhase || !task.startDate || !task.endDate) return null;
         const cale = this._snapToWorkingDays(task.startDate, task.endDate);
         return this._computeConstrainedDates({ ...task, ...cale }) || cale;
+    }
+
+    /** Les conflits de contrainte du projet ACTIF : chaque lien qu'une
+     *  contrainte dure rompt (conflitsContraintes, utils.js). Le calendrier
+     *  est celui de l'UTILISATEUR (ses reglages) : un collegue dont le
+     *  calendrier differe peut voir une autre liste, et la liste le dit. */
+    getConflitsContraintes() {
+        return conflitsContraintes(this.getTasks(), (id) => this.getTask(id), this._getCalendar());
     }
 
     /** Dates qu'imposeraient a `task` ses predecesseurs, lus dans `getTask`
