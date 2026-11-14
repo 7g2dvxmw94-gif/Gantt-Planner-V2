@@ -2309,6 +2309,22 @@ class Store {
             .catch(e => console.error('[store] sync applyPredecessorConstraints:', e));
     }
 
+    /** « Replacer » (liste des conflits) : place la tache selon ses liens
+     *  et sa contrainte, EN UN GESTE ANNULABLE. applyPredecessorConstraints
+     *  ne prend pas d'instantane (il suit une ecriture qui en a pris un) :
+     *  sans celui-ci, Ctrl+Z ne rendrait pas les dates d'avant. Aucun
+     *  instantane quand le placement ne change rien.
+     *  @returns {boolean} la tache a bouge */
+    replacerTache(taskId) {
+        const task = this.getTask(taskId);
+        if (!task) return false;
+        const cible = this._computeConstrainedDates(task);
+        if (!cible || (cible.startDate === task.startDate && cible.endDate === task.endDate)) return false;
+        this._snapshot();
+        this.applyPredecessorConstraints(taskId);
+        return true;
+    }
+
     /** Aperçu de l'impact du passage en jours ouvres, SANS rien modifier.
      *
      * A lancer avant migrateToWorkingDays() : les durees passant de
