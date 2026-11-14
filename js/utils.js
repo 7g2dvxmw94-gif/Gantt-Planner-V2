@@ -987,6 +987,28 @@ export function contrainteApresDeplacement({ avant, mode, debutAffiche, finAffic
 }
 
 /**
+ * Les liens qu'un glisser ROMPRAIT, sans rien ecrire (decision 8 de
+ * l'utilisateur, regle 6 du plan) : le placement FINAL de la tache
+ * glissee (`placer`, le calcul meme du moteur) compare a son etat d'avant.
+ * Rend les conflits « lien rompu » (conflitsContraintes) de la tache
+ * placee qui n'existaient pas avant le glisser. Un lien deja rompu ne
+ * compte pas ; un lien d'un SUCCESSEUR non plus (le toast le dira).
+ *
+ * @param {object}   p.avant    la tache avant le glisser
+ * @param {object}   p.updates  ce que le glisser ecrirait (dates, contrainte)
+ * @param {Function} p.placer   (tache, getTask) → { startDate, endDate } | null
+ */
+export function liensRompusAuLacher({ avant, updates, placer, getTask, cal = defaultCalendar() }) {
+    const cle = (c) => `${c.pred.id}|${c.type}`;
+    const liens = (t) => conflitsContraintes([t], getTask, cal).filter(c => c.sorte === 'lien');
+    const avantCles = new Set(liens(avant).map(cle));
+    const apres = { ...avant, ...updates };
+    const place = placer(apres, getTask);
+    const final = place ? { ...apres, startDate: place.startDate, endDate: place.endDate } : apres;
+    return liens(final).filter(c => !avantCles.has(cle(c)));
+}
+
+/**
  * La date EFFECTIVE d'une contrainte : sa date, ramenee sur un jour ouvre.
  *
  * - « au plus tot » (SNET, FNET) et « doit commencer » (MSO) : au jour

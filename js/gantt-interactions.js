@@ -7,7 +7,7 @@ import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { formatDateISO, formatDateDisplay, addDays, syncLog, parseISO, escapeHtml,
          workingDaysBetween, addWorkingDays, contrainteDe, libelleContrainte,
-         contrainteApresDeplacement } from './utils.js';
+         contrainteApresDeplacement, liensRompusAuLacher } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -49,6 +49,9 @@ class GanttInteractions {
         /* Appele juste avant l'ecriture d'un glisser horizontal : app.js y
            releve les conflits d'avant (voir onUpdate). */
         this._avantEcriture = opts.avantEcriture || null;
+        /* (details) → Promise<boolean> : demande, avant d'ecrire un glisser
+           qui romprait un lien, s'il faut continuer (app.js). */
+        this._confirmerRuptureLien = opts.confirmerRuptureLien || null;
         this._onPinchZoom = opts.onPinchZoom || null;
         this._zoomColWidthFn = opts.getColWidth;
         this._zoomLevelFn = opts.getZoomLevel || null;
@@ -806,6 +809,9 @@ class GanttInteractions {
                 if (suivie) Object.assign(updates, suivie);
             }
 
+            /* L'ecriture du glisser, telle quelle. Elle peut attendre la
+               reponse de la fenetre ci-dessous : rien n'est ecrit avant. */
+            const ecrire = () => {
             // Check critical path BEFORE update so we capture pre-change state
             const taskBeforeDrag = store.getTask(d.taskId);
             const criticalIds = (taskBeforeDrag && !taskBeforeDrag.isPhase)
@@ -858,6 +864,35 @@ class GanttInteractions {
             }
 
             if (this._onUpdate) this._onUpdate();
+            };
+
+            /* Fenetre « Rompre un lien ? » (decision 8). Le placement FINAL
+               est calcule sans rien ecrire ; s'il rompt un lien entrant qui
+               tenait, la question est posee et RIEN n'est ecrit avant la
+               reponse : « Annuler » redessine seulement (la barre revient),
+               sans instantane ni ecriture ; « Continuer quand meme » ecrit
+               exactement comme sans fenetre. L'etat du glisser est remis a
+               zero tout de suite : la fenetre peut attendre. */
+            const avant = store.getTask(d.taskId);
+            const rompus = (this._confirmerRuptureLien && avant)
+                ? liensRompusAuLacher({
+                    avant, updates,
+                    placer: (t, getTask) => store.computeConstrainedDatesIn(t, getTask),
+                    getTask: (id) => store.getTask(id),
+                    cal: store.getCalendar(),
+                })
+                : [];
+            this._isDragging = false;
+            this._dragData = null;
+            if (!rompus.length) { ecrire(); return; }
+
+            const focusAvant = document.activeElement;
+            this._confirmerRuptureLien({ tache: avant, liens: rompus }).then((continuer) => {
+                if (continuer) ecrire();
+                else if (this._onUpdate) this._onUpdate();
+                if (focusAvant && typeof focusAvant.focus === 'function' && document.contains(focusAvant)) focusAvant.focus();
+            });
+            return;
         }
 
         this._isDragging = false;
