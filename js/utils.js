@@ -776,7 +776,7 @@ export const CONTRAINTES = Object.freeze(['SNET', 'SNLT', 'FNET', 'FNLT', 'MSO',
 /** Les contraintes DURES : les seules qui peuvent l'emporter contre un
  *  lien (appliquerContrainte), et celles que comptera le point 5 du
  *  rapport DCMA. Seul le detecteur de conflits (conflitsContraintes) la
- *  lit : le moteur applique la regle de chaque type sans la consulter,
+ *  lit, pour les liens rompus : le moteur applique la regle de chaque type sans la consulter,
  *  dcma.js ne l'importe pas, et le point 5 repond toujours « sans objet ». */
 export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
 
@@ -890,8 +890,14 @@ export function liensNonTenus(tache, place, getTask, calendar = defaultCalendar(
 }
 
 /**
- * Les conflits de contrainte d'un ensemble de taches : chaque lien qu'une
- * contrainte DURE (CONTRAINTES_DURES) rompt, en l'emportant sur lui.
+ * Les conflits de contrainte d'un ensemble de taches, de deux sortes :
+ * - 'lien' : chaque lien qu'une contrainte DURE (CONTRAINTES_DURES) rompt,
+ *   en l'emportant sur lui ;
+ * - 'non-tenue' : la tache viole sa PROPRE contrainte, quel qu'en soit le
+ *   type (« Doit commencer le 15 » posee le 17, « au plus tot le 10 »
+ *   posee le 8...). Le moteur ne laisse jamais une tache ainsi ; des dates
+ *   arrivees sans placement le peuvent : un import, un changement de
+ *   calendrier, l'ecriture d'un client reste sur l'ancien code.
  *
  * Un etat derive du planning, jamais un evenement : il disparait des que
  * le planning est coherent. Une tache « Des que possible », SNET ou FNET
@@ -902,16 +908,29 @@ export function liensNonTenus(tache, place, getTask, calendar = defaultCalendar(
  *
  * Ne parcourt que les taches contraintes (contrainteDe), pas le reseau.
  *
- * @returns {Array<{tache, contrainte, pred, type, exige, tient, ecart}>}
+ * Pour 'non-tenue', `exige` est la date effective de la contrainte
+ * (dateEffectiveContrainte) et `tient` la borne visee de la tache.
+ *
+ * @returns {Array<{sorte: 'lien'|'non-tenue', tache, contrainte, pred?, type?, exige, tient, ecart?}>}
  */
 export function conflitsContraintes(taches, getTask, calendar = defaultCalendar()) {
     const conflits = [];
     for (const tache of taches) {
         const contrainte = contrainteDe(tache);
-        if (!contrainte || !CONTRAINTES_DURES.includes(contrainte.type)) continue;
+        if (!contrainte) continue;
         if (!tache.startDate || !tache.endDate) continue;
+
+        const { type } = contrainte;
+        const exige = formatDateISO(dateEffectiveContrainte(type, contrainte.date, calendar));
+        const tient = (type === 'SNET' || type === 'SNLT' || type === 'MSO') ? tache.startDate : tache.endDate;
+        const violee = (type === 'SNET' || type === 'FNET') ? tient < exige
+                     : (type === 'SNLT' || type === 'FNLT') ? tient > exige
+                     : tient !== exige;
+        if (violee) conflits.push({ sorte: 'non-tenue', tache, contrainte, exige, tient });
+
+        if (!CONTRAINTES_DURES.includes(type)) continue;
         for (const r of liensNonTenus(tache, tache, getTask, calendar)) {
-            conflits.push({ tache, contrainte, pred: r.pred, type: r.dep.type || 'FS',
+            conflits.push({ sorte: 'lien', tache, contrainte, pred: r.pred, type: r.dep.type || 'FS',
                             exige: r.exige, tient: r.tient, ecart: r.ecart });
         }
     }

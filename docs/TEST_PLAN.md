@@ -291,6 +291,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 6 | Lien rompu | Choisir « Doit commencer le » 04/06/2026 | Avant d'enregistrer, l'aperçu dit « Lien rompu avec « A » : il exige le lundi 08/06/2026, la contrainte tiendrait le jeudi 04/06/2026, 2 jours ouvrés plus tôt » ; enregistrée, B est placée 04 → 08/06 | |
 | 7 | Types | Ouvrir la fiche d'un jalon, d'un permis, d'une phase | La ligne est présente pour le jalon et le permis, absente pour la phase | |
 | 8 | Conflit | Après l'étape 6 (B « Doit commencer le » 04/06, lien A→B rompu) | Un bouton « ⚠ 1 conflit » dans la barre d'outils ; le lien A→B est rouge en tirets, le repère de B rouge ; la liste nomme B, A, « Fin→Début », exige le 08/06/2026, tient le 04/06/2026, « 2 jours ouvrés », et dit « Calculé avec votre calendrier » ; « Ouvrir la fiche » ferme la liste et ouvre la fiche de B ; une contrainte souple (SNET, FNET) n'est jamais listée ; A posée 01 → 03/06 : le bouton disparaît (`contraintes-conflits.spec.js`) | |
+| 9 | Non tenue | Importer R « Doit commencer le » 15/06/2026 aux dates 17 → 19/06, et S, même contrainte, aux dates 15 → 17/06 | « ⚠ 1 conflit » ; la ligne de R dit « Contrainte non tenue : elle exige le 15/06/2026, la tâche tient le 17/06/2026 » ; le repère de R est rouge ; S n'est pas listée (`contraintes-non-tenues.spec.js`) | |
 
 ---
 

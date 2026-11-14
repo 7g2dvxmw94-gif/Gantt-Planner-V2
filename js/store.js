@@ -3472,7 +3472,8 @@ class Store {
     }
 
     /** Les conflits de contrainte du projet ACTIF : chaque lien qu'une
-     *  contrainte dure rompt (conflitsContraintes, utils.js). Le calendrier
+     *  contrainte dure rompt, et chaque contrainte que les dates de sa
+     *  tache ne tiennent pas (conflitsContraintes, utils.js). Le calendrier
      *  est celui de l'UTILISATEUR (ses reglages) : un collegue dont le
      *  calendrier differe peut voir une autre liste, et la liste le dit. */
     getConflitsContraintes() {

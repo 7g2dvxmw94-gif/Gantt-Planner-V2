@@ -629,9 +629,11 @@ class GanttRenderer {
         /* En conflit : la contrainte rompt au moins un lien (detecteur de
            render()). Le nom accessible le dit, en plus du rouge. */
         const conflits = (this._conflitsParTache && this._conflitsParTache.get(task.id)) || [];
-        const nom = conflits.length
-            ? libelleContrainte(c) + ' — ' + t(conflits.length > 1 ? 'conflits.repere.plusieurs' : 'conflits.repere.un', { n: conflits.length })
-            : libelleContrainte(c);
+        const liens = conflits.filter(x => x.sorte === 'lien').length;
+        const etats = [];
+        if (conflits.some(x => x.sorte === 'non-tenue')) etats.push(t('conflits.repere.nonTenue'));
+        if (liens) etats.push(t(liens > 1 ? 'conflits.repere.plusieurs' : 'conflits.repere.un', { n: liens }));
+        const nom = etats.length ? libelleContrainte(c) + ' — ' + etats.join(', ') : libelleContrainte(c);
         container.appendChild(createElement('div', {
             className: `gantt-contrainte ${sens}` + (conflits.length ? ' en-conflit' : ''),
             style: { left: pos + 'px' },
@@ -908,7 +910,9 @@ class GanttRenderer {
         /* Liens rompus par une contrainte, relus ICI et non au debut de
            render() : refreshDependencies() redessine les liens seuls, apres
            un glisser, sur un planning qui a pu changer. */
-        const rompus = new Set(store.getConflitsContraintes().map(c => `${c.pred.id}|${c.tache.id}|${c.type}`));
+        const rompus = new Set(store.getConflitsContraintes()
+            .filter(c => c.sorte === 'lien')
+            .map(c => `${c.pred.id}|${c.tache.id}|${c.type}`));
 
         // Collect dependencies with link type
         const deps = [];
