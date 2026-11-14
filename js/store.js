@@ -2276,8 +2276,10 @@ class Store {
      *  Application STRICTE : la tache est placee exactement ou ses liens
      *  et sa contrainte l'exigent. Pour introduire un ecart, il faut un
      *  decalage sur le lien, ou une contrainte « au plus tot » (SNET,
-     *  FNET) qui retarde la tache au-dela de ce qu'exigent ses liens —
-     *  pas un deplacement a la souris, qui serait perdu au premier
+     *  FNET) qui retarde la tache au-dela de ce qu'exigent ses liens, ou
+     *  une « Doit commencer / finir le », dont le glisser emmene la date
+     *  (contrainteApresDeplacement, utils.js) — pas le deplacement a la
+     *  souris d'une tache sans contrainte, qui serait perdu au premier
      *  mouvement du predecesseur.
      *
      *  Une tache SANS LIEN mais contrainte est placee aussi, par sa seule
