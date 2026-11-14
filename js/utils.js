@@ -86,6 +86,18 @@ export function formatDateJour(date) {
 }
 
 /**
+ * Date en chiffres : « 03/06/2026 » en français, « 06/03/2026 » en anglais.
+ */
+export function formatDateChiffres(date) {
+    const d = parseISO(date);
+    return d.toLocaleDateString(_getLocale(), {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+/**
  * Format a short date (e.g. "15 Mar")
  */
 export function formatDateShort(date) {
@@ -775,11 +787,12 @@ export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
  * devra passer par lui (le moteur, les marges, la fiche, le rendu, le
  * DCMA, l'export MS Project, l'export CSV) : undefined, '', 'ASAP' ou
  * une valeur illisible vaudront alors partout « Des que possible ».
- * Aujourd'hui, quatre appelants : taskToRow (supabase-store.js), pour
+ * Aujourd'hui, six appelants : taskToRow (supabase-store.js), pour
  * l'ECRITURE EN BASE, _computeConstrainedDates (store.js), pour le
- * PLACEMENT, analyzeNetwork (store.js), pour les MARGES, et la fiche
+ * PLACEMENT, analyzeNetwork (store.js), pour les MARGES, la fiche
  * (task-modal.js), qui relit la contrainte a l'ouverture et juge la
- * saisie avant de l'enregistrer.
+ * saisie avant de l'enregistrer, et le Gantt : le repere de chaque
+ * ligne (gantt-renderer.js) et l'infobulle (gantt-interactions.js).
  *
  * DEUX EXCEPTIONS lisent ou gardent les champs BRUTS, sans passer par
  * lui :
@@ -864,6 +877,17 @@ export function exigenceDuLien(dep, pred, calendar = defaultCalendar()) {
  *
  * @returns {Date} date locale
  */
+/**
+ * Le nom d'une contrainte telle que le Gantt la montre, sur son repère
+ * comme dans l'infobulle : « Début au plus tôt le 03/06/2026 ». `c` est ce
+ * que rend contrainteDe() ; la date est la date SAISIE. Une seule règle
+ * pour les deux lieux, qui ne peuvent donc pas dire deux choses.
+ */
+export function libelleContrainte(c) {
+    // t() vient de i18n.js, script classique chargé avant les modules.
+    return t('gantt.contrainte.libelle', { type: t(`task.constraint.${c.type}`), date: formatDateChiffres(c.date) });
+}
+
 export function dateEffectiveContrainte(type, date, calendar = defaultCalendar()) {
     return (type === 'SNET' || type === 'FNET' || type === 'MSO')
         ? nextWorkingDay(date, calendar)
