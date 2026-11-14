@@ -7,7 +7,8 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, previousWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
          contrainteDe, exigenceDuLien, appliquerContrainte,
-         dateEffectiveContrainte, conflitsContraintes } from './utils.js';
+         dateEffectiveContrainte, conflitsContraintes,
+         normaliserRecherche, typeContrainteDepuisTexte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 
@@ -4279,6 +4280,18 @@ class Store {
             const colPhase = find(['phase', 'groupe', 'group', 'catégorie', 'categorie', 'section', 'wbs']);
             const colAssignee = find(['ressource', 'resource', 'assigné', 'assigne', 'assignee', 'responsable']);
 
+            /* Contrainte de date : deux colonnes reconnues par leur en-tete
+               ENTIER, jamais par un mot qu'il contient. Une colonne de
+               notes « Contraintes » (acces, livraisons...) n'est pas un
+               type, et « date » seul est trop commun. */
+            const entete = (variantes) => {
+                const i = headerMap.findIndex(h => variantes.includes(normaliserRecherche(h).trim().replace(/\s+/g, ' ')));
+                return i >= 0 ? headerMap[i] : null;
+            };
+            const colConstraintType = entete(['type de contrainte', 'constraint type']);
+            const colConstraintDate = entete(['date de contrainte', 'constraint date']);
+            this._avertissementsImport = [];
+
             if (!colName) {
                 console.error('No name column found. Headers:', headers);
                 return null;
@@ -4326,6 +4339,17 @@ class Store {
                 const phaseName = colPhase ? String(row[colPhase] || '').trim() : '';
                 const assigneeName = colAssignee ? String(row[colAssignee] || '').trim() : '';
 
+                /* La contrainte : un type reconnu ET une date lisible, ou
+                   rien. « Le plus tard possible » n'existe pas ici (decision
+                   de l'utilisateur) : la tache arrive en « des que
+                   possible », et l'avertissement la nomme, comme a l'import
+                   MS Project. */
+                const typeLu = colConstraintType ? typeContrainteDepuisTexte(row[colConstraintType]) : null;
+                const dateLue = colConstraintDate ? fmtDate(row[colConstraintDate]) : '';
+                if (typeLu === 'ALAP') this._avertissementsImport.push({ type: 'alap', nom: name });
+                const contrainte = (typeLu && typeLu !== 'ALAP' && dateLue)
+                    ? { constraintType: typeLu, constraintDate: dateLue } : {};
+
                 let parentId = null;
                 if (phaseName && phaseName !== name) {
                     if (!phaseMap[phaseName]) {
@@ -4372,6 +4396,7 @@ class Store {
                     dependencies: [],
                     order: tasks.length,
                     color: '#3B82F6',
+                    ...contrainte,
                 });
             });
 

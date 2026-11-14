@@ -1030,6 +1030,39 @@ export function liensRompusAuLacher({ avant, updates, placer, getTask, cal = def
 }
 
 /**
+ * Le type de contrainte d'un texte de tableur : son libelle (celui de la
+ * fiche, ou celui de MS Project, en francais ou en anglais) ou son code
+ * (MSO, SNET...), casse, accents et espaces de bord ignores
+ * (normaliserRecherche, la regle de la recherche).
+ *
+ * @returns {string|null|'ALAP'|undefined} un code de CONTRAINTES ;
+ *          null pour « des que possible » ou une case vide ; 'ALAP' pour
+ *          « le plus tard possible », que l'application n'a pas ;
+ *          undefined pour un texte qui n'est rien de tout cela.
+ */
+export function typeContrainteDepuisTexte(texte) {
+    const n = normaliserRecherche(texte).trim().replace(/\s+/g, ' ');
+    if (!n) return null;
+    for (const [type, libelles] of Object.entries(LIBELLES_CONTRAINTES)) {
+        if (libelles.includes(n)) return type === 'ASAP' ? null : type;
+    }
+    return undefined;
+}
+
+/** Les textes reconnus pour chaque type, deja normalises : code, libelle
+ *  de la fiche (fr, en), libelle de MS Project (fr, en). */
+const LIBELLES_CONTRAINTES = {
+    ASAP: ['asap', 'des que possible', 'as soon as possible'],
+    ALAP: ['alap', 'le plus tard possible', 'as late as possible'],
+    SNET: ['snet', 'debut au plus tot le', 'start no earlier than'],
+    SNLT: ['snlt', 'debut au plus tard le', 'start no later than'],
+    FNET: ['fnet', 'fin au plus tot le', 'finish no earlier than'],
+    FNLT: ['fnlt', 'fin au plus tard le', 'finish no later than'],
+    MSO:  ['mso', 'doit commencer le', 'must start on'],
+    MFO:  ['mfo', 'doit finir le', 'must finish on'],
+};
+
+/**
  * La date EFFECTIVE d'une contrainte : sa date, ramenee sur un jour ouvre.
  *
  * - « au plus tot » (SNET, FNET) et « doit commencer » (MSO) : au jour

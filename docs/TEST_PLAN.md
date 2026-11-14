@@ -516,6 +516,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 6 | Propriétés | Vérifier dates et relations | Propriétés conservées | |
 | 7 | Export des contraintes | Exporter en XML six tâches, une par type de contrainte | Chaque <Task> porte <ConstraintType> (2 à 7) et <ConstraintDate> (08:00 pour un début, 17:00 pour une fin), entre <PercentComplete> et <PredecessorLink> ; rien pour « Dès que possible » (`export-xml-contraintes.spec.js`) | |
 | 8 | Import des contraintes | Importer un XML dont les tâches portent les contraintes 1 à 7, une récapitulative contrainte, une « début au plus tôt » le 12/06 à 17:00 et une « doit commencer le » que ses dates ne tiennent pas | Les types 2 à 7 arrivent avec leur date ; la 17:00 dit le 15/06 ; « le plus tard possible » arrive en « Dès que possible » et un avertissement la nomme ; la récapitulative n'a pas de contrainte ; la « doit commencer » décalée est listée « non tenue » (`import-xml-contraintes.spec.js`) | |
+| 9 | Import Excel des contraintes | Importer un .xlsx aux colonnes « Type de contrainte » et « Date de contrainte » (libellés de la fiche, code MSO, « Le plus tard possible ») et une colonne de notes « Contraintes » | Les types et dates arrivent (cellule date ou texte, sans recul d'un jour sous Paris) ; « Le plus tard possible » arrive en « Dès que possible » avec un avertissement ; la colonne « Contraintes » n'est pas lue comme un type (`import-excel-contraintes.spec.js`) | |
 ---
 
 ## H. Cloud - Google Drive
