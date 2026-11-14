@@ -106,7 +106,7 @@ test('le bouton DCMA ouvre le rapport du projet actif', async ({ page }) => {
     await expect(ligne(2)).toHaveAttribute('data-etat', 'alerte');
     await expect(ligne(4).locator('.dcma-valeur')).toHaveText('100 % (2/2)');
     await expect(ligne(4)).toHaveAttribute('data-etat', 'ok');
-    await expect(ligne(5)).toHaveAttribute('data-etat', 'sans-objet');
+    await expect(ligne(5), 'aucune contrainte dure : point 5 à 0 %').toHaveAttribute('data-etat', 'ok');
     await expect(ligne(7)).toHaveAttribute('data-etat', 'na');
     /* Le test du chemin critique passe par le placement du store : le voir
        conforme établit que le rapport a bien reçu le vrai moteur. */

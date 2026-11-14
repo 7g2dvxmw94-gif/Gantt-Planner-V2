@@ -68,7 +68,7 @@ const APRES = '2027-06-30';
  *  l'échéance. */
 const COMMUNS = {
     1: '1:100:alerte /4 [A,B,Z,M]', 2: '2:0:ok /1 []', 3: '3:0:ok /1 []', 4: '4:100:ok /1 []',
-    5: '5:—:sans-objet /4 []', 8: '8:25:alerte /4 [Z]', 9: '9:0:ok /4 []', 10: '10:100:info /4 [A,B,Z,M]',
+    5: '5:0:ok /4 []', 8: '8:25:alerte /4 [Z]', 9: '9:0:ok /4 []', 10: '10:100:info /4 [A,B,Z,M]',
     11: '11:—:na /0 []', 12: '12:—:na /undefined []', 14: '14:—:na /undefined []',
 };
 const D3_AVANT = { ...COMMUNS, 6: '6:75:alerte /4 [A,B,M]', 7: '7:25:alerte /4 [Z]', 13: '13:0.85:alerte /undefined []' };
