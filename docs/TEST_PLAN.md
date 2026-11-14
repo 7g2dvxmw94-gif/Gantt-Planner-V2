@@ -513,7 +513,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 4 | Import | Cliquer "Importer" | Données converties | |
 | 5 | Vérification | Vérifier les tâches | Tâches importées correctement | |
 | 6 | Propriétés | Vérifier dates et relations | Propriétés conservées | |
-
+| 7 | Export des contraintes | Exporter en XML six tâches, une par type de contrainte | Chaque <Task> porte <ConstraintType> (2 à 7) et <ConstraintDate> (08:00 pour un début, 17:00 pour une fin), entre <PercentComplete> et <PredecessorLink> ; rien pour « Dès que possible » (`export-xml-contraintes.spec.js`) | |
 ---
 
 ## H. Cloud - Google Drive

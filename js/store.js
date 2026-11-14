@@ -192,6 +192,23 @@ export function numeroLienMSProject(code) {
     return trouve ? trouve[0] : '1';
 }
 
+/* Contrainte de date MS Project vers le code interne.
+   ------------------------------------------------------------
+   Documentation de l'element ConstraintType (schema MSPDI) :
+   « 0=As Soon As Possible, 1=As Late As Possible, 2=Must Start On,
+   3=Must Finish On, 4=Start No Earlier Than, 5=Start No Later Than,
+   6=Finish No Earlier Than and 7=Finish No Later Than ».
+   0 (« des que possible ») est l'absence de contrainte ; 1 (« le plus
+   tard possible ») n'a pas d'equivalent ici.
+   Comme pour les liens, les deux sens derivent de CETTE table unique. */
+export const CONTRAINTES_MSPROJECT = { '2': 'MSO', '3': 'MFO', '4': 'SNET', '5': 'SNLT', '6': 'FNET', '7': 'FNLT' };
+
+/** Sens export : le code MSPDI d'un type interne, ou null. */
+export function numeroContrainteMSProject(type) {
+    const trouve = Object.entries(CONTRAINTES_MSPROJECT).find(([, c]) => c === type);
+    return trouve ? trouve[0] : null;
+}
+
 export function findAllCycles(tasks) {
     const index = buildPredecessorIndex(tasks);
     const BLANC = 0, GRIS = 1, NOIR = 2;
