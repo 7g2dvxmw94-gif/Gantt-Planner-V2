@@ -6305,7 +6305,8 @@ tr:nth-child(even){background:#fafbfc}
     /* ---- Rapport DCMA 14 points ---- */
 
     /** Le bouton « ⚠ N conflits » : ABSENT tant que le projet actif n'a
-     *  aucun lien rompu par une contrainte (store.getConflitsContraintes).
+     *  aucun conflit de contrainte, lien rompu ou contrainte non tenue
+     *  (store.getConflitsContraintes).
      *  Relu a chaque changement du store et de projet actif. */
     _majConflitsBtn() {
         const bouton = $('#conflitsBtn');
@@ -6363,13 +6364,18 @@ tr:nth-child(even){background:#fafbfc}
                     createElement('strong', {}, c.tache.name),
                     createElement('span', { className: 'conflit-contrainte' }, ' — ' + libelleContrainte(c.contrainte)),
                 ]),
-                createElement('p', { className: 'conflit-detail' }, t('conflits.detail', {
-                    pred: c.pred.name,
-                    type: t(`conflits.type.${c.type}`),
-                    exige: formatDateChiffres(c.exige),
-                    tient: formatDateChiffres(c.tient),
-                    ecart: t(c.ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: c.ecart }),
-                })),
+                createElement('p', { className: 'conflit-detail' }, c.sorte === 'non-tenue'
+                    ? t('conflits.nonTenue', {
+                        exige: formatDateChiffres(c.exige),
+                        tient: formatDateChiffres(c.tient),
+                    })
+                    : t('conflits.detail', {
+                        pred: c.pred.name,
+                        type: t(`conflits.type.${c.type}`),
+                        exige: formatDateChiffres(c.exige),
+                        tient: formatDateChiffres(c.tient),
+                        ecart: t(c.ecart === 1 ? 'task.constraint.unJourOuvre' : 'task.constraint.joursOuvres', { n: c.ecart }),
+                    })),
                 ouvrir,
             ]));
         });
