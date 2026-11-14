@@ -2008,6 +2008,13 @@ class App {
         const assigneeNames = (task) => (task.assignees || [])
             .map(id => { const r = resources.find(r => r.id === id); return r ? r.name : ''; })
             .filter(Boolean).join(', ');
+        /* La contrainte de date, lue par contrainteDe comme partout : son
+           libelle (celui de la fiche) et sa date SAISIE, ou « Des que
+           possible » et une case vide. */
+        const contrainte = (task) => {
+            const c = contrainteDe(task);
+            return c ? [t(`task.constraint.${c.type}`), fmtDate(c.date)] : [t('task.constraint.asap'), ''];
+        };
         const row = (task, level) => [
             level,
             this._csvEscape(task.name, SEP),
@@ -2016,9 +2023,13 @@ class App {
             fmtDate(task.endDate),
             this._csvEscape(assigneeNames(task), SEP),
             task.progress,
+            ...contrainte(task).map(v => this._csvEscape(v, SEP)),
         ].join(SEP);
 
-        const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress')];
+        /* Les sept premieres colonnes gardent leur ordre : l'aide d'import
+           MS Project les designe. Les colonnes de contrainte viennent apres. */
+        const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress'),
+                         t('csv.col.constraintType'), t('csv.col.constraintDate')];
         const rows = [];
         allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
             rows.push(row(task, 1));

@@ -689,6 +689,8 @@ const I18N = {
         'csv.col.end': 'Fin',
         'csv.col.resources': 'Noms ressources',
         'csv.col.progress': '% achevé',
+        'csv.col.constraintType': 'Type de contrainte',
+        'csv.col.constraintDate': 'Date de contrainte',
 
         // Notification panel
         'notif.title': 'Notifications',
@@ -1509,6 +1511,8 @@ const I18N = {
         'csv.col.end': 'End',
         'csv.col.resources': 'Resource names',
         'csv.col.progress': '% complete',
+        'csv.col.constraintType': 'Constraint type',
+        'csv.col.constraintDate': 'Constraint date',
 
         // Notification panel
         'notif.title': 'Notifications',
