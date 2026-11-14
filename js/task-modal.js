@@ -8,7 +8,7 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines,
 import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween, isWorkingDay,
-         CONTRAINTES, contrainteDe, liensNonTenus, dateEffectiveContrainte,
+         CONTRAINTES, contrainteDe, liensNonTenus, dateEffectiveContrainte, contrainteApresDeplacement,
          formatDateJour,
          TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
 
@@ -601,13 +601,17 @@ class TaskModal {
             }
         });
 
+        /* Le dernier champ qui a fixe la fin : la fin tapee emmene une
+           contrainte de fin, la duree tapee non (_contrainteAvecDatesTapees). */
         // End date change: update duration
         this._taskEnd.addEventListener('change', () => {
+            this._dernierChampFin = 'fin';
             this._updateDurationFromDates();
         });
 
         // Duration change: update end date
         this._durationInput.addEventListener('input', () => {
+            this._dernierChampFin = 'duree';
             this._updateEndFromDuration();
         });
     }
@@ -673,6 +677,7 @@ class TaskModal {
 
         this._mode = 'edit';
         this._editingTaskId = taskId;
+        this._dernierChampFin = null;
         this._titleEl.textContent = t('task.edit.title');
         this._saveBtn.textContent = t('task.btnSave');
         this._deleteBtn.style.display = '';
@@ -1319,6 +1324,39 @@ class TaskModal {
         this._contrainteDate.focus();
     }
 
+    /** Les dates tapees emmenent la contrainte de leur bout (plan v4,
+     *  § 3.8), par la regle meme du glisser (contrainteApresDeplacement) :
+     *  un debut tape deplace la tache, et chaque bout contraint prend la
+     *  valeur de son champ ; une fin tapee en dernier n'emmene qu'une
+     *  contrainte de fin ; une duree tapee seule n'emmene rien. Si le type
+     *  ou la date de contrainte ont ete modifies dans la fiche, la saisie
+     *  fait foi. Rend la saisie, sa date eventuellement remplacee. Sert a
+     *  l'apercu ET a l'enregistrement : les deux disent la meme chose. */
+    _contrainteAvecDatesTapees(saisie) {
+        if (this._mode !== 'edit' || !saisie.type || !saisie.lisible) return saisie;
+        const base = store.getTask(this._editingTaskId);
+        const origine = contrainteDe(base);
+        if (!origine || origine.type !== saisie.type || origine.date !== saisie.date) return saisie;
+
+        const jalon = this._milestoneCheck.input.checked;
+        const debut = this._taskStart.value;
+        const fin = jalon ? debut : this._taskEnd.value;
+        if (!debut || !fin) return saisie;
+        const mode = debut !== base.startDate ? 'move'
+            : (fin !== base.endDate && this._dernierChampFin === 'fin') ? 'resize-right' : null;
+        if (!mode) return saisie;
+
+        const cal = store.getCalendar();
+        const suivie = contrainteApresDeplacement({
+            avant: { ...base, isMilestone: jalon }, mode,
+            debutAffiche: parseISO(debut), finAffichee: parseISO(fin),
+            duree: workingDaysBetween(debut, fin, cal), cal,
+            placer: (t, getTask) => store.computeConstrainedDatesIn(t, getTask),
+            getTask: (id) => store.getTask(id),
+        });
+        return (suivie && suivie.constraintDate) ? { ...saisie, date: suivie.constraintDate } : saisie;
+    }
+
     /** La tache telle que la fiche l'enregistrerait, pour l'apercu. */
     _tacheDuFormulaire(saisie) {
         const jalon = this._milestoneCheck.input.checked;
@@ -1338,7 +1376,7 @@ class TaskModal {
 
     _majApercuContrainte() {
         if (!this._contrainteInfo) return;
-        const saisie = this._contrainteSaisie();
+        const saisie = this._contrainteAvecDatesTapees(this._contrainteSaisie());
         this._contrainteDate.disabled = !saisie.type;
         this._contrainteInfo.textContent = '';
         /* Rien a annoncer pour « Des que possible », ni pour une phase, ni
@@ -1602,7 +1640,8 @@ class TaskModal {
            ACCEPTEE : l'apercu dit la date retenue. Une phase n'a pas de
            contrainte. */
         const estPhase = this._phaseCheck.input.checked;
-        const contrainte = estPhase ? { type: null, date: null, lisible: true } : this._contrainteSaisie();
+        const contrainte = estPhase ? { type: null, date: null, lisible: true }
+            : this._contrainteAvecDatesTapees(this._contrainteSaisie());
         if (!contrainte.lisible) {
             this._afficherErreurContrainte(contrainte.type);
             return;   // le modal reste ouvert, rien n'est ecrit
