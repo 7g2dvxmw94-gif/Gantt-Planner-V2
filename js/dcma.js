@@ -365,8 +365,19 @@ export function evaluerDcma(entree) {
            marge <= 0). Le point 12 peut la choisir pour le retard si sa
            marge PAR LES LIENS (margeFin) est elle aussi nulle ou negative ;
            une marge negative venue des seules contraintes de date
-           (margeContrainte) ne la designe pas. */
-        anomalies.margesNegatives = ids(nonPhases.filter(t => analyse.float && analyse.float[t.id] < 0));
+           (margeContrainte) ne la designe pas.
+
+           L'anomalie dit laquelle des deux causes : 'liens' quand la marge
+           par les liens (margeFin) est elle-meme negative, 'contrainte'
+           quand seule la borne des contraintes l'est. Sans margeFin
+           (analyses fabriquees des tests), la cause est 'liens', comme
+           avant les contraintes. */
+        anomalies.margesNegatives = nonPhases
+            .filter(t => analyse.float && analyse.float[t.id] < 0)
+            .map(t => ({
+                tacheId: t.id,
+                cause: (analyse.margeFin && !(analyse.margeFin[t.id] < 0)) ? 'contrainte' : 'liens',
+            }));
     }
 
     /* 8 — Duree elevee. Le PAM mesure la duree de BASELINE quand elle existe.
