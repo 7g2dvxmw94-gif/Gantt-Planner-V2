@@ -234,6 +234,16 @@ export function contrainteDepuisMSProject(code, dateHeure, calendar = defaultCal
     return { constraintType: type, constraintDate: date };
 }
 
+/** L'ordre des taches : `order`, puis l'identifiant pour departager deux
+ *  ex aequo. Sans ce second critere, deux taches de meme ordre se
+ *  rangeaient selon leur place dans le tableau en memoire, qui change
+ *  avec un rechargement, une ecriture recue ou une annulation : le Gantt,
+ *  les exports et la numerotation WBS changeaient d'ordre sans que
+ *  personne n'ait rien deplace. */
+export function comparerOrdreTaches(a, b) {
+    return ((a.order ?? 0) - (b.order ?? 0)) || String(a.id).localeCompare(String(b.id));
+}
+
 export function findAllCycles(tasks) {
     const index = buildPredecessorIndex(tasks);
     const BLANC = 0, GRIS = 1, NOIR = 2;
@@ -1817,11 +1827,11 @@ class Store {
         const pid = projectId || this._data.settings.activeProjectId;
         return this._data.tasks
             .filter(t => t.projectId === pid)
-            .sort((a, b) => a.order - b.order);
+            .sort(comparerOrdreTaches);
     }
 
     getAllTasks() {
-        return [...this._data.tasks].sort((a, b) => a.order - b.order);
+        return [...this._data.tasks].sort(comparerOrdreTaches);
     }
 
     /* ---- Index des taches ----------------------------------------
@@ -1887,7 +1897,7 @@ class Store {
     getChildTasks(parentId) {
         return this._data.tasks
             .filter(t => t.parentId === parentId)
-            .sort((a, b) => a.order - b.order);
+            .sort(comparerOrdreTaches);
     }
 
     getTaskTree(projectId = null) {
@@ -1897,7 +1907,7 @@ class Store {
             ...parent,
             children: tasks
                 .filter(t => t.parentId === parent.id)
-                .sort((a, b) => a.order - b.order)
+                .sort(comparerOrdreTaches)
                 .map(buildTree),
         });
         const trees = roots.map(buildTree);
@@ -1907,7 +1917,7 @@ class Store {
             if (!node.children || node.children.length === 0) return node.order;
             return Math.min(node.order, ...node.children.map(minSubtreeOrder));
         };
-        trees.sort((a, b) => minSubtreeOrder(a) - minSubtreeOrder(b));
+        trees.sort((a, b) => (minSubtreeOrder(a) - minSubtreeOrder(b)) || comparerOrdreTaches(a, b));
         return trees;
     }
 
