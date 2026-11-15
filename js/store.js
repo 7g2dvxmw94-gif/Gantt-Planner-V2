@@ -1103,8 +1103,7 @@ class Store {
 
         // Recalculate all phase dates/progress in memory so the Gantt
         // always reflects the actual children, even if Supabase has stale phase data.
-        const phases = this._data.tasks.filter(t => t.projectId === projectId && t.isPhase);
-        phases.forEach(phase => this._recalculatePhase(phase.id));
+        this._recalculerToutesLesPhases(this._data.tasks.filter(t => t.projectId === projectId && t.isPhase));
 
         this._loadedProjectIds.add(projectId);
     }
@@ -2453,10 +2452,8 @@ class Store {
             }
         }
 
-        // 3. Recalculer les phases
-        for (const phase of this._data.tasks.filter(t => t.isPhase)) {
-            this._recalculatePhase(phase.id);
-        }
+        // 3. Recalculer les phases, des plus profondes aux plus hautes
+        this._recalculerToutesLesPhases(this._data.tasks.filter(t => t.isPhase));
 
         this._save();
         this._emit('change', {});
@@ -2690,12 +2687,27 @@ class Store {
         this.updateTask(taskId, { collapsed: !task.collapsed });
     }
 
-    _recalculatePhase(phaseId) {
+    /** Recalcule les dates et l'avancement d'une phase d'apres ses enfants
+     *  directs, PUIS REMONTE a sa phase parente, et ainsi de suite : une
+     *  phase grand-parente suit l'avancement de ses petits-enfants.
+     *  L'ensemble `vus` arrete la remontee sur une boucle de parents
+     *  (donnees anciennes ou importees : la fiche les refuse, #107).
+     *
+     *  `remonter: false` sert au recalcul de TOUTES les phases
+     *  (_recalculerToutesLesPhases), qui les parcourt deja des plus
+     *  profondes aux plus hautes : remonter y recalculerait chaque
+     *  ancetre une fois par descendant. */
+    _recalculatePhase(phaseId, { remonter = true } = {}, vus = new Set()) {
+        if (vus.has(phaseId)) return;
+        vus.add(phaseId);
         const phase = this._data.tasks.find(t => t.id === phaseId);
         if (!phase || !phase.isPhase) return;
 
         const children = this._data.tasks.filter(t => t.parentId === phaseId);
-        if (children.length === 0) return;
+        if (children.length === 0) {
+            if (remonter && phase.parentId) this._recalculatePhase(phase.parentId, { remonter }, vus);
+            return;
+        }
 
         /* AUCUNE CONVERSION EN Date : la borne se prend sur les CHAINES.
          *
@@ -2749,6 +2761,26 @@ class Store {
         // Persist updated phase dates to Supabase
         supabaseStore.upsertTask(phase)
             .catch(e => console.error('[store] sync _recalculatePhase:', e));
+
+        if (remonter && phase.parentId) this._recalculatePhase(phase.parentId, { remonter }, vus);
+    }
+
+    /** Recalcule toutes les phases de `phases`, des PLUS PROFONDES aux plus
+     *  hautes : chacune l'est apres ses sous-phases, quel que soit l'ordre
+     *  du tableau. Recalculer dans l'ordre du tableau laissait fausse une
+     *  phase qui precede sa sous-phase (P0 avant P1 : P0 calculee sur
+     *  l'ancienne valeur de P1). La profondeur se compte par la chaine des
+     *  parents, bornee par un ensemble des vus (boucle de parents). */
+    _recalculerToutesLesPhases(phases) {
+        const profondeur = (p) => {
+            let n = 0; const vus = new Set([p.id]);
+            let parent = this._data.tasks.find(t => t.id === p.parentId);
+            while (parent && !vus.has(parent.id)) { vus.add(parent.id); n++; parent = this._data.tasks.find(t => t.id === parent.parentId); }
+            return n;
+        };
+        phases.map(p => [p, profondeur(p)])
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([p]) => this._recalculatePhase(p.id, { remonter: false }));
     }
 
     /* ---- Resources ---- */
