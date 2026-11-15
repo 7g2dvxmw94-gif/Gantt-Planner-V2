@@ -491,7 +491,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 4 | Ouverture | Ouvrir dans Excel | Données bien formatées | |
 | 5 | Colonnes | Vérifier les colonnes | Toutes les données | |
 | 6 | Contraintes | Exporter une tâche « Doit finir le 12/06/2026 » et une sans contrainte | Après les sept colonnes habituelles, « Type de contrainte » et « Date de contrainte » : « Doit finir le » / « 12/06/2026 », et « Dès que possible » / vide (`export-csv-contraintes.spec.js`) | |
-
+| 7 | Arborescence | Un projet dont une phase suit son premier enfant, avec une sous-phase et une tâche ordinaire qui a des enfants ; exporter en CSV, XML et PDF (tableau et frise) | Les quatre exports suivent l'ordre et l'arborescence du Gantt, sous-phases et enfants d'une tâche ordinaire compris ; en XML, tout nœud qui a des enfants est récapitulatif (`export-arborescence.spec.js`) | |
 ---
 
 ### G3. Export PDF
