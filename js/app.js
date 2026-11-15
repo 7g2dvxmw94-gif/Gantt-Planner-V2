@@ -1989,6 +1989,24 @@ class App {
         this._showToast(t('toast.exportAll', { count: data.projects.length }), 'success');
     }
 
+    /** L'ordre et la profondeur des exports : ceux du Gantt. Un parcours en
+     *  profondeur de store.getTaskTree(), l'arbre meme que le Gantt dessine
+     *  (racines par le plus petit ordre de leur sous-arbre, chaque noeud
+     *  suivi de TOUS ses descendants, a toute profondeur, phase ou non).
+     *  Les exports CSV, XML et PDF (tableau et frise) avaient chacun leur
+     *  copie d'un autre parcours : racines par leur ordre propre, puis les
+     *  seuls enfants directs des seules phases.
+     *  @returns {Array<{task, niveau}>} niveau 1 pour une racine */
+    _parcoursExport() {
+        const liste = [];
+        const parcourir = (noeuds, niveau) => noeuds.forEach(n => {
+            liste.push({ task: store.getTask(n.id) || n, niveau });
+            if (n.children && n.children.length) parcourir(n.children, niveau + 1);
+        });
+        parcourir(store.getTaskTree(), 1);
+        return liste;
+    }
+
     _exportCSV() {
         const project = store.getActiveProject();
         const allTasks = store.getTasks();
@@ -2030,14 +2048,7 @@ class App {
            MS Project les designe. Les colonnes de contrainte viennent apres. */
         const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress'),
                          t('csv.col.constraintType'), t('csv.col.constraintDate')];
-        const rows = [];
-        allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
-            rows.push(row(task, 1));
-            if (task.isPhase) {
-                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order)
-                    .forEach(child => rows.push(row(child, 2)));
-            }
-        });
+        const rows = this._parcoursExport().map(({ task, niveau }) => row(task, niveau));
 
         const csvStr = headers.join(SEP) + '\n' + rows.join('\n');
         const bytes = new Uint8Array(csvStr.length);
@@ -2074,17 +2085,12 @@ class App {
          * n'existerait pas encore. L'ancienne boucle unique n'avait pas ce
          * besoin — elle n'émettait aucun lien.
          *
-         * L'ordre d'émission est conservé à l'identique : tâches racines par
-         * `order`, chaque phase suivie de ses enfants. */
-        const ordreExport = [];
-        allTasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order).forEach(task => {
-            ordreExport.push({ task, niveau: 1 });
-            if (task.isPhase) {
-                allTasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order)
-                    .forEach(child => ordreExport.push({ task: child, niveau: 2 }));
-            }
-        });
+         * L'ordre d'émission est celui du Gantt (_parcoursExport). */
+        const ordreExport = this._parcoursExport();
         ordreExport.forEach(({ task }, i) => { taskUIDMap[task.id] = i + 1; });
+        /* Recapitulative (<Summary>) : tout noeud qui a des enfants, phase
+           ou non. MS Project calcule ses dates d'apres eux. */
+        const aEnfants = new Set(allTasks.map(t => t.parentId).filter(Boolean));
 
         /** Liens de précédence d'une tâche. dependencies[] porte ses
          *  PRÉDÉCESSEURS et <PredecessorLink> vit dans la <Task> qu'il
@@ -2140,7 +2146,7 @@ class App {
                 `<UID>${uid}</UID><ID>${uid}</ID>` +
                 `<Name>${esc(task.name)}</Name>` +
                 `<OutlineLevel>${niveau}</OutlineLevel>` +
-                (niveau === 1 && task.isPhase ? `<Summary>1</Summary>` : '') +
+                (aEnfants.has(task.id) ? `<Summary>1</Summary>` : '') +
                 (task.startDate ? `<Start>${fmtDateTime(task.startDate, '08:00:00')}</Start>` : '') +
                 (task.endDate ? `<Finish>${fmtDateTime(task.endDate, '17:00:00')}</Finish>` : '') +
                 `<Duration>${durISO(task)}</Duration>` +
@@ -2837,17 +2843,10 @@ thead{display:table-header-group}
         if (sections.includes('table')) {
             html += `<h2>${t('pdf.table.title')}</h2>`;
             html += `<table><thead><tr><th>${t('pdf.table.task')}</th><th>${t('pdf.table.start')}</th><th>${t('pdf.table.end')}</th><th>${t('pdf.table.assignees')}</th><th>${t('pdf.table.status')}</th><th>${t('pdf.table.priority')}</th><th>${t('pdf.table.progress')}</th></tr></thead><tbody>`;
-            const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
-            rootTasks.forEach(task => {
-                if (task.isPhase) {
-                    html += `<tr class="phase-row"><td colspan="7">${escapeHtml(task.name)} (${task.progress}%)</td></tr>`;
-                    const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
-                    children.forEach(child => {
-                        html += this._pdfTaskRow(child, resources, statusLabels, priorityLabels);
-                    });
-                } else {
-                    html += this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
-                }
+            this._parcoursExport().forEach(({ task }) => {
+                html += task.isPhase
+                    ? `<tr class="phase-row"><td colspan="7">${escapeHtml(task.name)} (${task.progress}%)</td></tr>`
+                    : this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
             });
             html += `</tbody></table>`;
         }
@@ -2987,15 +2986,7 @@ thead{display:table-header-group}
         }
 
         // Build flat list of rows with indent info
-        const rootTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.order - b.order);
-        const flatRows = [];
-        rootTasks.forEach(task => {
-            flatRows.push({ task, indent: 0 });
-            if (task.isPhase) {
-                const children = tasks.filter(t => t.parentId === task.id).sort((a, b) => a.order - b.order);
-                children.forEach(child => flatRows.push({ task: child, indent: 1 }));
-            }
-        });
+        const flatRows = this._parcoursExport().map(({ task, niveau }) => ({ task, indent: niveau - 1 }));
 
         const estTrackPx = 860; // Approx track width in A4 landscape print
         const ROWS_PER_PAGE = 20; // Max rows per page to avoid overflow
