@@ -1924,6 +1924,10 @@ class Store {
         }
 
         const tasks = this.getTasks();
+        /* L'ordre suivant le PLUS GRAND du projet, pas le nombre de taches :
+           apres une suppression, ce nombre retombe sur un ordre deja pris
+           (A0 B1 C2, B supprimee : tasks.length = 2, l'ordre de C). */
+        const ordreSuivant = tasks.reduce((m, t) => Math.max(m, Number.isFinite(t.order) ? t.order : -1), -1) + 1;
         const newTask = {
             id: generateId(),
             projectId: this._data.settings.activeProjectId,
@@ -1937,7 +1941,7 @@ class Store {
             assignees: [],
             isMilestone: false,
             isPhase: false,
-            order: tasks.length,
+            order: ordreSuivant,
             dependencies: [],
             collapsed: false,
             createdAt: new Date().toISOString(),
