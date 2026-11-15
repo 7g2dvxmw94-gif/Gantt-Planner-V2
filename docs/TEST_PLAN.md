@@ -255,7 +255,7 @@
 | 2 | Duplication | Cliquer "Dupliquer" | Nouvelle tâche créée | |
 | 3 | Données | Vérifier les propriétés | Copie conforme (sauf dates) | |
 | 4 | Indépendance | Modifier la copie | Tâche originale inchangée | |
-
+| 5 | Ordre de la copie | Projet A, B ; dupliquer A par le menu contextuel, puis Ctrl+Z | La copie se place juste après A, B est décalée : trois ordres distincts ; un seul Ctrl+Z retire la copie et rend son ordre à B (`ordre-duplication.spec.js`) | |
 ---
 
 ### B9. Supprimer une tâche

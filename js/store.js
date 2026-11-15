@@ -2693,6 +2693,33 @@ class Store {
         this._save();
     }
 
+    /** Duplique une tache JUSTE APRES elle, en un geste annulable.
+     *
+     *  La copie prend l'ordre suivant ; les taches du projet d'ordre
+     *  superieur sont decalees d'un cran. Copier le champ `order` tel quel
+     *  rendait la copie ex aequo avec l'original, et leur rang dependait
+     *  de l'ordre du tableau en memoire.
+     *
+     *  Un seul instantane : _batchingUndo est leve le temps des ecritures
+     *  (updateTask et addTask n'en prennent pas), puis rabaisse quoi qu'il
+     *  arrive. Un Ctrl+Z retire la copie ET rend leur ordre aux taches
+     *  decalees. */
+    dupliquerTache(taskId, nom) {
+        const task = this.getTask(taskId);
+        if (!task || !this.canEdit()) return null;
+        const { id, createdAt, updatedAt, ...data } = task;
+        this._snapshot();
+        this._batchingUndo = true;
+        try {
+            this.getTasks()
+                .filter(t => t.id !== taskId && Number.isFinite(t.order) && t.order > task.order)
+                .forEach(t => this.updateTask(t.id, { order: t.order + 1 }));
+            return this.addTask({ ...data, name: nom, dependencies: [], order: task.order + 1 });
+        } finally {
+            this._batchingUndo = false;
+        }
+    }
+
     toggleTaskCollapse(taskId) {
         const task = this.getTask(taskId);
         if (!task) return;

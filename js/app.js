@@ -6844,10 +6844,7 @@ tr:nth-child(even){background:#fafbfc}
     _duplicateTask(taskId) {
         const task = store.getTask(taskId);
         if (!task) return;
-        const { id, createdAt, updatedAt, ...data } = task;
-        data.name = task.name + ' (copie)';
-        data.dependencies = [];
-        store.addTask(data);
+        store.dupliquerTache(taskId, task.name + ' (copie)');
         ganttRenderer.render();
         this._renderStats();
         this._showToast(t('toast.taskDuplicated'), 'success');
