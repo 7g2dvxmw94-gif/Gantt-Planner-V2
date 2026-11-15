@@ -2056,6 +2056,11 @@ class Store {
         }
         delete updates.skipSnap;
 
+        /* La phase d'AVANT l'ecriture : si la tache change de parent,
+           l'ancienne phase doit etre recalculee aussi, sans l'enfant
+           qu'elle perd. Seule la nouvelle l'etait. */
+        const ancienParentId = this._data.tasks[idx].parentId || null;
+
         this._data.tasks[idx] = {
             ...this._data.tasks[idx],
             ...updates,
@@ -2080,6 +2085,9 @@ class Store {
         const task = this._data.tasks[idx];
         if (task.parentId) {
             this._recalculatePhase(task.parentId);
+        }
+        if (ancienParentId && ancienParentId !== (task.parentId || null)) {
+            this._recalculatePhase(ancienParentId);
         }
 
         // Propagate to successors only when dates change
