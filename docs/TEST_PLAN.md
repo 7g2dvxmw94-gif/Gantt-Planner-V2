@@ -265,7 +265,7 @@
 | 2 | Suppression | Appuyer "Suppr" | Confirmation demandée | |
 | 3 | Confirmation | Cliquer "Oui" | Tâche supprimée du Gantt | |
 | 4 | Vérification | Vérifier la liste | Tâche n'existe plus | |
-
+| 5 | Ordre après suppression | Créer A, B, C ; supprimer B ; créer D | A, C et D ont trois ordres distincts : D n'hérite pas de celui de C (`ordre-nouvelle-tache.spec.js`) | |
 ---
 
 ### B10. Sélection multiple
