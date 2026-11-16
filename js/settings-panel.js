@@ -302,6 +302,7 @@ class SettingsPanel {
     _renderGeneralTab() {
         const currency  = this._getCustomization('currency')  || 'EUR';
         const showLinks = this._getCustomization('showLinks') !== false;
+        const showWbs = this._getCustomization('showWbs') !== false;
         const currentLang = getCurrentLang();
         const excludeWeekends = store.getActiveProject()?.excludeWeekends !== false;
         const cal = store.getCalendar();
@@ -358,6 +359,13 @@ class SettingsPanel {
                             <label class="settings-field-label" for="settingsShowLinks">${t('settings.display.showLinks')}</label>
                             <label class="settings-toggle">
                                 <input type="checkbox" id="settingsShowLinks" ${showLinks ? 'checked' : ''}>
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-field settings-field-toggle">
+                            <label class="settings-field-label" for="settingsShowWbs">${t('settings.display.showWbs')}</label>
+                            <label class="settings-toggle">
+                                <input type="checkbox" id="settingsShowWbs" ${showWbs ? 'checked' : ''}>
                                 <span class="settings-toggle-slider"></span>
                             </label>
                         </div>
@@ -1085,6 +1093,13 @@ class SettingsPanel {
                 document.dispatchEvent(new CustomEvent('links-visibility-changed'));
             });
         }
+        const showWbsCheckbox = this._panel.querySelector('#settingsShowWbs');
+        if (showWbsCheckbox) {
+            showWbsCheckbox.addEventListener('change', () => {
+                this._saveCustomization('showWbs', showWbsCheckbox.checked);
+                document.dispatchEvent(new CustomEvent('wbs-visibility-changed'));
+            });
+        }
 
         const excludeWeekendsCheckbox = this._panel.querySelector('#settingsExcludeWeekends');
         if (excludeWeekendsCheckbox) {
@@ -1442,6 +1457,7 @@ class SettingsPanel {
         this._applyFontSize(snap.fontSize || 'normal');
         document.dispatchEvent(new CustomEvent('currency-changed'));
         document.dispatchEvent(new CustomEvent('links-visibility-changed'));
+        document.dispatchEvent(new CustomEvent('wbs-visibility-changed'));
     }
 
     /* ---- Open / Close ---- */

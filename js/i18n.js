@@ -92,6 +92,7 @@ const I18N = {
         'settings.currency.label': 'Devise affichée',
         'settings.display.title': 'Affichage',
         'settings.display.showLinks': 'Afficher les liens (dépendances)',
+        'settings.display.showWbs': 'Afficher le code WBS dans le Gantt',
         'settings.resources.title': 'Ressources',
         'settings.costs.excludeWeekends': 'Exclure les week-ends du calcul des coûts',
         'settings.costs.excludeWeekends.tooltip': 'Seuls les jours ouvrés (lun.-ven.) sont pris en compte pour calculer le coût des ressources. Désactivez si votre projet inclut du travail le week-end. Chaque ressource peut aussi être configurée individuellement.',
@@ -357,6 +358,7 @@ const I18N = {
         // Board/Table View
         'board.taskName': 'Tâche',
         'board.phase': 'Phase',
+        'board.wbs': 'WBS',
         'board.start': 'Début',
         'board.end': 'Fin',
         'board.blStart': 'Début BL',
@@ -914,6 +916,7 @@ const I18N = {
         'settings.currency.label': 'Display currency',
         'settings.display.title': 'Display',
         'settings.display.showLinks': 'Show links (dependencies)',
+        'settings.display.showWbs': 'Show the WBS code in the Gantt',
         'settings.resources.title': 'Resources',
         'settings.costs.excludeWeekends': 'Exclude weekends from cost calculation',
         'settings.costs.excludeWeekends.tooltip': 'Enabled by default: only working days (Mon–Fri) are used to calculate resource costs. Disable if your project includes weekend work. Each resource can also be configured individually via the "Works weekends" option in its profile.',
@@ -1179,6 +1182,7 @@ const I18N = {
         // Board/Table View
         'board.taskName': 'Task',
         'board.phase': 'Phase',
+        'board.wbs': 'WBS',
         'board.start': 'Start',
         'board.end': 'End',
         'board.blStart': 'BL Start',

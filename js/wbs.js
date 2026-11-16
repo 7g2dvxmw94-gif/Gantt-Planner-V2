@@ -54,3 +54,20 @@ export function numeroterWbs(arbre) {
     parcourirWbs(arbre, '', 1, null);
     return { codes, noeuds };
 }
+
+/** '2.1.10' → [2, 1, 10] ; null pour un texte qui n'est pas un code. */
+export function segmentsWbs(code) {
+    if (typeof code !== 'string' || !/^[1-9]\d*(\.[1-9]\d*)*$/.test(code)) return null;
+    return code.split('.').map(Number);
+}
+
+/** Tri naturel des codes : 1.2 < 1.10 < 2 ; un parent avant ses enfants ;
+ *  une valeur qui n'est pas un code (tâche hors de l'arbre) en dernier. */
+export function comparerCodesWbs(a, b) {
+    const sa = segmentsWbs(a), sb = segmentsWbs(b);
+    if (!sa || !sb) return (sa ? 0 : 1) - (sb ? 0 : 1);
+    for (let i = 0; i < Math.min(sa.length, sb.length); i++) {
+        if (sa[i] !== sb[i]) return sa[i] - sb[i];
+    }
+    return sa.length - sb.length;
+}

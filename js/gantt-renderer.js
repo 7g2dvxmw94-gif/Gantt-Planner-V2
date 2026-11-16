@@ -103,6 +103,9 @@ class GanttRenderer {
 
         const tasks = store.getTasks();
         const tree = store.getTaskTree();
+        /* Codes WBS de l'arbre COMPLET, calculés avant tout filtre : une
+           recherche ou un repli masque des lignes mais ne renumérote pas. */
+        this._codesWbs = store.getSettings().customization?.showWbs === false ? null : store.getWbs().codes;
         this._timelineRange = store.getTimelineRange(this._zoomLevel);
         // Cache baseline state for this render pass
         this._activeBaseline = store.getActiveBaseline();
@@ -449,6 +452,10 @@ class GanttRenderer {
             className: 'task-color',
             style: { background: task.color },
         }));
+
+        // Code WBS, hors de .task-name (dont le `title` reste le seul nom)
+        const codeWbs = this._codesWbs && this._codesWbs.get(task.id);
+        if (codeWbs) taskCell.appendChild(createElement('span', { className: 'task-wbs' }, codeWbs));
 
         // Task info
         const taskInfo = createElement('div', { className: 'task-info' });

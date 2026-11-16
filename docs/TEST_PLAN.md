@@ -315,6 +315,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 10 | Barre étroite | Fenêtre de 1 280 px : les libellés des onglets et des boutons secondaires sont masqués | Chaque contrôle au libellé masqué garde un nom (lecteur d'écran) et une infobulle : les cinq onglets et « Exporter » compris (`barre-outils-noms.spec.js`) | |
 | 11 | Barre sans débordement | Faire varier la largeur de 769 à 2 600 px, boutons de synchronisation et des conflits affichés, zoom « Trimestre » | La barre ne déborde à aucune largeur : « Nouvelle tâche » n'est jamais coupé (`barre-outils-debordement.spec.js`) | |
 | 12 | Numérotation WBS | Phase dont le premier enfant précède une tâche racine ; tâche ordinaire avec un enfant ; onze enfants sous une phase ; trois niveaux | Codes 1, 2, 2.1… dans l'ordre de l'arbre du Gantt ; rang à partir de 1 (1.10, 1.11) ; 2.1.1 au troisième niveau ; aucune tâche hors de l'arbre numérotée (`wbs-numerotation.spec.js`) | |
+| 13 | Code WBS au Gantt et au Tableau | Phase A ⊃ A1…A11 ; B ⊃ B1 ⊃ B1a | Chaque ligne du Gantt porte son code (A11 « 1.11 », B1a « 2.1.1 »), hors du nom ; colonne « WBS » au Tableau, triée en ordre naturel ; une recherche ne renumérote pas ; Réglages > Général masque le code du Gantt, pas la colonne ; code masqué à 375 px (`wbs-code-listes.spec.js`) | |
 ---
 
 ### C2. Vue Tableau (Table/Kanban)
