@@ -5909,7 +5909,15 @@ tr:nth-child(even){background:#fafbfc}
      *  possible ». Par textContent (_showToast) : les noms viennent du
      *  fichier. */
     _avertirImport() {
-        const alap = store.getAvertissementsImport().filter(a => a.type === 'alap').map(a => a.nom);
+        const avertissements = store.getAvertissementsImport();
+        /* Colonne de codes WBS (import Excel). */
+        avertissements.forEach(a => {
+            if (a.type === 'wbs-doublons') this._showToast(t('import.avertissement.wbsDoublons', { codes: a.codes.slice(0, 5).join(', ') }), 'warning');
+            else if (a.type === 'wbs-mixte') this._showToast(t('import.avertissement.wbsMixte', { valeur: a.valeur }), 'warning');
+            else if (a.type === 'wbs-phase-ignoree') this._showToast(t('import.avertissement.wbsPhaseIgnoree'), 'warning');
+            else if (a.type === 'wbs-parents-absents') this._showToast(t('import.avertissement.wbsParentsAbsents', { n: a.n }), 'warning');
+        });
+        const alap = avertissements.filter(a => a.type === 'alap').map(a => a.nom);
         if (!alap.length) return;
         const noms = alap.slice(0, 3).map(n => `« ${n} »`).join(', ')
             + (alap.length > 3 ? ' ' + t('import.avertissement.autres', { n: alap.length - 3 }) : '');
@@ -5932,6 +5940,10 @@ tr:nth-child(even){background:#fafbfc}
             const workbook = XLSX.read(data, { type: 'array', cellDates: true });
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+            /* Les mêmes lignes lues en texte : une colonne de codes WBS ne se
+               lit que là (« 1.10 » serait sinon le nombre 1.1). Les dates
+               restent lues sur les lignes typées. */
+            const textes = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
 
             if (!rows.length) {
                 this._showToast(t('toast.importExcelEmpty'), 'error');
@@ -5943,7 +5955,7 @@ tr:nth-child(even){background:#fafbfc}
                vraie — et le `if` ci-dessous annoncerait un succès même sur un
                import raté. La fonction englobante était déjà async, mais
                l'oubli aurait été silencieux. */
-            const result = await store.importFromExcel(rows, file.name);
+            const result = await store.importFromExcel(rows, file.name, { textes });
             if (result) {
                 ganttRenderer.render();
                 this._renderStats();
