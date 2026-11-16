@@ -3071,6 +3071,14 @@ ${assignLines.join('\n')}
                         <div class="pdf-export-option-label">${escapeHtml(t('pdf.dialog.dcma.label'))}</div>
                         <div class="pdf-export-option-desc">${escapeHtml(t('pdf.dialog.dcma.desc'))}</div>
                     </div>
+                </label>
+                <label class="pdf-export-option">
+                    <input type="checkbox" value="wbs">
+                    <span class="pdf-export-option-icon">✓</span>
+                    <div>
+                        <div class="pdf-export-option-label">${escapeHtml(t('pdf.dialog.wbs.label'))}</div>
+                        <div class="pdf-export-option-desc">${escapeHtml(t('pdf.dialog.wbs.desc'))}</div>
+                    </div>
                 </label>`}
             </div>
             <div class="pdf-export-date-section" id="pdfDateSection">
@@ -3236,6 +3244,11 @@ thead{display:table-header-group}
         if (sections.includes('dcma')) {
             if (sections.length > 1) html += `<div class="page-break"></div>`;
             html += this._pdfDcmaSection(project);
+        }
+
+        if (sections.includes('wbs')) {
+            if (sections.length > 1) html += `<div class="page-break"></div>`;
+            html += this._pdfWbsSection();
         }
 
         html += `<div class="footer">${t('pdf.footer', { name: escapeHtml(project.name), date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() })}</div>
@@ -3567,6 +3580,35 @@ thead{display:table-header-group}
 
         html += `</div>`;
         return html;
+    }
+
+    /** Organigramme WBS imprimé : les données de la vue (_wbsPresentation),
+     *  arbre entièrement déplié, rendues en chaîne. CHAQUE texte passe par
+     *  escapeHtml, attributs compris : un nom de tâche n'est jamais du
+     *  HTML. Styles en ligne, couleurs claires, une boîte jamais coupée. */
+    _pdfWbsSection() {
+        const e = escapeHtml;
+        const pr = this._wbsPresentation();
+        const boite = (n) => `<li class="wbs-pdf-noeud" data-wbs-code="${e(n.code)}">` +
+            `<div class="wbs-pdf-boite" style="border-left-color:${e(n.couleur || '#64748B')}">` +
+            `<div class="wbs-pdf-code">${e(n.code)}</div>` +
+            `<div class="wbs-pdf-nom" title="${e(n.nom)}">${e(n.nom)}</div>` +
+            `<div class="wbs-pdf-ligne">${e(n.dates)}</div>` +
+            `<div class="wbs-pdf-ligne">${e(n.etat)}</div></div>` +
+            (n.enfants.length ? `<ul class="wbs-pdf-groupe">${n.enfants.map(boite).join('')}</ul>` : '') +
+            `</li>`;
+        return `<h2>${e(t('pdf.wbs.title'))}</h2>
+<style>
+.wbs-pdf { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+.wbs-pdf-groupe { list-style:none; margin:0 0 0 7px; padding:0 0 0 8px; border-left:1px solid #CBD5E1; }
+.wbs-pdf-groupe > .wbs-pdf-noeud { margin-top:6px; }
+.wbs-pdf-boite { width:160px; box-sizing:border-box; padding:6px 8px; border:1px solid #CBD5E1; border-left:3px solid #64748B; border-radius:6px; background:#fff; break-inside:avoid; page-break-inside:avoid; }
+.wbs-pdf-code { font-size:9px; color:#64748B; }
+.wbs-pdf-nom { font-size:11px; font-weight:600; color:#1E293B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wbs-pdf-ligne { font-size:9px; color:#64748B; }
+</style>
+<p class="wbs-pdf-projet"><strong>${e(pr.projet.nom)}</strong> — ${e(pr.projet.avancement)}</p>
+<ul class="wbs-pdf">${pr.racines.map(boite).join('')}</ul>`;
     }
 
     _pdfTaskRow(task, resources, statusLabels, priorityLabels, code = '') {
