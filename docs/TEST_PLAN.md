@@ -312,6 +312,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 7 | Weekends | Vérifier les différences | Weekends marqués différemment | |
 | 8 | Contrainte de date | Tâche « Début au plus tôt le 03/06/2026 », tenue 08 → 10/06 par son prédécesseur ; tâche « Doit finir le 19/06/2026 » | Un repère au bord gauche du 03/06, nommé « Début au plus tôt le 03/06/2026 » ; un repère au bord droit du 19/06 ; aucun pour une tâche « Dès que possible » (`contraintes-repere.spec.js`) | |
 | 9 | Ex aequo | Deux tâches racines de même ordre (une tâche sortie d'une phase garde le sien) | Leur rang au Gantt ne dépend pas de l'ordre du tableau en mémoire : il est départagé par l'identifiant (`ordre-taches-ex-aequo.spec.js`) | |
+| 10 | Barre étroite | Fenêtre de 1 280 px : les libellés des onglets et des boutons secondaires sont masqués | Chaque contrôle au libellé masqué garde un nom (lecteur d'écran) et une infobulle : les cinq onglets et « Exporter » compris (`barre-outils-noms.spec.js`) | |
 ---
 
 ### C2. Vue Tableau (Table/Kanban)
