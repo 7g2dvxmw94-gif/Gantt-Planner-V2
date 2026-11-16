@@ -699,6 +699,7 @@ const I18N = {
         // CSV headers
         'import.avertissement.alap': 'Le plus tard possible n\'existe pas ici : {noms} importée(s) en « Dès que possible ».',
         'import.avertissement.autres': 'et {n} autres',
+        'csv.col.wbs': 'WBS',
         'csv.col.level': 'Niveau hiérarchique',
         'csv.col.name': 'Nom',
         'csv.col.duration': 'Durée',
@@ -1538,6 +1539,7 @@ const I18N = {
         // CSV headers
         'import.avertissement.alap': 'As late as possible does not exist here: {noms} imported as “As soon as possible”.',
         'import.avertissement.autres': 'and {n} more',
+        'csv.col.wbs': 'WBS',
         'csv.col.level': 'Hierarchical level',
         'csv.col.name': 'Name',
         'csv.col.duration': 'Duration',

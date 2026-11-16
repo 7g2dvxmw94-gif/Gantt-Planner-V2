@@ -36,10 +36,10 @@ test('exporter en CSV télécharge un fichier contenant les tâches du projet', 
     const content = await fs.readFile(filePath, 'latin1');
     const [header, ...rows] = content.split('\n');
 
-    /* Les sept premières colonnes, dans cet ordre : celles que lit l'aide
-       d'import MS Project. Les colonnes de contrainte viennent après
-       (export-csv-contraintes.spec.js). */
-    expect(header.split(';').slice(0, 7)).toEqual(['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé']);
+    /* Les huit premières colonnes, dans cet ordre : celles que lit l'aide
+       d'import MS Project, le code WBS en tête. Les colonnes de contrainte
+       viennent après (export-csv-contraintes.spec.js). */
+    expect(header.split(';').slice(0, 8)).toEqual(['WBS', 'Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé']);
     expect(rows.some(r => r.includes(taskName))).toBe(true);
     expect(content).toContain('10/08/2026');
     expect(content).toContain('12/08/2026');
