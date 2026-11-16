@@ -181,6 +181,7 @@
 | 6 | Imbrication | Créer tâche sous cette phase | Tâche imbriquée correctement | |
 | 7 | Phases imbriquées | P1 ⊃ P2 ⊃ X : passer X à 100 % ; puis un projet P0 ⊃ P1 ⊃ P2 ⊃ X dont P0 et P1 sont enregistrées à 0 %, rechargé | P2 et P1 suivent X (100 %) ; au rechargement, P0 est recalculée après P1 (100 %) ; une boucle de parents ne bloque pas l'écriture (`phase-imbriquee-avancement.spec.js`) | |
 | 8 | Changer de phase | P1 (X 100 %, Y 0 %) et P2 (Z 0 %) ; X passe sous P2 par la liste « Phase parente » | P2 passe à 50 % ; P1, l'ancienne phase, passe à 0 % (`phase-ancien-parent.spec.js`) | |
+| 9 | Phase importée | Importer en JSON une phase (0 %, 8–12 juin dans le fichier) ⊃ A1 (1er–5 juin, 40 %) et un jalon (19 juin, 100 %), et une sous-phase | Dès l'import, sans rechargement, chaque phase suit ses enfants : 70 %, 1er–19 juin (`import-json-phases.spec.js`) | |
 ---
 
 ### B3. Créer un jalon (milestone)

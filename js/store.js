@@ -3773,6 +3773,16 @@ class Store {
                     }
                 }
 
+                /* Les phases suivent leurs enfants dès l'import, comme au
+                   chargement (_loadProjectData) : sans cela, elles gardaient
+                   les dates et l'avancement du fichier jusqu'au
+                   rechargement suivant. APRÈS les écritures ci-dessus :
+                   _recalculatePhase écrit chaque phase en base sans
+                   attendre, et une sous-phase ne doit pas y partir avant sa
+                   phase parente. */
+                this._recalculerToutesLesPhases(this._data.tasks.filter(t => t.projectId === newProjectId && t.isPhase));
+                this._save();
+
                 this._emit('project:import', newProjectId);
                 return newProject;
             }
