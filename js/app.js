@@ -3,7 +3,7 @@
    Gantly
    ======================================== */
 
-import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES, numeroLienMSProject,
+import { store, tachesHorsArborescence, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PRICES, STRIPE_PRICES, numeroLienMSProject,
          numeroContrainteMSProject } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
@@ -501,6 +501,20 @@ class App {
             createElement('button', { type: 'button', className: 'btn btn-secondary wbs-zoom-plus', 'aria-label': t('wbs.zoom.in'), title: t('wbs.zoom.in'), onClick: () => regler(this._wbsZoom() + 10) }, '+'),
         ]);
         container.appendChild(createElement('div', { className: 'wbs-barre-vue' }, [tete, niveaux, boutonsZoom]));
+
+        /* Tâches que l'arbre ne peut pas placer (boucle de parents, parent
+           absent) : sans code WBS et absentes du Gantt, elles seraient
+           sinon invisibles. Elles sont nommées, avec la raison. */
+        const taches = store.getTasks();
+        const hors = tachesHorsArborescence(taches);
+        if (hors.length) {
+            const nomDe = new Map(taches.map(x => [x.id, x.name]));
+            container.appendChild(createElement('details', { className: 'wbs-hors' }, [
+                createElement('summary', {}, t('wbs.outside', { n: hors.length })),
+                createElement('ul', {}, hors.map(h => createElement('li', { dataset: { taskId: h.id, raison: h.raison } },
+                    `${nomDe.get(h.id) || ''} — ${t(`wbs.outside.${h.raison}`)}`))),
+            ]));
+        }
 
         if (pr.racines.length === 0) {
             container.appendChild(createElement('p', { className: 'wbs-vide' }, t('wbs.empty')));

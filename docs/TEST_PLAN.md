@@ -372,6 +372,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 10 | Niveaux | « Niveaux : 1 », « 2 », « Tout » | Seuls les niveaux choisis sont visibles ; un nœud replié porte « +n », n = ses descendants masqués (`wbs-niveaux.spec.js`) | |
 | 11 | Repli par défaut | Ouvrir l'onglet sur un projet de plus de 80 tâches, puis à 375 px | Niveaux 1 et 2 seulement | |
 | 12 | Zoom | −, la valeur, + | De 30 à 150 % par pas de 10, bornes tenues ; un clic sur la valeur revient à 100 % ; gardé au rechargement (`wbs-zoom.spec.js`) | |
+| 13 | Hors arborescence | Projet où deux tâches sont parentes l'une de l'autre, une troisième sous l'une d'elles | « 3 tâche(s) hors arborescence », la liste avec « boucle » et « sous-boucle » (`wbs-hors-arborescence.spec.js`) | |
 
 ---
 

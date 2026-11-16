@@ -349,6 +349,32 @@ export function wouldCreateParentLoop(tasks, taskId, parentId) {
     return findParentLoop(buildParentIndex(tasks), taskId, parentId);
 }
 
+/** Les taches que getTaskTree ne peut pas placer, donc sans code WBS, et
+ *  pourquoi : 'boucle' (la tache est dans une boucle de parents, que la
+ *  fiche refuse mais que d'anciennes donnees ou un import peuvent porter),
+ *  'sous-boucle' (un de ses ancetres l'est). Un parent absent n'est pas
+ *  traite ici : l'import JSON detache deja une tache dont le parent
+ *  n'existe pas (mesure par wbs-hors-arborescence.spec.js).
+ *  Reutilise findParentLoop : une seule definition de la boucle. */
+export function tachesHorsArborescence(tasks) {
+    const index = buildParentIndex(tasks);
+    const hors = [];
+    for (const t of tasks) {
+        if (!t.parentId) continue;
+        if (findParentLoop(index, t.id, t.parentId)) { hors.push({ id: t.id, raison: 'boucle' }); continue; }
+        const vus = new Set([t.id]);
+        let courant = t.parentId;
+        let raison = null;
+        while (courant && index.has(courant)) {
+            if (vus.has(courant)) { raison = 'sous-boucle'; break; }
+            vus.add(courant);
+            courant = index.get(courant);
+        }
+        if (raison) hors.push({ id: t.id, raison });
+    }
+    return hors;
+}
+
 // Stripe Price IDs — remplacez par vos vrais IDs après création sur stripe.com
 export const STRIPE_PRICES = {
     pro_monthly:  'price_PRO_MONTHLY_PLACEHOLDER',
