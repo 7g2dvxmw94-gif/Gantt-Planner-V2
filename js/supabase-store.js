@@ -6,7 +6,7 @@
 
 import { supabase } from './supabase-client.js';
 import { auth } from './auth.js';
-import { contrainteDe } from './utils.js';
+import { contrainteDe, datesReellesDe } from './utils.js';
 
 /* ---- Mappers Store → Supabase (camelCase → snake_case) ---- */
 
@@ -33,6 +33,7 @@ function taskToRow(t) {
        ligne entiere (tache perdue, dates comprises), ou lirait '12/06/2026'
        au 6 decembre (DateStyle « ISO, MDY »). Voir utils.js. */
     const contrainte = contrainteDe(t);
+    const reel = datesReellesDe(t);   // migration 030
     return {
         id:                   t.id,
         project_id:           t.projectId,
@@ -55,6 +56,8 @@ function taskToRow(t) {
         actual_cost:          typeof t.actualCost === 'number' ? t.actualCost : null,
         constraint_type:      contrainte ? contrainte.type : null,   // migration 029
         constraint_date:      contrainte ? contrainte.date : null,
+        actual_start:         reel.debut,   // migration 030
+        actual_finish:        reel.fin,
         // Permit fields
         /* CORRECTIF : n° de dossier, commune et service instructeur sont
            lus sous les noms qu'emploient la fiche (task-modal.js,
@@ -144,6 +147,8 @@ function rowToTask(row) {
         actualCost:   typeof row.actual_cost === 'number' ? row.actual_cost : null,
         constraintType: row.constraint_type || null,   // migration 029
         constraintDate: row.constraint_date || null,
+        actualStart:  row.actual_start  || null,   // migration 030
+        actualFinish: row.actual_finish || null,
         assignees:    [],   // rechargé séparément via task_assignees
         assignee:     null,
         // Permit fields
