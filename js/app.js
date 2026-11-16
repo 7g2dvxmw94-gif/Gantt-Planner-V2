@@ -2443,6 +2443,10 @@ class App {
         /* Recapitulative (<Summary>) : tout noeud qui a des enfants, phase
            ou non. MS Project calcule ses dates d'apres eux. */
         const aEnfants = new Set(allTasks.map(t => t.parentId).filter(Boolean));
+        /* Code WBS de chaque tâche (F1), sur le même arbre que l'ordre
+           d'émission : <WBS> et <OutlineNumber>, le numéro hiérarchique de
+           MS Project. */
+        const codesWbs = store.getWbs().codes;
 
         /** Liens de précédence d'une tâche. dependencies[] porte ses
          *  PRÉDÉCESSEURS et <PredecessorLink> vit dans la <Task> qu'il
@@ -2497,6 +2501,7 @@ class App {
             taskLines.push(`      <Task>` +
                 `<UID>${uid}</UID><ID>${uid}</ID>` +
                 `<Name>${esc(task.name)}</Name>` +
+                (codesWbs.has(task.id) ? `<WBS>${codesWbs.get(task.id)}</WBS><OutlineNumber>${codesWbs.get(task.id)}</OutlineNumber>` : '') +
                 `<OutlineLevel>${niveau}</OutlineLevel>` +
                 (aEnfants.has(task.id) ? `<Summary>1</Summary>` : '') +
                 (task.startDate ? `<Start>${fmtDateTime(task.startDate, '08:00:00')}</Start>` : '') +
