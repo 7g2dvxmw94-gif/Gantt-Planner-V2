@@ -2855,3 +2855,48 @@ thead .table-bl-col--header {
     font-size: var(--font-size-xs);
     padding: 2px var(--space-2);
 }
+
+/* Organigramme WBS : barre de la vue, niveaux, badge des masqués */
+.wbs-barre-vue {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.wbs-barre-vue .wbs-projet {
+    margin-bottom: 0;
+}
+
+.wbs-niveaux {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.wbs-niveaux-libelle {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-right: var(--space-1);
+}
+
+.wbs-niveau-btn {
+    padding: 2px var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.wbs-boite-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wbs-masques {
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    background: var(--bg-muted);
+    border-radius: var(--radius-full);
+    padding: 0 6px;
+}

@@ -7,7 +7,7 @@ import { store, PERMIT_TYPES, PERMIT_STATUSES, calculatePermitDeadlines, PLAN_PR
          numeroContrainteMSProject } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { themeManager } from './theme.js';
-import { ganttRenderer } from './gantt-renderer.js';
+import { ganttRenderer, VIRTUAL_THRESHOLD } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
@@ -455,11 +455,13 @@ class App {
             else if (!task.isMilestone && debut && fin) libelle = t('wbs.label.range', { code, nom: task.name, debut, fin, avancement: etat });
             else libelle = t('wbs.label.noDates', { code, nom: task.name, avancement: etat });
             const enfants = (task.children || []).filter(e => codes.has(e.id));
+            const sousNoeuds = enfants.map((e, i) => noeud(e, niveau + 1, i + 1, enfants.length));
             return {
                 id: task.id, code, nom: task.name, niveau, rang, nbFreres, type,
+                nbDescendants: sousNoeuds.reduce((somme, e) => somme + 1 + e.nbDescendants, 0),
                 couleur: task.color || '', dates, etat, libelle,
                 avancement: task.isMilestone || task.isPermit ? null : Math.max(0, Math.min(100, Math.round(Number(task.progress) || 0))),
-                enfants: enfants.map((e, i) => noeud(e, niveau + 1, i + 1, enfants.length)),
+                enfants: sousNoeuds,
             };
         };
         const racines = store.getTaskTree().filter(r => codes.has(r.id));
@@ -481,7 +483,16 @@ class App {
             createElement('span', { className: 'wbs-projet-nom', title: pr.projet.nom }, pr.projet.nom),
             createElement('span', { className: 'wbs-projet-avancement' }, pr.projet.avancement),
         ]);
-        container.appendChild(tete);
+        /* Niveaux affichés : 1 | 2 | Tout. */
+        const niveaux = createElement('div', { className: 'wbs-niveaux', role: 'group', 'aria-label': t('wbs.levels') },
+            [createElement('span', { className: 'wbs-niveaux-libelle', 'aria-hidden': 'true' }, t('wbs.levels'))]);
+        [['1', '1'], ['2', '2'], ['tout', t('wbs.levels.all')]].forEach(([valeur, libelle]) => {
+            niveaux.appendChild(createElement('button', {
+                type: 'button', className: 'btn btn-secondary wbs-niveau-btn', dataset: { niveau: valeur },
+                onClick: () => this._wbsAfficherNiveaux(valeur === 'tout' ? Infinity : Number(valeur)),
+            }, libelle));
+        });
+        container.appendChild(createElement('div', { className: 'wbs-barre-vue' }, [tete, niveaux]));
 
         if (pr.racines.length === 0) {
             container.appendChild(createElement('p', { className: 'wbs-vide' }, t('wbs.empty')));
@@ -492,7 +503,7 @@ class App {
            sélectionnée (sinon il retomberait sur le <body>). */
         const avaitFocus = this._wbsAvaitFocus || false;
         this._wbsAvaitFocus = false;
-        const replies = this._wbsRepliesDuProjet();
+        const replies = this._wbsRepliesDuProjet(pr.racines);
         const tous = [];
         const arbre = createElement('ul', { className: 'wbs-arbre', role: 'tree' });
         arbre.setAttribute('aria-label', t('wbs.tree', { projet: pr.projet.nom }));
@@ -513,6 +524,8 @@ class App {
             const boite = createElement('div', { className: `wbs-boite wbs-${n.type}`, style: { borderLeftColor: n.couleur } }, [
                 createElement('div', { className: 'wbs-boite-tete' }, [
                     createElement('span', { className: 'wbs-code' }, n.code),
+                    /* Replié : le nombre de descendants masqués. */
+                    ...(replie ? [createElement('span', { className: 'wbs-masques', title: t('wbs.hidden', { n: n.nbDescendants }) }, `+${n.nbDescendants}`)] : []),
                 ]),
                 createElement('div', { className: 'wbs-nom', title: n.nom }, n.nom),
                 createElement('div', { className: 'wbs-dates' }, n.dates),
@@ -630,11 +643,37 @@ class App {
 
     /** Ensemble des nœuds repliés du projet actif : état de la SESSION,
      *  jamais task.collapsed (persisté et partagé avec l'équipe). */
-    _wbsRepliesDuProjet() {
+    _wbsRepliesDuProjet(racines = null) {
         if (!this._wbsReplies) this._wbsReplies = new Map();
         const id = store.getActiveProject()?.id || '';
-        if (!this._wbsReplies.has(id)) this._wbsReplies.set(id, new Set());
+        if (!this._wbsReplies.has(id)) {
+            /* Repli par défaut, à la première ouverture du projet dans la
+               session : tout déplié jusqu'au seuil du Gantt, niveaux 1 et 2
+               au-delà, et toujours niveaux 1 et 2 sur mobile. */
+            const compter = (ns) => ns.reduce((somme, n) => somme + 1 + compter(n.enfants), 0);
+            const gros = racines && compter(racines) > VIRTUAL_THRESHOLD;
+            const mobile = window.matchMedia('(max-width: 768px)').matches;
+            this._wbsReplies.set(id, (racines && (gros || mobile)) ? this._wbsRepliesAuNiveau(racines, 2) : new Set());
+        }
         return this._wbsReplies.get(id);
+    }
+
+    /** Les nœuds à replier pour n'afficher que les niveaux 1 à `niveau`. */
+    _wbsRepliesAuNiveau(racines, niveau) {
+        const replies = new Set();
+        const parcourir = (ns) => ns.forEach(n => {
+            if (n.enfants.length && n.niveau >= niveau) replies.add(n.id);
+            parcourir(n.enfants);
+        });
+        parcourir(racines);
+        return replies;
+    }
+
+    _wbsAfficherNiveaux(niveau) {
+        const racines = this._wbsPresentation().racines;
+        const id = store.getActiveProject()?.id || '';
+        this._wbsReplies.set(id, this._wbsRepliesAuNiveau(racines, niveau));
+        this._renderWbsView();
     }
 
     _wbsReplier(taskId, replier) {
