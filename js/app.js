@@ -492,7 +492,15 @@ class App {
                 onClick: () => this._wbsAfficherNiveaux(valeur === 'tout' ? Infinity : Number(valeur)),
             }, libelle));
         });
-        container.appendChild(createElement('div', { className: 'wbs-barre-vue' }, [tete, niveaux]));
+        /* Zoom : −, valeur courante (clic : retour à 100 %), +. */
+        const zoom = this._wbsZoom();
+        const regler = (valeur) => { this._wbsZoomer(valeur); };
+        const boutonsZoom = createElement('div', { className: 'wbs-zoom', role: 'group', 'aria-label': t('wbs.zoom') }, [
+            createElement('button', { type: 'button', className: 'btn btn-secondary wbs-zoom-moins', 'aria-label': t('wbs.zoom.out'), title: t('wbs.zoom.out'), onClick: () => regler(this._wbsZoom() - 10) }, '−'),
+            createElement('button', { type: 'button', className: 'btn btn-secondary wbs-zoom-valeur', title: t('wbs.zoom.reset'), onClick: () => regler(100) }, `${zoom}%`),
+            createElement('button', { type: 'button', className: 'btn btn-secondary wbs-zoom-plus', 'aria-label': t('wbs.zoom.in'), title: t('wbs.zoom.in'), onClick: () => regler(this._wbsZoom() + 10) }, '+'),
+        ]);
+        container.appendChild(createElement('div', { className: 'wbs-barre-vue' }, [tete, niveaux, boutonsZoom]));
 
         if (pr.racines.length === 0) {
             container.appendChild(createElement('p', { className: 'wbs-vide' }, t('wbs.empty')));
@@ -507,6 +515,7 @@ class App {
         const tous = [];
         const arbre = createElement('ul', { className: 'wbs-arbre', role: 'tree' });
         arbre.setAttribute('aria-label', t('wbs.tree', { projet: pr.projet.nom }));
+        arbre.style.zoom = String(this._wbsZoom() / 100);
         const construire = (n) => {
             const li = createElement('li', {
                 className: `wbs-noeud wbs-niveau-${Math.min(n.niveau, 4)}`,
@@ -667,6 +676,32 @@ class App {
         });
         parcourir(racines);
         return replies;
+    }
+
+    /** Zoom de l'organigramme, en %, de 30 à 150 par pas de 10. Préférence
+     *  du navigateur (localStorage), lue et écrite sous try/catch : une
+     *  navigation privée peut la refuser. */
+    _wbsZoom() {
+        if (this._wbsZoomValeur === undefined) {
+            let lu = null;
+            try { lu = Number(localStorage.getItem('gantt_wbs_zoom')); } catch { lu = null; }
+            this._wbsZoomValeur = this._wbsZoomBorne(lu || 100);
+        }
+        return this._wbsZoomValeur;
+    }
+
+    _wbsZoomBorne(valeur) {
+        return Math.min(150, Math.max(30, Math.round(valeur / 10) * 10));
+    }
+
+    _wbsZoomer(valeur) {
+        this._wbsZoomValeur = this._wbsZoomBorne(valeur);
+        try { localStorage.setItem('gantt_wbs_zoom', String(this._wbsZoomValeur)); } catch { /* préférence non gardée */ }
+        /* Le re-rendu détruit le bouton cliqué : le focus lui est rendu,
+           pour qu'on puisse enchaîner les + au clavier. */
+        const classe = ['wbs-zoom-moins', 'wbs-zoom-valeur', 'wbs-zoom-plus'].find(c => document.activeElement?.classList?.contains(c));
+        this._renderWbsView();
+        if (classe) $(`#wbsView .${classe}`)?.focus();
     }
 
     _wbsAfficherNiveaux(niveau) {
