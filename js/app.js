@@ -473,6 +473,7 @@ class App {
         const container = $('#wbsView');
         if (!container) return;
         const pr = this._wbsPresentation();
+        if (container.contains(document.activeElement) && document.activeElement !== container) this._wbsAvaitFocus = true;
         container.innerHTML = '';
         container.className = 'wbs-view';
 
@@ -487,6 +488,11 @@ class App {
             return;
         }
 
+        /* Le focus était-il dans l'arbre ? Le re-rendu le rendra à la boîte
+           sélectionnée (sinon il retomberait sur le <body>). */
+        const avaitFocus = this._wbsAvaitFocus || false;
+        this._wbsAvaitFocus = false;
+        const replies = this._wbsRepliesDuProjet();
         const tous = [];
         const arbre = createElement('ul', { className: 'wbs-arbre', role: 'tree' });
         arbre.setAttribute('aria-label', t('wbs.tree', { projet: pr.projet.nom }));
@@ -502,7 +508,8 @@ class App {
                 tabindex: '-1',
                 dataset: { taskId: n.id, wbsCode: n.code },
             });
-            if (n.enfants.length) li.setAttribute('aria-expanded', 'true');
+            const replie = n.enfants.length > 0 && replies.has(n.id);
+            if (n.enfants.length) li.setAttribute('aria-expanded', replie ? 'false' : 'true');
             const boite = createElement('div', { className: `wbs-boite wbs-${n.type}`, style: { borderLeftColor: n.couleur } }, [
                 createElement('div', { className: 'wbs-boite-tete' }, [
                     createElement('span', { className: 'wbs-code' }, n.code),
@@ -520,6 +527,7 @@ class App {
             tous.push(li);
             if (n.enfants.length) {
                 const groupe = createElement('ul', { className: 'wbs-groupe', role: 'group' });
+                if (replie) groupe.hidden = true;
                 n.enfants.forEach(e => groupe.appendChild(construire(e)));
                 li.appendChild(groupe);
             }
@@ -530,8 +538,8 @@ class App {
 
         /* Un seul arrêt de tabulation : la boîte sélectionnée, sinon la
            première (motif d'arbre de l'APG ARIA). */
-        const choisi = tous.find(li => li.dataset.taskId === this._wbsSelection) || null;
-        if (choisi) this._wbsSelectionner(choisi, false);
+        const choisi = tous.find(li => li.dataset.taskId === this._wbsSelection && this._wbsVisible(li)) || null;
+        if (choisi) this._wbsSelectionner(choisi, avaitFocus);
         else tous[0].tabIndex = 0;
 
         this._bindWbsView(container);
@@ -574,11 +582,72 @@ class App {
         container.addEventListener('keydown', (e) => {
             const li = noeudDe(e);
             if (!li || e.target !== li) return;
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                taskModal.openEdit(li.dataset.taskId);
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const arbre = li.closest('[role="tree"]');
+            const visibles = [...arbre.querySelectorAll('[role="treeitem"]')].filter(x => this._wbsVisible(x));
+            const i = visibles.indexOf(li);
+            const aller = (cible) => { if (cible) this._wbsSelectionner(cible); };
+            const deplie = li.getAttribute('aria-expanded');
+            const parent = li.parentElement.closest('[role="treeitem"]');
+            let fait = true;
+            /* Motif d'arbre de l'APG ARIA. */
+            switch (e.key) {
+                case 'Enter': taskModal.openEdit(li.dataset.taskId); break;
+                case 'ArrowDown': aller(visibles[i + 1]); break;
+                case 'ArrowUp': aller(visibles[i - 1]); break;
+                case 'Home': aller(visibles[0]); break;
+                case 'End': aller(visibles[visibles.length - 1]); break;
+                case 'ArrowRight':
+                    if (deplie === 'false') this._wbsReplier(li.dataset.taskId, false);
+                    else if (deplie === 'true') aller(li.querySelector(':scope > [role="group"] > [role="treeitem"]'));
+                    break;
+                case 'ArrowLeft':
+                    if (deplie === 'true') this._wbsReplier(li.dataset.taskId, true);
+                    else aller(parent);
+                    break;
+                case '*': {
+                    /* Déplie tous les frères du nœud focalisé. */
+                    const freres = [...li.parentElement.children].filter(x => x.getAttribute('aria-expanded') === 'false');
+                    const replies = this._wbsRepliesDuProjet();
+                    freres.forEach(x => replies.delete(x.dataset.taskId));
+                    this._wbsAvaitFocus = true;
+                    this._renderWbsView();
+                    break;
+                }
+                default: fait = false;
             }
+            if (fait) e.preventDefault();
         });
+
+        /* La fiche ouverte depuis l'organigramme rend le focus à sa boîte
+           en se fermant. */
+        document.addEventListener('taskmodal:fermee', () => {
+            if (container.style.display === 'none' || !this._wbsSelection) return;
+            const li = container.querySelector(`[role="treeitem"][data-task-id="${CSS.escape(this._wbsSelection)}"]`);
+            if (li) this._wbsSelectionner(li);
+        });
+    }
+
+    /** Ensemble des nœuds repliés du projet actif : état de la SESSION,
+     *  jamais task.collapsed (persisté et partagé avec l'équipe). */
+    _wbsRepliesDuProjet() {
+        if (!this._wbsReplies) this._wbsReplies = new Map();
+        const id = store.getActiveProject()?.id || '';
+        if (!this._wbsReplies.has(id)) this._wbsReplies.set(id, new Set());
+        return this._wbsReplies.get(id);
+    }
+
+    _wbsReplier(taskId, replier) {
+        const replies = this._wbsRepliesDuProjet();
+        if (replier) replies.add(taskId); else replies.delete(taskId);
+        this._wbsSelection = taskId;
+        this._wbsAvaitFocus = true;
+        this._renderWbsView();
+    }
+
+    /** Un treeitem est visible si aucun de ses groupes ancêtres n'est replié. */
+    _wbsVisible(li) {
+        return !li.closest('[role="group"][hidden]');
     }
 
     /** Re-rendu sur changement du store, seulement si la vue est visible,

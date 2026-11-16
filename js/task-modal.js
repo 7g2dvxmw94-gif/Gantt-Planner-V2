@@ -790,6 +790,10 @@ class TaskModal {
 
     close() {
         this._overlay.classList.remove('active');
+        /* Annoncé pour qu'une vue puisse rendre le focus à l'élément qui a
+           ouvert la fiche (organigramme WBS) : sans cela, il retombait sur
+           le <body>. */
+        document.dispatchEvent(new CustomEvent('taskmodal:fermee'));
     }
 
     _show() {

@@ -366,6 +366,9 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 4 | Nom à chevrons | Tâche nommée `Étanchéité <MOA> & "lot"` | Le nom s'affiche tel quel | |
 | 5 | Retour | Revenir à la Timeline | Vue WBS masquée, Gantt visible | |
 | 6 | Mobile | 320, 360, 375 px | Navigation du bas sans débordement, un bouton par onglet | |
+| 7 | Repli | ← sur une phase dépliée, → pour la déplier | Descendants masqués puis visibles ; le Gantt n'est pas replié (`wbs-organigramme-clavier.spec.js`) | |
+| 8 | Clavier | ↓ ↑ ← → Début Fin * | Le focus suit le motif d'arbre ; un seul arrêt de tabulation | |
+| 9 | Focus rendu | Ouvrir la fiche au clavier, Annuler ou Enregistrer | Le focus revient à la boîte | |
 
 ---
 
