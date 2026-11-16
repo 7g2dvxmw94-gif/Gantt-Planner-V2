@@ -2385,7 +2385,9 @@ class App {
             const c = contrainteDe(task);
             return c ? [t(`task.constraint.${c.type}`), fmtDate(c.date)] : [t('task.constraint.asap'), ''];
         };
+        const codesWbs = store.getWbs().codes;
         const row = (task, level) => [
+            codesWbs.get(task.id) || '',
             level,
             this._csvEscape(task.name, SEP),
             dur(task),
@@ -2396,9 +2398,10 @@ class App {
             ...contrainte(task).map(v => this._csvEscape(v, SEP)),
         ].join(SEP);
 
-        /* Les sept premieres colonnes gardent leur ordre : l'aide d'import
-           MS Project les designe. Les colonnes de contrainte viennent apres. */
-        const headers = [t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress'),
+        /* Les huit premieres colonnes gardent leur ordre : l'aide d'import
+           MS Project les designe, le code WBS en tete. Les colonnes de
+           contrainte viennent apres. */
+        const headers = [t('csv.col.wbs'), t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress'),
                          t('csv.col.constraintType'), t('csv.col.constraintDate')];
         const rows = this._parcoursExport().map(({ task, niveau }) => row(task, niveau));
 
@@ -2581,6 +2584,7 @@ ${assignLines.join('\n')}
                     </ol>
                     <table style="width:100%;font-size:12px;border-collapse:collapse;margin:6px 0 8px">
                         <tr style="background:#f5f5f5"><th style="text-align:left;padding:4px 8px;border:1px solid #ddd">Colonne CSV (De)</th><th style="text-align:left;padding:4px 8px;border:1px solid #ddd">Champ MS Project (Vers)</th></tr>
+                        <tr><td style="padding:3px 8px;border:1px solid #eee">WBS</td><td style="padding:3px 8px;border:1px solid #eee">WBS</td></tr>
                         <tr><td style="padding:3px 8px;border:1px solid #eee">Niveau hiérarchique</td><td style="padding:3px 8px;border:1px solid #eee">Niveau hiérarchique</td></tr>
                         <tr><td style="padding:3px 8px;border:1px solid #eee">Nom</td><td style="padding:3px 8px;border:1px solid #eee">Nom</td></tr>
                         <tr><td style="padding:3px 8px;border:1px solid #eee">Durée</td><td style="padding:3px 8px;border:1px solid #eee">Durée</td></tr>
