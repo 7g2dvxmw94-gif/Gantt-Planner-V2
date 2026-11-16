@@ -3203,11 +3203,14 @@ thead{display:table-header-group}
         // ---- TABLE SECTION ----
         if (sections.includes('table')) {
             html += `<h2>${t('pdf.table.title')}</h2>`;
-            html += `<table><thead><tr><th>${t('pdf.table.task')}</th><th>${t('pdf.table.start')}</th><th>${t('pdf.table.end')}</th><th>${t('pdf.table.assignees')}</th><th>${t('pdf.table.status')}</th><th>${t('pdf.table.priority')}</th><th>${t('pdf.table.progress')}</th></tr></thead><tbody>`;
+            /* Code WBS en première colonne (F1), phases comprises. */
+            const codesWbs = store.getWbs().codes;
+            html += `<table><thead><tr><th>${t('pdf.table.wbs')}</th><th>${t('pdf.table.task')}</th><th>${t('pdf.table.start')}</th><th>${t('pdf.table.end')}</th><th>${t('pdf.table.assignees')}</th><th>${t('pdf.table.status')}</th><th>${t('pdf.table.priority')}</th><th>${t('pdf.table.progress')}</th></tr></thead><tbody>`;
             this._parcoursExport().forEach(({ task }) => {
+                const code = escapeHtml(codesWbs.get(task.id) || '');
                 html += task.isPhase
-                    ? `<tr class="phase-row"><td colspan="7">${escapeHtml(task.name)} (${task.progress}%)</td></tr>`
-                    : this._pdfTaskRow(task, resources, statusLabels, priorityLabels);
+                    ? `<tr class="phase-row"><td>${code}</td><td colspan="7">${escapeHtml(task.name)} (${task.progress}%)</td></tr>`
+                    : this._pdfTaskRow(task, resources, statusLabels, priorityLabels, code);
             });
             html += `</tbody></table>`;
         }
@@ -3566,12 +3569,13 @@ thead{display:table-header-group}
         return html;
     }
 
-    _pdfTaskRow(task, resources, statusLabels, priorityLabels) {
+    _pdfTaskRow(task, resources, statusLabels, priorityLabels, code = '') {
         const assignees = (task.assignees || []).map(id => {
             const r = resources.find(r => r.id === id);
             return r ? r.name : '';
         }).filter(Boolean).join(', ');
         return `<tr>
+<td>${code}</td>
 <td>&nbsp;&nbsp;${escapeHtml(task.name)}</td>
 <td>${formatDateDisplay(task.startDate)}</td>
 <td>${formatDateDisplay(task.endDate)}</td>

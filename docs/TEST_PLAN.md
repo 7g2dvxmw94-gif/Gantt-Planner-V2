@@ -527,7 +527,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 3 | Impression | Enregistrer en PDF | Fichier PDF créé | |
 | 4 | Contenu | Ouvrir le PDF | Gantt visible et lisible | |
 | 5 | Qualité | Vérifier la lisibilité | Texte et graphiques clairs | |
-
+| 6 | Code WBS | Exporter en PDF (tableau) un projet à trois niveaux | Première colonne « WBS » : le code de chaque ligne, phases comprises (`export-pdf-wbs.spec.js`) | |
 ---
 
 ### G4. Import XML MS Project

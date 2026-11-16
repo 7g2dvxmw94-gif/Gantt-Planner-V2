@@ -134,7 +134,12 @@ test('l\'export PDF (tableau et frise) suit l\'arbre du Gantt', async ({ page })
 
     /* Le tableau des tâches est le premier du document (d'autres sections,
        comme les ressources, ont le leur). */
-    const tableau = await fenetre.locator('table').first().locator('tbody tr td:first-child').allTextContents();
+    /* La colonne « Tâche » repérée par son en-tête, non par sa position :
+       une colonne ajoutée devant (le code WBS) ne déplace pas la lecture. */
+    const premier = fenetre.locator('table').first();
+    const iTache = (await premier.locator('thead th').allTextContents()).indexOf('Tâche');
+    expect(iTache, 'colonne « Tâche » du tableau PDF').toBeGreaterThanOrEqual(0);
+    const tableau = await premier.locator(`tbody tr td:nth-child(${iTache + 1})`).allTextContents();
     const frise = await fenetre.locator('.gantt-tl-row .gantt-tl-label').allTextContents();
     await fenetre.close();
     // --- L'ASSERTION CENTRALE ---
