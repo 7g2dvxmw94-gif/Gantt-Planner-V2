@@ -104,7 +104,12 @@ test('l\'export CSV suit l\'arbre du Gantt', async ({ page }) => {
     const s = Date.now();
     await monter(page, s);
     const csv = await fs.readFile(await exporter(page, 'CSV'), 'latin1');
-    const noms = csv.split('\n').slice(1).map(l => l.split(';')[1]);
+    /* La colonne « Nom » lue par son en-tête, non par sa position : une
+       colonne ajoutée devant (le code WBS) ne déplace pas la lecture. */
+    const [entete, ...lignesCsv] = csv.split('\n');
+    const iNom = entete.split(';').indexOf('Nom');
+    expect(iNom, 'colonne « Nom » du CSV').toBeGreaterThanOrEqual(0);
+    const noms = lignesCsv.map(l => l.split(';')[iNom]);
     // --- L'ASSERTION CENTRALE ---
     expect(cles(noms, s), 'l\'ordre des lignes du CSV').toEqual(ORDRE_GANTT);
     await (await present(page.locator('#msHelpOk'), 'aide d\'import MS Project')).click();

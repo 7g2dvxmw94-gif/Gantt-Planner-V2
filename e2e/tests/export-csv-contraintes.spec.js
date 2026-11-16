@@ -100,19 +100,25 @@ test('l\'export CSV écrit le type et la date de contrainte de chaque tâche', a
     const colonnes = entete.split(';');
     const ligneDe = (nom) => (lignes.find(l => l.includes(nom)) || '').split(';');
 
+    /* Les colonnes sont lues à partir de « Niveau hiérarchique », non de
+       la première : une colonne ajoutée devant (le code WBS) ne déplace
+       pas la lecture. */
+    const o = colonnes.indexOf('Niveau hiérarchique');
+    expect(o, 'colonne « Niveau hiérarchique »').toBeGreaterThanOrEqual(0);
+
     /* DISCRIMINANT — LES SEPT COLONNES ACTUELLES, inchangées, dans
        l'ordre, et les dates de T1 à leur place. Ferme « les exports
        actuels changent » et « on lit une autre ligne ». */
-    expect(colonnes.slice(0, 7), 'les sept colonnes actuelles').toEqual(
+    expect(colonnes.slice(o, o + 7), 'les sept colonnes actuelles').toEqual(
         ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé']);
-    expect(ligneDe(T1).slice(1, 5), 'la ligne de T1').toEqual([T1, '3 jours', '08/06/2026', '10/06/2026']);
+    expect(ligneDe(T1).slice(o + 1, o + 5), 'la ligne de T1').toEqual([T1, '3 jours', '08/06/2026', '10/06/2026']);
 
     // --- L'ASSERTION CENTRALE ---
-    expect(colonnes, 'deux colonnes de contrainte après les sept actuelles').toEqual(
+    expect(colonnes.slice(o), 'deux colonnes de contrainte après les sept actuelles').toEqual(
         ['Niveau hiérarchique', 'Nom', 'Durée', 'Début', 'Fin', 'Noms ressources', '% achevé',
          'Type de contrainte', 'Date de contrainte']);
-    expect(ligneDe(T1).slice(7), 'T1 : « Doit finir le » 12/06/2026').toEqual(['Doit finir le', '12/06/2026']);
-    expect(ligneDe(T2).slice(7), 'T2 : « Dès que possible », sans date').toEqual(['Dès que possible', '']);
+    expect(ligneDe(T1).slice(o + 7), 'T1 : « Doit finir le » 12/06/2026').toEqual(['Doit finir le', '12/06/2026']);
+    expect(ligneDe(T2).slice(o + 7), 'T2 : « Dès que possible », sans date').toEqual(['Dès que possible', '']);
 
     await (await present(page.locator('#msHelpOk'), 'aide d\'import MS Project')).click();
     await expect(page.locator('#msHelpOk')).toBeHidden();
