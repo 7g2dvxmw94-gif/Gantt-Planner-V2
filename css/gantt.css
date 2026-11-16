@@ -205,6 +205,15 @@
     flex-shrink: 0;
 }
 
+/* Code WBS : chiffres alignés, jamais coupés ; le nom prend le reste. */
+.task-wbs {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
 .task-info {
     flex: 1;
     min-width: 0;

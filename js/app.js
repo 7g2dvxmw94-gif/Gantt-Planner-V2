@@ -19,6 +19,7 @@ import { settingsPanel } from './settings-panel.js';
 import { auth } from './auth.js';
 import { collaborationUI } from './collaboration-ui.js';
 import { evaluerDcma } from './dcma.js';
+import { comparerCodesWbs } from './wbs.js';
 
 class App {
     constructor() {
@@ -52,6 +53,11 @@ class App {
         // Re-render Gantt when links visibility changes
         document.addEventListener('links-visibility-changed', () => {
             ganttRenderer.refreshDependencies();
+        });
+
+        // Afficher ou masquer le code WBS du Gantt
+        document.addEventListener('wbs-visibility-changed', () => {
+            ganttRenderer.render();
         });
 
         // Initialize Gantt renderer
@@ -403,6 +409,9 @@ class App {
         const tasks = this._getFilteredTasks(false);
         container.innerHTML = '';
         container.className = 'table-view';
+        /* Codes de l'arbre complet : la recherche filtre les lignes, elle ne
+           renumérote pas. */
+        const codesWbs = store.getWbs().codes;
 
         // Sort tasks
         const sorted = [...tasks].sort((a, b) => {
@@ -412,6 +421,9 @@ class App {
 
             switch (key) {
                 case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+                /* Tri naturel : 1.2 avant 1.10, ce que ne fait ni < ni la
+                   collation. */
+                case 'wbs': return comparerCodesWbs(codesWbs.get(a.id), codesWbs.get(b.id)) * dir;
                 case 'phase': {
                     const pa = a.parentId ? (store.getTask(a.parentId)?.name || '') : '';
                     const pb = b.parentId ? (store.getTask(b.parentId)?.name || '') : '';
@@ -555,6 +567,7 @@ class App {
         const activeBaseline = store.getActiveBaseline();
 
         const columns = [
+            { key: 'wbs', label: t('board.wbs') },
             { key: 'name', label: t('board.taskName') },
             { key: 'phase', label: t('board.phase') },
             { key: 'startDate', label: t('board.start') },
@@ -652,6 +665,12 @@ class App {
             else typeSpan.classList.add('type-task');
             tdType.appendChild(typeSpan);
             row.appendChild(tdType);
+
+            // Code WBS
+            const tdWbs = document.createElement('td');
+            tdWbs.className = 'table-wbs-col';
+            tdWbs.textContent = codesWbs.get(task.id) || '';
+            row.appendChild(tdWbs);
 
             // Name
             const tdName = document.createElement('td');

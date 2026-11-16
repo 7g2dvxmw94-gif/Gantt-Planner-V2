@@ -97,6 +97,11 @@
 
 /* ---- Mobile Landscape / Small Tablet (768px) ---- */
 @media (max-width: 768px) {
+    /* Le code WBS cède la place au nom sur mobile. */
+    .task-wbs {
+        display: none;
+    }
+
     .header {
         padding: 0 var(--space-3);
         gap: var(--space-2);
