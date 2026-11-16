@@ -71,3 +71,57 @@ export function comparerCodesWbs(a, b) {
     }
     return sa.length - sb.length;
 }
+
+/** Texte d'une cellule → code WBS normalisé, ou null.
+ *  ' 1.2 ' → '1.2' ; '01.2' → '1.2' ; '1.0' → '1' (Excel écrit souvent
+ *  « 1.0 » pour un lot de premier niveau) ; refusés : '', '0', '1..2',
+ *  'A.1', '1,2', '1.0.1', '1.2.0'. */
+export function lireCodeWbs(valeur) {
+    let s = String(valeur ?? '').trim();
+    if (/^\d+\.0$/.test(s)) s = s.slice(0, -2);
+    if (!/^\d+(\.\d+)*$/.test(s)) return null;
+    const segments = s.split('.').map(x => Number(x));
+    if (segments.some(n => !Number.isInteger(n) || n < 1)) return null;
+    return segments.join('.');
+}
+
+/** Reconstruit une hiérarchie depuis des codes lus d'un tableur.
+ *  @param {Array<string|null>} codes  un code normalisé par ligne, ou null
+ *  @returns {{ parentDe: Array<number|null>, ordre: number[],
+ *    aDesEnfants: Set<number>, anomalies: { doublons: string[],
+ *    parentsAbsents: number, sansCode: number } }}
+ *  Parent de a.b.c = a.b ; s'il manque, le plus proche ancêtre présent,
+ *  sinon la racine. Ordre : tri naturel des codes, les lignes sans code à
+ *  la fin dans leur ordre. Des doublons rendent la hiérarchie
+ *  inutilisable : l'appelant importe alors à plat. */
+export function reconstruireWbsDepuisCodes(codes) {
+    const index = new Map();
+    const doublons = new Set();
+    codes.forEach((c, i) => {
+        if (!c) return;
+        if (index.has(c)) doublons.add(c); else index.set(c, i);
+    });
+    const parentDe = codes.map(() => null);
+    const aDesEnfants = new Set();
+    let parentsAbsents = 0;
+    codes.forEach((c, i) => {
+        if (!c) return;
+        const segs = c.split('.');
+        let trouve = null;
+        for (let k = segs.length - 1; k >= 1 && trouve === null; k--) {
+            const p = segs.slice(0, k).join('.');
+            if (index.has(p)) trouve = index.get(p);
+            else if (k === segs.length - 1) parentsAbsents++;
+        }
+        parentDe[i] = trouve;
+        if (trouve !== null) aDesEnfants.add(trouve);
+    });
+    const avecCode = codes.map((c, i) => i).filter(i => codes[i]);
+    avecCode.sort((a, b) => comparerCodesWbs(codes[a], codes[b]) || a - b);
+    const sansCode = codes.map((c, i) => i).filter(i => !codes[i]);
+    return {
+        parentDe, aDesEnfants,
+        ordre: [...avecCode, ...sansCode],
+        anomalies: { doublons: [...doublons], parentsAbsents, sansCode: sansCode.length },
+    };
+}

@@ -20,6 +20,14 @@ export function tableurProjet({ taches }) {
     return ['Nom,Debut,Fin,Phase,Ressource,Avancement', ...lignes].join('\n');
 }
 
+/** Charge tableur libre : une ligne d'en-têtes puis des lignes, en CSV.
+ *  Sert aux colonnes de codes WBS : SheetJS lit « 1.10 » d'un CSV comme le
+ *  NOMBRE 1.1 dans les lignes typées et comme le texte « 1.10 » en
+ *  raw:false (mesuré, xlsx-0.20.3) — exactement le piège à couvrir. */
+export function tableurCsv(entetes, lignes) {
+    return [entetes, ...lignes].map(l => l.join(',')).join('\n');
+}
+
 /* ---- Vrai classeur .xlsx ----
  *
  *  Le CSV ci-dessus ne dit pas comment Excel STOCKE une date : dans un .xlsx,

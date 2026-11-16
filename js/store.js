@@ -11,7 +11,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          normaliserRecherche, typeContrainteDepuisTexte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
-import { numeroterWbs } from './wbs.js';
+import { numeroterWbs, lireCodeWbs, reconstruireWbsDepuisCodes } from './wbs.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
@@ -4357,7 +4357,10 @@ class Store {
      *  est toujours vraie, donc un `if (result)` posé sur l'appel non
      *  attendu annoncerait un succès sur un import raté. Voir
      *  js/app.js, _importExcelFile(). */
-    async importFromExcel(rows, fileName) {
+    /* `textes` : les mêmes lignes lues en TEXTE (sheet_to_json raw:false).
+       Les lignes typées rendent « 1.10 » en nombre 1.1 : une colonne de
+       codes WBS ne se lit que sur le texte. */
+    async importFromExcel(rows, fileName, { textes = null } = {}) {
         this._snapshot();
         try {
             // Auto-detect column mapping from headers
@@ -4390,6 +4393,31 @@ class Store {
             const colConstraintType = entete(['type de contrainte', 'constraint type']);
             const colConstraintDate = entete(['date de contrainte', 'constraint date']);
             this._avertissementsImport = [];
+
+            /* COLONNE DE CODES WBS. Candidate : un MOT de l'en-tête (sans
+               accents, découpé sur tout caractère non alphanumérique) vaut
+               wbs, otp ou sdp. Elle passe en mode code si toutes ses valeurs
+               non vides, lues en texte, sont des codes. Sinon : le
+               comportement d'avant (une colonne « WBS » de noms reste lue
+               comme une colonne de phases), avec un avertissement si elle
+               mêle codes et non-codes. */
+            let codesLignes = null;
+            const colCode = headerMap.find(h => normaliserRecherche(h).split(/[^a-z0-9]+/).some(m => ['wbs', 'otp', 'sdp'].includes(m))) || null;
+            if (colCode && textes && textes.length === rows.length) {
+                const valeurs = textes.map(r => String(r[colCode] ?? '').trim());
+                const nonVides = valeurs.filter(Boolean);
+                const lus = valeurs.map(v => v ? lireCodeWbs(v) : null);
+                const fautive = valeurs.find((v, i) => v && !lus[i]);
+                if (nonVides.length && !fautive) {
+                    codesLignes = lus;
+                    if (colPhase && colPhase !== colCode) {
+                        this._avertissementsImport.push({ type: 'wbs-phase-ignoree' });
+                    }
+                } else if (nonVides.length && fautive && nonVides.some(v => lireCodeWbs(v))) {
+                    this._avertissementsImport.push({ type: 'wbs-mixte', valeur: fautive });
+                }
+            }
+            const colPhaseLue = codesLignes ? null : colPhase;
 
             if (!colName) {
                 console.error('No name column found. Headers:', headers);
@@ -4435,7 +4463,7 @@ class Store {
                 const startDate = colStart ? fmtDate(row[colStart]) : '';
                 const endDate = colEnd ? fmtDate(row[colEnd]) : '';
                 const progress = colProgress ? (parseInt(row[colProgress]) || 0) : 0;
-                const phaseName = colPhase ? String(row[colPhase] || '').trim() : '';
+                const phaseName = colPhaseLue ? String(row[colPhaseLue] || '').trim() : '';
                 const assigneeName = colAssignee ? String(row[colAssignee] || '').trim() : '';
 
                 /* La contrainte : un type reconnu ET une date lisible, ou
@@ -4497,7 +4525,30 @@ class Store {
                     color: '#3B82F6',
                     ...contrainte,
                 });
+                if (codesLignes) tasks[tasks.length - 1]._codeWbs = codesLignes[i];
             });
+
+            /* Mode code : la hiérarchie et l'ordre viennent des codes. Une
+               ligne qui a des enfants devient une phase ; ses dates et son
+               avancement seront ceux de _recalculatePhase, après
+               l'enregistrement. Des doublons rendent la hiérarchie
+               inutilisable : import à plat, avertissement. */
+            if (codesLignes) {
+                const r = reconstruireWbsDepuisCodes(tasks.map(t => t._codeWbs || null));
+                if (r.anomalies.doublons.length) {
+                    this._avertissementsImport.push({ type: 'wbs-doublons', codes: r.anomalies.doublons });
+                } else {
+                    tasks.forEach((t, i) => {
+                        t.parentId = r.parentDe[i] === null ? null : tasks[r.parentDe[i]].id;
+                        if (r.aDesEnfants.has(i)) { t.isPhase = true; t.color = '#6366F1'; }
+                    });
+                    r.ordre.forEach((i, rang) => { tasks[i].order = rang; });
+                    if (r.anomalies.parentsAbsents) {
+                        this._avertissementsImport.push({ type: 'wbs-parents-absents', n: r.anomalies.parentsAbsents });
+                    }
+                }
+                tasks.forEach(t => { delete t._codeWbs; });
+            }
 
             // Auto-calculate phase dates
             tasks.filter(t => t.isPhase).forEach(phase => {
@@ -4568,6 +4619,13 @@ class Store {
                l'import disparaissait en entier. Même défaut, même correctif
                qu'à l'import XML — la fonction est partagée. */
             await this._persisterImport(newProject, tasks, ressourcesCreees, ressourcesEmpruntees);
+
+            /* Les phases suivent leurs enfants, des plus profondes aux plus
+               hautes (une phase de niveau 1 dont le seul enfant est une
+               sous-phase n'aurait sinon pas de dates). APRÈS l'écriture :
+               _recalculatePhase écrit chaque phase sans attendre (#145). */
+            this._recalculerToutesLesPhases(this._data.tasks.filter(t => t.projectId === newProjectId && t.isPhase));
+            this._save();
 
             this._emit('project:import', newProjectId);
             return newProject;

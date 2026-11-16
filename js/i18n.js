@@ -700,6 +700,10 @@ const I18N = {
         // CSV headers
         'import.avertissement.alap': 'Le plus tard possible n\'existe pas ici : {noms} importée(s) en « Dès que possible ».',
         'import.avertissement.autres': 'et {n} autres',
+        'import.avertissement.wbsDoublons': 'Codes WBS en double ({codes}) : tâches importées à plat, sans hiérarchie.',
+        'import.avertissement.wbsMixte': 'La colonne WBS mêle codes et autres valeurs (« {valeur} ») : lue comme une colonne de phases.',
+        'import.avertissement.wbsPhaseIgnoree': 'Colonne Phase ignorée : la hiérarchie vient de la colonne WBS.',
+        'import.avertissement.wbsParentsAbsents': '{n} code(s) WBS sans parent présent : rattaché(s) au plus proche ancêtre.',
         'csv.col.wbs': 'WBS',
         'csv.col.level': 'Niveau hiérarchique',
         'csv.col.name': 'Nom',
@@ -1544,6 +1548,10 @@ const I18N = {
         // CSV headers
         'import.avertissement.alap': 'As late as possible does not exist here: {noms} imported as “As soon as possible”.',
         'import.avertissement.autres': 'and {n} more',
+        'import.avertissement.wbsDoublons': 'Duplicate WBS codes ({codes}): tasks imported flat, without hierarchy.',
+        'import.avertissement.wbsMixte': 'The WBS column mixes codes and other values (“{valeur}”): read as a phase column.',
+        'import.avertissement.wbsPhaseIgnoree': 'Phase column ignored: the hierarchy comes from the WBS column.',
+        'import.avertissement.wbsParentsAbsents': '{n} WBS code(s) without a present parent: attached to the nearest ancestor.',
         'csv.col.wbs': 'WBS',
         'csv.col.level': 'Hierarchical level',
         'csv.col.name': 'Name',
