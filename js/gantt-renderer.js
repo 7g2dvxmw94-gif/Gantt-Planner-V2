@@ -15,7 +15,10 @@ const ZOOM_CONFIG = {
     quarter: { colWidth: 80,  labelKey: 'zoom.quarter' },
 };
 
-const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
+/* Au-delà de ce nombre de lignes, le Gantt se virtualise, et l'organigramme
+   WBS s'ouvre replié aux niveaux 1 et 2 (app.js) : un seul seuil de « gros
+   projet ». */
+export const VIRTUAL_THRESHOLD = 80;  // Enable virtualisation above this row count
 const ROW_HEIGHT = 48;         // Must match --gantt-row-height
 const BUFFER_ROWS = 10;        // Extra rows rendered above/below viewport
 
