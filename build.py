@@ -20,6 +20,7 @@ JS_FILES = [
     'js/i18n.js',
     'js/utils.js',
     'js/dcma.js',
+    'js/wbs.js',
     'js/store.js',
     'js/theme.js',
     'js/task-modal.js',
