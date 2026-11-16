@@ -2703,3 +2703,155 @@ thead .table-bl-col--header {
     display: flex;
     gap: var(--space-2, 8px);
 }
+
+/* ============================================================
+   Vue WBS : organigramme des tâches
+   Niveau 1 en boîtes côte à côte qui passent à la ligne ; sous chacune,
+   ses descendants en liste indentée (16 px par niveau). Jetons de thème
+   seulement : le thème sombre suit.
+   ============================================================ */
+.wbs-view {
+    padding: var(--space-4);
+    overflow: auto;
+    height: 100%;
+}
+
+.wbs-projet {
+    display: inline-flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    margin-bottom: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    max-width: 100%;
+}
+
+.wbs-projet-nom {
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wbs-projet-avancement {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.wbs-vide {
+    color: var(--text-secondary);
+}
+
+.wbs-arbre {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.wbs-groupe {
+    list-style: none;
+    margin: 0 0 0 7px;
+    padding: 0 0 0 8px;
+    border-left: 1px solid var(--border-default);
+}
+
+.wbs-groupe > .wbs-noeud {
+    margin-top: 8px;
+    position: relative;
+}
+
+/* Amorce horizontale du trait vers la boîte */
+.wbs-groupe > .wbs-noeud::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 18px;
+    width: 8px;
+    border-top: 1px solid var(--border-default);
+}
+
+.wbs-noeud {
+    outline: none;
+}
+
+.wbs-boite {
+    width: 176px;
+    box-sizing: border-box;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-default);
+    border-left: 3px solid var(--text-secondary);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+}
+
+.wbs-noeud[aria-selected="true"] > .wbs-boite {
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.wbs-noeud:focus-visible > .wbs-boite {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.wbs-code {
+    font-size: var(--font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.wbs-nom {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wbs-phase .wbs-nom {
+    font-weight: var(--font-weight-semibold);
+}
+
+.wbs-dates,
+.wbs-etat {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.wbs-etat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.wbs-barre {
+    flex: 1;
+    height: 4px;
+    border-radius: var(--radius-full);
+    background: var(--border-default);
+    overflow: hidden;
+}
+
+.wbs-barre-remplie {
+    display: block;
+    height: 100%;
+    background: var(--color-primary);
+}
+
+.wbs-ouvrir {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-xs);
+    padding: 2px var(--space-2);
+}

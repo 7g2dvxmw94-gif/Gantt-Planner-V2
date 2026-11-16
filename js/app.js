@@ -125,6 +125,10 @@ class App {
             if (document.getElementById('boardView')?.style.display !== 'none') {
                 this._renderBoardView();
             }
+            // Idem pour l'organigramme WBS
+            if (document.getElementById('wbsView')?.style.display !== 'none') {
+                this._planifierRenduWbs();
+            }
         });
 
         store.on('project:change', () => { this._applyRoleGating(); this._majConflitsBtn(); });
@@ -267,6 +271,7 @@ class App {
         const resourceView = $('#resourceView');
         const dashboardView = $('#dashboardView');
         const costsView = $('#costsView');
+        const wbsView = $('#wbsView');
 
         // Hide all views
         if (ganttWrapper) ganttWrapper.style.display = 'none';
@@ -274,6 +279,7 @@ class App {
         if (resourceView) resourceView.style.display = 'none';
         if (dashboardView) dashboardView.style.display = 'none';
         if (costsView) costsView.style.display = 'none';
+        if (wbsView) wbsView.style.display = 'none';
 
         // Show active view
         switch (view) {
@@ -325,6 +331,12 @@ class App {
                     );
                 }
                 break;
+            case 'wbs':
+                if (wbsView) {
+                    wbsView.style.display = '';
+                    this._renderWbsView();
+                }
+                break;
         }
 
         // Update mobile nav
@@ -349,6 +361,9 @@ class App {
                 break;
             case 'costs':
                 this._renderCostsView();
+                break;
+            case 'wbs':
+                this._renderWbsView();
                 break;
         }
     }
@@ -399,6 +414,181 @@ class App {
             }
 
             return true;
+        });
+    }
+
+    /* ============================================================
+       Vue WBS : organigramme des tâches (onglet « WBS »)
+
+       Disposition : les nœuds de niveau 1 en boîtes côte à côte, qui
+       passent à la ligne ; sous chacun, ses descendants en liste
+       indentée. L'ordre du DOM est celui des codes (pré-ordre de
+       getTaskTree) : aucun placement en JS.
+
+       Tout le texte passe par createElement/textContent : un nom de
+       tâche n'est jamais interprété comme du HTML.
+       ============================================================ */
+
+    /** Données pures de l'organigramme : rien du DOM. */
+    _wbsPresentation() {
+        const projet = store.getActiveProject();
+        const { codes } = store.getWbs();
+        const datee = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(parseISO(v));
+        const pct = (v) => `${Math.round(Number(v) || 0)}%`;
+        const noeud = (task, niveau, rang, nbFreres) => {
+            const code = codes.get(task.id) || '';
+            const debut = datee(task.startDate) ? formatDateDisplay(task.startDate) : null;
+            const fin = datee(task.endDate) ? formatDateDisplay(task.endDate) : null;
+            let type = 'tache', etat = pct(task.progress);
+            if (task.isMilestone) {
+                type = 'jalon';
+                etat = task.progress >= 100 ? t('gantt.milestone.reached') : t('gantt.milestone.pending');
+            } else if (task.isPermit) {
+                type = 'permis';
+                etat = t(`permit.status.${task.permitStatus}`);
+            } else if (task.isPhase) {
+                type = 'phase';
+            }
+            const dates = task.isMilestone ? (debut || '—') : (debut && fin ? `${debut} → ${fin}` : '—');
+            let libelle;
+            if (task.isMilestone && debut) libelle = t('wbs.label.milestone', { code, nom: task.name, date: debut, etat: etat.toLowerCase() });
+            else if (!task.isMilestone && debut && fin) libelle = t('wbs.label.range', { code, nom: task.name, debut, fin, avancement: etat });
+            else libelle = t('wbs.label.noDates', { code, nom: task.name, avancement: etat });
+            const enfants = (task.children || []).filter(e => codes.has(e.id));
+            return {
+                id: task.id, code, nom: task.name, niveau, rang, nbFreres, type,
+                couleur: task.color || '', dates, etat, libelle,
+                avancement: task.isMilestone || task.isPermit ? null : Math.max(0, Math.min(100, Math.round(Number(task.progress) || 0))),
+                enfants: enfants.map((e, i) => noeud(e, niveau + 1, i + 1, enfants.length)),
+            };
+        };
+        const racines = store.getTaskTree().filter(r => codes.has(r.id));
+        return {
+            projet: { nom: projet?.name || '', avancement: pct(store.getProjectStats().progress) },
+            racines: racines.map((r, i) => noeud(r, 1, i + 1, racines.length)),
+        };
+    }
+
+    _renderWbsView() {
+        const container = $('#wbsView');
+        if (!container) return;
+        const pr = this._wbsPresentation();
+        container.innerHTML = '';
+        container.className = 'wbs-view';
+
+        const tete = createElement('div', { className: 'wbs-projet' }, [
+            createElement('span', { className: 'wbs-projet-nom', title: pr.projet.nom }, pr.projet.nom),
+            createElement('span', { className: 'wbs-projet-avancement' }, pr.projet.avancement),
+        ]);
+        container.appendChild(tete);
+
+        if (pr.racines.length === 0) {
+            container.appendChild(createElement('p', { className: 'wbs-vide' }, t('wbs.empty')));
+            return;
+        }
+
+        const tous = [];
+        const arbre = createElement('ul', { className: 'wbs-arbre', role: 'tree' });
+        arbre.setAttribute('aria-label', t('wbs.tree', { projet: pr.projet.nom }));
+        const construire = (n) => {
+            const li = createElement('li', {
+                className: `wbs-noeud wbs-niveau-${Math.min(n.niveau, 4)}`,
+                role: 'treeitem',
+                'aria-level': n.niveau,
+                'aria-setsize': n.nbFreres,
+                'aria-posinset': n.rang,
+                'aria-selected': 'false',
+                'aria-label': n.libelle,
+                tabindex: '-1',
+                dataset: { taskId: n.id, wbsCode: n.code },
+            });
+            if (n.enfants.length) li.setAttribute('aria-expanded', 'true');
+            const boite = createElement('div', { className: `wbs-boite wbs-${n.type}`, style: { borderLeftColor: n.couleur } }, [
+                createElement('div', { className: 'wbs-boite-tete' }, [
+                    createElement('span', { className: 'wbs-code' }, n.code),
+                ]),
+                createElement('div', { className: 'wbs-nom', title: n.nom }, n.nom),
+                createElement('div', { className: 'wbs-dates' }, n.dates),
+                createElement('div', { className: 'wbs-etat' }, [
+                    ...(n.avancement === null ? [] : [createElement('span', { className: 'wbs-barre', 'aria-hidden': 'true' }, [
+                        createElement('span', { className: 'wbs-barre-remplie', style: { width: `${n.avancement}%` } }),
+                    ])]),
+                    createElement('span', { className: 'wbs-etat-texte' }, n.etat),
+                ]),
+            ]);
+            li.appendChild(boite);
+            tous.push(li);
+            if (n.enfants.length) {
+                const groupe = createElement('ul', { className: 'wbs-groupe', role: 'group' });
+                n.enfants.forEach(e => groupe.appendChild(construire(e)));
+                li.appendChild(groupe);
+            }
+            return li;
+        };
+        pr.racines.forEach(r => arbre.appendChild(construire(r)));
+        container.appendChild(arbre);
+
+        /* Un seul arrêt de tabulation : la boîte sélectionnée, sinon la
+           première (motif d'arbre de l'APG ARIA). */
+        const choisi = tous.find(li => li.dataset.taskId === this._wbsSelection) || null;
+        if (choisi) this._wbsSelectionner(choisi, false);
+        else tous[0].tabIndex = 0;
+
+        this._bindWbsView(container);
+    }
+
+    /** Sélectionne une boîte : arrêt de tabulation, aria-selected et bouton
+     *  « Ouvrir la fiche » (hors tabulation : le clavier passe par Entrée). */
+    _wbsSelectionner(li, focus = true) {
+        const arbre = li.closest('[role="tree"]');
+        arbre.querySelectorAll('[role="treeitem"]').forEach(x => {
+            x.tabIndex = -1;
+            x.setAttribute('aria-selected', 'false');
+        });
+        arbre.querySelectorAll('.wbs-ouvrir').forEach(b => b.remove());
+        li.tabIndex = 0;
+        li.setAttribute('aria-selected', 'true');
+        this._wbsSelection = li.dataset.taskId;
+        const bouton = createElement('button', { type: 'button', className: 'wbs-ouvrir btn btn-secondary', tabindex: '-1' }, t('wbs.openTask'));
+        li.querySelector(':scope > .wbs-boite').appendChild(bouton);
+        if (focus) li.focus();
+    }
+
+    _bindWbsView(container) {
+        if (container.dataset.wbsLie) return;
+        container.dataset.wbsLie = '1';
+        const noeudDe = (e) => e.target.closest('[role="treeitem"]');
+        container.addEventListener('click', (e) => {
+            const li = noeudDe(e);
+            if (!li) return;
+            if (e.target.closest('.wbs-ouvrir')) {
+                taskModal.openEdit(li.dataset.taskId);
+                return;
+            }
+            this._wbsSelectionner(li);
+        });
+        container.addEventListener('dblclick', (e) => {
+            const li = noeudDe(e);
+            if (li) taskModal.openEdit(li.dataset.taskId);
+        });
+        container.addEventListener('keydown', (e) => {
+            const li = noeudDe(e);
+            if (!li || e.target !== li) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                taskModal.openEdit(li.dataset.taskId);
+            }
+        });
+    }
+
+    /** Re-rendu sur changement du store, seulement si la vue est visible,
+     *  regroupé en une passe par image. */
+    _planifierRenduWbs() {
+        if (this._wbsRenduPrevu) return;
+        this._wbsRenduPrevu = true;
+        requestAnimationFrame(() => {
+            this._wbsRenduPrevu = false;
+            if (document.getElementById('wbsView')?.style.display !== 'none') this._renderWbsView();
         });
     }
 

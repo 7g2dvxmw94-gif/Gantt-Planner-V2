@@ -22,6 +22,14 @@ const I18N = {
         'tab.resources': 'Ressources',
         'tab.dashboard': 'Dashboard',
         'tab.costs': 'Coûts',
+        'tab.wbs': 'WBS',
+        'wbs.tree': 'Organigramme WBS — {projet}',
+        'wbs.openTask': 'Ouvrir la fiche',
+        'wbs.empty': 'Aucune tâche dans ce projet.',
+        'wbs.noDates': 'sans dates',
+        'wbs.label.range': '{code} {nom}, du {debut} au {fin}, {avancement}',
+        'wbs.label.milestone': '{code} {nom}, le {date}, {etat}',
+        'wbs.label.noDates': '{code} {nom}, sans dates, {avancement}',
 
         // Toolbar
         'toolbar.undo': 'Annuler (Ctrl/⌘+Z)',
@@ -846,6 +854,14 @@ const I18N = {
         'tab.resources': 'Resources',
         'tab.dashboard': 'Dashboard',
         'tab.costs': 'Costs',
+        'tab.wbs': 'WBS',
+        'wbs.tree': 'WBS chart — {projet}',
+        'wbs.openTask': 'Open the task',
+        'wbs.empty': 'No task in this project.',
+        'wbs.noDates': 'no dates',
+        'wbs.label.range': '{code} {nom}, from {debut} to {fin}, {avancement}',
+        'wbs.label.milestone': '{code} {nom}, on {date}, {etat}',
+        'wbs.label.noDates': '{code} {nom}, no dates, {avancement}',
 
         // Toolbar
         'toolbar.undo': 'Undo (Ctrl/⌘+Z)',
