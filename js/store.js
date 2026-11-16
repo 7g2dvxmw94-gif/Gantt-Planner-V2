@@ -11,6 +11,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          normaliserRecherche, typeContrainteDepuisTexte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
+import { numeroterWbs } from './wbs.js';
 
 const STORAGE_KEY = 'gantt-planner-pro';
 
@@ -1919,6 +1920,13 @@ class Store {
         };
         trees.sort((a, b) => (minSubtreeOrder(a) - minSubtreeOrder(b)) || comparerOrdreTaches(a, b));
         return trees;
+    }
+
+    /** Codes WBS du projet (1, 2.1, 2.1.3…), calculés sur l'arbre complet
+     *  de getTaskTree : ni filtre, ni recherche, ni repli. Rien n'est
+     *  stocké en base. → { codes: Map<id, code>, noeuds } (js/wbs.js). */
+    getWbs(projectId = null) {
+        return numeroterWbs(this.getTaskTree(projectId));
     }
 
     addTask(task) {
