@@ -17,7 +17,9 @@
    celui des conflits affichés). Un libellé masqué garde son nom et son
    infobulle (barre-outils-noms.spec.js). */
 @media (max-width: 2200px) {
-    .toolbar-actions .btn-secondary span {
+    /* Les LIBELLÉS seulement : une icône en span aria-hidden (le « ⚠ » du
+       bouton des conflits) reste, sans quoi le bouton devenait vide. */
+    .toolbar-actions .btn-secondary span:not([aria-hidden="true"]) {
         display: none;
     }
 
@@ -47,7 +49,7 @@
 
 /* ---- Laptop Small (1200px) ---- */
 @media (max-width: 1200px) {
-    .toolbar-actions .btn span {
+    .toolbar-actions .btn span:not([aria-hidden="true"]) {
         display: none;
     }
 
@@ -89,6 +91,14 @@
     .toolbar-actions > .icon-btn {
         width: 32px;
         height: 32px;
+    }
+
+    /* L'icône « ⚠ » du bouton des conflits reste visible : quelques pixels
+       de plus, rendus par le retrait latéral du bouton (la barre débordait
+       sinon de 769 à 772 px). */
+    .toolbar-actions .conflits-btn {
+        padding-left: 4px;
+        padding-right: 4px;
     }
 
     /* Six onglets : boutons de zoom et marge de la barre resserrés. Sans
@@ -157,7 +167,7 @@
         flex-shrink: 0;
     }
 
-    .toolbar-actions .btn span {
+    .toolbar-actions .btn span:not([aria-hidden="true"]) {
         display: none;
     }
 
