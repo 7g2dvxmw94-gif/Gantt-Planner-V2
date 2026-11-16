@@ -10,7 +10,13 @@
 }
 
 /* ---- Laptop Large (1600px) — hide secondary btn text ---- */
-@media (max-width: 1600px) {
+/* ---- Libellés des boutons secondaires (2200px) ----
+   Masqués sous 2 200 px, et non plus 1 600 : entre les deux, la barre
+   débordait, et « Nouvelle tâche » était coupé à droite sans signe visible
+   (barre-outils-debordement.spec.js, avec le bouton de synchronisation et
+   celui des conflits affichés). Un libellé masqué garde son nom et son
+   infobulle (barre-outils-noms.spec.js). */
+@media (max-width: 2200px) {
     .toolbar-actions .btn-secondary span {
         display: none;
     }
@@ -18,7 +24,9 @@
     .toolbar-actions .btn-secondary {
         padding: var(--space-2);
     }
+}
 
+@media (max-width: 1600px) {
     .toolbar-actions {
         gap: var(--space-2);
     }
@@ -67,6 +75,18 @@
     .toolbar {
         padding: 0 var(--space-3);
         gap: var(--space-2);
+    }
+
+    /* Barre compacte : onglets resserrés, boutons-icônes de 32 px. Sans
+       cela, la barre débordait de 769 à 909 px. */
+    .tab {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .toolbar-actions > .icon-btn {
+        width: 32px;
+        height: 32px;
     }
 
     /* Hide history btn to save space */

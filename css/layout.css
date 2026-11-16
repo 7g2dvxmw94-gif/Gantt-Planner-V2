@@ -157,7 +157,9 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-4);
+    /* 10 px sur les côtés, et non 16 : à 1 401 px, où les libellés des
+       onglets réapparaissent, la barre débordait (barre-outils-debordement). */
+    padding: var(--space-4) 10px;
     font-family: var(--font-sans);
     font-weight: var(--font-weight-medium);
     font-size: var(--font-size-sm);
