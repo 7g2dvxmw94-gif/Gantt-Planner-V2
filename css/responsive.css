@@ -32,8 +32,10 @@
     }
 }
 
-/* ---- Laptop Medium (1400px) — hide tab labels to prevent overflow ---- */
-@media (max-width: 1400px) {
+/* ---- Laptop Medium (1500px) — hide tab labels to prevent overflow ----
+   1 500 et non plus 1 400 : avec le sixième onglet (WBS), la barre
+   débordait de 1 401 à 1 470 px. */
+@media (max-width: 1500px) {
     .tab span {
         display: none;
     }
@@ -89,6 +91,16 @@
         height: 32px;
     }
 
+    /* Six onglets : boutons de zoom et marge de la barre resserrés. Sans
+       cela, la barre débordait de 769 à 783 px. */
+    .toolbar {
+        padding: 0 var(--space-2);
+    }
+
+    .zoom-btn {
+        width: 28px;
+    }
+
     /* Hide history btn to save space */
     #historyBtn {
         display: none;
@@ -97,6 +109,13 @@
 
 /* ---- Mobile Landscape / Small Tablet (768px) ---- */
 @media (max-width: 768px) {
+    /* Six vues dans la navigation du bas : boutons resserrés, libellé de
+       10 px. Sans cela, elle débordait de 31 px à 320 px. */
+    .mobile-nav-item {
+        padding: 2px;
+        font-size: 10px;
+    }
+
     /* Le code WBS cède la place au nom sur mobile. */
     .task-wbs {
         display: none;

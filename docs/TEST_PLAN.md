@@ -357,6 +357,18 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 
 ---
 
+### C5. Vue WBS (organigramme)
+| # | Étape | Action | Résultat attendu | ✓/✗ |
+|---|-------|--------|------------------|-----|
+| 1 | Ordre | Cliquer l'onglet « WBS » sur un projet dont une tâche racine précède une phase | Boîtes dans l'ordre des codes, la tâche racine à gauche de la phase, sur la même ligne (`wbs-organigramme.spec.js`) | |
+| 2 | Boîtes | Lire les boîtes | Code, nom, dates, avancement ; jalon « Franchi » ; permis : son statut ; phase : l'avancement du Gantt ; boîte projet avec l'avancement du projet | |
+| 3 | Fiche | Double-clic, Entrée ou « Ouvrir la fiche » sur une boîte | La fiche de la tâche s'ouvre ; un seul arrêt de tabulation dans l'arbre | |
+| 4 | Nom à chevrons | Tâche nommée `Étanchéité <MOA> & "lot"` | Le nom s'affiche tel quel | |
+| 5 | Retour | Revenir à la Timeline | Vue WBS masquée, Gantt visible | |
+| 6 | Mobile | 320, 360, 375 px | Navigation du bas sans débordement, un bouton par onglet | |
+
+---
+
 ## D. Interactions sur le Gantt
 
 ### D1. Glisser-déposer une barre (modification de dates)

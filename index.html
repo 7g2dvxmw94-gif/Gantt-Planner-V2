@@ -120,6 +120,13 @@
                     </svg>
                     <span data-i18n="tab.costs">Co&ucirc;ts</span>
                 </button>
+                <button class="tab" role="tab" aria-selected="false" data-view="wbs" tabindex="-1" id="tabWbs" aria-controls="mainContent" data-i18n-aria-label="tab.wbs" data-i18n-title="tab.wbs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/>
+                        <rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/>
+                    </svg>
+                    <span data-i18n="tab.wbs">WBS</span>
+                </button>
             </div>
 
             <div class="toolbar-actions">
@@ -237,6 +244,7 @@
             <div id="resourceView" style="display: none;" aria-label="Vue ressources"></div>
             <div id="dashboardView" style="display: none;" aria-label="Dashboard multi-projets"></div>
             <div id="costsView" style="display: none;" aria-label="Vue des coûts du projet"></div>
+            <div id="wbsView" style="display: none;"></div>
         </main>
     </div>
 
@@ -276,6 +284,13 @@
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
                 <span>Co&ucirc;ts</span>
+            </button>
+            <button class="mobile-nav-item" data-view="wbs" aria-label="Vue WBS">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/>
+                    <rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/>
+                </svg>
+                <span>WBS</span>
             </button>
         </div>
     </nav>
