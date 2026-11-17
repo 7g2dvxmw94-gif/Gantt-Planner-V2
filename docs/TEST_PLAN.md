@@ -309,6 +309,7 @@ A : lun 08 → ven 12/06/2026 ; B : lun 15 → ven 19/06/2026 ; aucun lien (date
 | 3 | Fin avant début | Fiche de A : Début réel 10/06, Fin réelle 09/06, enregistrer | La fiche reste ouverte, la Fin réelle en erreur, un message (alerte) dit qu'elle ne peut pas précéder le début réel ; rien n'est enregistré | |
 | 4 | Phase | Ouvrir la fiche d'une phase | Pas de champs de dates réelles : celles d'une phase viennent de ses enfants | |
 | 5 | Ancrage | A 01 → 05/06 précède B (commencée le 08, 08 → 10), D (non commencée) et E (commencée le 08, finie le 10) ; G prévue 10 → 12, commencée le 08 ; C suit B, F suit E. La fin de A passe au 12/06 | D est poussée au 15 → 16 ; B reste 08 → 10 et C 11 → 12 ; E s'étend à sa Fin réelle, 08 → 10, et F la suit, 11 → 12 ; G, prévue 10 → 12 mais commencée le 08, revient au 08 → 10 ; relu après rechargement (`dates-reelles-moteur.spec.js`) | |
+| 6 | Glisser | Au zoom « jour », tâches 08 → 10/06 : W non commencée déplacée de deux jours ; S2 commencée, fin tirée ; S3 commencée, bord gauche tiré ; S1 commencée, déplacée ; S4 finie, fin tirée | W passe au 10 → 12 et S2 au 08 → 12 ; S1, S3 et S4 ne suivent pas la souris et restent 08 → 10, sans entrée d'annulation (`dates-reelles-glisser.spec.js`) | |
 ---
 
 ## C. Vues du Projet
