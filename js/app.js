@@ -11,7 +11,7 @@ import { ganttRenderer, VIRTUAL_THRESHOLD } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
 import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
-         createElement, formatDateChiffres, libelleContrainte, contrainteDe } from './utils.js';
+         createElement, formatDateChiffres, libelleContrainte, contrainteDe, datesReellesDe } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
 import { oneDriveBackup } from './onedrive-backup.js';
@@ -778,6 +778,16 @@ class App {
                 }
                 case 'startDate': va = a.startDate; vb = b.startDate; break;
                 case 'endDate': va = a.endDate; vb = b.endDate; break;
+                /* Dates reelles : une tache SANS date reelle vient apres les
+                   autres, dans les deux sens — non commencee, elle n'est ni
+                   la plus tot ni la plus tard. */
+                case 'actualStart':
+                case 'actualFinish': {
+                    const da = datesReellesDe(a)[key === 'actualStart' ? 'debut' : 'fin'];
+                    const db = datesReellesDe(b)[key === 'actualStart' ? 'debut' : 'fin'];
+                    if (!da || !db) return (da ? -1 : 0) + (db ? 1 : 0);
+                    return (da < db ? -1 : da > db ? 1 : 0) * dir;
+                }
                 case 'status': va = a.status; vb = b.status; break;
                 case 'priority': {
                     const po = { high: 0, medium: 1, low: 2 };
@@ -919,6 +929,8 @@ class App {
             { key: 'phase', label: t('board.phase') },
             { key: 'startDate', label: t('board.start') },
             { key: 'endDate', label: t('board.end') },
+            { key: 'actualStart', label: t('board.actualStart') },
+            { key: 'actualFinish', label: t('board.actualFinish') },
             ...(activeBaseline ? [
                 { key: '_blStart', label: t('board.blStart'), baseline: true, tooltip: t('baseline.startTooltip', { name: activeBaseline.name }) },
                 { key: '_blEnd',   label: t('board.blEnd'),   baseline: true, tooltip: t('baseline.endTooltip', { name: activeBaseline.name }) },
@@ -1062,6 +1074,17 @@ class App {
             const tdEnd = document.createElement('td');
             tdEnd.textContent = formatDateDisplay(task.endDate);
             row.appendChild(tdEnd);
+
+            /* Dates reelles, par la regle unique (datesReellesDe) : ce que
+               le moteur ancre est ce qui s'affiche. « — » sans date. */
+            const reel = datesReellesDe(task);
+            for (const d of [reel.debut, reel.fin]) {
+                const td = document.createElement('td');
+                td.className = 'table-reel-col';
+                td.textContent = d ? formatDateDisplay(d) : '—';
+                if (!d) td.style.color = 'var(--text-muted)';
+                row.appendChild(td);
+            }
 
             // Baseline columns
             if (activeBaseline) {
