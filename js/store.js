@@ -2859,6 +2859,20 @@ class Store {
         const totalProgress = children.reduce((sum, c) => sum + (c.progress || 0), 0);
         phase.progress = Math.round(totalProgress / children.length);
 
+        /* DATES REELLES, comme MS Project : le Debut reel de la phase est le
+           plus tot de ceux de ses enfants ; sa Fin reelle, la plus tardive
+           des leurs, SEULEMENT quand TOUS en ont une. Une sous-phase compte
+           comme un enfant, avec le reel qu'elle vient de recevoir (les
+           phases sont recalculees des plus profondes aux plus hautes). Les
+           reels de chaque enfant passent par datesReellesDe : une Fin
+           reelle sans Debut reel y prend le debut prevu. Comparaison de
+           CHAINES, comme les dates ci-dessus. */
+        const reels = children.map(c => datesReellesDe(c));
+        phase.actualStart = reels.reduce((mini, r) => (r.debut && (!mini || r.debut < mini)) ? r.debut : mini, null);
+        phase.actualFinish = reels.every(r => r.fin)
+            ? reels.reduce((maxi, r) => (!maxi || r.fin > maxi) ? r.fin : maxi, null)
+            : null;
+
         // Persist updated phase dates to Supabase
         supabaseStore.upsertTask(phase)
             .catch(e => console.error('[store] sync _recalculatePhase:', e));
