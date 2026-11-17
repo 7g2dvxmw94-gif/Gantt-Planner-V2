@@ -4151,6 +4151,17 @@ class Store {
                 const startDate = startStr ? startStr.substring(0, 10) : '';
                 const endDate = finishStr ? finishStr.substring(0, 10) : '';
 
+                /* Dates reelles (<ActualStart>, <ActualFinish>), leur partie
+                   date, par la regle unique (datesReellesDe) : une Fin
+                   reelle seule prend le debut prevu, une date illisible est
+                   ecartee. Une recapitulative n'en porte pas : la phase les
+                   tire de ses enfants (_recalculatePhase). */
+                const reel = isSummary ? { debut: null, fin: null } : datesReellesDe({
+                    startDate,
+                    actualStart: (getTag(el, 'ActualStart') || '').substring(0, 10),
+                    actualFinish: (getTag(el, 'ActualFinish') || '').substring(0, 10),
+                });
+
                 /* Contrainte de date (<ConstraintType>, <ConstraintDate>).
                    Une recapitulative n'en porte pas : une phase suit ses
                    enfants. « Le plus tard possible » n'existe pas ici
@@ -4192,6 +4203,8 @@ class Store {
                     startDate,
                     endDate,
                     progress: pct,
+                    actualStart: reel.debut,
+                    actualFinish: reel.fin,
                     isPhase: isSummary,
                     parentId,
                     assignees: [],
