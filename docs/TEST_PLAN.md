@@ -505,7 +505,7 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 4 | Contenu | Ouvrir le fichier | JSON valide avec données | |
 | 5 | Import | Importer le fichier | Projet restauré identique | |
 | 6 | Contrainte de date | Importer un JSON dont une tâche porte « Doit finir le » 12/06/2026 (`MFO`), et d'autres une contrainte illisible (type inconnu, 30 février, date au format JJ/MM/AAAA) ; recharger ; réexporter | L'export porte toujours la contrainte. Les contraintes illisibles sont écartées (`null`), et leurs tâches sont là, à leurs dates | |
-
+| 7 | Dates réelles | Importer un JSON dont les tâches portent un Début réel et une Fin réelle (dont une fin seule, une fin avant le début, une date inexistante), puis recharger | Les dates réelles sont relues ; une fin seule prend le début prévu ; une fin avant le début et une date inexistante sont écartées, sans perdre la tâche (`dates-reelles-persistance.spec.js`) | |
 ---
 
 ### G2. Export CSV

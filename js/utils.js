@@ -815,6 +815,27 @@ export const CONTRAINTES_DURES = Object.freeze(['SNLT', 'FNLT', 'MSO', 'MFO']);
  * de la tache comprises ; '12/06/2026' est acceptee, mais lue au
  * 6 decembre sous le DateStyle « ISO, MDY ».
  */
+/**
+ * Les dates reelles d'une tache, normalisees : { debut, fin }, chacune une
+ * date ISO lisible ou null. Une date illisible est ecartee ; une Fin
+ * reelle sans Debut reel prend pour debut le debut prevu (regle MS
+ * Project) ; une fin qui precede le debut est ecartee. Regle unique, lue
+ * par taskToRow (supabase-store.js) avant toute ecriture : les CHECK de la
+ * migration 030 ne rejettent donc jamais une ligne, ce qui ferait perdre
+ * la tache entiere.
+ */
+export function datesReellesDe(tache) {
+    if (!tache) return { debut: null, fin: null };
+    const lisible = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && formatDateISO(parseISO(d)) === d;
+    let debut = lisible(tache.actualStart) ? tache.actualStart : null;
+    let fin = lisible(tache.actualFinish) ? tache.actualFinish : null;
+    /* Fin sans debut : le debut reel est le debut prevu (regle MS Project),
+       s'il est lisible et ne suit pas la fin. */
+    if (fin && !debut && lisible(tache.startDate) && tache.startDate <= fin) debut = tache.startDate;
+    if (fin && (!debut || fin < debut)) fin = null;
+    return { debut, fin };
+}
+
 export function contrainteDe(tache) {
     if (!tache || tache.isPhase) return null;
     const type = tache.constraintType;
