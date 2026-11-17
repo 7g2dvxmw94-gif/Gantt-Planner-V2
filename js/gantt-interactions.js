@@ -7,7 +7,7 @@ import { store } from './store.js';
 import { supabaseStore } from './supabase-store.js';
 import { formatDateISO, formatDateDisplay, addDays, syncLog, parseISO, escapeHtml,
          workingDaysBetween, addWorkingDays, contrainteDe, libelleContrainte,
-         contrainteApresDeplacement, liensRompusAuLacher } from './utils.js';
+         contrainteApresDeplacement, liensRompusAuLacher, datesReellesDe } from './utils.js';
 
 const AUTO_SCROLL_EDGE = 50;       // px from wrapper edge to trigger
 const AUTO_SCROLL_MAX_SPEED = 15;  // max px per animation frame
@@ -162,9 +162,23 @@ class GanttInteractions {
         // Lecture seule : pas de drag/resize
         if (!store.canEdit()) return;
 
+        /* DATES REELLES : le debut d'une tache COMMENCEE est un fait, et la
+           fin d'une tache FINIE aussi. Le moteur les ancre
+           (_computeConstrainedDates) ; le glisser ne doit pas faire mine de
+           les deplacer. Une tache commencee ne se deplace plus et son bord
+           gauche ne se tire plus — tire, il raccourcissait la tache, le
+           moteur la remettant a son Debut reel avec la duree tiree ; seule
+           sa fin se tire, tant qu'elle n'est pas finie. FIGEE : la barre ne
+           suit pas la souris horizontalement, et le lacher n'ecrit rien,
+           sans instantane. Le deplacement VERTICAL (reordonner) reste. */
+        const modeGlisser = isLeftHandle ? 'resize-left' : (isRightHandle ? 'resize-right' : 'move');
+        const reel = datesReellesDe(task);
+        const fige = !!reel.debut && (modeGlisser !== 'resize-right' || !!reel.fin);
+
         this._isDragging = true;
         this._justDragged = false;
         this._dragData = {
+            fige,
             taskId: task.id,
             bar: targetBar,
             isMilestone: isMilestone,
@@ -284,6 +298,7 @@ class GanttInteractions {
 
     _applyDrag(dx) {
         const d = this._dragData;
+        if (d.fige) return;   // tache commencee : voir _handleMouseDown
         const colWidth = this._zoomColWidthFn();
         // Account for wrapper scroll delta so the bar tracks the cursor
         const scrollDelta = d.wrapper ? d.wrapper.scrollLeft - d.origScrollLeft : 0;
@@ -733,6 +748,14 @@ class GanttInteractions {
             if (d.mode === 'move' && d.verticalMove && d.dropTarget) {
                 this._applyVerticalDrop();
                 if (this._onUpdate) this._onUpdate();
+                this._isDragging = false;
+                this._dragData = null;
+                return;
+            }
+
+            /* Tache figee (commencee, ou finie pour sa fin) : rien a ecrire,
+               aucun instantane. */
+            if (d.fige) {
                 this._isDragging = false;
                 this._dragData = null;
                 return;
