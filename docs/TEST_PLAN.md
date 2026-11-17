@@ -299,6 +299,17 @@ A : lun 01 → ven 05/06/2026 ; B : 3 jours ouvrés, précédée par A (Fin→D�
 | 12 | Dates tapées | C « Doit finir le 17/06 » (15 → 17) : début tapé 19/06 ; M « Doit commencer le 15/06 » : début tapé 19/06 ; C3 « Doit finir le 17/06 » : fin tapée 19/06 ; durée tapée seule ; B « Doit commencer le 15/06 » liée à A : début tapé 05/06 | C : 19 → 23, « 23/06 » ; M : 19 → 23, « 19/06 » ; C3 : 15 → 19, « 19/06 » ; une durée tapée seule ne déplace pas la contrainte, une contrainte saisie dans la fiche fait foi ; pour B, l'aperçu annonce le lien rompu avant d'enregistrer, puis le toast (`contraintes-dates-tapees.spec.js`) | |
 ---
 
+### B12. Saisir les dates réelles dans la fiche
+A : lun 08 → ven 12/06/2026 ; B : lun 15 → ven 19/06/2026 ; aucun lien (dates-reelles-fiche.spec.js).
+
+| # | Étape | Action | Résultat attendu | ✓/✗ |
+|---|-------|--------|------------------|-----|
+| 1 | Fin réelle seule | Ouvrir la fiche de A, saisir la Fin réelle 12/06/2026, enregistrer, rouvrir, recharger | Avant d'enregistrer : Début réel 08/06/2026 (le début prévu), 100 %, « Terminé » ; relus à la réouverture et après le rechargement | |
+| 2 | Début réel seul | Ouvrir la fiche de B, saisir le Début réel 17/06/2026, enregistrer | « En cours » à 0 % ; B passe 17 → 23/06 (durée ouvrée conservée), sans Fin réelle | |
+| 3 | Fin avant début | Fiche de A : Début réel 10/06, Fin réelle 09/06, enregistrer | La fiche reste ouverte, la Fin réelle en erreur, un message (alerte) dit qu'elle ne peut pas précéder le début réel ; rien n'est enregistré | |
+| 4 | Phase | Ouvrir la fiche d'une phase | Pas de champs de dates réelles : celles d'une phase viennent de ses enfants | |
+---
+
 ## C. Vues du Projet
 
 ### C1. Vue Timeline (Diagramme de Gantt)

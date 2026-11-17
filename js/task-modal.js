@@ -9,7 +9,7 @@ import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween, isWorkingDay,
          CONTRAINTES, contrainteDe, liensNonTenus, dateEffectiveContrainte, contrainteApresDeplacement,
-         formatDateJour,
+         formatDateJour, datesReellesDe,
          TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
 
 class TaskModal {
@@ -140,6 +140,19 @@ class TaskModal {
         durationGroup.appendChild(this._durationInput);
         datesRow.appendChild(durationGroup);
         body.appendChild(datesRow);
+        /* Dates reelles : le jour ou la tache a vraiment commence, et celui
+           ou elle s'est vraiment terminee. Elles pilotent le planning (le
+           prevu les suit) ; une Fin reelle passe la tache a 100 % et
+           « Termine ». Pas pour une phase : la sienne vient de ses enfants. */
+        this._actualRow = createElement('div', { className: 'form-row' });
+        this._actualRow.appendChild(this._createField(t('task.actualStart'), 'date', 'taskActualStart'));
+        this._actualRow.appendChild(this._createField(t('task.actualFinish'), 'date', 'taskActualFinish'));
+        body.appendChild(this._actualRow);
+        this._actualErreur = createElement('p', {
+            className: 'contrainte-erreur', id: 'taskActualError', role: 'alert',
+        });
+        this._taskActualFinish.setAttribute('aria-describedby', 'taskActualError');
+        body.appendChild(this._actualErreur);
 
         this._buildContrainteDOM(body);
 
@@ -511,6 +524,7 @@ class TaskModal {
         // Show/hide fields not relevant to phases
         const isPhase = type === 'phase';
         this._datesRow.style.display = isPhase ? 'none' : '';
+        if (this._actualRow) this._actualRow.style.display = isPhase ? 'none' : '';
         this._metaRow.style.display = isPhase ? 'none' : '';
         this._depRow.style.display = isPhase ? 'none' : '';
         this._contrainteBloc.style.display = isPhase ? 'none' : '';
@@ -556,12 +570,33 @@ class TaskModal {
     /* Derive status value from a progress percentage (0-100). */
     _syncStatusFromProgress(pct) {
         const n = parseInt(pct, 10);
-        if (n <= 0) this._statusSelect.value = 'todo';
+        /* Une tache qui a un Debut reel a commence : « En cours », meme a
+           0 %. */
+        if (n <= 0) this._statusSelect.value = (this._taskActualStart && this._taskActualStart.value) ? 'in_progress' : 'todo';
         else if (n >= 100) this._statusSelect.value = 'done';
         else this._statusSelect.value = 'in_progress';
     }
 
+    /** Fin reelle saisie : la tache est finie (100 %, « Termine ») ; sans
+     *  Debut reel, celui-ci prend le debut prevu (regle MS Project). Debut
+     *  reel saisi : « En cours » si elle n'avait pas commence. */
+    _majDepuisDatesReelles(champ) {
+        if (champ === 'fin' && this._taskActualFinish.value) {
+            if (!this._taskActualStart.value) this._taskActualStart.value = this._taskStart.value;
+            this._progressInput.value = 100;
+            this._progressLabel.textContent = '100%';
+            this._milestoneBtnPending.classList.remove('active');
+            this._milestoneBtnDone.classList.add('active');
+        }
+        this._taskActualFinish.classList.remove('input-error');
+        this._taskActualFinish.removeAttribute('aria-invalid');
+        this._actualErreur.textContent = '';
+        this._syncStatusFromProgress(this._progressInput.value);
+    }
+
     _bindEvents() {
+        this._taskActualStart.addEventListener('change', () => this._majDepuisDatesReelles('debut'));
+        this._taskActualFinish.addEventListener('change', () => this._majDepuisDatesReelles('fin'));
         // Close on overlay click
         this._overlay.addEventListener('click', (e) => {
             if (e.target === this._overlay) this.close();
@@ -635,6 +670,11 @@ class TaskModal {
         this._prioritySelect.value = 'medium';
         this._progressInput.value = 0;
         this._progressLabel.textContent = '0%';
+        this._taskActualStart.value = '';
+        this._taskActualFinish.value = '';
+        this._taskActualFinish.classList.remove('input-error');
+        this._taskActualFinish.removeAttribute('aria-invalid');
+        this._actualErreur.textContent = '';
         this._syncStatusFromProgress(0);
         // Type
         this._setTaskType('task');
@@ -691,6 +731,11 @@ class TaskModal {
         this._prioritySelect.value = task.priority;
         this._progressInput.value = task.progress;
         this._progressLabel.textContent = task.progress + '%';
+        this._taskActualStart.value = task.actualStart || '';
+        this._taskActualFinish.value = task.actualFinish || '';
+        this._taskActualFinish.classList.remove('input-error');
+        this._taskActualFinish.removeAttribute('aria-invalid');
+        this._actualErreur.textContent = '';
         this._syncStatusFromProgress(task.progress);
         const isDone = task.progress >= 100;
         this._milestoneBtnPending.classList.toggle('active', !isDone);
@@ -1651,6 +1696,20 @@ class TaskModal {
             return;   // le modal reste ouvert, rien n'est ecrit
         }
 
+        /* Une Fin reelle qui precede le Debut reel est refusee AVANT toute
+           ecriture : la normalisation l'ecarterait sans un mot. */
+        const debutReelTape = estPhase ? '' : this._taskActualStart.value;
+        const finReelleTapee = estPhase ? '' : this._taskActualFinish.value;
+        if (debutReelTape && finReelleTapee && finReelleTapee < debutReelTape) {
+            this._taskActualFinish.classList.add('input-error');
+            this._taskActualFinish.setAttribute('aria-invalid', 'true');
+            this._actualErreur.textContent = t('task.actualFinish.beforeStart');
+            this._taskActualFinish.focus();
+            return;   // le modal reste ouvert, rien n'est ecrit
+        }
+        this._taskActualFinish.removeAttribute('aria-invalid');
+        this._actualErreur.textContent = '';
+
         /* Refus des dependances circulaires, AVANT toute ecriture.
          *
          * On valide le LOT COMPLET : predecesseurs de la tache editee ET
@@ -1699,6 +1758,24 @@ class TaskModal {
             constraintType: contrainte.type,
             constraintDate: contrainte.date,
         };
+
+        /* Dates reelles, normalisees par la regle unique (datesReellesDe).
+           LE PREVU SUIT LE REEL : le debut prevu devient le Debut reel, a
+           duree ouvree conservee, et la fin prevue la Fin reelle. Les
+           dates prevues d'avant restent dans la reference (baseline). */
+        if (!data.isPhase) {
+            const reel = datesReellesDe({ startDate: data.startDate, actualStart: debutReelTape, actualFinish: finReelleTapee });
+            data.actualStart = reel.debut;
+            data.actualFinish = reel.fin;
+            if (reel.debut && reel.debut !== data.startDate) {
+                const cal = store.getCalendar();
+                const duree = Math.max(1, workingDaysBetween(data.startDate, data.endDate, cal) || 1);
+                data.startDate = reel.debut;
+                data.endDate = data.isMilestone ? reel.debut : formatDateISO(addWorkingDays(parseISO(reel.debut), duree - 1, cal));
+            }
+            if (reel.fin && !data.isMilestone) data.endDate = reel.fin;
+            if (reel.fin) { data.progress = 100; data.status = 'done'; }
+        }
 
         // Add permit-specific data
         if (isPermit) {

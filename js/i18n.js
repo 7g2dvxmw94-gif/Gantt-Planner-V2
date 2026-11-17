@@ -198,6 +198,9 @@ const I18N = {
         'task.assignees': 'Ressources',
         'task.startDate': 'Date de début',
         'task.endDate': 'Date de fin',
+        'task.actualStart': 'Début réel',
+        'task.actualFinish': 'Fin réelle',
+        'task.actualFinish.beforeStart': 'La fin réelle ne peut pas précéder le début réel.',
         'task.duration': 'Durée (jours)',
         // Contrainte de date (libellés de MS Project)
         'task.constraint.label': 'Contrainte',
@@ -1049,6 +1052,9 @@ const I18N = {
         'task.assignees': 'Resources',
         'task.startDate': 'Start Date',
         'task.endDate': 'End Date',
+        'task.actualStart': 'Actual start',
+        'task.actualFinish': 'Actual finish',
+        'task.actualFinish.beforeStart': 'The actual finish cannot precede the actual start.',
         'task.duration': 'Duration (days)',
         // Date constraint (MS Project labels)
         'task.constraint.label': 'Constraint',
