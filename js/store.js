@@ -6,7 +6,7 @@
 import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          parseISO, isWorkingDay, nextWorkingDay, previousWorkingDay, addWorkingDays,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
-         contrainteDe, exigenceDuLien, appliquerContrainte,
+         contrainteDe, exigenceDuLien, appliquerContrainte, datesReellesDe,
          dateEffectiveContrainte, conflitsContraintes,
          normaliserRecherche, typeContrainteDepuisTexte } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
@@ -2316,6 +2316,15 @@ class Store {
      * null. La contrainte est lue par contrainteDe() : une phase n'en a
      * jamais, et une valeur illisible vaut « Des que possible ».
      *
+     * DATES REELLES : une tache COMMENCEE (Debut reel, datesReellesDe) est
+     * ANCREE. Ni ses liens ni sa contrainte ne la deplacent : son debut
+     * est un fait. Sa fin est la Fin reelle, sinon Debut reel + duree
+     * ouvree. Ses successeurs se placent d'apres elle sans rien changer a
+     * leur calcul (ils lisent endDate). Une tache commencee rend donc
+     * TOUJOURS son ancrage, meme sans lien ni contrainte. Comme MS
+     * Project. Une phase n'est jamais ancree ici : ses dates viennent de
+     * ses enfants.
+     *
      * Ne lit que this.getTask et this._getCalendar : computeConstrainedDatesIn
      * l'appelle avec un faux `this` qui n'a qu'eux.
      *
@@ -2323,6 +2332,15 @@ class Store {
      */
     _computeConstrainedDates(task) {
         if (!task) return null;
+        const reel = task.isPhase ? null : datesReellesDe(task);
+        if (reel && reel.debut) {
+            if (task.isMilestone) return { startDate: reel.debut, endDate: reel.debut };
+            if (reel.fin) return { startDate: reel.debut, endDate: reel.fin };
+            const calReel = this._getCalendar();
+            const duree = Math.max(1, workingDaysBetween(task.startDate, task.endDate, calReel) || 1);
+            return { startDate: reel.debut,
+                     endDate: formatDateISO(addWorkingDays(parseISO(reel.debut), duree - 1, calReel)) };
+        }
         const contrainte = contrainteDe(task);
         const aDesLiens  = !!(task.dependencies && task.dependencies.length);
         if (!aDesLiens && !contrainte) return null;
