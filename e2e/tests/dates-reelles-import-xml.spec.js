@@ -77,6 +77,14 @@ test('l\'import MS Project lit le Début réel et la Fin réelle', async ({ page
     await expect.poll(async () => (await lire(page, s)).projet,
         { message: 'le projet importé doit devenir le projet actif', timeout: 15_000 }).toBe(nomProjet);
     await trackActiveProject(page);
+    /* DISCRIMINANT — L'IMPORT EST ALLÉ À SON TERME. Le projet devient actif
+       AVANT que ses tâches soient écrites en base (store.js,
+       importFromMSProjectXML : activeProjectId, puis _persisterImport) ; le
+       toast ne paraît qu'après l'écriture. Ferme « le rechargement plus bas
+       relit une base où les tâches ne sont pas encore » : sans cette
+       attente, le témoin relisait 0 tâche (run 44150845771). */
+    await expect(page.locator('#toastContainer .toast', { hasText: nomProjet }),
+        'l\'import doit aller à son terme').toBeVisible({ timeout: 30_000 });
 
     const attendu = [
         'A:2026-06-08→2026-06-10 100% réel 2026-06-08→2026-06-10',
