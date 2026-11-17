@@ -2531,6 +2531,17 @@ class App {
             return `<ConstraintType>${code}</ConstraintType><ConstraintDate>${fmtDateTime(c.date, heure)}</ConstraintDate>`;
         };
 
+        /* Dates reelles : <ActualStart> et <ActualFinish>, qui suivent
+           <PercentComplete> dans la sequence de <Task> (schema MSPDI) et
+           precedent <ConstraintType>. Par la regle unique (datesReellesDe) ;
+           08:00 pour un debut, 17:00 pour une fin, comme les dates de la
+           tache. Rien quand la date manque. */
+        const reelXML = (task) => {
+            const r = datesReellesDe(task);
+            return (r.debut ? `<ActualStart>${fmtDateTime(r.debut, '08:00:00')}</ActualStart>` : '')
+                 + (r.fin ? `<ActualFinish>${fmtDateTime(r.fin, '17:00:00')}</ActualFinish>` : '');
+        };
+
         // --- Passe 2 : émettre les tâches ---
         const taskLines = [];
         // Root summary task (UID 0)
@@ -2548,6 +2559,7 @@ class App {
                 (task.endDate ? `<Finish>${fmtDateTime(task.endDate, '17:00:00')}</Finish>` : '') +
                 `<Duration>${durISO(task)}</Duration>` +
                 `<PercentComplete>${task.progress || 0}</PercentComplete>` +
+                reelXML(task) +
                 contrainteXML(task) +
                 liensDe(task) +
                 `</Task>`);
