@@ -929,6 +929,12 @@ export function liensNonTenus(tache, place, getTask, calendar = defaultCalendar(
  *
  * Ne parcourt que les taches contraintes (contrainteDe), pas le reseau.
  *
+ * Une tache COMMENCEE (Debut reel, datesReellesDe) n'est jamais en conflit
+ * de contrainte : ses dates reelles l'emportent sur sa contrainte, et le
+ * moteur l'ancre (_computeConstrainedDates, store.js) — « Replacer » n'y
+ * pourrait rien. Comme MS Project. Une tache commencee hors sequence
+ * releve du DCMA.
+ *
  * Pour 'non-tenue', `exige` est la date effective de la contrainte
  * (dateEffectiveContrainte) et `tient` la borne visee de la tache.
  *
@@ -940,6 +946,7 @@ export function conflitsContraintes(taches, getTask, calendar = defaultCalendar(
         const contrainte = contrainteDe(tache);
         if (!contrainte) continue;
         if (!tache.startDate || !tache.endDate) continue;
+        if (datesReellesDe(tache).debut) continue;   // le reel l'emporte
 
         const { type } = contrainte;
         const exige = formatDateISO(dateEffectiveContrainte(type, contrainte.date, calendar));
