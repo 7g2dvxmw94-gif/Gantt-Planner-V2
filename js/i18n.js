@@ -722,6 +722,8 @@ const I18N = {
         'csv.col.progress': '% achevé',
         'csv.col.constraintType': 'Type de contrainte',
         'csv.col.constraintDate': 'Date de contrainte',
+        'csv.col.actualStart': 'Début réel',
+        'csv.col.actualFinish': 'Fin réelle',
 
         // Notification panel
         'notif.title': 'Notifications',
@@ -1578,6 +1580,8 @@ const I18N = {
         'csv.col.progress': '% complete',
         'csv.col.constraintType': 'Constraint type',
         'csv.col.constraintDate': 'Constraint date',
+        'csv.col.actualStart': 'Actual start',
+        'csv.col.actualFinish': 'Actual finish',
 
         // Notification panel
         'notif.title': 'Notifications',

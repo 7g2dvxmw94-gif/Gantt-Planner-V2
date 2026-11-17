@@ -2433,13 +2433,16 @@ class App {
             this._csvEscape(assigneeNames(task), SEP),
             task.progress,
             ...contrainte(task).map(v => this._csvEscape(v, SEP)),
+            /* Dates reelles, par la regle unique ; vides sans date. */
+            ...(r => [fmtDate(r.debut), fmtDate(r.fin)])(datesReellesDe(task)),
         ].join(SEP);
 
         /* Les huit premieres colonnes gardent leur ordre : l'aide d'import
            MS Project les designe, le code WBS en tete. Les colonnes de
            contrainte viennent apres. */
         const headers = [t('csv.col.wbs'), t('csv.col.level'), t('csv.col.name'), t('csv.col.duration'), t('csv.col.start'), t('csv.col.end'), t('csv.col.resources'), t('csv.col.progress'),
-                         t('csv.col.constraintType'), t('csv.col.constraintDate')];
+                         t('csv.col.constraintType'), t('csv.col.constraintDate'),
+                         t('csv.col.actualStart'), t('csv.col.actualFinish')];
         const rows = this._parcoursExport().map(({ task, niveau }) => row(task, niveau));
 
         const csvStr = headers.join(SEP) + '\n' + rows.join('\n');
