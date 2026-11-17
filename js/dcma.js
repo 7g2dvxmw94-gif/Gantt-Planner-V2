@@ -36,7 +36,7 @@
    ============================================================ */
 
 import { workingDaysBetween, addWorkingDays, formatDateISO, isWorkingDay, parseISO,
-         contrainteDe, CONTRAINTES_DURES } from './utils.js';
+         contrainteDe, CONTRAINTES_DURES, datesReellesDe } from './utils.js';
 
 /** PAM 4.6 et 4.8 : « 44 working days (2 months) ». */
 export const SEUIL_JOURS_OUVRES = 44;
@@ -58,6 +58,15 @@ const estJalon   = (t) => !!t.isMilestone;
 const estPermis  = (t) => !!t.isPermit;
 const avancement = (t) => Number(t.progress) || 0;
 const terminee   = (t) => avancement(t) >= 100;
+/* DATES REELLES (datesReellesDe, la regle unique) : quand elles existent,
+   elles font foi ; l'avancement n'en tient lieu qu'a defaut. Une tache
+   s'en remet a l'avancement si elle est avancee sans Debut reel, ou finie
+   sans Fin reelle : c'est elle, et elle seule, qui rend un point
+   « approche ». */
+const reelDe          = (t) => datesReellesDe(t);
+const debutApproche   = (t) => avancement(t) > 0 && !reelDe(t).debut;
+const finApprochee    = (t) => terminee(t) && !reelDe(t).fin;
+const faite           = (t) => terminee(t) || !!reelDe(t).fin;
 
 /** Plus grande date ISO d'une liste (les chaines ISO se comparent comme des
  *  dates). */
@@ -408,20 +417,25 @@ export function evaluerDcma(entree) {
         })),
         P8.length, { op: '<=', valeur: 5 }));
 
-    /* 9 — Dates invalides, par rapport a la date d'etat. Sans dates reelles,
-       l'avancement en tient lieu : une tache commencee dont le debut est
-       dans le futur porte une date « reelle » future. */
+    /* 9 — Dates invalides, par rapport a la date d'etat : une date REELLE
+       apres elle, ou une date PREVUE avant elle. Un Debut reel fait de la
+       tache une tache commencee, a cette date ; sans lui, l'avancement en
+       tient lieu : une tache avancee dont le debut est dans le futur porte
+       une date « reelle » future, une tache a 0 % un debut prevu. */
     const approcheDate = sourceDateEtat === 'aujourdhui' ? ['date-etat-aujourdhui'] : [];
+    const approcheReel = (taches) => (taches.some(t => debutApproche(t) || finApprochee(t)) ? ['sans-dates-reelles'] : []);
     {
-        const fautives = ids(P.filter(t =>
-            (t.endDate && t.endDate < dateEtat)
-            || (avancement(t) === 0 && t.startDate && t.startDate < dateEtat)
-            || (avancement(t) > 0 && t.startDate && t.startDate > dateEtat)));
+        const fautives = ids(P.filter(t => {
+            if (t.endDate && t.endDate < dateEtat) return true;
+            const debutReel = reelDe(t).debut || (avancement(t) > 0 ? t.startDate : null);
+            if (debutReel) return debutReel > dateEtat;
+            return !!t.startDate && t.startDate < dateEtat;
+        }));
         points.push({ n: 9, cle: 'datesInvalides', valeur: P.length ? fautives.length : null, unite: 'nombre',
                       numerateur: fautives.length, denominateur: P.length, seuil: { op: '<=', valeur: 0 },
                       etat: P.length ? etatSeuil(fautives.length, { op: '<=', valeur: 0 }) : 'na',
                       raison: P.length ? undefined : 'aucune-tache',
-                      approche: ['sans-dates-reelles', ...approcheDate], fautives });
+                      approche: [...approcheReel(P), ...approcheDate], fautives });
     }
 
     /* 10 — Ressources. Le PAM vise « des montants ou des heures » : une tache
@@ -450,11 +464,11 @@ export function evaluerDcma(entree) {
                       seuil: { op: '<=', valeur: 5 }, etat: 'na', raison: 'sans-baseline', fautives: [] });
     } else {
         const fautives = blEchues.filter(({ b, t }) => {
-            const fin = terminee(t) ? t.endDate : maxIso([t.endDate, dateEtat]);
+            const fin = reelDe(t).fin || (terminee(t) ? t.endDate : maxIso([t.endDate, dateEtat]));
             return fin > b.endDate;
         }).map(({ t }) => t.id);
         points.push(pointPourcent(11, 'tachesManquees', fautives, blEchues.length, { op: '<=', valeur: 5 },
-            { approche: ['sans-dates-reelles', ...approcheDate] }));
+            { approche: [...approcheReel(blEchues.map(({ t }) => t)), ...approcheDate] }));
     }
 
     /* 12 — Test du chemin critique. On retarde une tache CRITIQUE PAR LES
@@ -569,7 +583,7 @@ export function evaluerDcma(entree) {
         // Disjointes de blEchues, qui n'admet que des fins de baseline renseignees.
         const absentes = reelles.filter(t => !(parBaseline.get(t.id) || {}).endDate);
         const denominateur = blEchues.length + absentes.length;
-        const faites = reelles.filter(terminee).length;
+        const faites = reelles.filter(faite).length;
         if (!denominateur) {
             points.push({ n: 14, cle: 'bei', valeur: null, unite: 'ratio', seuil: { op: '>=', valeur: 0.95 },
                           etat: 'na', raison: 'aucune-tache', fautives: [] });
@@ -578,8 +592,8 @@ export function evaluerDcma(entree) {
             const valeur = arrondi2(exact);
             points.push({ n: 14, cle: 'bei', valeur, exact, unite: 'ratio', numerateur: faites, denominateur,
                           seuil: { op: '>=', valeur: 0.95 }, etat: etatSeuil(exact, { op: '>=', valeur: 0.95 }),
-                          fautives: blEchues.filter(({ t }) => !terminee(t)).map(({ t }) => t.id),
-                          approche: ['sans-dates-reelles', ...approcheDate] });
+                          fautives: blEchues.filter(({ t }) => !faite(t)).map(({ t }) => t.id),
+                          approche: [...approcheReel(reelles), ...approcheDate] });
         }
     }
 
