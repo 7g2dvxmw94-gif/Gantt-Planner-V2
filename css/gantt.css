@@ -614,6 +614,29 @@
     flex-shrink: 0;
 }
 
+/* ---- Dates réelles ----
+   Tâche commencée : un liseré sombre sur le bord gauche (le début est un
+   fait) ; finie : aussi sur le bord droit. Un pseudo-élément sans souris,
+   pour ne pas masquer les poignées ni toucher à box-shadow (chemin critique). */
+.gantt-bar.commencee::before,
+.gantt-bar.finie::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: rgba(15, 23, 42, 0.55);
+    pointer-events: none;
+}
+.gantt-bar.commencee::before {
+    left: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+.gantt-bar.finie::after {
+    right: 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
 /* ---- Critical Path ---- */
 .gantt-bar.critical-path {
     box-shadow: 0 0 0 2px var(--color-error), var(--shadow-md);

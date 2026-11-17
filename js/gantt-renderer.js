@@ -4,8 +4,8 @@
    ======================================== */
 
 import { store, PERMIT_STATUSES, calculatePermitDeadlines } from './store.js';
-import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, parseISO, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, createElement, TASK_COLORS,
-         contrainteDe, dateEffectiveContrainte, libelleContrainte } from './utils.js';
+import { getDaysBetween, getMonthsBetween, getWeeksBetween, addDays, daysBetween, parseISO, isWorkingDay, isToday, getMonthName, getWeekNumber, formatDateShort, formatDateDisplay, createElement, TASK_COLORS,
+         contrainteDe, dateEffectiveContrainte, libelleContrainte, datesReellesDe } from './utils.js';
 
 /* ---- Constants ---- */
 const ZOOM_CONFIG = {
@@ -584,12 +584,20 @@ class GanttRenderer {
         const gradient = colorObj ? colorObj.gradient : `linear-gradient(135deg, ${task.color}, ${task.color})`;
 
         const isCritical = this._criticalPath && this._criticalPath.includes(task.id);
+        /* Dates réelles (règle unique datesReellesDe) : la barre d'une tâche
+           commencée le montre à la vue (classes) et au lecteur d'écran (nom
+           accessible). */
+        const reel = datesReellesDe(task);
+        let nomBarre = t('task.meta.barAria', { name: task.name, progress: task.progress, start: formatDateShort(task.startDate), end: formatDateShort(task.endDate) });
+        if (reel.debut) nomBarre += ' — ' + t('gantt.bar.commencee', { date: formatDateDisplay(reel.debut) });
+        if (reel.fin) nomBarre += ', ' + t('gantt.bar.finie', { date: formatDateDisplay(reel.fin) });
         const bar = createElement('div', {
-            className: 'gantt-bar' + (isCritical ? ' critical-path' : ''),
+            className: 'gantt-bar' + (isCritical ? ' critical-path' : '')
+                + (reel.debut ? ' commencee' : '') + (reel.fin ? ' finie' : ''),
             style: { left: left + 'px', width: width + 'px', background: gradient },
             role: 'button',
             tabindex: '0',
-            'aria-label': t('task.meta.barAria', { name: task.name, progress: task.progress, start: formatDateShort(task.startDate), end: formatDateShort(task.endDate) }),
+            'aria-label': nomBarre,
             dataset: { taskId: task.id },
         });
 

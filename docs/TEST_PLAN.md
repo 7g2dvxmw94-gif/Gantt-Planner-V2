@@ -317,6 +317,7 @@ A : lun 08 → ven 12/06/2026 ; B : lun 15 → ven 19/06/2026 ; aucun lien (date
 | 11 | Export MS Project | Phase P ⊃ A (réel 08 → 10/06), B (commencée le 11, « Début au plus tôt le 11/06 ») ; C non commencée ; E Fin réelle 17/06 seule ; exporter en XML | <ActualStart>/<ActualFinish> après <PercentComplete>, avant <ConstraintType>, à 08:00 et 17:00 ; rien pour C ; pas de fin pour B ni pour la phase ; E a pour début réel son début prévu (`dates-reelles-export-xml.spec.js`) | |
 | 12 | Import MS Project | Importer un XML : A réel 08 → 10/06, B commencée le 11, C sans réel, D <ActualFinish> 17/06 seul, F <ActualStart> illisible ; recharger | A, B, C relues telles quelles ; D commencée le 16 (son début prévu) ; F sans réel, mais présente ; relues après rechargement (`dates-reelles-import-xml.spec.js`) | |
 | 13 | Export CSV | A réel 08 → 10/06, B commencée le 11, C sans réel, E Fin réelle 17/06 seule ; exporter en CSV | Colonnes « Début réel » et « Fin réelle » après « Date de contrainte », JJ/MM/AAAA, vides sans date ; E commencée le 16/06 (`dates-reelles-csv.spec.js`) | |
+| 14 | Gantt | W non commencée, S commencée le 08/06, F finie le 10/06, E Fin réelle 17/06 seule ; survoler chaque barre | Barre « commencee » (et « finie ») ; nom accessible « commencée le … » / « finie le … » ; infobulle « Réel : début → fin », « — » si non finie ; E réel 15 → 17/06 (`dates-reelles-gantt.spec.js`) | |
 ---
 
 ## C. Vues du Projet

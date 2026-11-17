@@ -494,6 +494,14 @@ class GanttInteractions {
             }
         }
 
+        // Dates réelles (règle unique) : « Réel : début → fin », « — » tant que non finie
+        if (!task.isPhase) {
+            const reel = datesReellesDe(task);
+            if (reel.debut) {
+                html += `<div class="gtt-row gtt-reel"><span class="gtt-icon">\u25b6</span><span>${escapeHtml(t('gantt.reel', { debut: fmt(reel.debut), fin: fmt(reel.fin) }))}</span></div>`;
+            }
+        }
+
         // Date constraint: the same line as the marker's name (libelleContrainte)
         const contrainte = contrainteDe(task);
         if (contrainte) {
