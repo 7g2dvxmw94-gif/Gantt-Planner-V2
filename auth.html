@@ -157,6 +157,7 @@
         }
         .alert.error   { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
         .alert.success { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+        .alert.info    { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
         .alert.show    { display: block; }
 
         .spinner {
@@ -331,6 +332,18 @@
 
             const session = await auth.getSession();
             if (session) { window.location.href = destination; return; }
+
+            /* Retour après une déconnexion pour inactivité (js/inactivite.js) :
+               le dire, une fois. */
+            let inactivite = false;
+            try {
+                inactivite = sessionStorage.getItem('gp.deconnexionInactivite') === '1';
+                sessionStorage.removeItem('gp.deconnexionInactivite');
+            } catch { /* stockage indisponible */ }
+            if (inactivite) {
+                showView('viewLogin');
+                showAlert('Vous avez été déconnecté après 30 minutes d\'inactivité. Reconnectez-vous pour continuer.', 'info');
+            }
 
             if (params.get('confirmed') === '1') {
                 showView('viewLogin');

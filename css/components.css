@@ -2928,3 +2928,33 @@ thead .table-bl-col--header {
     margin: var(--space-1) 0 0;
     padding-left: var(--space-4);
 }
+
+/* ---- Avertissement d'inactivité (js/inactivite.js) ----
+   Au-dessus de tout, bandeau d'essai compris (z 9999) : il doit rester
+   lisible et cliquable quoi qu'il y ait d'ouvert. */
+.inactivite-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-overlay);
+}
+.inactivite-boite {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-6);
+    width: min(90vw, 400px);
+    text-align: center;
+}
+.inactivite-boite h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-lg);
+}
+.inactivite-boite p {
+    margin: 0 0 var(--space-4);
+    color: var(--text-secondary);
+}
