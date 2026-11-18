@@ -6,7 +6,7 @@
 
 import { supabase } from './supabase-client.js';
 import { auth } from './auth.js';
-import { contrainteDe, datesReellesDe } from './utils.js';
+import { contrainteDe, datesReellesDe, calendrierNormalise } from './utils.js';
 
 /* ---- Mappers Store → Supabase (camelCase → snake_case) ---- */
 
@@ -118,6 +118,7 @@ function rowToProject(row) {
         activeBaselineId: row.active_baseline_id || null,
         statusDate:      row.status_date || null,   // migration 028
         deadline:        row.deadline    || null,   // migration 028
+        calendar:        calendrierNormalise(row.calendar),   // migration 031
         createdAt:       row.created_at,
         updatedAt:       row.updated_at,
         _role:           row._role || 'owner', // rôle de l'utilisateur courant
@@ -468,6 +469,20 @@ export const supabaseStore = {
             .eq('id', projectId);
         if (error) {
             console.error('[supabaseStore] setProjectDates:', error);
+            throw error;
+        }
+    },
+
+    /** Ecrit projects.calendar (migration 031), par UPDATE direct comme
+     *  setProjectDates : la RPC upsert_project ne nomme pas la colonne et
+     *  ne l'ecrase donc jamais. */
+    async setProjectCalendar(projectId, calendar) {
+        const { error } = await supabase
+            .from('projects')
+            .update({ calendar: calendrierNormalise(calendar) })
+            .eq('id', projectId);
+        if (error) {
+            console.error('[supabaseStore] setProjectCalendar:', error);
             throw error;
         }
     },
