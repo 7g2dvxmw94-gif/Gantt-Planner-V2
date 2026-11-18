@@ -657,6 +657,27 @@ export function defaultCalendar() {
     return { workingDays: [1, 2, 3, 4, 5], holidays: [], useFrenchHolidays: true };
 }
 
+/** Regle unique de forme d'un calendrier (projet ou modele du compte).
+ *  Rend null si l'entree n'est pas un objet. Jours ouvres : entiers de 0
+ *  (dimanche) a 6, sans doublon, tries — vides, ceux du defaut, comme le
+ *  lit isWorkingDay(). Feries propres : AAAA-MM-JJ lisibles, sans doublon,
+ *  tries ; une date illisible est ecartee. Drapeaux : booleens, feries
+ *  francais vrais par defaut. */
+export function calendrierNormalise(c) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
+    const jours = [...new Set((Array.isArray(c.workingDays) ? c.workingDays : [])
+        .filter(j => Number.isInteger(j) && j >= 0 && j <= 6))].sort((a, b) => a - b);
+    const feries = [...new Set((Array.isArray(c.holidays) ? c.holidays : [])
+        .filter(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
+            && formatDateISO(parseISO(d)) === d))].sort();
+    return {
+        workingDays: jours.length ? jours : defaultCalendar().workingDays,
+        holidays: feries,
+        useFrenchHolidays: c.useFrenchHolidays !== false,
+        alsaceMoselle: c.alsaceMoselle === true,
+    };
+}
+
 /* ── Memoisation ──────────────────────────────────────────────
    Sans cache, isWorkingDay() recalculait les feries de trois annees
    a CHAQUE appel — dont le dimanche de Paques. Or le moteur de

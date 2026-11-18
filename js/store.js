@@ -8,7 +8,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          workingDaysBetween, defaultCalendar, resetCalendarCache, syncLog,
          contrainteDe, exigenceDuLien, appliquerContrainte, datesReellesDe,
          dateEffectiveContrainte, conflitsContraintes,
-         normaliserRecherche, typeContrainteDepuisTexte } from './utils.js';
+         normaliserRecherche, typeContrainteDepuisTexte, calendrierNormalise } from './utils.js';
 import { supabaseStore } from './supabase-store.js';
 import { auth } from './auth.js';
 import { numeroterWbs, lireCodeWbs, reconstruireWbsDepuisCodes } from './wbs.js';
@@ -1813,6 +1813,26 @@ class Store {
             return true;
         } catch (e) {
             console.error('[store] sync setProjectDates:', e?.message || e);
+            return false;
+        }
+    }
+
+    /** Pose le calendrier d'un projet (migration 031), normalise par la
+     *  regle unique calendrierNormalise. Ne touche PAS au calendrier du
+     *  compte, qui reste le modele des nouveaux projets. Rend true une
+     *  fois l'ecriture en base faite, false sinon. */
+    async setProjectCalendar(projectId, calendar) {
+        if (!this.canEdit()) { console.warn('[store] setProjectCalendar: read-only project'); return false; }
+        const proj = this._data.projects.find(p => p.id === projectId);
+        const normalise = calendrierNormalise(calendar);
+        if (!proj || !normalise) return false;
+        proj.calendar = normalise;
+        this._save();
+        try {
+            await supabaseStore.setProjectCalendar(projectId, normalise);
+            return true;
+        } catch (e) {
+            console.error('[store] sync setProjectCalendar:', e?.message || e);
             return false;
         }
     }
