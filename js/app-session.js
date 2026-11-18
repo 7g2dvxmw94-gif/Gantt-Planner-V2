@@ -10,6 +10,7 @@
 import { auth } from './auth.js';
 import { supabase } from './supabase-client.js';
 import { store } from './store.js';
+import { demarrerSurveillanceInactivite } from './inactivite.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Update display name when store loads or settings change
@@ -26,6 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (_) {}
         }
     };
+
+    // Session connectée (app.js renvoie sinon vers auth.html) : surveiller
+    // l'inactivité. Audit de sécurité, point S1.
+    if (await auth.getSession()) demarrerSurveillanceInactivite();
 
     updateDisplayName();
     store.on('change', updateDisplayName);
