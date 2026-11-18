@@ -156,6 +156,15 @@
 
 ---
 
+### A6. Calendrier du projet
+Le calendrier (jours ouvrés, fériés français, Alsace-Moselle, fériés propres) appartient au projet et vaut pour tous ses membres ; celui du compte n'est que le modèle des nouveaux projets.
+
+| # | Étape | Action | Résultat attendu | ✓/✗ |
+|---|-------|--------|------------------|-----|
+| 1 | Persistance | Poser au projet un calendrier lun-sam, sans fériés français, Alsace-Moselle, fériés 12/06, 30/02 (illisible), 29/05, 12/06 (doublon) ; recharger | Relu : lun-sam, fériés 29/05 et 12/06, sans fériés français, Alsace-Moselle ; le calendrier du compte est inchangé (`calendrier-projet-persistance.spec.js`) | |
+
+---
+
 ## B. Gestion des Tâches
 
 ### B1. Créer une tâche simple
