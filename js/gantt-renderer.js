@@ -43,6 +43,8 @@ class GanttRenderer {
 
         // Listen for store changes
         store.on('change', () => this.render());
+        // La date d'etat a change (store.setProjectDates) : retracer son trait.
+        store.on('project:dates', () => this.render());
 
         // Bind virtual scroll
         const wrapper = this._container.closest('.gantt-wrapper');
@@ -508,6 +510,9 @@ class GanttRenderer {
         // Today line
         this._renderTodayLine(timelineCell);
 
+        // Date d'etat du projet
+        this._renderDateEtat(timelineCell);
+
         // Bar or milestone or permit
         if (isPermit) {
             this._renderPermitBar(timelineCell, task);
@@ -570,6 +575,26 @@ class GanttRenderer {
             'aria-hidden': 'true',
         });
         container.appendChild(line);
+    }
+
+    /* ---- Date d'etat ----
+       Trait vertical pointille a la FIN du jour d'etat, comme MS Project :
+       le point est fait « au soir du » jour d'etat, travail de ce jour
+       compris. Rien sans date d'etat : vide, c'est la date du jour, que
+       trace deja la ligne « aujourd'hui ». */
+
+    _renderDateEtat(container) {
+        const iso = store.getActiveProject()?.statusDate;
+        if (!iso) return;
+        const jour = parseISO(iso);
+        if (isNaN(jour)) return;
+        const pos = this._dateToPosition(addDays(jour, 1));
+        if (pos === null) return;
+        container.appendChild(createElement('div', {
+            className: 'date-etat-ligne',
+            style: { left: pos + 'px' },
+            'aria-hidden': 'true',
+        }));
     }
 
     /* ---- Task Bar ---- */
