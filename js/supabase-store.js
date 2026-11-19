@@ -683,3 +683,43 @@ export const supabaseStore = {
             .subscribe();
     },
 };
+
+/* ---- Ecritures en cours ----
+   Chaque appel a la base (lecture ou ecriture) qui rend une promesse est
+   compte jusqu'a ce qu'elle se regle. store.ecrituresEnCours() et
+   store.attendreEcritures() s'appuient dessus : plusieurs ecritures
+   partent en arriere-plan (updateTask, propagateDependencies), et un
+   rechargement avant leur fin les perdait (dates-reelles-moteur, runs
+   44290728444, 44300290973, 44561118641). */
+const _enCours = new Set();
+
+/** Compte une promesse jusqu'a son reglement ; la rend telle quelle. */
+export function suivreEcriture(p) {
+    if (!p || typeof p.then !== 'function') return p;
+    _enCours.add(p);
+    const retirer = () => _enCours.delete(p);
+    p.then(retirer, retirer);
+    return p;
+}
+
+export function nombreEcrituresEnCours() {
+    return _enCours.size;
+}
+
+/** Attend que toutes les promesses comptees se reglent, y compris celles
+ *  lancees pendant l'attente. */
+export async function attendreToutesEcritures() {
+    // Borne : un appel periodique (notifications) ne doit pas faire tourner
+    // l'attente sans fin.
+    for (let tour = 0; _enCours.size && tour < 50; tour++) {
+        await Promise.allSettled([..._enCours]);
+    }
+}
+
+for (const [cle, fn] of Object.entries(supabaseStore)) {
+    if (typeof fn !== 'function') continue;
+    supabaseStore[cle] = function (...args) {
+        return suivreEcriture(fn.apply(this, args));
+    };
+}
+

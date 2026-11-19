@@ -159,7 +159,14 @@ test('une tâche commencée reste sur ses dates réelles quand son prédécesseu
         'B:2026-06-08→2026-06-10 C:2026-06-11→2026-06-12 E:2026-06-08→2026-06-10 F:2026-06-11→2026-06-12 G:2026-06-08→2026-06-10');
 
     /* TÉMOIN — relu de la base après rechargement : l'ancrage a été écrit,
-       pas seulement affiché. */
+       pas seulement affiché. Les écritures parties en arrière-plan
+       (updateTask, propagateDependencies) sont d'abord attendues : sans
+       cela, le rechargement les perdait une fois sur deux (runs
+       44290728444, 44300290973, 44561118641). */
+    await page.evaluate(async () => {
+        const { store } = await import(new URL('js/store.js', document.baseURI).href);
+        await store.attendreEcritures();
+    });
     await page.reload();
     await waitForAppReady(page);
     await expect.poll(async () => (await lire(page, s, CLES)).dates,
