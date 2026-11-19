@@ -2406,6 +2406,28 @@ textarea.input {
     color: var(--text-secondary);
 }
 
+.date-etat-maj {
+    flex-basis: 100%;
+}
+
+.maj-modal {
+    max-width: 460px;
+}
+
+.maj-portee {
+    border: 0;
+    margin: var(--space-3) 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.maj-regles {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
 .btn.date-etat-reglee {
     border-color: var(--color-primary);
     color: var(--color-primary);
