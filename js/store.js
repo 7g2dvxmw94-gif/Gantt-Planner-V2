@@ -9,7 +9,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          contrainteDe, exigenceDuLien, appliquerContrainte, datesReellesDe,
          dateEffectiveContrainte, conflitsContraintes,
          normaliserRecherche, typeContrainteDepuisTexte, calendrierNormalise } from './utils.js';
-import { supabaseStore } from './supabase-store.js';
+import { supabaseStore, suivreEcriture, nombreEcrituresEnCours, attendreToutesEcritures } from './supabase-store.js';
 import { auth } from './auth.js';
 import { numeroterWbs, lireCodeWbs, reconstruireWbsDepuisCodes } from './wbs.js';
 
@@ -2167,20 +2167,22 @@ class Store {
 
         this._save();
         this._emit('task:update', this._data.tasks[idx]);
-        // Defer Supabase sync so applyPredecessorConstraints (called by caller) can adjust dates first
+        // Defer Supabase sync so applyPredecessorConstraints (called by caller) can adjust dates first.
+        // L'ecriture differee est comptee DES MAINTENANT (suivreEcriture) :
+        // attendreEcritures() ne doit pas la manquer pendant le tour d'attente.
         const updatedTaskId = taskId;
         const hasAssigneeUpdate = updates.assignees !== undefined;
-        setTimeout(() => {
+        suivreEcriture(new Promise(resolve => setTimeout(() => {
             const latest = this._data.tasks.find(t => t.id === updatedTaskId);
-            if (!latest) return;
-            supabaseStore.upsertTask(latest)
+            if (!latest) { resolve(); return; }
+            resolve(supabaseStore.upsertTask(latest)
                 .then(() => {
                     if (hasAssigneeUpdate) {
                         return supabaseStore.syncTaskAssignees(updatedTaskId, latest.assignees || []);
                     }
                 })
-                .catch(e => console.error('[store] sync updateTask:', e));
-        }, 0);
+                .catch(e => console.error('[store] sync updateTask:', e)));
+        }, 0)));
         return this._data.tasks[idx];
     }
 
@@ -2775,6 +2777,18 @@ class Store {
         }
 
         this._save();
+    }
+
+    /** Nombre d'appels a la base non regles (ecritures en arriere-plan
+     *  comprises, et celle qu'updateTask differe d'un tour). */
+    ecrituresEnCours() {
+        return nombreEcrituresEnCours();
+    }
+
+    /** Rend la main une fois toutes les ecritures en base terminees : a
+     *  attendre avant un rechargement qui doit relire la base. */
+    attendreEcritures() {
+        return attendreToutesEcritures();
     }
 
     /** Duplique une tache JUSTE APRES elle, en un geste annulable.
