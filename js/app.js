@@ -2058,7 +2058,17 @@ class App {
         pop.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this._fermerDateEtat(); }
         });
-        store.on('project:change', () => { this._fermerDateEtat(false); this._majBoutonDateEtat(); });
+        /* Fermer le panneau quand le projet actif CHANGE, pas quand le meme
+           projet est recharge : la creation d'un projet emet 'project:change'
+           en differe, apres le chargement depuis Supabase, et refermait le
+           panneau qu'on venait d'ouvrir (run 44603256000). */
+        this._dateEtatProjetId = store.getActiveProject()?.id ?? null;
+        store.on('project:change', () => {
+            const id = store.getActiveProject()?.id ?? null;
+            if (id !== this._dateEtatProjetId) this._fermerDateEtat(false);
+            this._dateEtatProjetId = id;
+            this._majBoutonDateEtat();
+        });
         store.on('project:dates', () => this._majBoutonDateEtat());
         this._majBoutonDateEtat();
     }
