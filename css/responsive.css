@@ -178,6 +178,7 @@
     /* Hide non-essential toolbar items on mobile */
     #criticalPathBtn,
     .baseline-wrap,
+    .date-etat-wrap,
     #importBtn,
     #exportBtn,
     #historyBtn,
