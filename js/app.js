@@ -1985,6 +1985,7 @@ class App {
 
         // Baseline
         this._bindBaseline();
+        this._bindDateEtat();
     }
 
     /* ---- Role-based UI gating ---- */
@@ -2034,6 +2035,95 @@ class App {
             }
         } else if (badge) {
             badge.remove();
+        }
+    }
+
+    /* ---- Date d'etat (barre d'outils) ----
+       Le champ projects.status_date, celui du rapport DCMA : les deux
+       ecrivent par store.setProjectDates(), qui ordonne les ecritures
+       (#87) et emet 'project:dates' une fois la base a jour. Vide, la
+       date d'etat est la date du jour. */
+
+    _bindDateEtat() {
+        const btn = document.getElementById('dateEtatBtn');
+        const pop = document.getElementById('dateEtatPopover');
+        if (!btn || !pop) return;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (pop.style.display !== 'none') this._fermerDateEtat(); else this._ouvrirDateEtat();
+        });
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('dateEtatWrap')?.contains(e.target)) this._fermerDateEtat(false);
+        });
+        pop.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this._fermerDateEtat(); }
+        });
+        store.on('project:change', () => { this._fermerDateEtat(false); this._majBoutonDateEtat(); });
+        store.on('project:dates', () => this._majBoutonDateEtat());
+        this._majBoutonDateEtat();
+    }
+
+    _majBoutonDateEtat() {
+        const btn = document.getElementById('dateEtatBtn');
+        if (!btn) return;
+        const iso = store.getActiveProject()?.statusDate || null;
+        const texte = iso
+            ? t('toolbar.dateEtat.valeur', { date: formatDateDisplay(iso) })
+            : t('toolbar.dateEtat.aujourdhui', { date: formatDateDisplay(formatDateISO(new Date())) });
+        btn.setAttribute('aria-label', texte);
+        btn.setAttribute('title', texte);
+        btn.classList.toggle('date-etat-reglee', !!iso);
+        const libelle = btn.querySelector('.date-etat-libelle');
+        if (libelle) libelle.textContent = iso ? formatDateDisplay(iso) : t('toolbar.dateEtat');
+    }
+
+    _ouvrirDateEtat() {
+        const btn = document.getElementById('dateEtatBtn');
+        const pop = document.getElementById('dateEtatPopover');
+        const projet = store.getActiveProject();
+        if (!btn || !pop || !projet) return;
+        const desactive = store.canEdit() ? '' : ' disabled';
+        pop.innerHTML = `
+            <div class="bl-pop-header"><span class="bl-pop-title" id="dateEtatTitre">${escapeHtml(t('toolbar.dateEtat'))}</span></div>
+            <div class="date-etat-corps">
+                <label class="sr-only" for="dateEtatChamp">${escapeHtml(t('toolbar.dateEtat'))}</label>
+                <input type="date" class="input" id="dateEtatChamp" value="${escapeHtml(projet.statusDate || '')}"${desactive}>
+                <button type="button" class="btn btn-secondary" id="dateEtatAujourdhui"${desactive}>${escapeHtml(t('toolbar.dateEtat.effacer'))}</button>
+                <p class="date-etat-aide">${escapeHtml(t('toolbar.dateEtat.aide'))}</p>
+            </div>`;
+        const champ = pop.querySelector('#dateEtatChamp');
+        const ecrire = async (valeur) => {
+            const p = store.getActiveProject();
+            if (!p) return;
+            await store.setProjectDates(p.id, { statusDate: valeur || null, deadline: p.deadline || null });
+            this._majBoutonDateEtat();
+        };
+        champ.addEventListener('change', () => ecrire(champ.value));
+        pop.querySelector('#dateEtatAujourdhui').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            champ.value = '';
+            await ecrire(null);
+        });
+        pop.style.display = 'block';
+        const rect = btn.getBoundingClientRect();
+        pop.style.top = (rect.bottom + 4) + 'px';
+        pop.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+        btn.setAttribute('aria-expanded', 'true');
+        btn.classList.add('active');
+        champ.focus();
+    }
+
+    /** Ferme le panneau ; rend le focus au bouton s'il etait dedans. */
+    _fermerDateEtat(rendreFocus = true) {
+        const btn = document.getElementById('dateEtatBtn');
+        const pop = document.getElementById('dateEtatPopover');
+        if (!pop || pop.style.display === 'none') return;
+        const focusDedans = pop.contains(document.activeElement);
+        pop.style.display = 'none';
+        if (btn) {
+            btn.setAttribute('aria-expanded', 'false');
+            btn.classList.remove('active');
+            if (rendreFocus || focusDedans) btn.focus();
         }
     }
 

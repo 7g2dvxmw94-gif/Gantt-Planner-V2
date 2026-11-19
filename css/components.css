@@ -2378,6 +2378,39 @@ textarea.input {
     display: inline-block;
 }
 
+.date-etat-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.date-etat-popover {
+    width: 260px;
+}
+
+.date-etat-corps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    padding: 12px 14px;
+}
+
+.date-etat-corps .input {
+    flex: 1 1 140px;
+}
+
+.date-etat-aide {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.btn.date-etat-reglee {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
 .btn.baseline-has-active {
     background: var(--color-primary);
     color: #fff;

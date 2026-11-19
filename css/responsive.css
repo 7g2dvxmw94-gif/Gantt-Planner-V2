@@ -10,6 +10,28 @@
 }
 
 /* ---- Laptop Large (1600px) — hide secondary btn text ---- */
+/* ---- Libellé du bouton « Date d'état » (2300px) ----
+   Il porte la date, plus longue qu'un libellé ordinaire : affiché dès
+   2 201 px, il faisait déborder la barre de 2 201 à 2 225 px (run
+   44572316337). Masqué, la date reste dans le nom et l'infobulle. */
+@media (max-width: 2300px) {
+    .toolbar-actions #dateEtatBtn .date-etat-libelle {
+        display: none;
+    }
+    .toolbar-actions #dateEtatBtn {
+        padding: var(--space-2);
+    }
+}
+
+/* ---- Bouton « Date d'état » masqué sous 820px ----
+   Il faisait déborder la barre de 769 à 800 px (run 44572316337). La date
+   d'état reste réglable dans la fenêtre du rapport DCMA, comme sur mobile. */
+@media (max-width: 820px) {
+    .date-etat-wrap {
+        display: none !important;
+    }
+}
+
 /* ---- Libellés des boutons secondaires (2200px) ----
    Masqués sous 2 200 px, et non plus 1 600 : entre les deux, la barre
    débordait, et « Nouvelle tâche » était coupé à droite sans signe visible
@@ -34,10 +56,11 @@
     }
 }
 
-/* ---- Laptop Medium (1500px) — hide tab labels to prevent overflow ----
+/* ---- Laptop Medium (1530px) — hide tab labels to prevent overflow ----
    1 500 et non plus 1 400 : avec le sixième onglet (WBS), la barre
-   débordait de 1 401 à 1 470 px. */
-@media (max-width: 1500px) {
+   débordait de 1 401 à 1 470 px. 1 530 et non plus 1 500 : avec le bouton
+   « Date d'état », elle débordait de 1 501 à 1 520 px (run 44572316337). */
+@media (max-width: 1530px) {
     .tab span {
         display: none;
     }
@@ -178,6 +201,7 @@
     /* Hide non-essential toolbar items on mobile */
     #criticalPathBtn,
     .baseline-wrap,
+    .date-etat-wrap,
     #importBtn,
     #exportBtn,
     #historyBtn,

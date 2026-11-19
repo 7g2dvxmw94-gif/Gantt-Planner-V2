@@ -1810,6 +1810,8 @@ class Store {
                 fin = this._projectDatesWrite;
                 await fin.catch(() => {});
             }
+            // Base a jour : la barre d'outils (date d'etat) se redessine.
+            this._emit('project:dates', projectId);
             return true;
         } catch (e) {
             console.error('[store] sync setProjectDates:', e?.message || e);
