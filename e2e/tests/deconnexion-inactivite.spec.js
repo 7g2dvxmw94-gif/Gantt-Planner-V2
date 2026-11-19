@@ -88,7 +88,13 @@ test('après 29 minutes sans activité un avertissement paraît ; à 30 minutes 
     /* 31 minutes : déconnexion, retour à l'écran de connexion qui dit
        pourquoi, session effacée de ce navigateur. */
     await vieillir(page, 31 * MIN);
-    await page.waitForURL(/auth\.html/, { timeout: 15_000 });
+    /* L'ADRESSE FINALE, pas l'événement de navigation : deux redirections
+       vers auth.html partent presque ensemble (celle du module, et celle
+       qu'app.js fait sur SIGNED_OUT) ; la première est annulée par la
+       seconde, et waitForURL échouait alors sur « net::ERR_ABORTED » bien
+       que la page arrive à destination (run 44613792838). */
+    await expect.poll(() => page.url(), { message: 'retour à l\'écran de connexion', timeout: 15_000 }).toMatch(/auth\.html/);
+    await page.waitForLoadState('load');
     await expect(page.locator('#alertBox'), 'l\'écran de connexion dit pourquoi')
         .toContainText('30 minutes d\'inactivité', { timeout: 10_000 });
     expect(await jetonSession(page), 'la session est effacée de ce navigateur').toBe(false);
