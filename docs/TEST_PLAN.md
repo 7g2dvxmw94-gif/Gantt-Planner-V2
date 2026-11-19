@@ -172,6 +172,7 @@ La date à laquelle on fait le point d'avancement (« status date » de MS Proje
 |---|-------|--------|------------------|-----|
 | 1 | Barre d'outils | Projet neuf ; ouvrir « Date d'état » dans la barre, saisir 10/06/2026 ; ouvrir le rapport DCMA ; recharger ; puis « Aujourd'hui » | Le bouton dit « aujourd'hui », puis la date réglée (nom et infobulle) ; le rapport DCMA lit la même date ; relue après rechargement ; « Aujourd'hui » l'efface (`date-etat-barre.spec.js`) | |
 | 2 | Gantt | W 11 → 12/06/2026 ; date d'état 10/06, puis 12/06, puis effacée | Un trait vertical pointillé dans chaque ligne, à la fin du 10/06 (bord gauche de W), puis deux colonnes plus loin ; effacée, plus de trait (`date-etat-gantt.spec.js`) | |
+| 3 | Mettre à jour le projet | A 01→05/06, B 08→12/06, C 08→12/06 à 80 %, D 15→19/06, F finie le 04/06, jalon M 05/06 ; date d'état 10/06 ; « Mettre à jour le projet », tout le projet ; puis Annuler | A 100 % réel 01→05 ; B 60 % commencée le 08 ; C reste à 80 %, commencée le 08 ; D et F inchangées ; M franchi ; une annulation rend tout (`mettre-a-jour-projet.spec.js`) | |
 
 ---
 
