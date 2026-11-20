@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (permis) : le délai de recours des tiers se
  * compte en MOIS, pas en soixante jours.
@@ -82,6 +82,7 @@ test('la fin du recours des tiers se compte en mois, pas en soixante jours', asy
     await page.locator('#taskName').fill(`PC Entrepôt ${suffixe}`);
     await page.locator('#taskStart').fill('2026-06-01');
     await page.locator('#taskEnd').fill('2026-12-31');
+    await ongletFiche(page, 'permis');
 
     /* PREMIER DISCRIMINANT — LE PERMIS EST ACCORDÉ.
        calculatePermitDeadlines n'entre dans le bloc du recours que si le

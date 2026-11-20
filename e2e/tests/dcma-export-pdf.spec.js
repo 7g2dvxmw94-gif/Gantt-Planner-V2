@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § G3 (export PDF), pour le rapport DCMA 14 points :
  * le dialogue d'export propose une section « Robustesse du planning
@@ -32,6 +32,7 @@ async function creerTache(page, nom, debut, fin) {
 
 async function lier(page, barreSuccesseur, nomPredecesseur) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('#taskModalOverlay .form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: nomPredecesseur });

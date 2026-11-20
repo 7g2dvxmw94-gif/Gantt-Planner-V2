@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B2 (créer une phase / groupe).
 
@@ -47,6 +47,7 @@ async function creerTacheEnfant(page, { nom, debut, fin, phase, progression }) {
     await page.locator('#taskEnd').fill(fin);
     await page.locator('#taskParent').selectOption({ label: phase });
     if (progression !== undefined) {
+        await ongletFiche(page, 'avancement');
         await page.locator('#taskProgress').fill(String(progression));
         await expect(page.locator('#taskModalOverlay .progress-input-label'))
             .toHaveText(`${progression}%`);

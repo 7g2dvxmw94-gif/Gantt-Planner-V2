@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B10 (sélection multiple), depuis le rapport DCMA
  * 14 points : une ligne en alerte doit mener aux tâches qui la causent.
@@ -32,6 +32,7 @@ async function creerTache(page, nom, debut, fin) {
 
 async function lier(page, barreSuccesseur, nomPredecesseur) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('#taskModalOverlay .form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: nomPredecesseur });

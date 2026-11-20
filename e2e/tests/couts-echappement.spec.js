@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § C4, volet coûts — suite directe de #48.
  *
@@ -62,6 +62,7 @@ test('la vue Coûts n\'interprète pas les noms comme du balisage', async ({ pag
     await modaleTache.locator('#taskName').fill(nomTache);
     await modaleTache.locator('#taskStart').fill('2026-09-07');
     await modaleTache.locator('#taskEnd').fill('2026-09-09');
+    await ongletFiche(page, 'ressources');
     await modaleTache.locator('.assignee-item', { hasText: nomRessource })
         .locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: 'Créer' }).click();

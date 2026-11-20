@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § C4, volet coûts.
  *
@@ -84,6 +84,7 @@ test('les coûts ne facturent pas les jours fériés', async ({ page }) => {
     await modaleTache.locator('#taskName').fill(nomTache);
     await modaleTache.locator('#taskStart').fill(DEBUT);
     await modaleTache.locator('#taskEnd').fill(FIN);
+    await ongletFiche(page, 'ressources');
     await modaleTache.locator('.assignee-item', { hasText: nomRessource })
         .locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: 'Créer' }).click();

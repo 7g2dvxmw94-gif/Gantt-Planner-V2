@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique), quatrième angle après
  * critical-path.spec.js (liens Fin→Début simples),
@@ -66,6 +66,7 @@ async function creerTache(page, nom, debut, fin) {
 /** Le <select> de type n'est révélé que par la case cochée : l'ordre compte. */
 async function lier(page, barreSuccesseur, nomPredecesseur, type) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('.form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: nomPredecesseur });

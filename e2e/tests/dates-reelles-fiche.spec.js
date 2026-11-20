@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { waitForAppReady, deleteActiveProject } from '../helpers.js';
+import { waitForAppReady, deleteActiveProject, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § B12 : la fiche d'une tâche saisit son Début réel et
@@ -106,6 +106,7 @@ async function fermerSansEnregistrer(page) {
  *  PREMIÈRE de l'assertion centrale de chaque test. C'est elle qui échoue
  *  tant que la fiche n'a pas la ligne. */
 async function champsReels(page) {
+    await ongletFiche(page, 'avancement');
     const fin = page.locator('#taskActualFinish');
     await expect(fin, 'champ « Fin réelle » absent de la fiche').toBeVisible();
     const debut = page.locator('#taskActualStart');

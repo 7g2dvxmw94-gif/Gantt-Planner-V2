@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § D1 (glisser-déposer) croisé avec § B7 (dépendances).
  * gantt-drag.spec.js vérifie qu'une tâche LIBRE suit la souris ;
@@ -122,6 +122,7 @@ test('glisser une tâche liée ne l\'arrache pas à ses contraintes', async ({ p
 
     // Lier Élévation à Fondations en Fin→Début.
     await barreLiee.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('.form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     await groupe.locator('.dep-list > div').filter({ hasText: nomAmont })

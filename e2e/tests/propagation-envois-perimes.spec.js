@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B3 (dépendances), sur la face RÉSEAU du losange
  * traité en #68.
@@ -71,6 +71,7 @@ async function creerTache(page, nom, debut, fin) {
 
 async function lier(page, barreSuccesseur, nomsPredecesseurs) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('.form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     for (const nom of nomsPredecesseurs) {

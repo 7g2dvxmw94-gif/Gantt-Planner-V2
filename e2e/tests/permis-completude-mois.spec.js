@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (permis de construire), sous l'angle que
  * permit.spec.js laisse de côté — et qu'il verrouille même à l'envers,
@@ -83,6 +83,7 @@ test('la limite de complétude se compte en mois, pas en 30 jours', async ({ pag
     await page.locator('#taskName').fill(nomPermis);
     await page.locator('#taskStart').fill('2026-01-01');
     await page.locator('#taskEnd').fill('2026-12-31');
+    await ongletFiche(page, 'permis');
 
     /* DISCRIMINANT — L'ÉCHÉANCE EST CALCULÉE ET AFFICHÉE.
        Avril compte trente jours : le 1er avril donne le 1er mai dans les

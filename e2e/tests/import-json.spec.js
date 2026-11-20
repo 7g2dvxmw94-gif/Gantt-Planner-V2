@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures.js';
 import { readFileSync } from 'fs';
-import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § G1 étape 5 (import) : le fichier JSON exporté
@@ -110,6 +110,7 @@ test('les assignés d’une tâche survivent au réimport', async ({ page }) => 
     await modalTache.locator('#taskName').fill(taskName);
     await modalTache.locator('#taskStart').fill('2026-06-01');
     await modalTache.locator('#taskEnd').fill('2026-06-03');
+    await ongletFiche(page, 'ressources');
     await modalTache.locator('.assignee-item', { hasText: nomRessource })
         .locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: 'Créer' }).click();
@@ -206,6 +207,7 @@ test('la restauration d’une sauvegarde globale conserve les assignés', async 
     await modalTache.locator('#taskName').fill(taskName);
     await modalTache.locator('#taskStart').fill('2026-06-01');
     await modalTache.locator('#taskEnd').fill('2026-06-03');
+    await ongletFiche(page, 'ressources');
     await modalTache.locator('.assignee-item', { hasText: nomRessource })
         .locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: 'Créer' }).click();

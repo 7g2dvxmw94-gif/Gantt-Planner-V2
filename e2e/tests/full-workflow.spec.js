@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Test d'intégration "bout en bout" demandé pour vérifier que plusieurs
    fonctionnalités marchent bien ENSEMBLE sur un scénario réaliste, plutôt
@@ -49,6 +49,7 @@ test('projet complet : tâches à durées variées + jalon + ressource + coûts 
         await modal.locator('#taskName').fill(t.name);
         await modal.locator('#taskStart').fill(t.start);
         await modal.locator('#taskEnd').fill(t.end);
+        await ongletFiche(page, 'ressources');
         await modal.locator('.assignee-item', { hasText: resourceName })
             .locator('input[type="checkbox"]').check();
         await page.getByRole('button', { name: 'Créer' }).click();

@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures.js';
 import { readFileSync } from 'fs';
-import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § G1 étape 5 (réimport d'un export JSON) sous
@@ -57,6 +57,7 @@ function lignePredecesseur(page, nomPredecesseur) {
 
 async function lier(page, barreSuccesseur, nomPredecesseur, type, decalage) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const ligne = lignePredecesseur(page, nomPredecesseur);
     await ligne.locator('input[type="checkbox"]').check();
     await ligne.locator('select').selectOption(type);

@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4, volet des délais réglementaires — complément
  * de permit.spec.js, qui vérifie l'instruction et la complétude mais pas
@@ -84,6 +84,7 @@ test('la péremption d\'un permis se compte en années, pas en 1095 jours', asyn
     await page.locator('#taskName').fill(nomPermis);
     await page.locator('#taskStart').fill('2026-08-10');
     await page.locator('#taskEnd').fill('2026-11-30');
+    await ongletFiche(page, 'permis');
     await page.locator('#permitStatus').selectOption('granted');
 
     const peremption = valeurEcheance(page, 'Péremption permis');

@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Types de lien et décalage (TEST_PLAN.md § B7, au-delà du cas par défaut).
  *
@@ -44,6 +44,7 @@ async function lier(page, { successeur, predecesseur, type, decalage = 0 }) {
     const barre = page.locator('.gantt-bar[data-task-id]').filter({ hasText: successeur });
     await expect(barre).toBeVisible({ timeout: 10_000 });
     await barre.dblclick();
+    await ongletFiche(page, 'liens');
 
     const groupe = page.locator('.form-group', { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: predecesseur });

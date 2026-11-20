@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique).
 
@@ -44,6 +44,7 @@ test('activer le chemin critique surligne les tâches sans marge', async ({ page
 
     // Lier B à A (Fin→Début) pour former l'unique chaîne du projet.
     await barB.dblclick();
+    await ongletFiche(page, 'liens');
     const predGroup = page.locator('.form-group', { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     await predGroup.locator('.dep-list > div').filter({ hasText: nameA })
         .locator('input[type="checkbox"]').check();
@@ -112,6 +113,7 @@ test('une branche parallèle plus courte garde sa marge et n’est pas critique'
 
     // Faire converger les deux branches sur la tâche finale.
     await barreFinale.dblclick();
+    await ongletFiche(page, 'liens');
     const predGroup = page.locator('.form-group', { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     for (const nom of [nomLongue, nomCourte]) {
         await predGroup.locator('.dep-list > div').filter({ hasText: nom })

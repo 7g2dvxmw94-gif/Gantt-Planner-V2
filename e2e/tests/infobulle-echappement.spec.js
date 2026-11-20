@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § D4 — « Infobulle au survol », jusqu'ici sans
  * aucun test.
@@ -59,6 +59,7 @@ test('l\'infobulle du Gantt n\'interprète pas les noms comme du balisage', asyn
     await modaleTache.locator('#taskName').fill(nomTache);
     await modaleTache.locator('#taskStart').fill('2026-09-07');
     await modaleTache.locator('#taskEnd').fill('2026-09-11');
+    await ongletFiche(page, 'ressources');
     await modaleTache.locator('.assignee-item', { hasText: nomRessource })
         .locator('input[type="checkbox"]').check();
     await page.getByRole('button', { name: 'Créer' }).click();

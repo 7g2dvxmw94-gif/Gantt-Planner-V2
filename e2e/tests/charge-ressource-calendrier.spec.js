@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { snapshotCustomization } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § C3, volets 3 et 4 — « Pourcentage de charge » et
@@ -89,6 +89,7 @@ test('la charge d\'une ressource compte les samedis quand ils sont ouvrés', asy
     await page.locator('#taskStart').fill(SAMEDI_TRAVAILLE);
     await page.locator('#taskEnd').fill(SAMEDI_TRAVAILLE);
 
+    await ongletFiche(page, 'ressources');
     const ligneEquipe = page.locator('#taskModalOverlay .assignee-item', { hasText: nomRessource });
     await expect(ligneEquipe).toBeVisible();
     await ligneEquipe.locator('input[type="checkbox"]').check();

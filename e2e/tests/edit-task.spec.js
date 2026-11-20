@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B5 (modifier une tâche) : la modal d'édition doit
    s'ouvrir pré-remplie, accepter un changement de nom, de date de fin, de
@@ -65,6 +65,7 @@ test('modifier une tâche depuis la modal : nom, date de fin, couleur, priorité
     await page.locator('#taskEnd').fill('2026-08-14');
     await page.locator(`#taskModalOverlay .color-swatch[data-color="${VERT}"]`).click();
     await page.locator('#taskPriority').selectOption('high');
+    await ongletFiche(page, 'avancement');
     await page.locator('#taskProgress').fill('50');
 
     // Le statut suit la progression sans intervention de l'utilisateur.

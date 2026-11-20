@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § A4 (dupliquer un projet).
@@ -62,6 +62,7 @@ test('dupliquer un projet : la copie survit au rechargement, dépendances remapp
         await modal.locator('#taskStart').fill(debut);
         await modal.locator('#taskEnd').fill(fin);
         if (avecRessource) {
+            await ongletFiche(page, 'ressources');
             await modal.locator('.assignee-item', { hasText: nomRessource })
                 .locator('input[type="checkbox"]').check();
         }
@@ -74,6 +75,7 @@ test('dupliquer un projet : la copie survit au rechargement, dépendances remapp
     const barreAval = page.locator('.gantt-bar[data-task-id]').filter({ hasText: nomAval });
     await expect(barreAval).toBeVisible({ timeout: 10_000 });
     await barreAval.dblclick();
+    await ongletFiche(page, 'liens');
     const groupePred = page.locator('.form-group', { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     await groupePred.locator('.dep-list > div').filter({ hasText: nomAmont })
         .locator('input[type="checkbox"]').check();

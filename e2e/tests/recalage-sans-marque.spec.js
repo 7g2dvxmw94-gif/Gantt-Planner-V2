@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B7 (dépendances) et § B3 (jalon), sur ce que la
  * barre affiche APRÈS un recalage.
@@ -86,6 +86,7 @@ async function fermee(page) {
 
 /** Coche `nomAmont` dans la liste « Précédée par » de la fiche ouverte. */
 async function cocherPredecesseur(page, nomAmont) {
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('.form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const caseAmont = groupe.locator('.dep-list > div').filter({ hasText: nomAmont })

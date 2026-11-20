@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § D1 (glisser-déposer) croisé avec le calendrier
  * ouvré.
@@ -98,6 +98,7 @@ async function creer(page, { nom, debut, fin, predecesseurs = [] }) {
     await (await present(page.locator('#taskStart'), 'champ de début')).fill(debut);
     await (await present(page.locator('#taskEnd'), 'champ de fin')).fill(fin);
     for (const amont of predecesseurs) {
+        await ongletFiche(page, 'liens');
         const groupe = page.locator('.form-group',
             { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
         const caseAmont = groupe.locator('.dep-list > div').filter({ hasText: amont })
