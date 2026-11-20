@@ -9,7 +9,7 @@ import { generateId, daysBetween, addDays, addYears, addMonths, formatDateISO,
          contrainteDe, exigenceDuLien, appliquerContrainte, datesReellesDe,
          dateEffectiveContrainte, conflitsContraintes,
          normaliserRecherche, typeContrainteDepuisTexte, calendrierNormalise } from './utils.js';
-import { supabaseStore, suivreEcriture, nombreEcrituresEnCours, attendreToutesEcritures } from './supabase-store.js';
+import { supabaseStore, suivreEcriture, nombreEcrituresEnCours, nombreEcrituresNonEnregistrees, attendreToutesEcritures } from './supabase-store.js';
 import { auth } from './auth.js';
 import { numeroterWbs, lireCodeWbs, reconstruireWbsDepuisCodes } from './wbs.js';
 
@@ -2783,6 +2783,12 @@ class Store {
      *  comprises, et celle qu'updateTask differe d'un tour). */
     ecrituresEnCours() {
         return nombreEcrituresEnCours();
+    }
+
+    /** Ecritures en base non terminees, lectures exclues : ce qu'on perdrait
+     *  en quittant la page (avertissement beforeunload). */
+    ecrituresNonEnregistrees() {
+        return nombreEcrituresNonEnregistrees();
     }
 
     /** Rend la main une fois toutes les ecritures en base terminees : a
