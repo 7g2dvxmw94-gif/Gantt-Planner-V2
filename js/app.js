@@ -4911,10 +4911,10 @@ thead{display:table-header-group}
                 });
 
                 if (n.taskId) {
-                    item.addEventListener('click', () => {
+                    item.addEventListener('click', async () => {
                         panel.remove();
                         if (n.projectId) {
-                            store.setActiveProject(n.projectId);
+                            await store.setActiveProject(n.projectId);
                             this._dashboardFilterProjectId = null;
                             this._costsFilterProjectId = null;
                             ganttRenderer.render();
@@ -5488,8 +5488,8 @@ thead{display:table-header-group}
 
         // Click handler to switch to project
         container.querySelectorAll('[data-project-id]').forEach(row => {
-            row.addEventListener('click', () => {
-                store.setActiveProject(row.dataset.projectId);
+            row.addEventListener('click', async () => {
+                await store.setActiveProject(row.dataset.projectId);
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
                 ganttRenderer.render();
@@ -7921,9 +7921,9 @@ tr:nth-child(even){background:#fafbfc}
             nameSpan.className = 'project-item-name';
             nameSpan.textContent = p.name;
             nameSpan.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;';
-            nameSpan.addEventListener('click', (e) => {
+            nameSpan.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                store.setActiveProject(p.id);
+                await store.setActiveProject(p.id);
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
                 ganttRenderer.render();
@@ -7987,7 +7987,7 @@ tr:nth-child(even){background:#fafbfc}
                 return;
             }
             if (dup) {
-                store.setActiveProject(dup.id);
+                await store.setActiveProject(dup.id);
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
                 ganttRenderer.render();
@@ -8077,7 +8077,13 @@ tr:nth-child(even){background:#fafbfc}
             budgetUsed: 0,
         });
 
-        store.setActiveProject(project.id);
+        /* ATTENDU : setActiveProject() charge le projet depuis Supabase et
+           n'emet 'project:change' qu'ensuite. Non attendu, le toast « cree »
+           paraissait avant ce chargement, qui ecrasait ensuite ce qu'on
+           avait fait entre-temps (une baseline disparaissait de la liste,
+           le panneau « Date d'etat » se refermait). Meme chose aux autres
+           appels de setActiveProject() de ce fichier. */
+        await store.setActiveProject(project.id);
         this._dashboardFilterProjectId = null;
         this._costsFilterProjectId = null;
         ganttRenderer.render();
