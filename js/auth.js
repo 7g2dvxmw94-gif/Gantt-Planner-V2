@@ -91,6 +91,12 @@ export const auth = {
         if (error) throw error;
     },
 
+    /* ---- Nouveau mot de passe (session de récupération ou connecté) ---- */
+    async updatePassword(password) {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+    },
+
     /* ---- Déconnexion ---- */
     async signOut() {
         const { error } = await supabase.auth.signOut();
