@@ -58,3 +58,21 @@ export async function deleteActiveProject(page) {
     await page.locator('button.project-dropdown-item.danger').click();
     await page.locator('#toastContainer .toast', { hasText: 'Projet supprimé' }).waitFor({ timeout: 10_000 });
 }
+
+/** Fiche de tâche à onglets : affiche l'onglet `cle` (general, avancement,
+ *  liens, ressources, permis, avance, notes) avant d'agir sur ses champs.
+ *  Sans onglets dans la fiche, ne fait rien : les champs sont tous
+ *  affichés. Un champ d'un onglet non affiché est masqué, et Playwright
+ *  refuse de le remplir ou de le cliquer.
+ *
+ *  Répartition : en-tête (toujours visible) — nom, type ; general — phase
+ *  parente, priorité, début, fin, durée, couleur ; avancement — %
+ *  achevé, statut, état du jalon, dates réelles ; liens — prédécesseurs,
+ *  successeurs ; ressources — ressources affectées, coûts fixes ; permis —
+ *  champs du permis ; avance — contrainte ; notes — description. */
+export async function ongletFiche(page, cle) {
+    const onglet = page.locator(`#taskModalOverlay [role="tab"][data-onglet="${cle}"]`);
+    if (await onglet.count() === 0) return;
+    await onglet.click();
+    await onglet.and(page.locator('[aria-selected="true"]')).waitFor();
+}
