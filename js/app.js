@@ -2103,7 +2103,13 @@ class App {
                 <input type="date" class="input" id="dateEtatChamp" value="${escapeHtml(projet.statusDate || '')}"${desactive}>
                 <button type="button" class="btn btn-secondary" id="dateEtatAujourdhui"${desactive}>${escapeHtml(t('toolbar.dateEtat.effacer'))}</button>
                 <p class="date-etat-aide">${escapeHtml(t('toolbar.dateEtat.aide'))}</p>
+                <button type="button" class="btn btn-primary date-etat-maj" id="mettreAJourBtn" aria-haspopup="dialog"${desactive}>${escapeHtml(t('maj.ouvrir'))}</button>
             </div>`;
+        pop.querySelector('#mettreAJourBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._fermerDateEtat(false);
+            this._ouvrirMettreAJour();
+        });
         const champ = pop.querySelector('#dateEtatChamp');
         const ecrire = async (valeur) => {
             const p = store.getActiveProject();
@@ -2124,6 +2130,56 @@ class App {
         btn.setAttribute('aria-expanded', 'true');
         btn.classList.add('active');
         champ.focus();
+    }
+
+    /** Fenetre « Mettre a jour le projet » (store.mettreAJourAvancement). */
+    _ouvrirMettreAJour() {
+        const projet = store.getActiveProject();
+        if (!projet || !store.canEdit()) return;
+        const iso = projet.statusDate || formatDateISO(new Date());
+        const nbSel = this._selectedTaskIds.size;
+        const overlay = document.createElement('div');
+        overlay.id = 'mettreAJourModal';
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal maj-modal" role="dialog" aria-modal="true" aria-labelledby="majTitre" aria-describedby="majIntro">
+                <div class="modal-header"><h2 class="modal-title" id="majTitre"></h2></div>
+                <div class="modal-body">
+                    <p id="majIntro"></p>
+                    <fieldset class="maj-portee">
+                        <legend class="sr-only"></legend>
+                        <label><input type="radio" name="majPortee" value="tout" checked> <span class="maj-tout"></span></label>
+                        <label><input type="radio" name="majPortee" value="selection"${nbSel ? '' : ' disabled'}> <span class="maj-sel"></span></label>
+                    </fieldset>
+                    <p class="maj-regles"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary maj-annuler"></button>
+                    <button type="button" class="btn btn-primary maj-valider"></button>
+                </div>
+            </div>`;
+        overlay.querySelector('#majTitre').textContent = t('maj.titre');
+        overlay.querySelector('#majIntro').textContent = t('maj.intro', { date: formatDateDisplay(iso) });
+        overlay.querySelector('legend').textContent = t('maj.portee');
+        overlay.querySelector('.maj-tout').textContent = t('maj.tout');
+        overlay.querySelector('.maj-sel').textContent = t('maj.selection', { n: nbSel });
+        overlay.querySelector('.maj-regles').textContent = t('maj.regles');
+        overlay.querySelector('.maj-annuler').textContent = t('maj.annuler');
+        overlay.querySelector('.maj-valider').textContent = t('maj.valider');
+        document.body.appendChild(overlay);
+
+        const bouton = document.getElementById('dateEtatBtn');
+        const fermer = () => { overlay.remove(); if (bouton) bouton.focus(); };
+        overlay.querySelector('.maj-annuler').addEventListener('click', fermer);
+        overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); fermer(); } });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) fermer(); });
+        overlay.querySelector('.maj-valider').addEventListener('click', () => {
+            const selection = overlay.querySelector('input[name="majPortee"]:checked')?.value === 'selection';
+            const n = store.mettreAJourAvancement(projet.statusDate || null, selection ? [...this._selectedTaskIds] : null);
+            fermer();
+            this._showToast(t(n ? 'maj.fait' : 'maj.rien', { n, date: formatDateDisplay(iso) }), n ? 'success' : 'info');
+        });
+        overlay.querySelector('.maj-valider').focus();
     }
 
     /** Ferme le panneau ; rend le focus au bouton s'il etait dedans. */

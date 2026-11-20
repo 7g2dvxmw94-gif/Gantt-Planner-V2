@@ -2791,6 +2791,62 @@ class Store {
         return attendreToutesEcritures();
     }
 
+    /** « Mettre a jour le projet », comme MS Project : porte l'avancement
+     *  jusqu'au SOIR de la date d'etat (vide : aujourd'hui). Regles choisies
+     *  par l'utilisateur (19/11/2026) :
+     *   - de 0 a 100 % : fin prevue au plus tard a la date d'etat -> 100 %,
+     *     Debut et Fin reels aux dates prevues ; a cheval -> jours ouvres
+     *     ecoules / duree ouvree (99 % au plus : elle n'est pas finie), Debut
+     *     reel au debut prevu ; apres -> rien ;
+     *   - rien ne recule : une date reelle posee ne bouge pas, un
+     *     avancement n'est jamais diminue, une tache finie est laissee ;
+     *   - un jalon atteint est franchi.
+     *  Phases (deduites de leurs enfants) et permis ne sont pas touches.
+     *  `ids` : la portee (null : tout le projet). Un seul instantane : un
+     *  Ctrl+Z defait tout. Rend le nombre de taches modifiees. */
+    mettreAJourAvancement(dateEtat, ids = null) {
+        if (!this.canEdit()) return 0;
+        const de = dateEtat || formatDateISO(new Date());
+        const cal = this._getCalendar();
+        const portee = ids ? new Set(ids) : null;
+        const lisible = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(parseISO(d));
+        const modifs = [];
+        for (const t of this.getTasks()) {
+            if (t.isPhase || t.isPermit || (portee && !portee.has(t.id))) continue;
+            const reel = datesReellesDe(t);
+            if (reel.fin) continue;
+            const debut = t.startDate, fin = t.endDate;
+            if (!lisible(debut)) continue;
+            const debutReel = reel.debut || debut;
+            if (t.isMilestone) {
+                if (debut <= de) modifs.push([t.id, { progress: 100, status: 'done', actualStart: debutReel, actualFinish: debutReel }]);
+                continue;
+            }
+            if (!lisible(fin)) continue;
+            if (fin <= de) {
+                modifs.push([t.id, { progress: 100, status: 'done', actualStart: debutReel,
+                    actualFinish: fin >= debutReel ? fin : debutReel }]);
+            } else if (debut <= de) {
+                const duree = Math.max(1, workingDaysBetween(debut, fin, cal));
+                const ecoule = workingDaysBetween(debut, de, cal);
+                const calcule = Math.min(99, Math.round(100 * ecoule / duree));
+                const avancement = Math.max(Number(t.progress) || 0, calcule);
+                const maj = { actualStart: debutReel, progress: avancement };
+                if (!t.status || t.status === 'todo') maj.status = 'in_progress';
+                if (avancement !== t.progress || debutReel !== t.actualStart || maj.status) modifs.push([t.id, maj]);
+            }
+        }
+        if (!modifs.length) return 0;
+        this._snapshot();
+        this._batchingUndo = true;
+        try {
+            modifs.forEach(([id, maj]) => this.updateTask(id, maj));
+        } finally {
+            this._batchingUndo = false;
+        }
+        return modifs.length;
+    }
+
     /** Duplique une tache JUSTE APRES elle, en un geste annulable.
      *
      *  La copie prend l'ordre suivant ; les taches du projet d'ordre
