@@ -2120,8 +2120,10 @@ class App {
         champ.addEventListener('change', () => ecrire(champ.value));
         pop.querySelector('#dateEtatAujourdhui').addEventListener('click', async (e) => {
             e.stopPropagation();
-            champ.value = '';
-            await ecrire(null);
+            /* Inscrit la date du jour et l'enregistre (l'ancien comportement,
+               effacer, ne se voyait pas : champ vide avant comme apres). */
+            champ.value = formatDateISO(new Date());
+            await ecrire(champ.value);
         });
         pop.style.display = 'block';
         const rect = btn.getBoundingClientRect();
