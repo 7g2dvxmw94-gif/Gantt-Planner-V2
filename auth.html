@@ -271,6 +271,26 @@
                 </div>
             </div>
 
+            <!-- NOUVEAU MOT DE PASSE (arrivee par le lien « mot de passe oublie ») -->
+            <div id="viewNewPassword" style="display:none">
+                <h1 class="card-title">Choisissez un nouveau mot de passe</h1>
+                <p class="card-subtitle">Il remplacera l'ancien sur tous vos appareils.</p>
+                <form id="formNewPassword" novalidate>
+                    <div class="form-group">
+                        <label for="newPassword">Nouveau mot de passe</label>
+                        <input type="password" id="newPassword" autocomplete="new-password" minlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPasswordConfirm">Confirmez le mot de passe</label>
+                        <input type="password" id="newPasswordConfirm" autocomplete="new-password" minlength="8" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnNewPassword">
+                        <span class="spinner"></span>
+                        <span class="btn-label">Enregistrer</span>
+                    </button>
+                </form>
+            </div>
+
             <!-- CONFIRMATION -->
             <div id="viewConfirm" style="display:none">
                 <div class="confirm-panel show">
@@ -292,7 +312,7 @@
 
         const $ = id => document.getElementById(id);
 
-        const views = ['viewLogin', 'viewRegister', 'viewReset', 'viewConfirm'];
+        const views = ['viewLogin', 'viewRegister', 'viewReset', 'viewConfirm', 'viewNewPassword'];
         function showView(viewId) {
             views.forEach(v => $(v).style.display = 'none');
             $(viewId).style.display = 'block';
@@ -331,6 +351,19 @@
             window.__authRedirect = destination;
 
             const session = await auth.getSession();
+
+            /* Arrivee par le lien « mot de passe oublie » (auth.resetPassword,
+               redirectTo auth.html?reset=1) : le lien ouvre une session de
+               recuperation. Sans ce formulaire, la page renvoyait aussitot
+               vers l'outil et le mot de passe ne changeait jamais
+               (signale le 20/11/2026). */
+            if (params.get('reset') === '1') {
+                if (session) { showView('viewNewPassword'); $('newPassword').focus(); return; }
+                showView('viewReset');
+                showAlert('Ce lien a expiré ou a déjà servi. Demandez-en un nouveau ci-dessous.', 'error');
+                return;
+            }
+
             if (session) { window.location.href = destination; return; }
 
             /* Retour après une déconnexion pour inactivité (js/inactivite.js) :
@@ -398,6 +431,24 @@
                 showView('viewConfirm');
             } catch (err) { showAlert(err.message); }
             finally { setLoading('btnRegister', false); }
+        });
+
+        $('formNewPassword').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const motDePasse = $('newPassword').value;
+            const confirmation = $('newPasswordConfirm').value;
+            hideAlert();
+            if (motDePasse.length < 8) { showAlert('Le mot de passe doit contenir au moins 8 caractères.'); return; }
+            if (motDePasse !== confirmation) { showAlert('Les deux mots de passe doivent être identiques.'); return; }
+            setLoading('btnNewPassword', true);
+            try {
+                await auth.updatePassword(motDePasse);
+                showAlert('Mot de passe enregistré. Ouverture de l\'outil…', 'success');
+                setTimeout(() => { window.location.href = window.__authRedirect || 'index.html'; }, 1200);
+            } catch (err) {
+                showAlert(err.message);
+                setLoading('btnNewPassword', false);
+            }
         });
 
         $('formReset').addEventListener('submit', async (e) => {
