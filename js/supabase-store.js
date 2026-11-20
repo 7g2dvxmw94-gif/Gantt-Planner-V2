@@ -692,18 +692,32 @@ export const supabaseStore = {
    rechargement avant leur fin les perdait (dates-reelles-moteur, runs
    44290728444, 44300290973, 44561118641). */
 const _enCours = new Set();
+/* Parmi elles, les ECRITURES (tout sauf les get*) : ce sont elles qu'on
+   perdrait en quittant la page. Une lecture en cours (notifications…)
+   n'avertit pas l'utilisateur. */
+const _ecritures = new Set();
 
-/** Compte une promesse jusqu'a son reglement ; la rend telle quelle. */
-export function suivreEcriture(p) {
+function suivre(p, ecriture) {
     if (!p || typeof p.then !== 'function') return p;
     _enCours.add(p);
-    const retirer = () => _enCours.delete(p);
+    if (ecriture) _ecritures.add(p);
+    const retirer = () => { _enCours.delete(p); _ecritures.delete(p); };
     p.then(retirer, retirer);
     return p;
 }
 
+/** Compte une ecriture jusqu'a son reglement ; la rend telle quelle. */
+export function suivreEcriture(p) {
+    return suivre(p, true);
+}
+
 export function nombreEcrituresEnCours() {
     return _enCours.size;
+}
+
+/** Ecritures en base non terminees (lectures exclues). */
+export function nombreEcrituresNonEnregistrees() {
+    return _ecritures.size;
 }
 
 /** Attend que toutes les promesses comptees se reglent, y compris celles
@@ -719,7 +733,7 @@ export async function attendreToutesEcritures() {
 for (const [cle, fn] of Object.entries(supabaseStore)) {
     if (typeof fn !== 'function') continue;
     supabaseStore[cle] = function (...args) {
-        return suivreEcriture(fn.apply(this, args));
+        return suivre(fn.apply(this, args), !cle.startsWith('get'));
     };
 }
 

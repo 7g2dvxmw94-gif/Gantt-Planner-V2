@@ -8515,5 +8515,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const app = new App();
     window.app = app; // Expose globally for trial banner inline handlers
+
+    /* Quitter la page (rechargement, fermeture de l'onglet) pendant une
+       ecriture en base la perdrait : le navigateur demande confirmation
+       (« Quitter la page ? »). Sans ecriture en cours, on quitte librement. */
+    window.addEventListener('beforeunload', (e) => {
+        if (store.ecrituresNonEnregistrees() === 0) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
     app.init();
 });
