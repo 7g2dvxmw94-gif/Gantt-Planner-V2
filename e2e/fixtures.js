@@ -15,6 +15,16 @@ import { runCleanup } from './cleanup.js';
 
 export const test = base.extend({
     page: async ({ page }, use) => {
+        /* « Quitter la page ? » (beforeunload, tant qu'une écriture en base
+           est en cours) : accepté, comme le ferait l'utilisateur pressé.
+           Sans cela Playwright le refuse, et le rechargement ou la
+           navigation du test reste bloqué. Ce listener désactive le refus
+           automatique des autres dialogues : quand aucun autre listener ne
+           s'en charge, il les refuse lui-même, comme avant. */
+        page.on('dialog', (d) => {
+            if (d.type() === 'beforeunload') { d.accept().catch(() => {}); return; }
+            if (page.listenerCount('dialog') === 1) d.dismiss().catch(() => {});
+        });
         await use(page);
         await runCleanup(page);
     },
