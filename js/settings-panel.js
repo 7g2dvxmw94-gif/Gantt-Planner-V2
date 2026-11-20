@@ -5,6 +5,7 @@
 
 import { store, PLAN_PRICES } from './store.js';
 import { CURRENCIES, formatDateDisplay } from './utils.js';
+import { auth } from './auth.js';
 
 const COLOR_PRESETS = [
     { id: 'indigo',  name: 'Indigo',   primary: '#6366F1', hover: '#4F46E5', light: '#EEF2FF', dark: '#4338CA' },
@@ -185,6 +186,28 @@ class SettingsPanel {
                             <input type="text" class="settings-field-input" id="settingsName" placeholder="${t('settings.company.placeholder')}" value="${brandName}">
                         </div>
                     </div>
+                </div>
+
+                <!-- Mot de passe -->
+                <div class="settings-group">
+                    <div class="settings-group-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <h3>${t('settings.password')}</h3>
+                    </div>
+                    <form class="settings-identity-fields" id="settingsPasswordForm" novalidate>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsNewPassword">${t('settings.password.new')} <span style="font-weight:400;color:var(--text-muted)">(${t('settings.password.hint')})</span></label>
+                            <input type="password" class="settings-field-input" id="settingsNewPassword" autocomplete="new-password" minlength="8">
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-field-label" for="settingsNewPasswordConfirm">${t('settings.password.confirm')}</label>
+                            <input type="password" class="settings-field-input" id="settingsNewPasswordConfirm" autocomplete="new-password" minlength="8">
+                        </div>
+                        <div class="settings-field">
+                            <button type="submit" class="btn btn-secondary" id="settingsPasswordBtn">${t('settings.password.submit')}</button>
+                            <p id="settingsPasswordStatus" role="status" aria-live="polite" style="margin:8px 0 0;font-size:13px;"></p>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Logo -->
@@ -891,6 +914,39 @@ class SettingsPanel {
         }
     }
 
+    /* Changer son mot de passe une fois connecté : 8 caractères au moins,
+       deux saisies identiques, puis auth.updatePassword(). */
+    _bindPasswordChange() {
+        const form    = this._panel.querySelector('#settingsPasswordForm');
+        if (!form) return;
+        const champ   = form.querySelector('#settingsNewPassword');
+        const confirm = form.querySelector('#settingsNewPasswordConfirm');
+        const bouton  = form.querySelector('#settingsPasswordBtn');
+        const statut  = form.querySelector('#settingsPasswordStatus');
+        const dire = (msg, erreur) => {
+            statut.textContent = msg;
+            statut.style.color = erreur ? 'var(--danger, #DC2626)' : 'var(--success, #059669)';
+        };
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mdp = champ.value;
+            if (mdp !== confirm.value) return dire(t('settings.password.mismatch'), true);
+            if (mdp.length < 8)        return dire(t('settings.password.tooShort'), true);
+            bouton.disabled = true;
+            dire(t('settings.password.saving'), false);
+            try {
+                await auth.updatePassword(mdp);
+                champ.value = '';
+                confirm.value = '';
+                dire(t('settings.password.done'), false);
+            } catch (err) {
+                dire(t('settings.password.error') + (err?.message || ''), true);
+            } finally {
+                bouton.disabled = false;
+            }
+        });
+    }
+
     _bindProfilEvents() {
         const uploadBtn  = this._panel.querySelector('#settingsAvatarUploadBtn');
         const fileInput  = this._panel.querySelector('#settingsAvatarInput');
@@ -918,6 +974,8 @@ class SettingsPanel {
                 this._switchTab('profil');
             });
         }
+
+        this._bindPasswordChange();
 
         const userNameInput  = this._panel.querySelector('#settingsUserName');
         const initialsInput  = this._panel.querySelector('#settingsInitials');

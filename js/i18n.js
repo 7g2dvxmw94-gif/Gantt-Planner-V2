@@ -135,6 +135,16 @@ const I18N = {
 
         // Settings - Profile
         'settings.identity': 'Identité',
+        'settings.password': 'Mot de passe',
+        'settings.password.new': 'Nouveau mot de passe',
+        'settings.password.confirm': 'Confirmer le mot de passe',
+        'settings.password.hint': '8 caractères au moins',
+        'settings.password.submit': 'Changer mon mot de passe',
+        'settings.password.tooShort': 'Le mot de passe doit contenir au moins 8 caractères.',
+        'settings.password.mismatch': 'Les deux saisies doivent être identiques.',
+        'settings.password.saving': 'Enregistrement…',
+        'settings.password.done': 'Mot de passe modifié.',
+        'settings.password.error': 'Le mot de passe n\'a pas pu être modifié : ',
         'settings.avatar.hint': 'JPG, PNG ou GIF · Max 2 Mo',
         'settings.avatar.upload': 'Choisir une photo',
         'settings.avatar.remove': 'Supprimer',
@@ -1015,6 +1025,16 @@ const I18N = {
 
         // Settings - Profile
         'settings.identity': 'Identity',
+        'settings.password': 'Password',
+        'settings.password.new': 'New password',
+        'settings.password.confirm': 'Confirm password',
+        'settings.password.hint': 'At least 8 characters',
+        'settings.password.submit': 'Change my password',
+        'settings.password.tooShort': 'The password must contain at least 8 characters.',
+        'settings.password.mismatch': 'Both entries must be identical.',
+        'settings.password.saving': 'Saving…',
+        'settings.password.done': 'Password changed.',
+        'settings.password.error': 'The password could not be changed: ',
         'settings.avatar.hint': 'JPG, PNG or GIF · Max 2 MB',
         'settings.avatar.upload': 'Choose a photo',
         'settings.avatar.remove': 'Remove',
