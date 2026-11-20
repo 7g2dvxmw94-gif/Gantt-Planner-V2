@@ -178,6 +178,7 @@ class GanttRenderer {
             this._lastBody = body;
             this._lastTasks = tasks;
             this._renderDependencies(body, tasks);
+            this._renderLignesAvancement(body);
             return;
         } else {
             this._virtualActive = false;
@@ -196,6 +197,7 @@ class GanttRenderer {
         this._lastBody = body;
         this._lastTasks = tasks;
         this._renderDependencies(body, tasks);
+        this._renderLignesAvancement(body);
     }
 
     _flattenTree(nodes, depth) {
@@ -256,6 +258,7 @@ class GanttRenderer {
     refreshDependencies() {
         if (!this._lastBody || !this._lastTasks) return;
         this._renderDependencies(this._lastBody, this._lastTasks);
+        this._renderLignesAvancement(this._lastBody);
     }
 
     setVisibleTaskIds(ids) {
@@ -1088,6 +1091,100 @@ class GanttRenderer {
             svg.style.left = 'var(--gantt-task-col-width)';
             svg.style.pointerEvents = 'none';
             svg.style.zIndex = '4';
+            body.style.position = 'relative';
+            body.appendChild(svg);
+        });
+    }
+
+    /* ---- Lignes d'avancement (D3) ----
+       Comme MS Project : un zigzag part du trait de la date d'etat (a
+       defaut, aujourd'hui), fin du jour, et va pointer, ligne par ligne,
+       le % acheve sur la barre PREVUE. A gauche du trait : en retard ; a
+       droite : en avance. Reste sur le trait : une tache achevee, ou non
+       commencee et prevue apres la date d'etat. Un jalon non atteint dont
+       la date est passee pointe sa date. Une phase n'a pas de point.
+       Option du compte (customization.lignesAvancement), desactivee par
+       defaut. */
+
+    _pointAvancement(task, xEtat, jourEtat) {
+        if (task.isPhase) return null;
+        const debut = parseISO(task.startDate);
+        if (isNaN(debut)) return null;
+        const progres = Number(task.progress) || 0;
+        if (progres >= 100) return xEtat;
+        if (task.isMilestone) {
+            if (debut > jourEtat) return xEtat;
+            const x = this._dateToPosition(debut);
+            return x === null ? xEtat : x;
+        }
+        if (progres <= 0 && debut > jourEtat) return xEtat;
+        const gauche = this._dateToPosition(debut);
+        const droite = this._dateToPosition(addDays(parseISO(task.endDate), 1));
+        if (gauche === null || droite === null) return xEtat;
+        return gauche + (droite - gauche) * progres / 100;
+    }
+
+    _renderLignesAvancement(body) {
+        if (!body) return;
+        const actif = store.getSettings().customization?.lignesAvancement === true;
+        const iso = store.getActiveProject()?.statusDate;
+        let jourEtat = iso ? parseISO(iso) : new Date();
+        if (isNaN(jourEtat)) jourEtat = new Date();
+        jourEtat = new Date(jourEtat.getFullYear(), jourEtat.getMonth(), jourEtat.getDate());
+        const parId = new Map(store.getTasks().map(tk => [tk.id, tk]));
+
+        requestAnimationFrame(() => {
+            const ancienne = body.querySelector('.gantt-lignes-avancement');
+            if (ancienne) ancienne.remove();
+            if (!actif) return;
+            const xEtat = this._dateToPosition(addDays(jourEtat, 1));
+            if (xEtat === null) return;
+            const rows = [...body.querySelectorAll('.gantt-row')].filter(r => r.style.display !== 'none' && r.dataset.taskId);
+            if (!rows.length) return;
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(NS, 'svg');
+            svg.classList.add('gantt-lignes-avancement');
+            svg.setAttribute('aria-hidden', 'true');
+            const hauteur = body.scrollHeight;
+            svg.setAttribute('width', this._timelineWidth);
+            svg.setAttribute('height', hauteur);
+            Object.assign(svg.style, {
+                position: 'absolute', top: '0', left: 'var(--gantt-task-col-width)',
+                width: this._timelineWidth + 'px', height: hauteur + 'px',
+                pointerEvents: 'none', zIndex: '5',
+            });
+
+            const sommets = [];
+            const points = [];
+            rows.sort((a, b) => a.offsetTop - b.offsetTop).forEach(row => {
+                const task = parId.get(row.dataset.taskId);
+                if (!task) return;
+                const haut = row.offsetTop;
+                const bas = haut + row.offsetHeight;
+                const x = this._pointAvancement(task, xEtat, jourEtat);
+                sommets.push([xEtat, haut]);
+                if (x !== null) {
+                    sommets.push([x, (haut + bas) / 2]);
+                    points.push({ id: task.id, x, y: (haut + bas) / 2 });
+                }
+                sommets.push([xEtat, bas]);
+            });
+            if (!sommets.length) return;
+            const ligne = document.createElementNS(NS, 'polyline');
+            ligne.setAttribute('points', sommets.map(([x, y]) => `${x},${y}`).join(' '));
+            ligne.classList.add('ligne-avancement');
+            svg.appendChild(ligne);
+            points.forEach(p => {
+                const c = document.createElementNS(NS, 'circle');
+                c.setAttribute('cx', p.x);
+                c.setAttribute('cy', p.y);
+                c.setAttribute('r', 3.5);
+                c.classList.add('ligne-avancement-point');
+                if (p.x < xEtat - 1) c.classList.add('en-retard');
+                c.dataset.taskId = p.id;
+                svg.appendChild(c);
+            });
             body.style.position = 'relative';
             body.appendChild(svg);
         });

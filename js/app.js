@@ -2101,7 +2101,17 @@ class App {
                 <button type="button" class="btn btn-secondary" id="dateEtatAujourdhui"${desactive}>${escapeHtml(t('toolbar.dateEtat.effacer'))}</button>
                 <p class="date-etat-aide">${escapeHtml(t('toolbar.dateEtat.aide'))}</p>
                 <button type="button" class="btn btn-primary date-etat-maj" id="mettreAJourBtn" aria-haspopup="dialog"${desactive}>${escapeHtml(t('maj.ouvrir'))}</button>
+                <label class="date-etat-option"><input type="checkbox" id="lignesAvancementCase"${store.getSettings().customization?.lignesAvancement === true ? ' checked' : ''}> ${escapeHtml(t('toolbar.dateEtat.lignes'))}</label>
             </div>`;
+        /* Lignes d'avancement : reglage d'affichage du compte (lecture
+           seule comprise : il ne modifie pas le projet). */
+        const caseLignes = pop.querySelector('#lignesAvancementCase');
+        caseLignes.addEventListener('change', async () => {
+            const customization = { ...(store.getSettings().customization || {}), lignesAvancement: caseLignes.checked };
+            const ecriture = store.updateSettings({ customization });
+            ganttRenderer.refreshDependencies();
+            await ecriture;
+        });
         pop.querySelector('#mettreAJourBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             this._fermerDateEtat(false);

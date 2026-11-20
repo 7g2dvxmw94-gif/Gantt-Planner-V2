@@ -2491,6 +2491,15 @@ textarea.input {
     flex: 1 1 140px;
 }
 
+.date-etat-option {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
 .date-etat-aide {
     flex-basis: 100%;
     margin: 0;

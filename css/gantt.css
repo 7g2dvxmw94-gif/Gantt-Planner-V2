@@ -452,6 +452,25 @@
     pointer-events: none;
 }
 
+/* Lignes d'avancement (D3) : zigzag du trait de la date d'etat au %
+   acheve de chaque tache ; point rouge pour une tache en retard. */
+.ligne-avancement {
+    fill: none;
+    stroke: var(--color-error);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.ligne-avancement-point {
+    fill: var(--bg-base);
+    stroke: var(--color-error);
+    stroke-width: 1.5;
+}
+
+.ligne-avancement-point.en-retard {
+    fill: var(--color-error);
+}
+
 .today-marker {
     position: absolute;
     top: -22px;
