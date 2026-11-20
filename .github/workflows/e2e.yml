@@ -45,9 +45,12 @@ jobs:
     # de concurrence global au dépôt : un job bloqué gèle donc toute la CI
     # pendant six heures, PR et merges compris. C'est arrivé le 19/08 sur le
     # run 32227370548, tué au bout du délai maximal sans avoir lancé un seul
-    # test. La suite complète tourne en 6 à 8 min ; 30 min laisse une marge
-    # confortable tout en bornant les dégâts.
-    timeout-minutes: 30
+    # test. La suite complète tournait en 6 à 8 min, et 30 min laissait une
+    # marge confortable. Mesuré le 20/11/2026 : à 247 tests, elle prend de
+    # 26 à 29,5 min, et cinq runs ont été coupés à 30 min sans échec (dont
+    # 44657116994, deux fois, au test 243). 45 min rend la marge sans
+    # renoncer à la borne.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
