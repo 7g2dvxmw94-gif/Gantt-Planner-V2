@@ -10,7 +10,7 @@ import { themeManager } from './theme.js';
 import { ganttRenderer, VIRTUAL_THRESHOLD } from './gantt-renderer.js';
 import { taskModal } from './task-modal.js';
 import { ganttInteractions } from './gantt-interactions.js';
-import { $, $$, debounce, formatDateISO, formatDateDisplay, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
+import { $, $$, debounce, formatDateISO, formatDateDisplay, ecartJoursOuvres, addDays, daysBetween, formatCurrency, formatRate, getCurrencySymbol, getCurrencyConfig, escapeHtml, syncLog, parseISO, isWorkingDay,
          createElement, formatDateChiffres, libelleContrainte, contrainteDe, datesReellesDe } from './utils.js';
 import { onboarding } from './onboarding.js';
 import { cloudBackup } from './cloud-backup.js';
@@ -934,6 +934,7 @@ class App {
             ...(activeBaseline ? [
                 { key: '_blStart', label: t('board.blStart'), baseline: true, tooltip: t('baseline.startTooltip', { name: activeBaseline.name }) },
                 { key: '_blEnd',   label: t('board.blEnd'),   baseline: true, tooltip: t('baseline.endTooltip', { name: activeBaseline.name }) },
+                { key: '_blStartVariance', label: t('board.blStartVariance'), baseline: true, tooltip: t('baseline.startVarianceTooltip', { name: activeBaseline.name }) },
                 { key: '_blVariance', label: t('board.blVariance'), baseline: true, tooltip: t('baseline.varianceTooltip', { name: activeBaseline.name }) },
             ] : []),
             { key: 'assignees', label: t('board.assignees') },
@@ -1100,26 +1101,22 @@ class App {
                 tdBlEnd.textContent = blTask ? formatDateDisplay(blTask.endDate) : '—';
                 row.appendChild(tdBlEnd);
 
-                const tdVariance = document.createElement('td');
-                tdVariance.className = 'table-bl-col';
-                if (blTask) {
-                    const variance = Math.round((parseISO(task.endDate) - parseISO(blTask.endDate)) / 86400000);
+                /* Ecarts de debut et de fin, en jours OUVRES (ecartJoursOuvres) :
+                   +Nj retard, -Nj avance, ±0j a l'heure. */
+                const calendrierEcarts = store.getCalendar();
+                const celluleEcart = (actuelle, reference) => {
+                    const td = document.createElement('td');
+                    td.className = 'table-bl-col';
+                    if (!blTask) { td.textContent = '—'; return td; }
+                    const ecart = ecartJoursOuvres(reference, actuelle, calendrierEcarts);
                     const badge = document.createElement('span');
-                    if (variance > 0) {
-                        badge.className = 'bl-variance-late';
-                        badge.textContent = `+${variance}j`;
-                    } else if (variance < 0) {
-                        badge.className = 'bl-variance-early';
-                        badge.textContent = `${variance}j`;
-                    } else {
-                        badge.className = 'bl-variance-ok';
-                        badge.textContent = '±0j';
-                    }
-                    tdVariance.appendChild(badge);
-                } else {
-                    tdVariance.textContent = '—';
-                }
-                row.appendChild(tdVariance);
+                    badge.className = ecart > 0 ? 'bl-variance-late' : ecart < 0 ? 'bl-variance-early' : 'bl-variance-ok';
+                    badge.textContent = ecart > 0 ? `+${ecart}j` : ecart < 0 ? `${ecart}j` : '±0j';
+                    td.appendChild(badge);
+                    return td;
+                };
+                row.appendChild(celluleEcart(task.startDate, blTask?.startDate));
+                row.appendChild(celluleEcart(task.endDate, blTask?.endDate));
             }
 
             // Assignees
