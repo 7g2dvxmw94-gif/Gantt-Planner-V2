@@ -11,8 +11,9 @@ import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.
  *
  * LA RÈGLE : un bouton « Date d'état » dans la barre d'outils, à côté de
  * « Baseline », ouvre un panneau avec le champ de date et « Aujourd'hui »
- * (qui l'efface : vide, la date d'état est la date du jour, comme dans le
- * rapport DCMA). Le nom accessible et l'infobulle du bouton disent la date
+ * (qui y inscrit la date du jour : date-etat-aujourdhui.spec.js). Vide,
+ * la date d'état est la date du jour, comme dans le rapport DCMA. Le nom
+ * accessible et l'infobulle du bouton disent la date
  * en vigueur. C'est le MÊME champ du projet que celui du rapport DCMA :
  * régler l'un se lit dans l'autre, et la valeur survit au rechargement.
  *
@@ -73,12 +74,6 @@ test('la date d\'état se règle dans la barre d\'outils, et c\'est celle du rap
     await expect.poll(() => lireDateEtat(page), { message: 'relue après rechargement', timeout: 15_000 }).toBe('2026-06-10');
     await expect(bouton, 'après rechargement, le bouton dit la date').toHaveAttribute('aria-label', new RegExp(juin10));
 
-    /* « Aujourd'hui » efface : retour à la date du jour. */
-    await bouton.click();
-    await page.locator('#dateEtatAujourdhui').click();
-    await expect.poll(() => lireDateEtat(page), { message: '« Aujourd\'hui » efface la date d\'état' }).toBeNull();
-    await expect(bouton, 'le bouton redit « aujourd\'hui »').toHaveAttribute('aria-label', /aujourd'hui/);
-
-    await page.keyboard.press('Escape');
+    /* « Aujourd'hui » : voir date-etat-aujourdhui.spec.js. */
     await deleteActiveProject(page);
 });
