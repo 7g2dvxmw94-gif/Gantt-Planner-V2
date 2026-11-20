@@ -780,6 +780,19 @@ export function workingDaysBetween(start, end, calendar = defaultCalendar()) {
     return n;
 }
 
+/** Ecart, en jours OUVRES, d'une date actuelle a sa date de reference
+ *  (baseline) : les jours ouvres de l'intervalle ]reference, actuelle],
+ *  positif en retard, negatif en avance, 0 a l'heure. Comme les champs
+ *  « Ecart de debut / de fin » de MS Project : un week-end ne compte pas. */
+export function ecartJoursOuvres(reference, actuelle, calendar = defaultCalendar()) {
+    if (!reference || !actuelle || reference === actuelle) return 0;
+    const signe = actuelle > reference ? 1 : -1;
+    const [bas, haut] = signe > 0 ? [reference, actuelle] : [actuelle, reference];
+    const d = parseISO(bas);
+    d.setDate(d.getDate() + 1);
+    return signe * workingDaysBetween(formatDateISO(d), haut, calendar);
+}
+
 /* ============================================================
    Contraintes de date (« Doit finir le », « Debut au plus tot le »...)
    ------------------------------------------------------------
