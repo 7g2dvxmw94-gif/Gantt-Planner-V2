@@ -2058,15 +2058,17 @@ class App {
         pop.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this._fermerDateEtat(); }
         });
-        /* Fermer le panneau quand le projet actif CHANGE, pas quand le meme
-           projet est recharge : la creation d'un projet emet 'project:change'
-           en differe, apres le chargement depuis Supabase, et refermait le
-           panneau qu'on venait d'ouvrir (run 44603256000). */
-        this._dateEtatProjetId = store.getActiveProject()?.id ?? null;
+        /* Fermer le panneau quand l'evenement porte sur un AUTRE projet que
+           celui affiche A SON OUVERTURE (_ouvrirDateEtat pose la reference).
+           setActiveProject() pose l'id tout de suite et n'emet
+           'project:change' qu'apres le chargement depuis Supabase : comparer
+           au precedent evenement (#175) refermait un panneau ouvert dans
+           l'intervalle, sur le nouveau projet (runs 44603256000,
+           44649900013). */
+        this._dateEtatProjetId = null;
         store.on('project:change', () => {
             const id = store.getActiveProject()?.id ?? null;
             if (id !== this._dateEtatProjetId) this._fermerDateEtat(false);
-            this._dateEtatProjetId = id;
             this._majBoutonDateEtat();
         });
         store.on('project:dates', () => this._majBoutonDateEtat());
@@ -2092,6 +2094,7 @@ class App {
         const pop = document.getElementById('dateEtatPopover');
         const projet = store.getActiveProject();
         if (!btn || !pop || !projet) return;
+        this._dateEtatProjetId = projet.id;
         const desactive = store.canEdit() ? '' : ' disabled';
         pop.innerHTML = `
             <div class="bl-pop-header"><span class="bl-pop-title" id="dateEtatTitre">${escapeHtml(t('toolbar.dateEtat'))}</span></div>
