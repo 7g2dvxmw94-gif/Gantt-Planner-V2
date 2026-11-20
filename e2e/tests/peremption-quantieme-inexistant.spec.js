@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (permis) : une péremption partie d'un
  * 29 février expire le DERNIER JOUR DE FÉVRIER, pas le 1er mars.
@@ -90,6 +90,7 @@ test('une péremption partie d\'un 29 février expire le dernier jour de févrie
     await page.locator('#taskName').fill(`PC Atelier ${suffixe}`);
     await page.locator('#taskStart').fill('2028-02-01');
     await page.locator('#taskEnd').fill('2028-06-30');
+    await ongletFiche(page, 'permis');
 
     /* PREMIER DISCRIMINANT — LE PERMIS EST ACCORDÉ.
        calculatePermitDeadlines ne calcule la péremption que si le statut

@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § B11 (contraintes de date dans la fiche) : les
@@ -159,6 +159,7 @@ test('début tapé : la contrainte de chaque bout suit ; durée tapée : rien ne
        date de contrainte saisie ». */
     await ouvrir(page, C5);
     await page.locator('#taskStart').fill('2026-06-19');
+    await ongletFiche(page, 'avance');
     await page.locator('#taskConstraintDate').fill('2026-06-25');
     await enregistrer(page);
     expect((await lire(page, [C5])).etat[C5], 'C5 : la saisie fait foi').toBe('2026-06-23→2026-06-25 MFO 2026-06-25');

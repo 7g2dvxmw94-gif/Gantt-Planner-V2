@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § B11 : la fiche d'une tâche permet de poser une
@@ -139,6 +139,7 @@ async function fermerSansEnregistrer(page) {
  *  l'assertion centrale de chaque test. C'est elle qui échoue tant que la
  *  fiche n'a pas la ligne. */
 async function selecteurContrainte(page) {
+    await ongletFiche(page, 'avance');
     const sel = page.locator('#taskConstraint');
     await expect(sel, 'sélecteur de contrainte absent de la fiche').toBeVisible();
     return sel;
@@ -208,6 +209,7 @@ async function preparer(page) {
     /* B est liée à A par sa fiche : case de A cochée dans « Précédée par »,
        type Fin→Début (le premier de la liste), décalage 0. */
     await ouvrirFiche(page, B);
+    await ongletFiche(page, 'liens');
     const ligneA = await present(page.locator('#taskPredList > div').filter({ hasText: A }), `ligne de « ${A} » dans « Précédée par »`);
     await (await present(ligneA.locator('input[type="checkbox"]'), 'case de A')).check();
     await expect(ligneA.locator('select'), 'le lien posé doit être Fin→Début').toHaveValue('FS');
@@ -374,6 +376,7 @@ test('la ligne de contrainte est présente pour un jalon et un permis, absente p
     expect((await lire(page, [J])).taches[J], 'le jalon est posé le vendredi 12').toBe('2026-06-12→2026-06-12 MFO 2026-06-13');
 
     await ouvrirFiche(page, P);
+    await ongletFiche(page, 'avance');
     await expect(page.locator('#taskConstraint'), 'la ligne de contrainte doit figurer dans la fiche d\'un permis').toBeVisible();
     await fermerSansEnregistrer(page);
 

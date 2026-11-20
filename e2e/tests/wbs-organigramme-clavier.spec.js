@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* WBS, fonctionnalité F3b : dans l'organigramme (F3a), replier une
@@ -195,6 +195,7 @@ test('focus rendu : fermer la fiche rend le focus à la boîte', async ({ page }
     /* Après un enregistrement, qui redessine la vue. */
     await page.keyboard.press('Enter');
     await expect(page.locator('#taskName'), 'fiche de A1, encore').toHaveValue(`A1 ${s}`);
+    await ongletFiche(page, 'avancement');
     await page.locator('#taskProgress').fill('50');
     await page.locator('#taskModalOverlay').getByRole('button', { name: 'Enregistrer' }).click();
     await expect(page.locator('#taskModalOverlay')).toBeHidden();

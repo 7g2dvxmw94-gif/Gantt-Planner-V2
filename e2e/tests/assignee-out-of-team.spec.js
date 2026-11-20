@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Régression : une tâche assignée perdait l'affichage de ses assignés dès
    que l'équipe du projet devenait vide.
@@ -48,6 +48,7 @@ test('assignés hors équipe : ils restent visibles quand le projet n\'a plus de
 
     /* La ressource appartient à l'équipe : elle est rendue par la première
        boucle, sans le marqueur --out. On coche pour créer l'assignation. */
+    await ongletFiche(page, 'ressources');
     const ligneEquipe = page.locator('#taskModalOverlay .assignee-item', { hasText: nomRessource });
     await expect(ligneEquipe).toBeVisible();
     await ligneEquipe.locator('input[type="checkbox"]').check();
@@ -71,6 +72,7 @@ test('assignés hors équipe : ils restent visibles quand le projet n\'a plus de
     // --- L'assertion qui mord : rouvrir la tâche, l'assigné doit survivre ---
     await page.locator('#tabTimeline').click();
     await barre.dblclick();
+    await ongletFiche(page, 'ressources');
     const ligneHorsEquipe = page.locator('#taskModalOverlay .assignee-item', { hasText: nomRessource });
     await expect(ligneHorsEquipe).toBeVisible({ timeout: 10_000 });
     // Toujours cochée : l'assignation n'a pas été perdue, seulement masquée.

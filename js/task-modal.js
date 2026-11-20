@@ -9,8 +9,19 @@ import { supabaseStore } from './supabase-store.js';
 import { $, $$, createElement, formatDateISO, formatDateDisplay, addDays,
          parseISO, addWorkingDays, workingDaysBetween, isWorkingDay,
          CONTRAINTES, contrainteDe, liensNonTenus, dateEffectiveContrainte, contrainteApresDeplacement,
-         formatDateJour, datesReellesDe,
+         formatDateJour, datesReellesDe, ecartJoursOuvres,
          TASK_COLORS, getCurrencySymbol, syncLog, normaliserRecherche} from './utils.js';
+
+/* Les onglets de la fiche, dans l'ordre, et ceux de chaque type. Une
+   phase n'a ni dates propres, ni avancement saisi, ni liens, ni
+   contrainte : ses dates viennent de ses enfants. */
+const ONGLETS = ['general', 'avancement', 'liens', 'ressources', 'permis', 'avance', 'notes'];
+const ONGLETS_PAR_TYPE = {
+    task:      ['general', 'avancement', 'liens', 'ressources', 'avance', 'notes'],
+    milestone: ['general', 'avancement', 'liens', 'ressources', 'avance', 'notes'],
+    phase:     ['general', 'ressources', 'notes'],
+    permit:    ['general', 'avancement', 'liens', 'ressources', 'permis', 'avance', 'notes'],
+};
 
 class TaskModal {
     constructor() {
@@ -66,6 +77,55 @@ class TaskModal {
         // Body
         const body = createElement('div', { className: 'modal-body' });
 
+        /* ONGLETS, comme « Informations sur la tache » de MS Project. En
+           tete, toujours visibles : le type (a la creation seulement) et le
+           nom. Puis un onglet par theme ; ceux qui sont sans objet pour le
+           type sont retires (_majOnglets). Un champ d'un onglet non affiche
+           est masque : une erreur d'enregistrement affiche son onglet
+           (_afficherOnglet). */
+        const entete = createElement('div', { className: 'fiche-entete' });
+        body.appendChild(entete);
+        const tablist = createElement('div', {
+            className: 'fiche-onglets', role: 'tablist', 'aria-label': t('task.onglets.label'),
+        });
+        body.appendChild(tablist);
+        this._ongletsBtns = {};
+        this._panneaux = {};
+        ONGLETS.forEach((cle) => {
+            const btn = createElement('button', {
+                type: 'button', role: 'tab', className: 'fiche-onglet',
+                id: `ficheOnglet-${cle}`, 'aria-controls': `fichePanneau-${cle}`,
+                'aria-selected': 'false', tabindex: '-1', dataset: { onglet: cle },
+                onClick: () => this._afficherOnglet(cle),
+            });
+            btn.appendChild(createElement('span', {}, t(`task.onglet.${cle}`)));
+            tablist.appendChild(btn);
+            this._ongletsBtns[cle] = btn;
+            const panneau = createElement('div', {
+                className: 'fiche-panneau', role: 'tabpanel', id: `fichePanneau-${cle}`,
+                'aria-labelledby': `ficheOnglet-${cle}`, dataset: { onglet: cle },
+            });
+            panneau.hidden = true;
+            body.appendChild(panneau);
+            this._panneaux[cle] = panneau;
+        });
+        /* Fleches gauche/droite, Debut, Fin : d'un onglet a l'autre (motif
+           WAI-ARIA des onglets ; un seul est dans l'ordre de tabulation). */
+        tablist.addEventListener('keydown', (e) => {
+            const visibles = ONGLETS.filter(c => !this._ongletsBtns[c].hidden);
+            const i = visibles.indexOf(this._ongletActif);
+            let cible = null;
+            if (e.key === 'ArrowRight') cible = visibles[(i + 1) % visibles.length];
+            else if (e.key === 'ArrowLeft') cible = visibles[(i - 1 + visibles.length) % visibles.length];
+            else if (e.key === 'Home') cible = visibles[0];
+            else if (e.key === 'End') cible = visibles[visibles.length - 1];
+            if (!cible) return;
+            e.preventDefault();
+            this._afficherOnglet(cible);
+            this._ongletsBtns[cible].focus();
+        });
+        const P = this._panneaux;
+
         // === TYPE SELECTOR (top of modal) ===
         const typeGroup = createElement('div', { className: 'form-group' });
         typeGroup.appendChild(createElement('label', { className: 'form-label' }, t('task.type.label')));
@@ -89,7 +149,7 @@ class TaskModal {
             typeSwitcher.appendChild(btn);
         });
         typeGroup.appendChild(typeSwitcher);
-        body.appendChild(typeGroup);
+        this._typeGroup = typeGroup;
 
         // Hidden checkboxes (keep for data binding)
         this._milestoneCheck = { input: createElement('input', { type: 'checkbox', id: 'taskMilestone', style: { display: 'none' } }) };
@@ -98,9 +158,11 @@ class TaskModal {
         // Task name
         this._taskNameGroup = this._createField(t('task.name.label'), 'text', 'taskName', t('task.name.placeholder'));
         this._taskNameLabel = this._taskNameGroup.querySelector('.form-label');
-        body.appendChild(this._taskNameGroup);
+        this._taskNameGroup.classList.add('fiche-entete-nom');
+        entete.appendChild(this._taskNameGroup);
+        entete.appendChild(typeGroup);
 
-        // Name + Parent row
+        // Général : phase parente + priorite (ajoutee plus bas)
         const nameParentRow = createElement('div', { className: 'form-row' });
         // Parent phase selector
         const parentGroup = createElement('div', { className: 'form-group' });
@@ -119,8 +181,9 @@ class TaskModal {
             style: { resize: 'vertical', minHeight: '48px' },
         });
         descGroup.appendChild(this._descInput);
-        nameParentRow.appendChild(descGroup);
-        body.appendChild(nameParentRow);
+        this._descInput.rows = 10;
+        P.notes.appendChild(descGroup);
+        P.general.appendChild(nameParentRow);
 
         // Dates + Duration row (3 columns)
         this._datesRow = createElement('div', { className: 'form-row form-row-3' });
@@ -139,7 +202,7 @@ class TaskModal {
         });
         durationGroup.appendChild(this._durationInput);
         datesRow.appendChild(durationGroup);
-        body.appendChild(datesRow);
+        P.general.appendChild(datesRow);
         /* Dates reelles : le jour ou la tache a vraiment commence, et celui
            ou elle s'est vraiment terminee. Elles pilotent le planning (le
            prevu les suit) ; une Fin reelle passe la tache a 100 % et
@@ -147,14 +210,12 @@ class TaskModal {
         this._actualRow = createElement('div', { className: 'form-row' });
         this._actualRow.appendChild(this._createField(t('task.actualStart'), 'date', 'taskActualStart'));
         this._actualRow.appendChild(this._createField(t('task.actualFinish'), 'date', 'taskActualFinish'));
-        body.appendChild(this._actualRow);
         this._actualErreur = createElement('p', {
             className: 'contrainte-erreur', id: 'taskActualError', role: 'alert',
         });
         this._taskActualFinish.setAttribute('aria-describedby', 'taskActualError');
-        body.appendChild(this._actualErreur);
 
-        this._buildContrainteDOM(body);
+        this._buildContrainteDOM(P.avance, body);
 
         // Priority + Status + Progress row (3 columns)
         this._metaRow = createElement('div', { className: 'form-row form-row-3' });
@@ -170,7 +231,8 @@ class TaskModal {
             this._prioritySelect.appendChild(opt);
         });
         priorityGroup.appendChild(this._prioritySelect);
-        metaRow.appendChild(priorityGroup);
+        this._priorityGroup = priorityGroup;
+        nameParentRow.appendChild(priorityGroup);
 
         // Status
         const statusGroup = createElement('div', { className: 'form-group' });
@@ -247,10 +309,14 @@ class TaskModal {
         progressGroup.appendChild(this._milestoneStatusToggle);
 
         metaRow.appendChild(progressGroup);
-        body.appendChild(metaRow);
+        /* Avancement : % acheve et statut, dates reelles, baseline. */
+        P.avancement.appendChild(metaRow);
+        P.avancement.appendChild(this._actualRow);
+        P.avancement.appendChild(this._actualErreur);
+        this._baselineBloc = createElement('div', { className: 'fiche-baseline' });
+        P.avancement.appendChild(this._baselineBloc);
 
         // Color + Assignees row
-        const colorAssignRow = createElement('div', { className: 'form-row' });
 
         // Color picker
         const colorGroup = createElement('div', { className: 'form-group' });
@@ -272,7 +338,7 @@ class TaskModal {
             this._colorPicker.appendChild(swatch);
         });
         colorGroup.appendChild(this._colorPicker);
-        colorAssignRow.appendChild(colorGroup);
+        P.general.appendChild(colorGroup);
 
         // Assignees (multi-select with search)
         const assigneeGroup = createElement('div', { className: 'form-group' });
@@ -286,8 +352,7 @@ class TaskModal {
         assigneeGroup.appendChild(this._assigneeSearch);
         this._assigneeList = createElement('div', { className: 'assignee-list' });
         assigneeGroup.appendChild(this._assigneeList);
-        colorAssignRow.appendChild(assigneeGroup);
-        body.appendChild(colorAssignRow);
+        P.ressources.appendChild(assigneeGroup);
 
         // Fixed costs section (multiple named costs)
         const fixedCostsGroup = createElement('div', { className: 'form-group' });
@@ -308,7 +373,7 @@ class TaskModal {
             style: { fontSize: '11px', color: 'var(--text-muted, #999)', marginTop: '4px' },
         }, t('task.fixedCosts.hint'));
         fixedCostsGroup.appendChild(fixedCostHint);
-        body.appendChild(fixedCostsGroup);
+        P.ressources.appendChild(fixedCostsGroup);
 
         // Dependencies row (predecessors + successors side by side)
         this._depRow = createElement('div', { className: 'form-row' });
@@ -333,7 +398,9 @@ class TaskModal {
         this._succSearch = this._createDepSearch(succGroup, this._succList, t('task.depSearch.successors'));
         succGroup.appendChild(this._succList);
         depRow.appendChild(succGroup);
-        body.appendChild(depRow);
+        P.liens.appendChild(depRow);
+        /* Le nombre de liens, sur l'onglet. */
+        P.liens.addEventListener('change', () => this._majBadgeLiens());
 
         // === PERMIT FIELDS ===
         this._permitFields = createElement('div', { className: 'permit-fields' });
@@ -457,7 +524,7 @@ class TaskModal {
         this._permitDeadlinesPanel = createElement('div', { className: 'permit-deadlines' });
         this._permitFields.appendChild(this._permitDeadlinesPanel);
 
-        body.appendChild(this._permitFields);
+        P.permis.appendChild(this._permitFields);
 
         modal.appendChild(body);
 
@@ -526,6 +593,7 @@ class TaskModal {
         this._datesRow.style.display = isPhase ? 'none' : '';
         if (this._actualRow) this._actualRow.style.display = isPhase ? 'none' : '';
         this._metaRow.style.display = isPhase ? 'none' : '';
+        this._priorityGroup.style.display = isPhase ? 'none' : '';
         this._depRow.style.display = isPhase ? 'none' : '';
         this._contrainteBloc.style.display = isPhase ? 'none' : '';
 
@@ -563,6 +631,73 @@ class TaskModal {
         }
 
         this._majApercuContrainte();
+        this._majOnglets(type);
+    }
+
+    /** Les onglets du type : ceux qui sont sans objet sont retires. Si
+     *  l'onglet affiche disparait, la fiche revient a Général. */
+    _majOnglets(type) {
+        const permis = ONGLETS_PAR_TYPE[type] || ONGLETS_PAR_TYPE.task;
+        ONGLETS.forEach(cle => { this._ongletsBtns[cle].hidden = !permis.includes(cle); });
+        if (!this._ongletActif || !permis.includes(this._ongletActif)) this._afficherOnglet('general');
+    }
+
+    /** Affiche l'onglet `cle`, masque les autres. */
+    _afficherOnglet(cle) {
+        this._ongletActif = cle;
+        ONGLETS.forEach(c => {
+            const actif = c === cle;
+            this._ongletsBtns[c].setAttribute('aria-selected', actif ? 'true' : 'false');
+            this._ongletsBtns[c].tabIndex = actif ? 0 : -1;
+            this._ongletsBtns[c].classList.toggle('active', actif);
+            this._panneaux[c].hidden = !actif;
+        });
+    }
+
+    /** Nombre de liens (predecesseurs + successeurs coches) sur l'onglet. */
+    _majBadgeLiens() {
+        const btn = this._ongletsBtns && this._ongletsBtns.liens;
+        if (!btn) return;
+        const n = this._getSelectedPredecessors().length + this._getSelectedSuccessors().length;
+        let badge = btn.querySelector('.fiche-onglet-badge');
+        if (!n) { if (badge) badge.remove(); return; }
+        if (!badge) {
+            badge = createElement('span', { className: 'fiche-onglet-badge' });
+            btn.appendChild(badge);
+        }
+        badge.textContent = String(n);
+    }
+
+    /** Baseline active, en lecture seule dans Avancement : debut et fin de
+     *  la baseline, ecarts en jours ouvres. Vide sans baseline ou pour une
+     *  tache absente de la baseline (creee apres). */
+    _remplirBaseline(task) {
+        const bloc = this._baselineBloc;
+        bloc.innerHTML = '';
+        const bl = task ? store.getActiveBaseline() : null;
+        const blTache = bl ? bl.tasks.find(x => x.id === task.id) : null;
+        bloc.hidden = !blTache;
+        if (!blTache) return;
+        bloc.appendChild(createElement('div', { className: 'fiche-baseline-titre' }, t('task.baseline.titre', { name: bl.name })));
+        const grille = createElement('div', { className: 'fiche-baseline-grille' });
+        const cal = store.getCalendar();
+        const ecart = (reference, actuelle) => {
+            const n = ecartJoursOuvres(reference, actuelle, cal);
+            return { texte: n > 0 ? `+${n}j` : n < 0 ? `${n}j` : '±0j', classe: n > 0 ? 'bl-variance-late' : n < 0 ? 'bl-variance-early' : 'bl-variance-ok' };
+        };
+        const cases = [
+            [t('board.blStart'), { texte: formatDateDisplay(blTache.startDate) }],
+            [t('board.blEnd'), { texte: formatDateDisplay(blTache.endDate) }],
+            [t('board.blStartVariance'), ecart(blTache.startDate, task.startDate)],
+            [t('board.blVariance'), ecart(blTache.endDate, task.endDate)],
+        ];
+        cases.forEach(([libelle, v]) => {
+            const c = createElement('div', { className: 'fiche-baseline-case' });
+            c.appendChild(createElement('div', { className: 'fiche-baseline-libelle' }, libelle));
+            c.appendChild(createElement('div', { className: 'fiche-baseline-valeur' + (v.classe ? ' ' + v.classe : '') }, v.texte));
+            grille.appendChild(c);
+        });
+        bloc.appendChild(grille);
     }
 
     /* ---- Events ---- */
@@ -612,7 +747,11 @@ class TaskModal {
             // Focus trap
             if (e.key === 'Tab') {
                 const modal = this._overlay.querySelector('.modal');
-                const focusable = modal.querySelectorAll('button, [href], input:not([type="hidden"]):not([style*="display: none"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                /* Seuls les controles AFFICHES : ceux des onglets masques
+                   ne recoivent pas le focus, et fausseraient premier et
+                   dernier. */
+                const focusable = [...modal.querySelectorAll('button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])')]
+                    .filter(el => el.getClientRects().length > 0);
                 if (!focusable.length) return;
                 const first = focusable[0];
                 const last = focusable[focusable.length - 1];
@@ -659,6 +798,7 @@ class TaskModal {
         this._titleEl.textContent = t('task.new.title');
         this._saveBtn.textContent = t('task.btnCreate');
         this._deleteBtn.style.display = 'none';
+        this._typeGroup.style.display = '';
 
         // Defaults
         const today = new Date();
@@ -707,6 +847,9 @@ class TaskModal {
         this._remplirContrainte(null);
         this._majApercuContrainte();
 
+        this._remplirBaseline(null);
+        this._majBadgeLiens();
+        this._afficherOnglet('general');
         this._show();
         this._taskName.focus();
     }
@@ -721,6 +864,8 @@ class TaskModal {
         this._titleEl.textContent = t('task.edit.title');
         this._saveBtn.textContent = t('task.btnSave');
         this._deleteBtn.style.display = '';
+        /* En modification, pas de choix du type : il se lit dans le titre. */
+        this._typeGroup.style.display = 'none';
 
         // Fill fields
         this._taskName.value = task.name;
@@ -743,6 +888,7 @@ class TaskModal {
         // Type
         const taskType = task.isPermit ? 'permit' : (task.isMilestone ? 'milestone' : (task.isPhase ? 'phase' : 'task'));
         this._setTaskType(taskType);
+        this._titleEl.appendChild(createElement('span', { className: 'fiche-type-badge' }, t(`task.type.${taskType}`)));
 
         // Fill permit-specific fields
         if (task.isPermit) {
@@ -792,6 +938,10 @@ class TaskModal {
         this._remplirContrainte(task);
         this._majApercuContrainte();
 
+        this._remplirBaseline(task);
+        this._majBadgeLiens();
+        this._afficherOnglet('general');
+
         // Mode lecture seule pour les viewers
         const readOnly = !store.canEdit();
         this._setReadOnly(readOnly);
@@ -814,7 +964,7 @@ class TaskModal {
             body.style.opacity = readOnly ? '0.6' : '';
             // Bloquer uniquement les éléments interactifs (pas le body entier)
             body.querySelectorAll(
-                'input, select, textarea, button, [role="button"], .color-swatch, .milestone-btn, .task-type-btn, .assignee-item'
+                'input, select, textarea, button:not(.fiche-onglet), [role="button"], .color-swatch, .milestone-btn, .task-type-btn, .assignee-item'
             ).forEach(el => {
                 el.style.pointerEvents = readOnly ? 'none' : '';
             });
@@ -1274,7 +1424,7 @@ class TaskModal {
      * (contrainteDe() ne lui en reconnait aucune) ; presente pour une
      * tache, un jalon et un permis. */
 
-    _buildContrainteDOM(body) {
+    _buildContrainteDOM(conteneur, body) {
         this._contrainteBloc = createElement('div', { className: 'form-group contrainte-bloc' });
         const ligne = createElement('div', { className: 'form-row' });
 
@@ -1312,7 +1462,7 @@ class TaskModal {
         });
         this._contrainteBloc.appendChild(this._contrainteErreur);
         this._contrainteBloc.appendChild(this._contrainteInfo);
-        body.appendChild(this._contrainteBloc);
+        conteneur.appendChild(this._contrainteBloc);
 
         this._contrainteType.addEventListener('change', () => {
             const type = this._contrainteType.value;
@@ -1692,6 +1842,7 @@ class TaskModal {
         const contrainte = estPhase ? { type: null, date: null, lisible: true }
             : this._contrainteAvecDatesTapees(this._contrainteSaisie());
         if (!contrainte.lisible) {
+            this._afficherOnglet('avance');
             this._afficherErreurContrainte(contrainte.type);
             return;   // le modal reste ouvert, rien n'est ecrit
         }
@@ -1704,6 +1855,7 @@ class TaskModal {
             this._taskActualFinish.classList.add('input-error');
             this._taskActualFinish.setAttribute('aria-invalid', 'true');
             this._actualErreur.textContent = t('task.actualFinish.beforeStart');
+            this._afficherOnglet('avancement');
             this._taskActualFinish.focus();
             return;   // le modal reste ouvert, rien n'est ecrit
         }
@@ -1727,6 +1879,7 @@ class TaskModal {
             ];
             const check = store.validateDependencyChanges(lot);
             if (!check.valid) {
+                this._afficherOnglet('liens');
                 this._showDependencyError(check.message);
                 return;   // le modal reste ouvert, rien n'est ecrit
             }

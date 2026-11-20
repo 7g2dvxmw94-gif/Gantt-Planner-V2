@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject, expectProjectName, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, expectProjectName, waitForAppReady, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (créer un permis de construire), volet
  * persistance : le n° de dossier, la commune et le service instructeur
@@ -101,6 +101,7 @@ test('le n° de dossier, la commune et le service instructeur d\'un permis survi
     await page.locator('#taskName').fill(nomPermis);
     await page.locator('#taskStart').fill('2026-03-02');
     await page.locator('#taskEnd').fill('2026-03-13');
+    await ongletFiche(page, 'permis');
     await champPermis(page, 'N° de dossier').fill(saisis.dossier);
     await champPermis(page, 'Commune').fill(saisis.commune);
     await champPermis(page, 'Service instructeur').fill(saisis.service);

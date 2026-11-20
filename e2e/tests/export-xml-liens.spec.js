@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures.js';
 import fs from 'node:fs/promises';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § G4 étape 6, volet export.
  *
@@ -72,6 +72,7 @@ test('export XML : les liens de précédence et leur type sont émis', async ({ 
     // B suit A en Début→Début : un type NON défaut, que l'export doit rendre.
     await expect(barre(tacheB)).toBeVisible({ timeout: 10_000 });
     await barre(tacheB).dblclick();
+    await ongletFiche(page, 'liens');
     const ligneB = groupePred().locator('.dep-list > div').filter({ hasText: tacheA });
     await ligneB.locator('input[type="checkbox"]').check();
     await ligneB.locator('select').selectOption('SS');
@@ -80,6 +81,7 @@ test('export XML : les liens de précédence et leur type sont émis', async ({ 
 
     // C suit A en Fin→Début, le type par défaut.
     await barre(tacheC).dblclick();
+    await ongletFiche(page, 'liens');
     const ligneC = groupePred().locator('.dep-list > div').filter({ hasText: tacheA });
     await ligneC.locator('input[type="checkbox"]').check();
     await page.locator('#taskModalOverlay').getByRole('button', { name: 'Enregistrer' }).click();

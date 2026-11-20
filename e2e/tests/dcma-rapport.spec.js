@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique) et § AC1 (clavier), sous
  * l'angle du rapport DCMA 14 points : le bouton de la barre d'outils ouvre
@@ -48,6 +48,7 @@ function lignePredecesseur(page, nomPredecesseur) {
 
 async function lier(page, barreSuccesseur, nomPredecesseur, decalage) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const ligne = lignePredecesseur(page, nomPredecesseur);
     await ligne.locator('input[type="checkbox"]').check();
     await ligne.locator('select').selectOption('FS');

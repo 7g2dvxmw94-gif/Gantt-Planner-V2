@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (permis) : le délai d'instruction se compte en
  * MOIS, pas en multiples de trente jours.
@@ -95,6 +95,7 @@ test('le délai d\'instruction se compte en mois, pas en tranches de trente jour
     await page.locator('#taskName').fill(`PC Halle ${suffixe}`);
     await page.locator('#taskStart').fill('2026-03-01');
     await page.locator('#taskEnd').fill('2026-07-31');
+    await ongletFiche(page, 'permis');
 
     /* PREMIER DISCRIMINANT — LE TYPE EST BIEN UN PC.
        Trois mois ne valent que pour les permis de construire ordinaires et

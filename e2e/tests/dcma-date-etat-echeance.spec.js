@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { createProject, deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique), sous l'angle du rapport
  * DCMA 14 points : la date d'état et l'échéance du projet.
@@ -41,6 +41,7 @@ async function creerTache(page, nom, debut, fin) {
 
 async function lier(page, barreSuccesseur, nomPredecesseur) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('#taskModalOverlay .form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: nomPredecesseur });

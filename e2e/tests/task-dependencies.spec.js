@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B7 (définir des dépendances) : ajouter un
    prédécesseur ne doit pas se contenter de dessiner une ligne dans le
@@ -34,6 +34,7 @@ test('ajouter un prédécesseur contraint automatiquement les dates de la tâche
     const barB = page.locator('.gantt-bar[data-task-id]').filter({ hasText: nameB });
     await expect(barB).toBeVisible({ timeout: 10_000 });
     await barB.dblclick();
+    await ongletFiche(page, 'liens');
     const predGroup = page.locator('.form-group', { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     await predGroup.locator('.dep-list > div').filter({ hasText: nameA })
         .locator('input[type="checkbox"]').check();

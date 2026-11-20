@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { deleteActiveProject, waitForAppReady } from '../helpers.js';
+import { deleteActiveProject, waitForAppReady, ongletFiche } from '../helpers.js';
 import { trackActiveProject } from '../cleanup.js';
 
 /* Couvre TEST_PLAN.md § B7 (liens entre tâches), sous l'angle de la
@@ -225,6 +225,7 @@ test('la fiche d\'une tâche filtre ses prédécesseurs par une recherche sans c
     const autres = NOMS.map(nom).filter(n => n !== editee);
 
     await ouvrirFiche(page, editee);
+    await ongletFiche(page, 'liens');
     const grp = groupe(page, 'Précédée par');
 
     /* DISCRIMINANT 1 — AVANT TOUTE FRAPPE, LA LISTE PROPOSE LES 29 AUTRES
@@ -296,6 +297,7 @@ test('la fiche d\'un jalon filtre ses successeurs, et Échap vide la recherche s
     const autres = NOMS.map(nom).filter(n => n !== editee);
 
     await ouvrirFiche(page, editee);
+    await ongletFiche(page, 'liens');
     const grp = groupe(page, 'Succédée par');
 
     /* DISCRIMINANT 1 — AVANT TOUTE FRAPPE, LA LISTE PROPOSE LES 29 AUTRES

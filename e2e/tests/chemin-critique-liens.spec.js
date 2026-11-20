@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § E2 (chemin critique), sous l'angle que
  * critical-path.spec.js laisse de côté : ses deux scénarios n'emploient que
@@ -58,6 +58,7 @@ async function creerTache(page, nom, debut, fin) {
  *  case cochée (majVisibilite dans task-modal.js) : l'ordre compte. */
 async function lier(page, barreSuccesseur, nomPredecesseur, type, decalage = 0) {
     await barreSuccesseur.dblclick();
+    await ongletFiche(page, 'liens');
     const groupe = page.locator('.form-group',
         { has: page.locator('.form-label', { hasText: 'Précédée par' }) });
     const ligne = groupe.locator('.dep-list > div').filter({ hasText: nomPredecesseur });

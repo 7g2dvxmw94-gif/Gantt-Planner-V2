@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures.js';
-import { createProject, deleteActiveProject } from '../helpers.js';
+import { createProject, deleteActiveProject, ongletFiche } from '../helpers.js';
 
 /* Couvre TEST_PLAN.md § B4 (créer un permis de construire) : le type
    « Permis » révèle les champs réglementaires, et les délais sont calculés
@@ -66,6 +66,8 @@ async function openPermitForm(page, name) {
     await page.locator('#taskName').fill(name);
     await page.locator('#taskStart').fill('2026-08-10');
     await page.locator('#taskEnd').fill('2026-11-30');
+    // Les champs réglementaires sont dans l'onglet « Permis » de la fiche.
+    await ongletFiche(page, 'permis');
 }
 
 test('créer un permis : les champs réglementaires apparaissent et les délais sont calculés', async ({ page }) => {
