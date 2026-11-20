@@ -7923,6 +7923,11 @@ tr:nth-child(even){background:#fafbfc}
             nameSpan.style.cssText = 'flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;';
             nameSpan.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                /* La liste se ferme D'ABORD : fermee apres le chargement, elle
+                   restait ouverte pendant celui-ci, et un clic sur le
+                   selecteur la refermait au lieu de l'ouvrir (run
+                   44735985140, 13 tests). */
+                dropdown.remove();
                 await store.setActiveProject(p.id);
                 this._dashboardFilterProjectId = null;
                 this._costsFilterProjectId = null;
@@ -7932,7 +7937,6 @@ tr:nth-child(even){background:#fafbfc}
                 this._renderProjectName();
                 this._refreshPhaseFilter();
                 this._refreshCurrentView();
-                dropdown.remove();
             });
             item.appendChild(nameSpan);
 
