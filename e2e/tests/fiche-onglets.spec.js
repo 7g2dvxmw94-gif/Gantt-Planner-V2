@@ -22,7 +22,9 @@ import { createProject, deleteActiveProject } from '../helpers.js';
  * centrale « liste d'onglets absente de la fiche ». Le discriminant — la
  * fiche s'ouvre, nom et dates affichés — passe. */
 
-const onglets = (page) => page.locator('#taskModalOverlay [role="tablist"] [role="tab"]');
+/* Les onglets AFFICHÉS : un onglet sans objet pour le type reste dans le
+ * DOM, masqué (hidden) ; allTextContents le lirait quand même. */
+const onglets = (page) => page.locator('#taskModalOverlay [role="tablist"] [role="tab"]:visible');
 const libelles = async (page) => (await onglets(page).allTextContents()).map(s => s.replace(/\d+$/, '').trim());
 const onglet = (page, cle) => page.locator(`#taskModalOverlay [role="tab"][data-onglet="${cle}"]`);
 
