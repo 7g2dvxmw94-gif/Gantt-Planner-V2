@@ -41,7 +41,10 @@ async function etat(page) {
     return page.evaluate(async () => {
         const { store } = await import(new URL('js/store.js', document.baseURI).href);
         const p = store.getActiveProject();
-        return { id: p?.id ?? null, calendrier: p?.calendar, compte: JSON.stringify(store.getCalendar()) };
+        // Le calendrier du COMPTE : depuis C1, getCalendar() rend celui du
+        // projet actif ; getCalendrierCompte() est le reglage du compte.
+        return { id: p?.id ?? null, calendrier: p?.calendar,
+            compte: JSON.stringify(store.getCalendrierCompte ? store.getCalendrierCompte() : store.getCalendar()) };
     });
 }
 

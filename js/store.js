@@ -2272,7 +2272,22 @@ class Store {
      *  Renvoyer un objet neuf a chaque appel — et cette fonction est
      *  appelee des milliers de fois par recalcul — reconstruirait ce Set
      *  aussi souvent. Le cache est invalide par _invalidateCalendar(). */
+    /** Le calendrier du MOTEUR : celui du projet actif s'il en a un
+     *  (migration 031, C0), sinon celui du compte — projets anterieurs a
+     *  C0. Lu a chaque appel, sans cache propre : changer de projet ne
+     *  peut pas laisser servir le calendrier du precedent. L'objet du
+     *  projet n'est remplace que par setProjectCalendar (objet neuf), ce
+     *  qui garde juste la memoisation des feries, indexee par identite. */
     _getCalendar() {
+        const pid = this._data.settings.activeProjectId;
+        const projet = pid ? this._data.projects.find(p => p.id === pid) : null;
+        if (projet && projet.calendar) return projet.calendar;
+        return this._getCalendrierCompte();
+    }
+
+    /** Le calendrier du COMPTE (settings.customization.calendar) : modele
+     *  des nouveaux projets, et calendrier des projets qui n'en ont pas. */
+    _getCalendrierCompte() {
         if (!this._calendarRef) {
             const stored = this._data.settings.customization?.calendar;
             this._calendarRef = stored
@@ -2299,6 +2314,11 @@ class Store {
      *  saisie en jours ouvres vers une date de fin. */
     getCalendar() {
         return this._getCalendar();
+    }
+
+    /** Le calendrier du compte, que le panneau Parametres edite. */
+    getCalendrierCompte() {
+        return this._getCalendrierCompte();
     }
 
     /** Recale une paire de dates sur des jours ouvres, duree ouvree
