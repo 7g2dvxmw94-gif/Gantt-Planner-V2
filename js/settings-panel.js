@@ -328,7 +328,7 @@ class SettingsPanel {
         const showWbs = this._getCustomization('showWbs') !== false;
         const currentLang = getCurrentLang();
         const excludeWeekends = store.getActiveProject()?.excludeWeekends !== false;
-        const cal = store.getCalendar();
+        const cal = store.getCalendrierCompte();
 
         return `
             <div class="settings-section">
@@ -517,7 +517,7 @@ class SettingsPanel {
      *  reglages, ce qui lui vaut gratuitement le suivi des ecritures en vol
      *  et la restauration sur « Annuler ». */
     _saveCalendar(patch) {
-        const actuel = store.getCalendar();
+        const actuel = store.getCalendrierCompte();
         return this._saveCustomization('calendar', { ...actuel, ...patch });
     }
 
@@ -1181,7 +1181,7 @@ class SettingsPanel {
         this._panel.querySelectorAll('.calendar-day-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const jour = Number(btn.dataset.day);
-                const actuels = store.getCalendar().workingDays || [];
+                const actuels = store.getCalendrierCompte().workingDays || [];
                 const actif = actuels.includes(jour);
                 if (actif && actuels.length === 1) return;
 
@@ -1221,7 +1221,7 @@ class SettingsPanel {
             addBtn.addEventListener('click', () => {
                 const iso = dateInput.value;
                 if (!iso) return;
-                const actuels = store.getCalendar().holidays || [];
+                const actuels = store.getCalendrierCompte().holidays || [];
                 if (actuels.includes(iso)) { dateInput.value = ''; return; }
                 this._saveCalendar({ holidays: [...actuels, iso].sort() });
                 dateInput.value = '';
@@ -1243,7 +1243,7 @@ class SettingsPanel {
             const btn = e.target.closest('.calendar-holiday-remove');
             if (!btn) return;
             const iso = btn.dataset.holiday;
-            const actuels = store.getCalendar().holidays || [];
+            const actuels = store.getCalendrierCompte().holidays || [];
             this._saveCalendar({ holidays: actuels.filter(j => j !== iso) });
             this._refreshHolidayList();
             document.dispatchEvent(new CustomEvent('calendar-changed'));
@@ -1252,7 +1252,7 @@ class SettingsPanel {
 
     _refreshHolidayList() {
         const liste = this._panel.querySelector('#settingsHolidayList');
-        if (liste) liste.innerHTML = this._renderCustomHolidays(store.getCalendar());
+        if (liste) liste.innerHTML = this._renderCustomHolidays(store.getCalendrierCompte());
     }
 
     _bindAideEvents() {
